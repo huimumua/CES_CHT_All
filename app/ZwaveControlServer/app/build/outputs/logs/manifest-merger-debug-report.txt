@@ -1,0 +1,175 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:2:1-61:12
+	package
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:3:5-46
+		INJECTED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml
+		INJECTED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml
+	android:versionName
+		INJECTED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml
+		INJECTED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:2:11-69
+	android:versionCode
+		INJECTED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml
+		INJECTED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml
+uses-permission#android.permission.RECEIVE_BOOT_COMPLETED
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:5:5-81
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:5:22-78
+uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:6:5-81
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:6:22-78
+uses-permission#android.permission.ACCESS_NETWORK_STATE
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:7:5-79
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:7:22-76
+uses-permission#android.permission.READ_EXTERNAL_STORAGE
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:8:5-80
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:8:22-77
+uses-permission#android.permission.INTERNET
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:9:5-67
+MERGED from [ZwaveControlServer:broker:unspecified] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/ZwaveControlServer/broker/unspecified/AndroidManifest.xml:10:5-67
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:9:22-64
+uses-permission#android.permission.WAKE_LOCK
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:10:5-68
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:10:22-65
+uses-permission#android.permission.ACCESS_WIFI_STATE
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:11:5-76
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:11:22-73
+application
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:13:5-59:19
+MERGED from [com.android.support:appcompat-v7:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/25.3.1/AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:support-v4:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-v4/25.3.1/AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:support-fragment:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-fragment/25.3.1/AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:support-media-compat:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-media-compat/25.3.1/AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:support-core-ui:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-core-ui/25.3.1/AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:support-core-utils:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-core-utils/25.3.1/AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:animated-vector-drawable:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/animated-vector-drawable/25.3.1/AndroidManifest.xml:26:5-20
+MERGED from [com.android.support:support-vector-drawable:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-vector-drawable/25.3.1/AndroidManifest.xml:26:5-20
+MERGED from [com.android.support:support-compat:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-compat/25.3.1/AndroidManifest.xml:29:5-20
+MERGED from [com.android.support.constraint:constraint-layout:1.0.0-alpha9] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support.constraint/constraint-layout/1.0.0-alpha9/AndroidManifest.xml:9:5-20
+	android:label
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:17:9-41
+	android:supportsRtl
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:19:9-35
+	android:roundIcon
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:18:9-54
+	android:allowBackup
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:15:9-35
+	android:icon
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:16:9-43
+	android:theme
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:20:9-40
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:14:9-53
+activity#com.askey.firefly.zwave.control.ui.MainActivity
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:21:9-29:20
+	android:windowSoftInputMode
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:23:13-59
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:22:13-44
+intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:24:13-28:29
+action#android.intent.action.MAIN
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:25:17-69
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:25:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:27:17-77
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:27:27-74
+receiver#com.askey.firefly.zwave.control.service.BootBroadcastReceiver
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:32:9-39:20
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:32:19-64
+intent-filter#android.intent.action.BOOT_COMPLETED+android.intent.action.PACKAGE_ADDED+android.intent.action.USER_PRESENT+android.intent.action.destroy
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:33:13-38:29
+action#android.intent.action.BOOT_COMPLETED
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:34:17-79
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:34:25-76
+action#android.intent.action.USER_PRESENT
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:35:17-77
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:35:25-74
+action#android.intent.action.PACKAGE_ADDED
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:36:17-78
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:36:25-75
+action#android.intent.action.destroy
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:37:17-72
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:37:25-69
+service#com.askey.firefly.zwave.control.service.ZwaveControlService
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:41:9-47:19
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:41:18-61
+service#org.eclipse.paho.android.service.MqttService
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:48:9-80
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:48:18-77
+service#com.askey.firefly.zwave.control.mqtt.MQTTBroker
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:49:9-60
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:49:18-49
+receiver#com.askey.firefly.zwave.control.service.ZwaveReceiver
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:51:9-58:20
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:52:13-50
+intent-filter#action.com.askey.zwave+action.com.askey.zwave.add+action.com.askey.zwave.remove
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:53:13-57:25
+action#action.com.askey.zwave.add
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:54:13-65
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:54:21-62
+action#action.com.askey.zwave.remove
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:55:13-68
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:55:21-65
+action#action.com.askey.zwave
+ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:56:13-61
+	android:name
+		ADDED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml:56:21-58
+uses-sdk
+INJECTED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+MERGED from [com.android.support:appcompat-v7:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/25.3.1/AndroidManifest.xml:21:5-23:78
+MERGED from [com.android.support:support-v4:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-v4/25.3.1/AndroidManifest.xml:21:5-23:54
+MERGED from [com.android.support:support-fragment:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-fragment/25.3.1/AndroidManifest.xml:21:5-23:60
+MERGED from [com.android.support:support-media-compat:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-media-compat/25.3.1/AndroidManifest.xml:21:5-23:63
+MERGED from [com.android.support:support-core-ui:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-core-ui/25.3.1/AndroidManifest.xml:21:5-23:58
+MERGED from [com.android.support:support-core-utils:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-core-utils/25.3.1/AndroidManifest.xml:21:5-23:61
+MERGED from [com.android.support:animated-vector-drawable:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/animated-vector-drawable/25.3.1/AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-vector-drawable:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-vector-drawable/25.3.1/AndroidManifest.xml:20:5-43
+MERGED from [com.android.support:support-compat:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-compat/25.3.1/AndroidManifest.xml:21:5-23:58
+MERGED from [com.android.support.constraint:constraint-layout:1.0.0-alpha9] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support.constraint/constraint-layout/1.0.0-alpha9/AndroidManifest.xml:5:5-7:41
+MERGED from [ZwaveControlServer:broker:unspecified] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/ZwaveControlServer/broker/unspecified/AndroidManifest.xml:6:5-8:41
+MERGED from [ZwaveControlServer:netty_parser:unspecified] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/ZwaveControlServer/netty_parser/unspecified/AndroidManifest.xml:6:5-8:41
+MERGED from [ZwaveControlServer:parser_commons:unspecified] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/ZwaveControlServer/parser_commons/unspecified/AndroidManifest.xml:6:5-8:41
+	tools:overrideLibrary
+		ADDED from [com.android.support:appcompat-v7:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/25.3.1/AndroidManifest.xml:23:9-75
+	android:targetSdkVersion
+		INJECTED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml
+		INJECTED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml
+		INJECTED from /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/src/main/AndroidManifest.xml
+meta-data#android.support.VERSION
+ADDED from [com.android.support:appcompat-v7:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/25.3.1/AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:support-v4:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-v4/25.3.1/AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:support-fragment:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-fragment/25.3.1/AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:support-media-compat:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-media-compat/25.3.1/AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:support-core-ui:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-core-ui/25.3.1/AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:support-core-utils:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-core-utils/25.3.1/AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:animated-vector-drawable:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/animated-vector-drawable/25.3.1/AndroidManifest.xml:22:5-24:34
+MERGED from [com.android.support:support-vector-drawable:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-vector-drawable/25.3.1/AndroidManifest.xml:22:5-24:34
+MERGED from [com.android.support:support-compat:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/support-compat/25.3.1/AndroidManifest.xml:25:5-27:34
+	android:value
+		ADDED from [com.android.support:appcompat-v7:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/25.3.1/AndroidManifest.xml:27:9-31
+	android:name
+		ADDED from [com.android.support:appcompat-v7:25.3.1] /Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/25.3.1/AndroidManifest.xml:26:9-47

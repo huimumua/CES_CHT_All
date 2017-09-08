@@ -1,0 +1,14 @@
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/CMakeFiles/zwcontrol-jni.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/CMakeFiles/rebuild_cache.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/CMakeFiles/usbserial-jni.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/src/main/cpp/openssl-1.0.1p/CMakeFiles/ssl.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/src/main/cpp/openssl-1.0.1p/CMakeFiles/edit_cache.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/src/main/cpp/openssl-1.0.1p/CMakeFiles/rebuild_cache.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/src/main/cpp/openssl-1.0.1p/CMakeFiles/crypto.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/src/main/cpp/cjson/CMakeFiles/edit_cache.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/src/main/cpp/cjson/CMakeFiles/rebuild_cache.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/src/main/cpp/cjson/CMakeFiles/cjson.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/src/main/cpp/zwcontrol/CMakeFiles/edit_cache.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/src/main/cpp/zwcontrol/CMakeFiles/rebuild_cache.dir
+/Volumes/Data/chiapin/MQTT/ZwaveControlServer/app/.externalNativeBuild/cmake/release/armeabi-v7a/src/main/cpp/zwcontrol/CMakeFiles/zwcontrol.dir
