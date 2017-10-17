@@ -29,4 +29,15 @@ public class Const {
     public static final String SAVE_NODEINFO_FILE = DATA_PATH + "/" +"zwController_nodeInfo.txt";
 
 	public static final String DBPATH = DATA_PATH + "/" + "zwave.db";
+
+	public static final int TCP_PORT = 48080;
+	public static final String remoteServerIP = "211.75.141.112";
+	public static final String TCPSTRING = "firefly_zwave:";
+
+	public static String localMQTTServerUri = "tcp://"+ Utils.getIpAddress() + ":1883";
+	public static String remoteMQTTServerUri = "tcp://"+ remoteServerIP +":1883";
+
+	public static int TCPClientPort = 0;
+	public static String mqttClientId = Utils.getPublicTopicName();
+	public static String PublicTopicName = Utils.getPublicTopicName();
 }

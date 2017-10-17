@@ -24,17 +24,20 @@ public class ZwaveDevice implements Parcelable {
     private String name;
     @Property(nameInDb = "nodeInfo")
     private String nodeInfo;
+    @Property(nameInDb = "devType")
+    private String devType;
     @Property(nameInDb = "address")
     private String address;
 
-    @Generated(hash = 513716990)
+    @Generated(hash = 930548255)
     public ZwaveDevice(Long zwaveId, String homeId, Integer nodeId, String name,
-            String nodeInfo, String address) {
+            String nodeInfo, String devType, String address) {
         this.zwaveId = zwaveId;
         this.homeId = homeId;
         this.nodeId = nodeId;
         this.name = name;
         this.nodeInfo = nodeInfo;
+        this.devType = devType;
         this.address = address;
     }
 
@@ -48,6 +51,7 @@ public class ZwaveDevice implements Parcelable {
         homeId = in.readString();
         name = in.readString();
         nodeInfo = in.readString();
+        devType = in.readString();
         address = in.readString();
     }
 
@@ -57,6 +61,7 @@ public class ZwaveDevice implements Parcelable {
         dest.writeString(homeId);
         dest.writeString(name);
         dest.writeString(nodeInfo);
+        dest.writeString(devType);
         dest.writeString(address);
     }
 
@@ -115,6 +120,14 @@ public class ZwaveDevice implements Parcelable {
 
     public void setHomeId(String homeId) {
         this.homeId = homeId;
+    }
+
+    public String getDevType() {
+        return this.devType;
+    }
+
+    public void setDevType(String devType) {
+        this.devType = devType;
     }
 
     public Long getZwaveId() {

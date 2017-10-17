@@ -1,22 +1,10 @@
 package com.askey.firefly.zwave.control.service;
 
-import android.Manifest;
-import android.annotation.TargetApi;
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Service;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Build;
+import android.os.Binder;
 import android.os.IBinder;
-import android.os.RemoteCallbackList;
 import android.os.RemoteException;
-import android.provider.Settings;
-import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.text.LoginFilter;
 import android.util.Log;
 
 import com.askey.firefly.zwave.control.bean.DeviceList;
@@ -26,23 +14,18 @@ import com.askey.firefly.zwave.control.dao.ZwaveDeviceManager;
 import com.askey.firefly.zwave.control.jni.ZwaveControlHelper;
 import com.askey.firefly.zwave.control.thirdparty.usbserial.UsbSerial;
 import com.askey.firefly.zwave.control.utils.Logg;
-import com.askey.zwave.control.IZwaveContrlCallBack;
-import com.askey.zwave.control.IZwaveControlInterface;
 import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
-import static android.R.id.message;
-import static com.askey.firefly.zwave.control.utils.Const.DEBUG;
-import static com.askey.firefly.zwave.control.utils.Const.ZWCONTROL_CFG_PATH;
 import static com.askey.firefly.zwave.control.utils.Const.FILE_PATH;
 import static com.askey.firefly.zwave.control.utils.Const.SAVE_NODEINFO_FILE;
+import static com.askey.firefly.zwave.control.utils.Const.ZWCONTROL_CFG_PATH;
 /**
  * 项目名称：ZwaveControl
  * 类描述：
@@ -54,15 +37,13 @@ import static com.askey.firefly.zwave.control.utils.Const.SAVE_NODEINFO_FILE;
  */
 public class ZwaveControlService extends Service {
 
-
     private final String TAG = "ZwaveControlService";
-    private RemoteCallbackList<IZwaveContrlCallBack> mCallbacks = new RemoteCallbackList<>();
     private UsbSerial mUsbSerial = new UsbSerial(this);
-    private IZwaveContrlCallBack mCallBack;
-    private static ZwaveControlService mService;
+    public static ZwaveControlService mService;
     private int flag;
     private int nodeId;
     private ZwaveDeviceManager zwaveDeviceManager;
+    private static ArrayList <zwaveCallBack> mCallBacks = new ArrayList<>();
 
     @Override
     public void onCreate() {
@@ -72,23 +53,14 @@ public class ZwaveControlService extends Service {
         ImportData.importFile(this,"device_settings.csv");
         ImportData.importDatabase(this);
         zwaveDeviceManager = ZwaveDeviceManager.getInstance(this);
-//        //test
-//        ZwaveDevice zwaveDevice = new ZwaveDevice();
-//        zwaveDevice.setHomeId("23456");
-//        zwaveDevice.setAddress("12");
-//        zwaveDevice.setName("sdfsdf");
-//        zwaveDevice.setType("4234");
-//        zwaveDevice.setNodeId(1);
-//        ZwaveDeviceManager.getInstance(ZwaveControlService.this).insertZwaveDevice(zwaveDevice);
-
-
     }
-public static ZwaveControlService getInstance() {
-    if (mService != null) {
-        return mService;
+
+    public static ZwaveControlService getInstance() {
+        if (mService != null) {
+            return mService;
+        }
+        return null;
     }
-    return null;
-}
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -100,620 +72,210 @@ public static ZwaveControlService getInstance() {
         }else{
             Logg.e(TAG,"==CreateZwController=creatResult="+creatResult);
         }
-        return remoteBinder;
+        return myBinder;
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        intent = new Intent("android.intent.action.bootreceiver");
-        sendBroadcast(intent);
-        return super.onStartCommand(intent, flags, startId);
+    public MyBinder myBinder = new MyBinder();
+
+    public class MyBinder extends Binder {
+        public ZwaveControlService getService() {
+            return ZwaveControlService.this;
+        }
     }
+
 
     @Override
     public void onDestroy() {
         Logg.i(TAG, "=====onDestroy=========");
-        Intent intent = new Intent("android.intent.action.destroy");
-        sendBroadcast(intent);
-        mCallbacks.kill();
         super.onDestroy();
     }
-    private IZwaveControlInterface.Stub remoteBinder = new IZwaveControlInterface.Stub() {
 
-        @Override
-        public void registerListener(IZwaveContrlCallBack callBack) throws RemoteException {
-            mCallbacks.register(callBack);
-            mCallBack = callBack;
-        }
-
-        @Override
-        public void unRegisterListener(IZwaveContrlCallBack callBack) throws RemoteException {
-            mCallbacks.unregister(callBack);
-            mCallBack = null;
-        }
-
-        @Override
-        public void openController(IZwaveContrlCallBack callBack) throws RemoteException {
-           doOpenController(callBack);
-        }
-
-
-        @Override
-        public int addDevice(IZwaveContrlCallBack callBack) throws RemoteException {
-            int result =  ZwaveControlHelper.ZwController_AddDevice();
-            return result;
-        }
-
-        @Override
-        public int removeDevice(IZwaveContrlCallBack callBack) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_RemoveDevice();
-            return result;
-        }
-
-        @Override
-        public int getDevices(IZwaveContrlCallBack callBack) throws RemoteException {
-           int result = ZwaveControlHelper.ZwController_GetDeviceList();
-            return result;
-        }
-
-        @Override
-        public int getDeviceInfo(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            flag = 1;
-            nodeId = deviceId;
-            int result = ZwaveControlHelper.ZwController_GetDeviceList();
-            return result;
-        }
-
-        @Override
-        public int removeFailedDevice(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_RemoveFailedDevice(deviceId);
-            return result;
-        }
-
-        @Override
-        public int replaceFailedDevice(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_ReplaceFailedDevice(deviceId);
-            return result;
-        }
-
-        @Override
-        public int stopAddDevice(IZwaveContrlCallBack callBack) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_StopAddDevice();
-            return result;
-        }
-
-        @Override
-        public int stopRemoveDevice(IZwaveContrlCallBack callBack) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_StopRemoveDevice();
-            return result;
-        }
-
-        @Override
-        public int getDeviceBattery(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            Logg.i(TAG,"=====getDeviceBattery==deviceId==="+deviceId);
-            int result = ZwaveControlHelper.ZwController_GetDeviceBattery(deviceId);
-            return result;
-        }
-
-        @Override
-        public int getSensorMultiLevel(IZwaveContrlCallBack callBack,int deviceId) throws RemoteException {
-            Logg.i(TAG,"=====getSensorMultiLevel==deviceId==="+deviceId);
-            int result = ZwaveControlHelper.ZwController_GetSensorMultiLevel(deviceId);
-            return result;
-        }
-
-        @Override
-        public int updateNode(IZwaveContrlCallBack callBack,int deviceId) throws RemoteException {
-            Logg.i(TAG,"=====updateNode==deviceId==="+deviceId);
-            int result = ZwaveControlHelper.ZwController_UpdateNode(deviceId);
-            return result;
-        }
-
-        @Override
-        public int reNameDevice(IZwaveContrlCallBack callBack, String homeId, int deviceId,String newName) throws RemoteException {
-            //数据库
-            Logg.i(TAG,"=====reNameDevice==homeId==="+homeId +"=deviceId=="+deviceId +"=newName=="+newName);
-            updateName(homeId,deviceId,newName);
-            return 0;
-        }
-
-        @Override
-        public int setDefault(IZwaveContrlCallBack callBack) throws RemoteException {
-            setDefaultCallBack("");
-            return 0;
-        }
-
-        @Override
-        public int getConfiguration(IZwaveContrlCallBack callBack, String homeId, int deviceId, int paramMode, int paramNumber, int rangeStart, int rangeEnd) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_GetConfiguration(deviceId, paramMode, paramNumber, rangeStart, rangeEnd);
-            return result;
-        }
-
-        @Override
-        public int setConfiguration(IZwaveContrlCallBack callBack, String homeId, int deviceId, int paramNumber, int paramSize, int useDefault, int paramValue) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_SetConfiguration(deviceId, paramNumber, paramSize, useDefault, paramValue);
-            setConfigurationCallBack(String.valueOf(result));
-            return result;
-        }
-
-        @Override
-        public int getSupportedSwitchType(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_GetSupportedSwitchType(deviceId);
-            return result;
-        }
-
-        @Override
-        public int startStopSwitchLevelChange(IZwaveContrlCallBack callBack,String homeId, int deviceId, int startLvlVal, int duration, int pmyChangeDir, int secChangeDir, int secStep) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_startStopSwitchLevelChange(deviceId,startLvlVal,duration,pmyChangeDir,secChangeDir,secStep);
-            startStopSwitchLevelChangeCallBack(String.valueOf(result));
-            return result;
-        }
-
-        @Override
-        public int getPowerLevel(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_GetPowerLevel(deviceId);
-            return result;
-        }
-
-        @Override
-        public int setSwitchAllOn(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_SetSwitchAllOn(deviceId);
-            setSwitchAllOnCallBack(String.valueOf(result));
-            return result;
-        }
-
-        @Override
-        public int setSwitchAllOff(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_SetSwitchAllOff(deviceId);
-            setSwitchAllOffCallBack(String.valueOf(result));
-            return result;
-        }
-
-        @Override
-        public int getBasic(IZwaveContrlCallBack callBack,int deviceId) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_GetBasic(deviceId);
-            return result;
-        }
-
-        @Override
-        public int setBasic(IZwaveContrlCallBack callBack,int deviceId, int value) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_SetBasic(deviceId,value);
-            setBasicCallBack(String.valueOf(result));
-            return result;
-        }
-
-        @Override
-        public int getSwitchMultiLevel(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_GetSwitchMultiLevel(deviceId);
-            return result;
-        }
-
-        @Override
-        public int setSwitchMultiLevel(IZwaveContrlCallBack callBack, int deviceId, int value, int duration) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_SetSwitchMultiLevel(deviceId, value, duration);
-            setSwitchMultiLevelCallBack(String.valueOf(result));
-            return result;
-        }
-
-        @Override
-        public int closeController() throws RemoteException {
-            int result = ZwaveControlHelper.CloseZwController();
-            return result;
-        }
-
-    };
-
-    private void setBasicCallBack(String result) {
-
-        String setBasicResult = "setBasic:" + result;
-        final int N = mCallbacks.beginBroadcast();
-        try {
-            //add finish
-            Logg.i(TAG, "=====setBasicCallBack=========");
-
-            Log.d("ZwaveControlService", "ZwaveControlService " + result);
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).setBasic(setBasicResult);
-            }
-
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
+    public void register(zwaveCallBack callback){
+        mCallBacks.add(callback);
     }
 
+    public void unregister(zwaveCallBack callback){
+        mCallBacks.remove(callback);
+    }
 
+    public String openController(){
+        return doOpenController();
+    }
 
-    private void updateName(String homeId, int deviceId, String newName) {
-        int result = -1;
-       ZwaveDevice zwaveDevice = zwaveDeviceManager.queryZwaveDevices(homeId, deviceId);
+    public int addDevice(){
+        return ZwaveControlHelper.ZwController_AddDevice();
+    }
+
+    public int removeDevice(){
+        return ZwaveControlHelper.ZwController_RemoveDevice();
+    }
+
+    public int getDevices(){
+        return ZwaveControlHelper.ZwController_GetDeviceList();
+    }
+
+    public int getDeviceInfo(int deviceId){
+        return ZwaveControlHelper.ZwController_GetDeviceList();
+    }
+
+    public int removeFailedDevice(int deviceId){
+        return ZwaveControlHelper.ZwController_RemoveFailedDevice(deviceId);
+    }
+
+    public int replaceFailedDevice(int deviceId){
+        return ZwaveControlHelper.ZwController_ReplaceFailedDevice(deviceId);
+    }
+
+    public int stopAddDevice(){
+        return ZwaveControlHelper.ZwController_StopAddDevice();
+    }
+
+    public int stopRemoveDevice(){
+        return ZwaveControlHelper.ZwController_StopRemoveDevice();
+    }
+
+    public int getDeviceBattery(int deviceId){
+        Logg.i(TAG,"=====getDeviceBattery==deviceId==="+deviceId);
+        return ZwaveControlHelper.ZwController_GetDeviceBattery(deviceId);
+    }
+
+    public int getSensorMultiLevel(int deviceId) throws RemoteException {
+        Logg.i(TAG,"=====getSensorMultiLevel==deviceId==="+deviceId);
+        return ZwaveControlHelper.ZwController_GetSensorMultiLevel(deviceId);
+    }
+
+    public int updateNode(int deviceId){
+        Logg.i(TAG,"=====updateNode==deviceId==="+deviceId);
+        return ZwaveControlHelper.ZwController_UpdateNode(deviceId);
+    }
+
+    public String reNameDevice(String homeId, int deviceId, String newName, String devType){
+        //数据库
+        Logg.i(TAG,"=====reNameDevice==homeId==="+homeId +"=deviceId=="+deviceId +"=newName=="+newName+"=devType=="+devType);
+        return updateName(homeId,deviceId,newName,devType);
+    }
+
+    public int setDefault(){
+        return ZwaveControlHelper.ZwController_SetDefault();
+    }
+
+    public int getConfiguration(String homeId, int deviceId, int paramMode, int paramNumber, int rangeStart, int rangeEnd){
+        return ZwaveControlHelper.ZwController_GetConfiguration(deviceId, paramMode, paramNumber, rangeStart, rangeEnd);
+    }
+
+    public int setConfiguration(String homeId, int deviceId, int paramNumber, int paramSize, int useDefault, int paramValue) throws RemoteException {
+        int result = ZwaveControlHelper.ZwController_SetConfiguration(deviceId, paramNumber, paramSize, useDefault, paramValue);
+        zwaveControlResultCallBack("setConfiguration",String.valueOf(result));
+        return result;
+    }
+
+    public int getSupportedSwitchType(int deviceId){
+        return ZwaveControlHelper.ZwController_GetSupportedSwitchType(deviceId);
+    }
+
+    public int startStopSwitchLevelChange(String homeId, int deviceId, int startLvlVal, int duration, int pmyChangeDir, int secChangeDir, int secStep){
+        int result = ZwaveControlHelper.ZwController_startStopSwitchLevelChange(deviceId,startLvlVal,duration,pmyChangeDir,secChangeDir,secStep);
+        zwaveControlResultCallBack("startStopSwitchLevelChange",String.valueOf(result));
+        return result;
+    }
+
+    public int getPowerLevel(int deviceId){
+        return ZwaveControlHelper.ZwController_GetPowerLevel(deviceId);
+    }
+
+    public int setSwitchAllOn(int deviceId){
+        int result = ZwaveControlHelper.ZwController_SetSwitchAllOn(deviceId);
+        zwaveControlResultCallBack("setSwitchAllOn",String.valueOf(result));
+        return result;
+    }
+
+    public int setSwitchAllOff(int deviceId){
+        int result = ZwaveControlHelper.ZwController_SetSwitchAllOff(deviceId);
+        zwaveControlResultCallBack("setSwitchAllOff",String.valueOf(result));
+        return result;
+    }
+
+    public int getBasic(int deviceId){
+        return ZwaveControlHelper.ZwController_GetBasic(deviceId);
+    }
+
+    public int setBasic(int deviceId, int value){
+        int result = ZwaveControlHelper.ZwController_SetBasic(deviceId,value);
+        zwaveControlResultCallBack("setBasic",String.valueOf(result));
+        return result;
+    }
+
+    public int getSwitchMultiLevel(int deviceId){
+        return ZwaveControlHelper.ZwController_GetSwitchMultiLevel(deviceId);
+    }
+
+    public int setSwitchMultiLevel(int deviceId, int value, int duration){
+        int result = ZwaveControlHelper.ZwController_SetSwitchMultiLevel(deviceId, value, duration);
+        zwaveControlResultCallBack("setSwitchMultiLevel",String.valueOf(result));
+        return result;
+    }
+
+    public int getMeter(int deviceId,int meterUnit){
+        int result = ZwaveControlHelper.ZwController_GetMeter(deviceId,meterUnit);
+        return result;
+    }
+
+    public int getSensorBasic(int deviceId){
+        int result = ZwaveControlHelper.ZwController_GetSensorBinary(deviceId);
+        return result;
+    }
+
+    public int closeController(){
+        return ZwaveControlHelper.CloseZwController();
+    }
+
+    private String updateName(String homeId, int deviceId, String newName, String devType) {
+        Logg.i(TAG,"=====updateName==homeId==="+homeId +"=deviceId=="+deviceId +"=newName=="+newName+"=devType=="+devType);
+
+        int result;
+        ZwaveDevice zwaveDevice = zwaveDeviceManager.queryZwaveDevices(homeId, deviceId);
         if (zwaveDevice != null) {
+            Logg.i(TAG,"=====zwaveDevice.setName(newName)====");
             zwaveDevice.setName(newName);
+            zwaveDevice.setDevType(devType);
             zwaveDeviceManager.updateZwaveDevice(zwaveDevice);
             result = 0;
         } else {
             result = -1;
         }
         String reNameResult = "reNameDevice:"+result;
-        reNameDeviceCallBack(reNameResult);
+        Log.i(TAG,"reNameResult = "+reNameResult);
+        return reNameResult;
     }
 
-    private void reNameDeviceCallBack(String result) {
+    public interface zwaveCallBack {
 
-        final int N = mCallbacks.beginBroadcast();
-        try {
-            //add finish
-            Logg.i(TAG, "=====updateNameCallBack=========");
+        void zwaveControlResultCallBack(String className, String result);
+    }
 
-            Log.d("ZwaveControlService", "ZwaveControlService " + result);
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).reNameDeviceCallBack(result);
-            }
 
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
+    private void zwaveControlResultCallBack(String className, String result){
+
+        Log.i(TAG," === "+className+"CallBack ===" + result);
+        for (zwaveCallBack callback : mCallBacks) {
+            callback.zwaveControlResultCallBack(className,result);
         }
-        mCallbacks.finishBroadcast();
     }
 
-
-    //添加设备
-       private void doAddDevice(String result) {
-           Logg.i(TAG, "=====doAddDevice=========");
-
-               final int N = mCallbacks.beginBroadcast();
-        try {
-            //add finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).addDeviceCallBack(result);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-        }
-        mCallbacks.finishBroadcast();
-    }
-
-    //删除设备
-       private void doRemoveDevice(String result) {
-
-        final int N = mCallbacks.beginBroadcast();
-        try {
-            Logg.i(TAG, "=====doRemoveDevice=========");
-            //remove finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).removeDeviceCallBack(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-
-    //
-
-       private void doGetDeviceList(String result) {
-           Logg.i(TAG, "=====doGetDeviceList=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).getDevicesCallBack(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-
-    private void removeFailCallBack(String result) {
-
-        Logg.i(TAG, "=====removeFailCallBack=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).removeFailedDeviceCallBack(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-    private void stopAddDeviceCallBack(String result) {
-
-        Logg.i(TAG, "=====stopAddDeviceCallBack=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).stopAddDeviceCallBack(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-    private void stopRemoveDeviceCallBack(String result) {
-
-        Logg.i(TAG, "=====stopRemoveDeviceCallBack=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).stopRemoveDeviceCallBack(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-    private void getDeviceBatteryCallBack(String result) {
-
-        Logg.i(TAG, "=====getDeviceBatteryCallBack=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).getDeviceBatteryCallBack(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-    private void getSensorMultiLevelCallBack(String result) {
-
-        Logg.i(TAG, "=====getSensorMultiLevelCallBack=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).getSensorMultiLevelCallBack(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-    private void updateNodeCallBack(String result) {
-
-        Logg.i(TAG, "=====updateNodeCallBack=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).updateNodeCallBack(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-    private void setDefaultCallBack(String str) {
-
-        int result = ZwaveControlHelper.ZwController_SetDefault();
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            String resultDefault = "setDefault:"+result;
-            Logg.i(TAG, "=====resultDefault========="+resultDefault);
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).setDefaultCallBack(resultDefault);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-    private void replaceFailCallBack(String result) {
-
-        Logg.i(TAG, "=====replaceFailCallBack=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).replaceFailedDeviceCallBack(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-    private void doGetDeviceInfo(String result) {
-
-        final int N = mCallbacks.beginBroadcast();
-        try {
-            Logg.i(TAG, "=====doGetDeviceInfo=========");
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).getDevicesInfoCallBack(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-
-    private void setSwitchAllOffCallBack(String result) {
-        Logg.i(TAG, "=====setSwitchAllOff=========");
-        String onResult = "setSwitchAllOff:" + result;
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).setSwitchAllOff(onResult);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-
-    private void setSwitchAllOnCallBack(String result) {
-        Logg.i(TAG, "=====setSwitchAllOn=========");
-        String onResult = "setSwitchAllOn:" + result;
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).setSwitchAllOn(onResult);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-
-    }
-
-    private void getPowerLevel(String result) {
-        Logg.i(TAG, "=====getPowerLevel=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).setSwitchAllOn(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-
-    private void startStopSwitchLevelChangeCallBack(String result) {
-        Logg.i(TAG, "=====startStopSwitchLevelChange=========");
-        String levelChangeResult = "startStopSwitchLevelChange:" + result;
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).startStopSwitchLevelChange(levelChangeResult);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-
-    private void getSupportedSwitchType(String result) {
-        Logg.i(TAG, "=====getSupportedSwitchType=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).getSupportedSwitchType(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-    private void getBasic(String result) {
-        Logg.i(TAG, "=====getBasic=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).getBasic(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-
-    private void setSwitchMultiLevelCallBack(String result) {
-        Logg.i(TAG, "=====setSwitchMultiLevel=========");
-        String onResult = "setSwitchMultiLevel:" + result;
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).setSwitchMultiLevel(onResult);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-
-    }
-
-    private void getSwitchMultiLevel(String result) {
-        Logg.i(TAG, "=====getSwitchMultiLevel=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-
-            //get Device finish
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).getSwitchMultiLevel(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-
-    public void doOpenController(IZwaveContrlCallBack callBack) {
+    public String doOpenController() {
         Logg.i(TAG, "=====doOpenController=========");
-        if (mCallBack == null) {
-            return;
+        if (mCallBacks == null) {
+            return null;
         }
         byte[] result = new byte[500];
         int isOK = ZwaveControlHelper.OpenZwController(ZWCONTROL_CFG_PATH, FILE_PATH, SAVE_NODEINFO_FILE,result);
-//        if (isOK == 0) {
-//            insertHomeDevice(new String(result));
-//        }
+
         Logg.i(TAG,"===isOK=="+isOK);
         String openResult = "openController:"+isOK;
         Log.d("ZwaveControlService", "ZwaveControlService " + new String(result) + isOK);
-        final int N = mCallbacks.beginBroadcast();
-        try {
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).openControlCallBack(openResult,result.length);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
+
+        zwaveControlResultCallBack("openController",new String(result));
+        return openResult;
     }
 
     private void insertHomeDevice(String result) {
@@ -736,44 +298,11 @@ public static ZwaveControlService getInstance() {
         }
     }
 
-    //开关
-    private void getConfiguration(String result) {
-
-        Logg.i(TAG, "=====getConfiguration=========");
-        final int N = mCallbacks.beginBroadcast();
-        try {
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).getConfiguration(result);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
-
-    //开关
-    private void setConfigurationCallBack(String result) {
-
-        Logg.i(TAG, "=====setConfiguration=========");
-        String configResult = "setConfiguration:" + result;
-        final int N = mCallbacks.beginBroadcast();
-        try {
-            for (int i = 0;i < N;i++) {
-                mCallbacks.getBroadcastItem(i).setConfiguration(configResult);
-            }
-        } catch (Exception e) {
-            Logg.i(TAG, "=====Exception=========" + e.toString());
-            e.printStackTrace();
-        }
-        mCallbacks.finishBroadcast();
-    }
 
     public void zwaveCallBack(byte[] result, int len)  {
         // jni callback
-
         String jniResult = new String(result);
-        Logg.i(TAG,"jniResult==="+jniResult);
+        Logg.i(TAG," jniResult==="+jniResult);
         String messageType = null;
         String status = null;
         try {
@@ -782,74 +311,80 @@ public static ZwaveControlService getInstance() {
             status = jsonObject.optString("Status");
 
         } catch (JSONException e) {
+            Log.i(TAG,"JSONExceptionJSONExceptionJSONException");
             e.printStackTrace();
-    }
-    if ("Node Add Status".equals(messageType)) {
-        doAddDevice(jniResult);
-        if ("Success".equals(status)) {
-           flag = 2;
-            Logg.i(TAG,"=======Node Add Status=Success=");
-            ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
-            ZwaveControlHelper.ZwController_GetDeviceList();
         }
-    } else if ("Node Remove Status".equals(messageType)) {
-        doRemoveDevice(jniResult);
-        if ("Success".equals(status)) {
-            Logg.i(TAG,"=======Node Remove Status=Success=");
-            flag = 3;
-            ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
-            ZwaveControlHelper.ZwController_GetDeviceList();
+
+        if ("Node Add Status".equals(messageType)) {
+            Log.i(TAG,"===== Node Add Status ====");
+            //doAddDevice(jniResult);
+            zwaveControlResultCallBack("addDevice",jniResult);
+            if ("Success".equals(status)) {
+               flag = 2;
+                Logg.i(TAG,"=======Node Add Status=Success=");
+                ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
+                ZwaveControlHelper.ZwController_GetDeviceList();
+            }
+        } else if ("Node Remove Status".equals(messageType)) {
+            zwaveControlResultCallBack("removeDevice",jniResult);
+            if ("Success".equals(status)) {
+                Logg.i(TAG,"=======Node Remove Status=Success=");
+                flag = 3;
+                ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
+                ZwaveControlHelper.ZwController_GetDeviceList();
+            }
+        } else if ("Node List Report".equals(messageType)) {
+            if (flag == 1) {
+                flag = 0;
+                zwaveControlResultCallBack("getDeviceInfo",jniResult);
+            } else if (flag == 0) {
+               String jsonResult = getDeviceList(jniResult);//json 添加name
+                zwaveControlResultCallBack("getDeviceList",jsonResult);
+            } else if (flag == 2) {
+                flag = 0;
+                insertDevice(jniResult);
+            } else if (flag == 3) {
+                flag = 0;
+                deleteDevice(jniResult);
+            }
+        } else if ("Node List Report".equals(messageType)) {/////
+            zwaveControlResultCallBack("removeFail",jniResult);
+            if(jniResult.contains("Success")){
+                ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
+            }
+        } else if ("Node List Report".equals(messageType)) {/////
+            zwaveControlResultCallBack("replaceFail",jniResult);
+            if(jniResult.contains("Success")){
+                ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
+            }
+        } else if ("Node List Report".equals(messageType)) {/////
+            zwaveControlResultCallBack("stopAddDevice",jniResult);
+        } else if ("Node List Report".equals(messageType)) {/////
+            zwaveControlResultCallBack("stopRemoveDevice",jniResult);
+        } else if ("Node Battery Value".equals(messageType)) {
+            zwaveControlResultCallBack("getDeviceBattery",jniResult);
+        } else if ("Sensor Information".equals(messageType)) {
+            zwaveControlResultCallBack("getSensorMultiLevel",jniResult);
+        } else if ("Node List Report".equals(messageType)) {/////
+            zwaveControlResultCallBack("updateNode",jniResult);
+        } else if ("Configuration Get Information".equals(messageType)) {
+            zwaveControlResultCallBack("getConfiguration",jniResult);
+        } else if ("  ".equals(messageType)) {////
+            zwaveControlResultCallBack("getSupportedSwitchType",jniResult);
+        }else if ("Power Level Get Information".equals(messageType)) {
+            zwaveControlResultCallBack("getPowerLevel",jniResult);
+        } else if ("Basic Information".equals(messageType)) {
+            zwaveControlResultCallBack("getBasic",jniResult);
+        }else if ("Meter reading".equals(messageType)){
+            zwaveControlResultCallBack("getMeter",jniResult);
+        } else if ("  ".equals(messageType)) {////
+            zwaveControlResultCallBack("getSwitchMultiLevel",jniResult);
         }
-    } else if ("Node List Report".equals(messageType)) {
-        if (flag == 1) {
-            flag = 0;
-            doGetDeviceInfo(getDeviceInfo(jniResult));
-        } else if (flag == 0) {
-           String jsonResult = getDeviceList(jniResult);//json 添加name
-            doGetDeviceList(jsonResult);
-        } else if (flag == 2) {
-            flag = 0;
-            insertDevice(jniResult);
-        } else if (flag == 3) {
-            flag = 0;
-            deleteDevice(jniResult);
-        }
-    } else if ("Node List Report".equals(messageType)) {/////
-        removeFailCallBack(jniResult);
-        if(jniResult.contains("Success")){
-            ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
-        }
-    } else if ("Node List Report".equals(messageType)) {/////
-        replaceFailCallBack(jniResult);
-        if(jniResult.contains("Success")){
-            ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
-        }
-    } else if ("Node List Report".equals(messageType)) {/////
-        stopAddDeviceCallBack(jniResult);
-    } else if ("Node List Report".equals(messageType)) {/////
-        stopRemoveDeviceCallBack(jniResult);
-    } else if ("Node Battery Value".equals(messageType)) {
-        getDeviceBatteryCallBack(jniResult);
-    } else if ("Sensor Information".equals(messageType)) {
-        getSensorMultiLevelCallBack(jniResult);
-    } else if ("Node List Report".equals(messageType)) {/////
-        updateNodeCallBack(jniResult);
-    } else if ("Configuration Get Information".equals(messageType)) {
-        getConfiguration(jniResult);
-    } else if ("  ".equals(messageType)) {////
-        getSupportedSwitchType(jniResult);
-    }else if ("Power Level Get Information".equals(messageType)) {
-        getPowerLevel(jniResult);
-    } else if ("Basic Information".equals(messageType)) {
-        getBasic(jniResult);
-    } else if ("  ".equals(messageType)) {////
-        getSwitchMultiLevel(jniResult);
-    }
     }
 
 
     private String getDeviceList(String Result) {
-        JSONObject deviceListResult = null;
+        JSONObject deviceListResult;
         try {
             deviceListResult = new JSONObject(Result);
             JSONArray list = deviceListResult.getJSONArray("Node Info List");
@@ -884,27 +419,18 @@ public static ZwaveControlService getInstance() {
         for (ZwaveDevice zwaveDevice :list) {//db
             i = 0;
             for (DeviceList.NodeInfoList nodeInfoTemp : temp) {//jni
-                Logg.i(TAG,"===deleteDevice====zwaveDevice.getHomeId()=="+zwaveDevice.getHomeId());
-                Logg.i(TAG,"===deleteDevice====nodeInfoTemp.getHomeId()=="+nodeInfoTemp.getHomeId());
-                Logg.i(TAG,"===deleteDevice====zwaveDevice.getNodeId()=="+zwaveDevice.getNodeId());
-                Logg.i(TAG,"===deleteDevice====nodeInfoTemp.getNodeId()=="+nodeInfoTemp.getNodeId());
+
                 if (zwaveDevice.getHomeId().toString().trim().equals(nodeInfoTemp.getHomeId().toString().trim())) {
                     if(!zwaveDevice.getNodeId().toString().trim().equals(nodeInfoTemp.getNodeId().toString().trim())){
                         i++;
                     }
-                }/*else  {
-                    zwaveDeviceManager.deleteZwaveDevice(zwaveDevice.getZwaveId());
-                    String removeResult = "removeDevice:" + zwaveDevice.getHomeId() + ":" + zwaveDevice.getNodeId();
-                    Logg.i(TAG,"====deleteDevice=else==removeResult=="+removeResult);
-                    doRemoveDevice(removeResult);
-                    break;
-                }*/
+                }
 
                 if (temp.size() == i) {
                     zwaveDeviceManager.deleteZwaveDevice(zwaveDevice.getZwaveId());
                     String removeResult = "removeDevice:" + zwaveDevice.getHomeId() + ":" + zwaveDevice.getNodeId();
                     Logg.i(TAG,"==deleteDevice=====removeResult=="+removeResult);
-                    doRemoveDevice(removeResult);
+                    zwaveControlResultCallBack("removeDevice",removeResult);
                 }
             }
         }
@@ -935,7 +461,7 @@ public static ZwaveControlService getInstance() {
                 if(!nodeInfoTemp.getNodeId().toString().trim().equals("1")){
                     String addResult = "addDevice:" + nodeInfoTemp.getHomeId() + ":" + nodeInfoTemp.getNodeId();
                     Logg.i(TAG,"===insertDevice====addResult=="+addResult);
-                    doAddDevice(addResult);
+                    zwaveControlResultCallBack("addDevice",addResult);
                     break;
                 }
             }else{
@@ -956,6 +482,4 @@ public static ZwaveControlService getInstance() {
         }
         return gson.toJson(nodeInfo);
     }
-
-
 }

@@ -132,6 +132,7 @@ public class ZwaveDeviceManager {
             upDateZwaveDevice.setNodeId(zwaveDevice.getNodeId());
             upDateZwaveDevice.setName(zwaveDevice.getName());
             upDateZwaveDevice.setNodeInfo(zwaveDevice.getNodeInfo());
+            upDateZwaveDevice.setDevType(zwaveDevice.getDevType());
             upDateZwaveDevice.setAddress(zwaveDevice.getAddress());
             zwaveDeviceDao.update(upDateZwaveDevice);
         }

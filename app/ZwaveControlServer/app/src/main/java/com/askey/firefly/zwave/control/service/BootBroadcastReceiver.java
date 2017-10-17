@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
-import com.askey.firefly.zwave.control.ui.MainActivity;
 import com.askey.firefly.zwave.control.utils.Logg;
 
 /**
@@ -24,13 +23,6 @@ public class BootBroadcastReceiver extends BroadcastReceiver{
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        if (intent.getAction().equals("android.intent.action.BOOT_COMPLETED")) {
-            Logg.i(TAG, "=========BOOT_COMPLETED===========");
-//启动程序
-            Intent activity = new Intent(context, MainActivity.class);
-            activity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(activity);
-        }
         if (intent.getAction().equals("android.intent.action.USER_PRESENT")) {
             Logg.i(TAG, "=========USER_PRESENT===========");
             ServiceConnection serviceConnection = new ServiceConnection() {
@@ -46,12 +38,6 @@ public class BootBroadcastReceiver extends BroadcastReceiver{
             Intent service = new Intent(context, ZwaveControlService.class);
             context. bindService(service, serviceConnection, Context.BIND_AUTO_CREATE);
         }
-        if (intent.getAction().equals("android.intent.action.destroy")) {
-            Logg.i(TAG, "=========destroy===========");
-            //启动程序
-            Intent activity = new Intent(context, MainActivity.class);
-            activity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(activity);
-        }
+
     }
 }
