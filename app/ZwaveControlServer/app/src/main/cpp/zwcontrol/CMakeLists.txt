@@ -6,6 +6,8 @@ set(CMAKE_LD_FLAGS "-fPIE")
 set(OPENSSL_LIBRARIES "ssl")
 set(LIBCRYPTO_LIBRARIES "crypto")
 
+add_subdirectory("src/libs2")
+
 add_definitions (-DOS_LINUX -DFLASH_PROG_API)
 
 include_directories(
@@ -32,6 +34,8 @@ set(SRC
     src/zw_sec_aes.c
     src/zw_sec_layer.c
     src/zw_sec_random.c
+    src/zw_sec2_wrap.c
+    src/zw_sec2_keystore.c
     zwcontrol_api.c
     )
 
@@ -39,4 +43,4 @@ add_library(zwcontrol SHARED ${SRC})
 
 find_library(log-lib log)
 
-target_link_libraries(zwcontrol ${OPENSSL_LIBRARIES} ${LIBCRYPTO_LIBRARIES} usbserial-jni cjson ${log-lib})
+target_link_libraries(zwcontrol s2_controller ${OPENSSL_LIBRARIES} ${LIBCRYPTO_LIBRARIES} usbserial-jni cjson ${log-lib})

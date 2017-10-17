@@ -15,6 +15,16 @@ comments: Initial release
 #include <unistd.h>
 #endif
 #include "../include/zw_hci_transport.h"
+#include "zw_api.h"
+
+#ifdef USING_SERIAL_DIR
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <sys/time.h>
+#endif
+
 
 /**
 @defgroup Transport Transport layer APIs
@@ -754,7 +764,26 @@ static void tpt_wr_thrd(void   *data)
 
         if (wr_req)
         {
+#ifdef USING_SERIAL_DIR
+            total_written = 0;
+
+            while (total_written < wr_req->dat_sz)
+            {
+                bytes_written = write(tpt_ctx->comm_port_fd, wr_req->wr_buf + total_written,
+                                      wr_req->dat_sz - total_written);
+
+                if (bytes_written < 0)
+                {
+                    debug_msg_show(tpt_ctx->plt_ctx, "Write comm port error");
+                    break;
+                }
+
+                total_written += bytes_written;
+
+            }            
+#else
             UsbSerial_WriteData(wr_req->wr_buf, wr_req->dat_sz);
+#endif
             free(wr_req);
         }
     }
@@ -788,8 +817,62 @@ static void tpt_rd_thrd(void   *data)
         plt_sleep(100);
     }
 
+#ifdef USING_SERIAL_DIR
+    int             fd_max;
+    int             result;
+    int             filedes;
+    fd_set          read_set;
+    fd_set          active_rd_set;
+    struct timeval  timeout;
+    unsigned        timeout_sec;
+    unsigned        timeout_usec;
+    /* Initialize the file descriptor set. */
+    filedes = tpt_ctx->comm_port_fd;
+
+    FD_ZERO (&read_set);
+    FD_SET (filedes, &read_set);
+    fd_max = filedes;
+
+    // Calculate timeout
+    timeout_sec = tpt_ctx->tpt_rd_tmout / 1000;
+
+    timeout_usec = (tpt_ctx->tpt_rd_tmout % 1000) * 1000;
+#endif
+
     while (tpt_ctx->rd_thrd_run)
     {
+
+#ifdef USING_SERIAL_DIR
+        /* Initialize the timeout data structure. */
+        timeout.tv_sec = timeout_sec;
+        timeout.tv_usec = timeout_usec;
+
+        /* select returns 0 if timeout,
+        total number of ready file descriptors in all of the sets if input available,
+         -1 if error. */
+        active_rd_set = read_set;
+        result = (select(fd_max + 1, &active_rd_set, NULL, NULL, &timeout));
+
+        if (result > 0)
+        {
+            if (FD_ISSET(filedes, &active_rd_set))
+            {
+                if(read(filedes, &rd_char, 1) == 1)
+                {// read completed immediately, callback frame layer
+                    tpt_ctx->tpt_rd_cb(tpt_ctx, &rd_char, 1);
+                }
+            }
+
+        }
+        else if(result == 0)
+        {
+            //debug_msg_show(tpt_ctx->plt_ctx, "Timeout reading");
+        }
+        else
+        {
+            debug_msg_show(tpt_ctx->plt_ctx, "Read comm port select error");
+        }
+#else
         if(UsbSerial_Check() > 0)
         {
             if(UsbSerial_ReadData(&rd_char, 1) == 1)
@@ -799,6 +882,7 @@ static void tpt_rd_thrd(void   *data)
         }
 
         usleep(1000);
+#endif
     }
 
     tpt_ctx->rd_thrd_sts = 0;
@@ -887,12 +971,78 @@ tpt_port_setup - Setup comm port parameters.
 */
 static int tpt_port_setup(tpt_layer_ctx_t *tpt_ctx)
 {
+#ifdef USING_SERIAL_DIR
+
+    tpt_ctx->comm_port_fd = open(tpt_ctx->comm_port_name, O_RDWR);
+
+    if (tpt_ctx->comm_port_fd < 0)
+    {
+        debug_msg_show(tpt_ctx->plt_ctx, "Failed to open:%s. Err no:%d", tpt_ctx->comm_port_name, errno);
+        if (errno == EACCES)
+        {
+            debug_msg_show(tpt_ctx->plt_ctx, "Access to the port is not allowed \(need root access) or the port does not exist");
+        }
+        return 0;
+    }
+
+    if(isatty (tpt_ctx->comm_port_fd))
+    {
+        //char            *term_name;
+        struct termios  term_setting;
+
+/*
+        term_name = ttyname (tpt_ctx->comm_port_fd);
+        if (term_name)
+        {
+            debug_msg_show(tpt_ctx->plt_ctx, "Terminal name:%s", term_name);
+        }
+*/
+
+        //Get setting
+        if(tcgetattr (tpt_ctx->comm_port_fd, &term_setting) != 0)
+        {
+            debug_msg_show(tpt_ctx->plt_ctx, "tcgetattr error");
+            close(tpt_ctx->comm_port_fd);
+            return 0;
+        }
+
+        //Set to raw mode
+        cfmakeraw (&term_setting);
+
+        //Set speed
+        cfsetspeed (&term_setting, B115200);
+
+        //Set input mode
+        term_setting.c_cc[VMIN] = 1; //minimum one char
+        term_setting.c_cc[VTIME] = 0;//no timeout
+
+        //Set comm port setting
+        if(tcsetattr (tpt_ctx->comm_port_fd, TCSAFLUSH, &term_setting) != 0)
+        {
+            debug_msg_show(tpt_ctx->plt_ctx, "tcsetattr error");
+            close(tpt_ctx->comm_port_fd);
+            return 0;
+        }
+    }
+    else
+    {
+        debug_msg_show(tpt_ctx->plt_ctx, "The fd for %s is NOT a serial comm port", tpt_ctx->comm_port_name);
+        close(tpt_ctx->comm_port_fd);
+        return 0;
+    }
+
+    return 1;
+
+#else
+//////////////////////////////////////////
     if(UsbSerial_Open() == 0)
     {
         return 1;
     }
 
     return 0;
+//////////////////////////////////////////
+#endif
 }
 
 
@@ -908,6 +1058,13 @@ int32_t tpt_init(tpt_layer_ctx_t *tpt_ctx)
     tpt_ctx->wr_req_hd = NULL;
     if (tpt_ctx->tpt_rd_tmout < TRANSPORT_READ_TIMEOUT_MIN)
         tpt_ctx->tpt_rd_tmout = TRANSPORT_READ_TIMEOUT_MIN;
+
+#ifdef USING_SERIAL_DIR
+    if (!tpt_ctx->comm_port_id)
+        return INIT_ERROR_TRANSPORT;
+
+    tpt_ctx->comm_port_name = (char *)tpt_ctx->comm_port_id;
+#endif
 
     if (!plt_mtx_init(&tpt_ctx->wr_req_mtx))
         return INIT_ERROR_TRANSPORT;
@@ -928,8 +1085,11 @@ int32_t tpt_init(tpt_layer_ctx_t *tpt_ctx)
     return 0;
 
 l_TRANSPORT_INIT_ERROR2:
+#ifdef USING_SERIAL_DIR
+    close(tpt_ctx->comm_port_fd);
+#else
     UsbSerial_Close();
-
+#endif
 l_TRANSPORT_INIT_ERROR1:
     plt_sem_destroy(tpt_ctx->wr_q_sem);
 
@@ -950,7 +1110,11 @@ void tpt_exit(tpt_layer_ctx_t *tpt_ctx)
     //Stop all the threads
     tpt_thrd_stop(tpt_ctx);
 
+#ifdef USING_SERIAL_DIR
+    close(tpt_ctx->comm_port_fd);
+#else
     UsbSerial_Close();
+#endif
     plt_sem_destroy(tpt_ctx->wr_q_sem);
 
     util_list_flush(tpt_ctx->wr_req_mtx, &tpt_ctx->wr_req_hd);

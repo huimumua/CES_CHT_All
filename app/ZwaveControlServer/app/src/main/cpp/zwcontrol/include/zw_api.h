@@ -81,6 +81,9 @@ typedef void	*zwnet_p;		/**< opaque network handle */
 
 /* forward references */
 
+// For KDDI, defined this for using serial port directly
+//#define USING_SERIAL_DIR
+
 struct  _zwnoded;
 struct  _zwepd;
 struct  _zwifd;
@@ -225,10 +228,28 @@ typedef struct _zwifd	    *zwifd_p;		/**< interface descriptor */
 #define ZW_CID_ALRM_SUP_EVT_GET  82	   /**< zwif_alrm_sup_evt_get */
 #define ZW_CID_DRLOG_REC_SUP_GET 83	   /**< zwif_drlog_rec_sup_get */
 #define ZW_CID_DRLOG_REC_GET     84	   /**< zwif_drlog_rec_get */
+
+/**********************************************************************/
+// Modify: skysoft start
 #define ZW_CID_SWITCH_ALL_ON     85	   /**< zwif_switch_all_on */
 #define ZW_CID_SWITCH_ALL_OFF    86    /**< zwif_switch_all_off */
 #define ZW_CID_SWITCH_ALL_SET    87    /**< zwif_switch_all_set */
 #define ZW_CID_SWITCH_ALL_GET    88    /**< zwif_switch_all_get */
+#define ZW_CID_BSENSOR_SUP_RPT_GET    89    /**< zwif_bsensor_sup_get */
+#define ZW_CID_LANG_GET          90    /**< zwif_lang_get */
+#define ZW_CID_SW_COR_GET        91    /**< zwif_sw_color_get */
+#define ZW_CID_SW_COR_SUP_GET    92    /**< zwif_sw_color_sup_get */
+#define ZW_CID_BARRIER_OP_SET    93    /**< zwif_barrier_op_set */
+#define ZW_CID_BARRIER_OP_GET    94    /**< zwif_barrier_op_get */
+#define ZW_CID_BARRIER_OP_SIG_SET    95    /**< zwif_barrier_op_sig_set */
+#define ZW_CID_BARRIER_OP_SIG_GET    96    /**< zwif_barrier_op_sig_get */
+#define ZW_CID_BARRIER_OP_SIG_SUP_GET    97    /**< zwif_barrier_op_sig_sup_get */
+#define ZW_CID_BASIC_TAR_INFO_GET    98    /**< zwif_basic_tariff_info_get */
+#define ZW_CID_CONFIG_BULK_SET    99 /**< zwif_config_bulk_set */
+
+
+// Modify: skysoft end
+/**********************************************************************/
 
 #define ZW_CID_POLL              0xFFFF /**< The command is meant fo polling purposes only */
 
@@ -1030,6 +1051,24 @@ generic report callback for switch, binary sensor, battery, lock
 @param[in]	level	level
 */
 
+typedef void (*zwrep_basic_v2_fn)(zwifd_p ifd, uint8_t cur_val, uint8_t tar_val, uint8_t duration);
+/**<
+basic report v2 callback
+@param[in]	ifd	     interface
+@param[in]	cur_val	 current value
+@param[in]	tar_val	 target value
+@param[in]	duration
+*/
+
+typedef void (*zwrep_multi_level_v4_fn)(zwifd_p ifd, uint8_t cur_val, uint8_t tar_val, uint8_t duration);
+/**<
+multi-level v4 report callback for switch
+@param[in]	ifd	     interface
+@param[in]	cur_val	 current value
+@param[in]	tar_val	 target value
+@param[in]	duration duration
+*/
+
 typedef void (*zwrep_group_fn)(zwifd_p ifd, uint8_t group, uint8_t max_cnt, uint8_t cnt, zwepd_p ep);
 /**<
 group report callback
@@ -1350,17 +1389,34 @@ report callback for switch
 @param[in]	on		0=off, else on
 */
 
-int zwif_switch_set(zwifd_p ifd, uint8_t on);
+typedef void (*zwrep_switch_v2_fn)(zwifd_p ifd, uint8_t on, uint8_t duration);
+/**<
+report callback for switch
+@param[in]	ifd	    interface
+@param[in]	on		0=off, else on
+@param[in]  duration
+*/
+
+int zwif_switch_set(zwifd_p ifd, uint8_t on, uint8_t duration);
 /**<
 turn on/off switch
 @param[in]	ifd		interface
 @param[in]	on		0=off, else on
+@param[in]  duration
 @return		ZW_ERR_XXX
 */
 
 int zwif_switch_rpt_set(zwifd_p ifd, zwrep_switch_fn rpt_cb);
 /**<
 setup a switch report callback function
+@param[in]	ifd         interface
+@param[in]	rpt_cb	    report callback function
+return      ZW_ERR_XXX
+*/
+
+int zwif_switch_rpt_set_v2(zwifd_p ifd, zwrep_switch_v2_fn rpt_cb);
+/**<
+setup a binary switch v2 report callback function
 @param[in]	ifd         interface
 @param[in]	rpt_cb	    report callback function
 return      ZW_ERR_XXX
@@ -1440,6 +1496,14 @@ setup a level report callback function
 return      ZW_ERR_XXX
 */
 
+int zwif_level_rpt_set_v4(zwifd_p ifd, zwrep_multi_level_v4_fn rpt_cb);
+/**<
+setup a level report callback function
+@param[in]	ifd         interface
+@param[in]	rpt_cb	    report callback function
+return      ZW_ERR_XXX
+*/
+
 int zwif_level_get(zwifd_p ifd);
 /**<
 get level report through report callback
@@ -1478,12 +1542,12 @@ get a switch type report through report callback
 /**
 @}
 @defgroup BSns Binary Sensor Interface APIs
-Binary sensors state can be idle (no event) or event detected
-Their state can be read back by the generic zwif_get_report.
+Binary sensors value can be idle (no event) or event detected
+Their value can be read back by the generic zwif_get_report.
 @{
 */
 
-typedef void (*zwrep_bsensor_fn)(zwifd_p ifd, uint8_t state);
+typedef void (*zwrep_bsensor_fn)(zwifd_p ifd, uint8_t value, uint8_t type);
 /**<
 report callback for binary sensor
 @param[in]	ifd	        interface
@@ -1755,6 +1819,26 @@ typedef struct
 
 }
 zwconfig_t, *zwconfig_p;
+
+typedef struct
+{
+    uint8_t     offset1;		// offset MSB
+    uint8_t     offset2;		// offset LSB
+    uint8_t     num_of_param;
+    uint8_t     param_size; 	// param size, 1, 2, or 4;
+    uint8_t     data[256][4];	/**< data (a signed number) with the first byte is the most significant byte*/
+    uint8_t     use_default;	/**< parameter flag:  1=use default factory setting 0=use the value in data[]*/
+
+}
+zwconfig_bulk_t, *zwconfig_bulk_p;
+
+int zwif_config_set_v2(zwifd_p ifd, zwconfig_bulk_p param);
+/**<
+set configuration parameter version 2
+@param[in]	ifd	    interface
+@param[in]	param	parameter to set.
+@return	ZW_ERR_XXX
+*/
 
 int zwif_config_set(zwifd_p ifd, zwconfig_p param);
 /**<
@@ -2496,6 +2580,14 @@ setup a basic report callback function
 return      ZW_ERR_XXX
 */
 
+int zwif_basic_rpt_set_v2(zwifd_p ifd, zwrep_basic_v2_fn rpt_cb);
+/**<
+setup a basic version 2 report callback function
+@param[in]	ifd         Interface descriptor
+@param[in]	rpt_cb	    Report callback function
+return      ZW_ERR_XXX
+*/
+
 int zwif_basic_get(zwifd_p ifd);
 /**<
 get basic report through report callback
@@ -2627,7 +2719,7 @@ typedef struct
     uint8_t     id;                     /**< User identifier */
     uint8_t     id_sts;                 /**< User id status*/
     uint8_t     code_len;               /**< User code length*/
-    uint8_t     code[MAX_USRCOD_LENGTH];/**< User code; minimum length = 4, maximum length = 10*/
+    uint8_t     u_code[MAX_USRCOD_LENGTH];/**< User code; minimum length = 4, maximum length = 10*/
 }
 zwusrcod_t, *zwusrcod_p;
 
@@ -4160,6 +4252,126 @@ get the switch all mode in use by the node through report callback
 @param[in]	ifd	        interface
 @return		ZW_ERR_XXX
 */
+
+// Command Class Sensor Binary start
+typedef void (*zwrep_bsensor_sup_fn)(zwifd_p ifd, uint8_t value[]);
+/**<
+report callback for binary sensor support
+@param[in]	ifd	        interface
+@param[in]	value		eg,0x01:generic, 0x02:smoke, 0x06:water ...
+*/
+
+int zwif_bsensor_sup_rpt_set(zwifd_p ifd, zwrep_bsensor_sup_fn rpt_cb);
+/**<
+setup a binary sensor support report callback function
+@param[in]	ifd         interface
+@param[in]	rpt_cb	    report callback function
+return      ZW_ERR_XXX
+*/
+
+int zwif_bsensor_sup_get(zwifd_p ifd);
+/**<
+get binary sensor support report through report callback
+@param[in]	ifd	        interface
+@return		ZW_ERR_XXX
+*/
+
+int zwif_bsensor_sup_get_poll(zwifd_p ifd, zwpoll_req_t *poll_req);
+/**<
+get binary sensor support report through report callback
+@param[in]	ifd	        interface
+@param[in, out] poll_req Poll request
+@return		ZW_ERR_NONE if success; else ZW_ERR_XXX on error
+*/
+// Command Class Sensor Binary end
+
+// Command Class Door Lock Logging start
+
+/**
+zwif_door_lock_record_rep_set - Setup door lock record report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_door_lock_record_rep_set(zwifd_p ifd, zwrep_drlog_rep_fn rpt_cb);
+
+// Command Class Door Lock Logging end
+
+
+// Command Class Language 
+typedef struct
+{
+	uint8_t language[3];
+    uint8_t country[2];
+}
+zwlang_rep_t;
+
+typedef void (*zwrep_lang_rep_fn)(zwifd_p ifd, zwlang_rep_t *rec);
+/**<
+report callback for door lock logging record
+@param[in]	ifd	    interface
+@param[in]	rec     door lock logging record
+*/
+
+/**
+zwif_lang_rep_set - Setup language get report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_lang_rep_set(zwifd_p ifd, zwrep_lang_rep_fn rpt_cb);
+int zwif_lang_get(zwifd_p ifd);
+
+// Command Class Switch Color
+typedef void (*zwrep_sw_color_rep_fn)(zwifd_p ifd, uint8_t compid, uint8_t value);
+int zwif_sw_color_rep_set(zwifd_p ifd, zwrep_sw_color_rep_fn rpt_cb);
+int zwif_sw_color_get(zwifd_p ifd, uint8_t compid);
+
+typedef void (*zwrep_sw_color_sup_rep_fn)(zwifd_p ifd, uint8_t color_number, uint8_t* color_type);
+int zwif_sw_color_sup_rep_set(zwifd_p ifd, zwrep_sw_color_sup_rep_fn rpt_cb);
+int zwif_sw_color_sup_get(zwifd_p ifd);
+
+// Command Class barrier operator
+int zwif_barrier_op_set(zwifd_p ifd, uint8_t val);
+/**<
+set barrier operator value
+@param[in]	ifd		interface
+@param[in]	val		value. The value can be either 0x00 (off/close) or 0xFF (on/open).
+@return	ZW_ERR_XXX
+*/
+typedef void (*zwrep_barrier_op_rep_fn)(zwifd_p ifd, uint8_t state);
+int zwif_barrier_op_rep_set(zwifd_p ifd, zwrep_barrier_op_rep_fn rpt_cb);
+int zwif_barrier_op_get(zwifd_p ifd);
+int zwif_barrier_op_sig_set(zwifd_p ifd, uint8_t subSysType, uint8_t state);
+
+typedef void (*zwrep_barrier_op_sig_rep_fn)(zwifd_p ifd, uint8_t subSysType, uint8_t state);
+int zwif_barrier_op_sig_rep_set(zwifd_p ifd, zwrep_barrier_op_sig_rep_fn rpt_cb);
+int zwif_barrier_op_sig_get(zwifd_p ifd, uint8_t subSysType);
+
+typedef void (*zwrep_barrier_op_sig_sup_rep_fn)(zwifd_p ifd, uint8_t type_len, uint8_t *type);
+int zwif_barrier_op_sig_sup_rep_set(zwifd_p ifd, zwrep_barrier_op_sig_sup_rep_fn rpt_cb);
+int zwif_barrier_op_sig_sup_get(zwifd_p ifd);
+
+// Command Class basic tariff info
+
+/** basic tariff info data */
+typedef struct
+{
+    uint8_t     ele_num;		      // element number
+    uint8_t     total_rate_num;       // rate num
+    uint8_t     e1_cur_rate;          // element 1 current rate in use
+    uint8_t     e1_rate_consump[4];   // element 1 rate consumption register
+    uint8_t     e1_next_hour;
+    uint8_t     e1_next_min;
+    uint8_t     e1_next_sec;
+    uint8_t     e2_cur_rate;          // element 2 current rate in use
+    uint8_t     e2_rate_consump[4];	  // element 2 rate consumption register
+}
+zwbasic_tariff_info_t, *zwbasic_tariff_info_p;
+
+typedef void (*zwrep_basic_tariff_info_rep_fn)(zwifd_p ifd, zwbasic_tariff_info_p data);
+int zwif_basic_tariff_info_rep_set(zwifd_p ifd, zwrep_basic_tariff_info_rep_fn rpt_cb);
+int zwif_basic_tariff_info_get(zwifd_p ifd);
 
 
 // skysoft end

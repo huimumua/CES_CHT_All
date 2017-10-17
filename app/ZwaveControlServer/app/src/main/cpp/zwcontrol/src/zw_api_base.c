@@ -27,18 +27,21 @@ static void zwif_get_desc_dat(zwif_p intf, zwifd_p desc);
 
 static const cmd_get_resp_t cmd_get_resp_tbl[] =
 {   //Format: command class, get command, report command
-    {COMMAND_CLASS_SENSOR_BINARY, SENSOR_BINARY_GET, SENSOR_BINARY_REPORT},
+    {COMMAND_CLASS_SENSOR_BINARY_V2, SENSOR_BINARY_GET_V2, SENSOR_BINARY_REPORT_V2},
+    {COMMAND_CLASS_SENSOR_BINARY_V2, SENSOR_BINARY_SUPPORTED_GET_SENSOR_V2, SENSOR_BINARY_SUPPORTED_SENSOR_REPORT_V2},
     {COMMAND_CLASS_SENSOR_MULTILEVEL, SENSOR_MULTILEVEL_GET, SENSOR_MULTILEVEL_REPORT},
     {COMMAND_CLASS_SENSOR_MULTILEVEL, SENSOR_MULTILEVEL_SUPPORTED_GET_SENSOR_V5, SENSOR_MULTILEVEL_SUPPORTED_SENSOR_REPORT_V5},
     {COMMAND_CLASS_SENSOR_MULTILEVEL, SENSOR_MULTILEVEL_SUPPORTED_GET_SCALE_V5, SENSOR_MULTILEVEL_SUPPORTED_SCALE_REPORT_V5},
     {COMMAND_CLASS_METER, METER_GET, METER_REPORT},
     {COMMAND_CLASS_METER, METER_SUPPORTED_GET_V2, METER_SUPPORTED_REPORT_V2},
+    {COMMAND_CLASS_METER, METER_SUPPORTED_GET_V3, METER_SUPPORTED_REPORT_V3},
     {COMMAND_CLASS_METER_TBL_MONITOR, METER_TBL_TABLE_ID_GET, METER_TBL_TABLE_ID_REPORT},
     {COMMAND_CLASS_METER_PULSE, METER_PULSE_GET, METER_PULSE_REPORT},
     {COMMAND_CLASS_SIMPLE_AV_CONTROL, SIMPLE_AV_CONTROL_GET, SIMPLE_AV_CONTROL_REPORT},
     {COMMAND_CLASS_CONFIGURATION, CONFIGURATION_GET, CONFIGURATION_REPORT},
     {COMMAND_CLASS_SWITCH_MULTILEVEL, SWITCH_MULTILEVEL_GET, SWITCH_MULTILEVEL_REPORT},
     {COMMAND_CLASS_SWITCH_MULTILEVEL, SWITCH_MULTILEVEL_SUPPORTED_GET_V3, SWITCH_MULTILEVEL_SUPPORTED_REPORT_V3},
+    {COMMAND_CLASS_SWITCH_MULTILEVEL, SWITCH_MULTILEVEL_GET_V4, SWITCH_MULTILEVEL_REPORT_V4},
     {COMMAND_CLASS_SWITCH_BINARY, SWITCH_BINARY_GET, SWITCH_BINARY_REPORT},
     {COMMAND_CLASS_ASSOCIATION, ASSOCIATION_GET, ASSOCIATION_REPORT},
     {COMMAND_CLASS_ASSOCIATION, ASSOCIATION_SPECIFIC_GROUP_GET_V2, ASSOCIATION_SPECIFIC_GROUP_REPORT_V2},
@@ -85,7 +88,12 @@ static const cmd_get_resp_t cmd_get_resp_tbl[] =
     {COMMAND_CLASS_POWERLEVEL, POWERLEVEL_TEST_NODE_GET, POWERLEVEL_TEST_NODE_REPORT},
     {COMMAND_CLASS_DOOR_LOCK_LOGGING, DOOR_LOCK_LOGGING_RECORDS_SUPPORTED_GET, DOOR_LOCK_LOGGING_RECORDS_SUPPORTED_REPORT},
     {COMMAND_CLASS_DOOR_LOCK_LOGGING, RECORD_GET, RECORD_REPORT},
-    {COMMAND_CLASS_SWITCH_ALL, SWITCH_ALL_GET, SWITCH_ALL_REPORT}
+    {COMMAND_CLASS_SWITCH_ALL, SWITCH_ALL_GET, SWITCH_ALL_REPORT},
+    {COMMAND_CLASS_LANGUAGE, LANGUAGE_GET, LANGUAGE_REPORT},
+    {COMMAND_CLASS_SWITCH_COLOR, SWITCH_COLOR_GET, SWITCH_COLOR_REPORT},
+    {COMMAND_CLASS_SWITCH_COLOR, SWITCH_COLOR_SUPPORTED_GET, SWITCH_COLOR_SUPPORTED_REPORT},
+    {COMMAND_CLASS_BARRIER_OPERATOR, BARRIER_OPERATOR_GET, BARRIER_OPERATOR_REPORT},
+    {COMMAND_CLASS_BASIC_TARIFF_INFO, BASIC_TARIFF_INFO_GET, BASIC_TARIFF_INFO_REPORT},
 
 };
 
@@ -1621,6 +1629,7 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
                 static const uint8_t intf_settings[] =
                 {
                     SWITCH_MULTILEVEL_REPORT,
+                    SWITCH_MULTILEVEL_REPORT_V4,
                     SWITCH_MULTILEVEL_SUPPORTED_REPORT_V3   //version 3
                 };
                 return zwif_alloc(cls, ver, propty, intf_settings, (ver < 3)? 1 : sizeof(intf_settings));
@@ -1709,11 +1718,12 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
             }
             break;
 
-        case COMMAND_CLASS_SENSOR_BINARY:
+        case COMMAND_CLASS_SENSOR_BINARY_V2:
             {
                 static const uint8_t intf_settings[] =
                 {
-                    SENSOR_BINARY_REPORT
+                    SENSOR_BINARY_REPORT_V2,
+                    SENSOR_BINARY_SUPPORTED_SENSOR_REPORT_V2
 
                 };
 
@@ -1822,7 +1832,8 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
                 static const uint8_t intf_settings[] =
                 {
                     METER_REPORT,
-                    METER_SUPPORTED_REPORT_V2  //version 2
+                    METER_SUPPORTED_REPORT_V2,  //version 2
+                    METER_SUPPORTED_REPORT_V3
 
                 };
 
@@ -1894,6 +1905,21 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
                     SECURITY_COMMANDS_SUPPORTED_REPORT
 
                 };
+                return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
+            }
+            break;
+
+        case COMMAND_CLASS_SECURITY_2:
+            {
+                static const uint8_t intf_settings[] =
+                        {
+                                SECURITY_2_NONCE_REPORT,
+                                SECURITY_2_NETWORK_KEY_REPORT,
+                                SECURITY_2_NETWORK_KEY_VERIFY,
+                                SECURITY_2_COMMANDS_SUPPORTED_REPORT,
+                                SECURITY_2_CAPABILITIES_REPORT
+                        };
+
                 return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
             }
             break;
@@ -2150,6 +2176,54 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
             }
             break;
 #endif
+        /*************************************************/
+        // Add by skysoft start
+        case COMMAND_CLASS_LANGUAGE:
+            {
+                static const uint8_t intf_settings[] =
+                {
+                    LANGUAGE_REPORT
+                };
+                return zwif_alloc(cls, ver, propty, intf_settings, 1);
+            }
+            break;
+
+        case COMMAND_CLASS_SWITCH_COLOR:
+            {
+                static const uint8_t intf_settings[] =
+                {
+                    SWITCH_COLOR_REPORT,
+                    SWITCH_COLOR_SUPPORTED_REPORT
+
+                };
+                return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
+            }
+            break;
+
+        case COMMAND_CLASS_BARRIER_OPERATOR:
+            {
+                static const uint8_t intf_settings[] =
+                {
+                    BARRIER_OPERATOR_REPORT,
+                    BARRIER_OPERATOR_SIGNAL_SUPPORTED_REPORT,
+                    BARRIER_OPERATOR_SIGNAL_REPORT
+                };
+                return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
+            }
+            break;
+
+        case COMMAND_CLASS_BASIC_TARIFF_INFO:
+            {
+                static const uint8_t intf_settings[] =
+                {
+                    BASIC_TARIFF_INFO_REPORT
+                };
+                return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
+            }
+            break;
+
+            // Add by skysoft end
+            /*************************************************/
         default:
             return zwif_alloc(cls, ver, propty, NULL, 0);
 
@@ -3065,7 +3139,7 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
     {   //Wake up notification and security command class do not require a user-defined callback,
         //it uses the system callback function.
         if (!((cmd_buf[0] == COMMAND_CLASS_WAKE_UP && cmd_buf[1] == WAKE_UP_NOTIFICATION)
-              || (cmd_buf[0] == COMMAND_CLASS_SECURITY)
+              || (cmd_buf[0] == COMMAND_CLASS_SECURITY) || (cmd_buf[0] == COMMAND_CLASS_SECURITY_2)
               || (cmd_buf[0] == COMMAND_CLASS_DEVICE_RESET_LOCALLY)))
         {
             return;
@@ -3151,6 +3225,9 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
             }
             break;
 
+        case COMMAND_CLASS_SECURITY_2:
+            break;
+
         case COMMAND_CLASS_VERSION:
             {
                 if (cmd_buf[1] == VERSION_COMMAND_CLASS_REPORT)
@@ -3215,7 +3292,14 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
             {
                 if (cmd_buf[1] == BASIC_REPORT)
                 {
-                    if (cmd_len >= 3)
+                    if (cmd_len >= 5)  // ver 2
+                    {
+                        zwrep_basic_v2_fn rpt_cb;
+                        rpt_cb = (zwrep_basic_v2_fn)report_cb;
+                        zwif_get_desc(intf, &ifd);
+                        rpt_cb(&ifd, cmd_buf[2], cmd_buf[3], cmd_buf[4]);
+                    }
+                    else if (cmd_len >= 3)  // ver 1
                     {
                         zwrep_fn    rpt_cb;
                         rpt_cb = (zwrep_fn)report_cb;
@@ -3248,6 +3332,14 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
             {
                 if (cmd_buf[1] == SWITCH_MULTILEVEL_REPORT)
                 {
+                    if (cmd_len >= 5) // ver 4
+                    {
+                        zwrep_multi_level_v4_fn    rpt_cb;
+                        rpt_cb = (zwrep_multi_level_v4_fn)report_cb;
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, cmd_buf[2], cmd_buf[3], cmd_buf[4]);
+                    }
                     if (cmd_len >= 3)
                     {
                         zwrep_fn    rpt_cb;
@@ -3275,7 +3367,15 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
             {
                 if (cmd_buf[1] == SWITCH_BINARY_REPORT)
                 {
-                    if (cmd_len >= 3)
+                    if (cmd_len >= 4)  // version 2
+                    {
+                        zwrep_switch_v2_fn    rpt_cb;
+                        rpt_cb = (zwrep_switch_v2_fn)report_cb;
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, cmd_buf[2], cmd_buf[3]);
+                    }
+                    else if (cmd_len >= 3)  // version 1
                     {
                         zwrep_switch_fn    rpt_cb;
                         rpt_cb = (zwrep_switch_fn)report_cb;
@@ -3308,17 +3408,28 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
             }
             break;
 
-        case COMMAND_CLASS_SENSOR_BINARY:
+        case COMMAND_CLASS_SENSOR_BINARY_V2:
             {
-                if (cmd_buf[1] == SENSOR_BINARY_REPORT)
+                if (cmd_buf[1] == SENSOR_BINARY_REPORT_V2)
                 {
-                    if (cmd_len >= 3)
+                    if (cmd_len >= 4)
                     {
                         zwrep_bsensor_fn    rpt_cb;
                         rpt_cb = (zwrep_bsensor_fn)report_cb;
                         zwif_get_desc(intf, &ifd);
                         //Callback the registered function
-                        rpt_cb(&ifd, cmd_buf[2]);
+                        rpt_cb(&ifd, cmd_buf[2],cmd_buf[3]);
+                    }
+                }
+                else if (cmd_buf[1] == SENSOR_BINARY_SUPPORTED_SENSOR_REPORT_V2)
+                {
+                    if (cmd_len >=3)
+                    {
+                        zwrep_bsensor_sup_fn    rpt_cb;
+                        rpt_cb = (zwrep_bsensor_sup_fn)report_cb;
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, cmd_buf);
                     }
                 }
             }
@@ -3623,7 +3734,7 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
                                 if ((intf->ver >= 2) && (ep_id & 0x80))
                                 {
                                     //Bit-address is set:
-                                    //Bit 0 is End Point 1, bit 1 is End Point 2 … bit 6 is End Point 7
+                                    //Bit 0 is End Point 1, bit 1 is End Point 2 ï¿½ bit 6 is End Point 7
                                     zwepd_p         ep_desc_tmp;
                                     unsigned        num_of_ep;
                                     int             j;
@@ -4124,6 +4235,23 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
                         rpt_cb(&ifd, &meter_cap);
                     }
                 }
+                else if (cmd_buf[1] == METER_SUPPORTED_REPORT_V3)
+                {
+                    if (cmd_len >= 4)
+                    {
+                        zwmeter_cap_t           meter_cap;
+                        zwrep_meter_sup_fn      rpt_cb;
+                        rpt_cb = (zwrep_meter_sup_fn)report_cb;
+
+                        meter_cap.reset_cap = cmd_buf[2] >> 7;
+                        meter_cap.type = cmd_buf[2] & 0x1F;
+                        meter_cap.unit_sup = cmd_buf[3];
+
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, &meter_cap);
+                    }
+                }
 
             }
             break;
@@ -4414,7 +4542,7 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
                             break;
                         }
 
-                        memcpy(usr_cod.code, cmd_buf + 4, usr_cod.code_len);
+                        memcpy(usr_cod.u_code, cmd_buf + 4, usr_cod.code_len);
 
                         zwif_get_desc(intf, &ifd);
                         //Callback the registered function
@@ -5671,8 +5799,8 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
             break;
         // skysoft: tiny.hui start
         case COMMAND_CLASS_SWITCH_ALL:
-        {
-            if (cmd_buf[1] == SWITCH_ALL_REPORT)
+            {
+                if (cmd_buf[1] == SWITCH_ALL_REPORT)
                 {
                     if (cmd_len >= 3)
                     {
@@ -5685,9 +5813,154 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
                         rpt_cb(&ifd, cmd_buf[2]);
                     }
                 }
-        }
-        break;
+            }
+            break;
+        case COMMAND_CLASS_LANGUAGE:
+            {
+                if( cmd_buf[1] == LANGUAGE_REPORT)
+                {
+                    if(cmd_len >= 7)
+                    {
+                        zwrep_lang_rep_fn  rpt_cb;
+                        zwlang_rep_t       *lang;
+                        rpt_cb = (zwrep_lang_rep_fn)report_cb;
+                        memcpy(lang->language, cmd_buf + 2, 3);
+                        memcpy(lang->country, cmd_buf + 5, 2);
 
+                        zwif_get_desc(intf, &ifd);
+                        rpt_cb(&ifd, &lang);
+                    }
+                }
+            }
+            break;
+        case COMMAND_CLASS_SWITCH_COLOR:
+            {
+                if(cmd_buf[1] == SWITCH_COLOR_REPORT)
+                {
+                    if(cmd_len >=4)
+                    {
+                        zwrep_sw_color_rep_fn rpt_cb;
+                        rpt_cb = (zwrep_sw_color_rep_fn)report_cb;
+                        zwif_get_desc(intf, &ifd);
+                        rpt_cb(&ifd, cmd_buf[2], cmd_buf[3]);
+                    }
+                }
+                else if(cmd_buf[1] == SWITCH_COLOR_SUPPORTED_REPORT)
+                {
+                    if(cmd_len >=4)
+                    {
+                        zwrep_sw_color_sup_rep_fn rpt_cb;
+                        rpt_cb = (zwrep_sw_color_sup_rep_fn)report_cb;
+                        zwif_get_desc(intf, &ifd);
+
+                        int max_color_type = (cmd_len - 2) * 8;
+                        uint8_t color_type[16];
+                        int color_number = 0;
+
+                        for (i = 0; i < max_color_type; i++)
+                        {
+                            if ((cmd_buf[(i>>3) + 2] >> (i & 0x07)) & 0x01)
+                            {
+                                color_type[color_number++] = i;
+                            }
+                        }
+                        rpt_cb(&ifd, color_number, color_type);
+                    }
+                }
+            }
+            break;
+        case COMMAND_CLASS_BARRIER_OPERATOR:
+            {
+                if(cmd_buf[1] == BARRIER_OPERATOR_REPORT)
+                {
+                    if(cmd_len >=3)
+                    {
+                        zwrep_barrier_op_rep_fn rpt_cb;
+                        rpt_cb = (zwrep_barrier_op_rep_fn)report_cb;
+                        zwif_get_desc(intf, &ifd);
+                        rpt_cb(&ifd, cmd_buf[2]);
+                    }
+                }
+                else if(cmd_buf[1] == BARRIER_OPERATOR_SIGNAL_REPORT)
+                {
+                    if(cmd_len >= 4)
+                    {
+                        zwrep_barrier_op_sig_rep_fn rpt_cb;
+                        rpt_cb = (zwrep_barrier_op_sig_rep_fn)report_cb;
+                        zwif_get_desc(intf, &ifd);
+                        rpt_cb(&ifd, cmd_buf[2], cmd_buf[3]);
+                    }
+                }
+                else if(cmd_buf[1] == BARRIER_OPERATOR_SIGNAL_SUPPORTED_REPORT)
+                {
+                    if(cmd_len >= 3)
+                    {
+                        zwrep_barrier_op_sig_sup_rep_fn rpt_cb;
+                        rpt_cb = (zwrep_barrier_op_sig_sup_rep_fn)report_cb;
+                        zwif_get_desc(intf, &ifd);
+
+                        uint8_t             barrier_op_type[248];
+                        int                 i;
+                        int                 max_barrier_op_type;
+                        uint8_t             type_len;
+
+                        type_len = 0;
+                        max_barrier_op_type = (cmd_len - 2) * 8;
+
+                        for (i = 0; i < max_barrier_op_type; i++)
+                        {
+                            if ((cmd_buf[(i>>3) + 2] >> (i & 0x07)) & 0x01)
+                            {
+                                barrier_op_type[type_len++] = i + 1;
+                            }
+                        }
+
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, type_len, barrier_op_type);
+                    }
+                }
+            }
+            break;
+        case COMMAND_CLASS_BASIC_TARIFF_INFO:
+            if (cmd_buf[1] == BASIC_TARIFF_INFO_REPORT)
+            {
+                if(cmd_len >= 5)
+                {
+                    zwrep_basic_tariff_info_rep_fn rpt_cb;
+                    rpt_cb = (zwrep_basic_tariff_info_rep_fn)report_cb;
+                    zwif_get_desc(intf, &ifd);
+
+                    zwbasic_tariff_info_t tariff_info_value;
+
+                    tariff_info_value.ele_num = cmd_buf[2] >> 7;
+                    tariff_info_value.total_rate_num = cmd_buf[2] & 0x15;
+                    tariff_info_value.e1_cur_rate = cmd_buf[3] & 0x15;
+
+                    if (cmd_len >= 8)
+                    {
+                        memcpy(tariff_info_value.e1_rate_consump, cmd_buf + 4, 4);
+                    }
+
+                    if (cmd_len >= 11)
+                    {
+                        tariff_info_value.e1_next_hour = cmd_buf[8];
+                        tariff_info_value.e1_next_hour = cmd_buf[9];
+                        tariff_info_value.e1_next_hour = cmd_buf[10];
+                    }
+
+                    if (tariff_info_value.ele_num == 1)
+                    {
+                        if(cmd_len >= 16)
+                        {
+                            tariff_info_value.e1_cur_rate = cmd_buf[11] & 0x15;
+                            memcpy(tariff_info_value.e2_rate_consump, cmd_buf + 12, 4);
+                        }
+                    }
+                    rpt_cb(&ifd, &tariff_info_value);
+                }
+            }
+            break;
         // skysoft: tiny.hui end
     }
 }

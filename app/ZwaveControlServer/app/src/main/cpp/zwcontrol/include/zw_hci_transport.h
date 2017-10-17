@@ -76,6 +76,8 @@ typedef struct _tpt_layer_ctx
     #endif
 
     #ifdef OS_LINUX
+    char            *comm_port_name;    ///< pointer to comm port name
+    int             comm_port_fd;       ///< comm port file descriptor
     void            *wr_req_mtx;        ///< mutex for accessing write request list
     void            *wr_q_sem;          ///< semaphore for waiting requests to write to the comm port
     util_lst_t      *wr_req_hd;         ///< head of linked list for write requests

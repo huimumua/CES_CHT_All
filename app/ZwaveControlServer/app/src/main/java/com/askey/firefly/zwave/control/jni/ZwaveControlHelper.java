@@ -1,13 +1,6 @@
 package com.askey.firefly.zwave.control.jni;
 
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
-import com.askey.firefly.zwave.control.service.ZwaveSendBroadcast;
-
-
-import android.content.Intent;
-import android.util.Log;
-
-import java.nio.ByteBuffer;
 
 /**
  * 项目名称：ZwaveControl
@@ -104,6 +97,18 @@ public class ZwaveControlHelper {
                                                            int rangeStart, int rangeEnd);
     public native static int ZwController_SetConfiguration(int deviceId, int paramNumber, int paramSize,
                                                            int useDefault, int paramValue);
+    /**
+     * versing 2
+     * deviceId     nodeId
+     * offset1      the MSB bit about the start param number
+     * offset2      the LSB bit about the start param number
+     * paramNumber  the number of param will be set
+     * paramSize    the param unit, 1,2 or 4 bytes
+     * useDefault   weather to use param default value, 1 means use it's default value
+     * paramValue   the value array will be set, the array size depends by paramNumber
+     * */
+    public native static int ZwController_SetConfigurationBulk(int deviceId, int offset1, int offset2, int paramNumber, int paramSize,
+                                                           int useDefault, int[] paramValue);
 
     /**
     ** zwave controller jni interface
@@ -119,4 +124,150 @@ public class ZwaveControlHelper {
     public native static int ZwController_SetSwitchAllOff(int deviceId);
     public native static int ZwController_SetSwitchAll(int deviceId, int value);
     public native static int ZwController_GetSwitchAll(int deviceId);
+    public native static int ZwController_StartLearnMode();
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_SWITCH_BINARY
+    **/
+    public native static int ZwController_SetBinarySwitchState(int deviceId, int state, int duration);
+    public native static int ZwController_GetBinarySwitchState(int deviceId);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_SENSOR_BINARY
+    **/
+    public native static int ZwController_GetSensorBinary(int deviceId);
+    public native static int ZwController_GetSensorBinarySupportedSensor(int deviceId);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_METER
+    **/
+    public native static int ZwController_GetMeter(int deviceId, int meter_unit);
+    public native static int ZwController_resetMeter(int deviceId);
+    public native static int ZwController_getMeterSupported(int deviceId);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_WAKE_UP
+    **/
+    public native static int ZwController_getWakeUpSettings(int deviceId);
+    public native static int ZwController_setWakeUpInterval(int deviceId, int interval);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_DOOR_LOCK
+    **/
+    public native static int ZwController_getDoorLockOperation(int deviceId);
+
+    /**
+    ** @param mode (hex)
+    ** (0) Door Unsecured, (1) Door Unsecured with timeout
+    ** (10) Door Unsecured for inside Door Handles, 16
+    ** (11) Door Unsecured for inside Door Handles with timeout, 17
+    ** (20) Door Unsecured for outside Door Handles, 32
+    ** (21) Door Unsecured for outside Door Handles with timeout, 33
+    ** (FE) Door/Lock State Unknown
+    ** (FF) Door Secured
+    **/
+    public native static int ZwController_setDoorLockOperation(int deviceId, int mode);
+    public native static int ZwController_getDoorLockConfiguration(int deviceId);
+    public native static int ZwController_setDoorLockConfiguration(int deviceId, int type, int out_sta,
+                                                                   int in_sta, int tmout_min, int tmout_sec);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_USER_CODE
+    **/
+    public native static int ZwController_getUserCode(int deviceId, int user_id);
+    public native static int ZwController_setUserCode(int deviceId, int user_id, int status);
+    public native static int ZwController_getUserCodeNumber(int deviceId);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_PROTECTION
+    **/
+    public native static int ZwController_getProtection(int deviceId);
+
+    /**
+    ** @param localPortState local protection state
+    **        value: (0) Unprotected, (1) Protection by sequence, (2) No operation possible
+    ** @param rfPortState RF Protection State (version 2)
+    **        value: (0) Unprotected (1) No RF control (2) No RF control and response
+    **/
+    public native static int ZwController_setProtection(int deviceId, int localPortState, int rfPortState);
+    public native static int ZwController_getSupportedProtection(int deviceId);
+    public native static int ZwController_getProtectionExcControlNode(int deviceId);
+    public native static int ZwController_setProtectionExcControlNode(int deviceId, int control_nodeid);
+    public native static int ZwController_getProtectionTimeout(int deviceId);
+
+    /** 
+    ** @param unit Timeout unit
+    ** (0) seconds (1 to 60) 
+    ** (1) minutes (2 to 191) 
+    ** (2) No timeout (always protected)
+    **/
+    public native static int ZwController_setProtectionTimeout(int deviceId, int unit, int time);
+
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_INDICATOR
+    **/
+    public native static int ZwController_getIndicator(int deviceId);
+
+    /** 
+    ** @param value indicator unit
+    ** 00 = off, disable; FF = on, enable; Other value: 1 to 63h
+    **/
+    public native static int ZwController_setIndicator(int deviceId, int value);
+
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_DOOR_LOCK_LOGGING
+    **/
+    public native static int ZwController_getDoorLockLoggingSupportedRecords(int deviceId);
+    public native static int ZwController_getDoorLockLoggingRecords(int deviceId, int rec_num);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_LANGUAGE
+    **/
+    public native static int ZwController_getLanguage(int deviceId);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_SWITCH_COLOR
+    **/
+    public native static int ZwController_getSwitchColor(int deviceId, int compID);
+    public native static int ZwController_getSupportedSwitchColor(int deviceId);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_BARRIER_OPERATOR
+    **/
+    public native static int ZwController_setBarrierOperator(int deviceId, int value);
+    public native static int ZwController_getBarrierOperator(int deviceId);
+    public native static int ZwController_setBarrierOperatorSignal(int deviceId, int subSysType, int state);
+    public native static int ZwController_getBarrierOperatorSignal(int deviceId, int subSysType);
+    public native static int ZwController_getSupportedBarrierOperatorSignal(int deviceId);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_BASIC_TARIFF_INFO
+    **/
+    public native static int ZwController_getBasicTariffInfo(int deviceId);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_ASSOCIATION
+    **/
+    public native static int ZwController_getGroupInfo(int deviceId, int groupId);
+    public native static int ZwController_addEndpointsToGroup(int deviceId, int groupId, int[] arr);
+    public native static int ZwController_removeEndpointsFromGroup(int deviceId, int groupId, int[] arr);
+    public native static int ZwController_getMaxSupportedGroups(int deviceId);
+    public native static int ZwController_getSpecificGroup(int deviceId);
+
 }

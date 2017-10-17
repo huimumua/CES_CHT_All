@@ -33,6 +33,14 @@
 #ifndef _ZW_TYPEDEFS_H_
 #define _ZW_TYPEDEFS_H_
 
+#ifndef __C51__
+#define code
+#define idata
+#define xdata
+#define far
+typedef unsigned char bit;
+#endif
+
 /****************************************************************************/
 /*                              INCLUDE FILES                               */
 /****************************************************************************/
@@ -42,6 +50,7 @@
 /****************************************************************************/
 
 /* offset of field m in a struct s */
+#undef offsetof
 #define offsetof(s,m)   (WORD)( (BYTE_P)&(((s *)0)->m) - (BYTE_P)0 )
 
 /****************************************************************************/
@@ -103,5 +112,8 @@ typedef DWORD * DWORD_P;
 #define STATIC static
 #define BOOL_ BOOL
 #endif
+
+#define UNUSED(x) x = x; /* Hack to silence warning C280 Unreferenced local variable */
+#define UNUSED_CONST(x) if(x) ; /* Hack to silence warning C280 Unreferenced const variable */
 
 #endif /* _ZW_TYPEDEFS_H_ */

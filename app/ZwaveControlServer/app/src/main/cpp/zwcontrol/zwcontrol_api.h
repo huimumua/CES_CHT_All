@@ -126,6 +126,7 @@ typedef struct _hl_appl_ctx
     void                *plt_ctx;                   ///< Platform context for printing of output text messages
     uint16_t            av_btn_down;                ///< Flag to indicate whether the AV button is down
     uint16_t            av_btn_ctl;                 ///< AV Button control code
+    char                comm_port_name[80];         ///< Comm port name
     uint16_t            fw_vid;                     ///< Vendor/Manufacturer id
     uint16_t            fw_id;                      ///< Firmware id
     uint16_t            fw_frag_sz;                 ///< Meta data fragment size for firmware update
@@ -142,6 +143,7 @@ typedef struct _hl_appl_ctx
     dev_cfg_buf_t       dev_cfg_bufs[4];            ///< buffers that store an arrays of device specific configurations
                                                     ///< with the first buffer has the highest priority for device matching
 #endif
+
 } hl_appl_ctx_t;
 
 typedef struct
@@ -164,25 +166,160 @@ int  zwcontrol_rm_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
 int  zwcontrol_rp_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
 int  zwcontrol_stop_op(hl_appl_ctx_t *hl_appl);
 int  zwcontrol_default_set(hl_appl_ctx_t *hl_appl);
-int  zwcontrol_battery_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
-int  zwcontrol_sensor_multilevel_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
 int  zwcontrol_update_node(hl_appl_ctx_t *hl_appl, uint8_t nodeId);
 int  zwcontrol_save_nodeinfo(hl_appl_ctx_t *hl_appl, const char* filepath);
+int  zwcontrol_start_learn_mode(hl_appl_ctx_t* hl_appl);
+
+/*
+ **  Command Class Battery
+ */
+int  zwcontrol_battery_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
+int  zwcontrol_sensor_multilevel_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
+
+
+/*
+ **  Command Class Baisc ver 1~2
+ */
 int  zwcontrol_basic_get(hl_appl_ctx_t *hl_appl, int nodeId);
 int  zwcontrol_basic_set(hl_appl_ctx_t *hl_appl, int nodeId, int value);
+
+/*
+ **  Command Class Switch Multi-Level
+ */
 int  zwcontrol_switch_multilevel_get(hl_appl_ctx_t* hl_appl, int nodeId);
 int  zwcontrol_switch_multilevel_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint16_t levelValue, uint8_t duration);
 int  zwcontrol_get_support_switch_type(hl_appl_ctx_t* hl_appl, int nodeId);
 int  zwcontrol_start_stop_switchlevel_change(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint16_t startLvlVal,
                                              uint8_t duration, uint8_t pmyChangeDir, uint8_t secChangeDir, uint8_t secStep);
+
+/*
+ **  Command Class Configuration
+ */
 int  zwcontrol_configuration_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t paramMode, uint8_t paramNumber,
                                  uint16_t rangeStart, uint16_t rangeEnd);
 int  zwcontrol_configuration_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t paramNumber,
                                  uint8_t paramSize, uint8_t useDefault, int32_t paramValue);
+int  zwcontrol_configuration_bulk_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t offset1, uint8_t offset2,
+                                      uint8_t paramNumber, uint8_t paramSize, uint8_t useDefault, uint32_t* paramValue);
+
+/*
+ **  Command Class Power Level
+ */
 int  zwcontrol_powerLevel_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Switch All
+ */
 int  zwcontrol_swith_all_on(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_swith_all_off(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_swith_all_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t value);
 int  zwcontrol_swith_all_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Switch Binary ver 1~2
+ */
+int  zwcontrol_switch_binary_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t bin_state, uint8_t duration);
+int  zwcontrol_switch_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Sensor Binary v2
+ */
+int  zwcontrol_sensor_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_sensor_binary_supported_sensor_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Meter v3
+ */
+int  zwcontrol_meter_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t meter_unit);
+int  zwcontrol_meter_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_meter_reset(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Wake Up
+ */
+int  zwcontrol_wake_up_interval_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_wake_up_interval_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint32_t wkup_interval);
+
+/*
+ **  Command Class Door Lock
+ */
+int  zwcontrol_door_lock_operation_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_door_lock_operation_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t mode);
+int  zwcontrol_door_lock_config_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_door_lock_config_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t type, uint8_t out_sta,
+                                    uint8_t in_sta, uint8_t tmout_min, uint8_t tmout_sec);
+
+/*
+ **  Command Class User Code
+ */
+int  zwcontrol_user_code_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t user_id);
+int  zwcontrol_user_code_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t user_id, uint8_t status);
+int  zwcontrol_user_code_number_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Protection v1-v3
+ */
+int  zwcontrol_protection_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_protection_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t local_prot, uint8_t rf_prot);
+int  zwcontrol_supported_protection_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_protection_exclusive_control_node_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_protection_exclusive_control_node_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t node_id);
+int  zwcontrol_protection_timeout_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_protection_timeout_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t unit, uint8_t time);
+
+/*
+ **  Command Class Indicator v1
+ */
+int  zwcontrol_indicator_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_indicator_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint16_t value);
+
+/*
+ **  Command Class Door Lock Looging
+ */
+int  zwcontrol_door_lock_logging_supported_records_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_door_lock_logging_records_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t record_number);
+
+/*
+ **  Command Class Language
+ */
+int  zwcontrol_language_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+// int  zwcontrol_language_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Switch Color
+ */
+int  zwcontrol_switch_color_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t compId);
+int  zwcontrol_switch_color_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Barrier Operator
+ **  Be used to control and query the status of motorized barriers.
+ */
+int  zwcontrol_barrier_operator_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t value);
+int  zwcontrol_barrier_operator_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_barrier_operator_signal_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t subSysType, uint8_t state);
+int  zwcontrol_barrier_operator_signal_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t subSysType);
+int  zwcontrol_barrier_operator_signal_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Basic Tariff Info
+ **  Be used to request current tariff information from the meter.
+ */
+int  zwcontrol_basic_tariff_info_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Association & Multi-Channel Association
+ **  
+ */
+int  zwcontrol_get_group_info(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id);
+
+// Association set 
+int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList);
+// Association remove
+int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList);
+// Association groupings get
+int  zwcontrol_get_max_supported_groups(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+// Association specific(current active) group get
+int  zwcontrol_get_specific_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 
 #endif

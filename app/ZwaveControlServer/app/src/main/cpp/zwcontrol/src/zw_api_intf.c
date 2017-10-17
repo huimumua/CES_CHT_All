@@ -192,9 +192,9 @@ return      ZW_ERR_XXX
 int zwif_bsensor_rpt_set(zwifd_p ifd, zwrep_bsensor_fn rpt_cb)
 {
     //Check whether the command class is correct
-    if (ifd->cls == COMMAND_CLASS_SENSOR_BINARY)
+    if (ifd->cls == COMMAND_CLASS_SENSOR_BINARY_V2)
     {
-        return zwif_set_report(ifd, rpt_cb, SENSOR_BINARY_REPORT);
+        return zwif_set_report(ifd, rpt_cb, SENSOR_BINARY_REPORT_V2);
     }
     return ZW_ERR_CLASS_NOT_FOUND;
 }
@@ -209,11 +209,11 @@ zwif_bsensor_get_ex - get binary sensor report through report callback
 static int zwif_bsensor_get_ex(zwifd_p ifd, zwpoll_req_t *poll_req)
 {
     //Check whether the command class is correct
-    if (ifd->cls == COMMAND_CLASS_SENSOR_BINARY)
+    if (ifd->cls == COMMAND_CLASS_SENSOR_BINARY_V2)
     {
         if (poll_req)
         {
-            return zwif_get_report_poll(ifd, NULL, 0, SENSOR_BINARY_GET, poll_req);
+            return zwif_get_report_poll(ifd, NULL, 0, SENSOR_BINARY_GET_V2, poll_req);
         }
         else
         {
@@ -223,7 +223,7 @@ static int zwif_bsensor_get_ex(zwifd_p ifd, zwpoll_req_t *poll_req)
             {
                 return result;
             }
-            return zwif_get_report(ifd, NULL, 0, SENSOR_BINARY_GET, zwif_exec_cb);
+            return zwif_get_report(ifd, NULL, 0, SENSOR_BINARY_GET_V2, zwif_exec_cb);
 
         }
     }
@@ -525,6 +525,10 @@ return      ZW_ERR_XXX
 */
 int zwif_meter_rpt_set(zwifd_p ifd, zwrep_meter_fn rpt_cb)
 {
+    if ((ifd->ver == 3) && (ifd->cls == COMMAND_CLASS_METER))
+    {
+        return zwif_set_report(ifd, rpt_cb, METER_REPORT_V3);
+    }
     //Check whether the command class is correct
     if (ifd->cls == COMMAND_CLASS_METER)
     {
@@ -571,6 +575,20 @@ static int zwif_meter_get_ex(zwifd_p ifd, uint8_t unit, zwpoll_req_t *poll_req)
                 return zwif_get_report(ifd, NULL, 0, METER_GET, zwif_exec_cb);
             }
         }
+        else if(ifd->ver == 3)
+        {
+            uint8_t param;
+
+            param = (unit & 0x07) << 2;
+            if (poll_req)
+            {
+                return zwif_get_report_poll(ifd, &param, 1, METER_GET, poll_req);
+            }
+            else
+            {
+                return zwif_get_report(ifd, &param, 1, METER_GET, zwif_exec_cb);
+            }
+        }
         else
         {
             uint8_t param;
@@ -590,7 +608,6 @@ static int zwif_meter_get_ex(zwifd_p ifd, uint8_t unit, zwpoll_req_t *poll_req)
     }
     return ZW_ERR_CLASS_NOT_FOUND;
 }
-
 
 /**
 zwif_meter_get - Get meter report through report callback
@@ -648,7 +665,10 @@ int zwif_meter_sup_get(zwifd_p ifd,  zwrep_meter_sup_fn cb)
     }
 
     //Setup report callback
-    result = zwif_set_report(ifd, cb, METER_SUPPORTED_REPORT_V2);
+    if (ifd->ver == 3)
+        result = zwif_set_report(ifd, cb, METER_SUPPORTED_REPORT_V3);
+    else
+        result = zwif_set_report(ifd, cb, METER_SUPPORTED_REPORT_V2);
 
     if (result == 0)
     {
@@ -659,8 +679,12 @@ int zwif_meter_sup_get(zwifd_p ifd,  zwrep_meter_sup_fn cb)
         }
 
         //Request for report
-        result = zwif_get_report(ifd, NULL, 0,
-                                 METER_SUPPORTED_GET_V2, zwif_exec_cb);
+        if(ifd->ver == 3)
+            result = zwif_get_report(ifd, NULL, 0,
+                                 METER_SUPPORTED_GET_V3, zwif_exec_cb);
+        else 
+            result = zwif_get_report(ifd, NULL, 0,
+                                    METER_SUPPORTED_GET_V2, zwif_exec_cb);
     }
     return result;
 
@@ -695,12 +719,19 @@ int zwif_meter_reset(zwifd_p ifd)
     }
 
     //Prepare the command
-    cmd[0] = COMMAND_CLASS_METER_V2;
-    cmd[1] = METER_RESET_V2;
+    if(ifd->ver == 3)
+    {
+        cmd[0] = COMMAND_CLASS_METER_V3;
+        cmd[1] = METER_RESET_V3;
+    }
+    else
+    {
+        cmd[0] = COMMAND_CLASS_METER_V2;
+        cmd[1] = METER_RESET_V2;
+    }
 
     //Send the command
     return zwif_exec(ifd, cmd, 2, zwif_exec_cb);
-
 }
 
 
@@ -1051,6 +1082,59 @@ int zwif_config_set(zwifd_p ifd, zwconfig_p param)
     return result;
 }
 
+int zwif_config_set_v2(zwifd_p ifd, zwconfig_bulk_p param)
+{
+    int         result;
+    uint8_t     *cmd;
+    uint8_t     cmd_len;    //the length of the command and parameters
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_CONFIGURATION)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    //Check input values
+    if (memchr(data_storage_sz, param->param_size, sizeof(data_storage_sz)) == NULL)
+    {
+        return ZW_ERR_VALUE;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_CONFIG_BULK_SET, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    cmd_len = 6 + (param->param_size)*param->num_of_param;
+    cmd = (uint8_t *)malloc(cmd_len);
+
+    if (!cmd)
+    {
+        return ZW_ERR_MEMORY;
+    }
+
+    //Prepare the command
+    cmd[0] = COMMAND_CLASS_CONFIGURATION;
+    cmd[1] = CONFIGURATION_BULK_SET_V2;
+    cmd[2] = param->offset1;
+    cmd[3] = param->offset2;
+    cmd[4] = param->num_of_param;
+    cmd[5] = (param->param_size & 0x07) | ((param->use_default & 0x01) << 7);
+    int i, j = 0 ;
+    for (i = 0; i < param->num_of_param; i++)
+    {
+        memcpy(cmd + 6 + j, param->data[i], param->param_size);
+        j += param->param_size;
+    }
+
+    //Send the command
+    result = zwif_exec(ifd, cmd, cmd_len, zwif_exec_cb);
+
+    free(cmd);
+    return result;
+}
+
 
 /**
 zwif_config_rpt_set - Setup a configuration parameter report callback function
@@ -1293,6 +1377,22 @@ int zwif_level_rpt_set(zwifd_p ifd, zwrep_fn rpt_cb)
     return ZW_ERR_CLASS_NOT_FOUND;
 }
 
+/**
+zwif_level_rpt_set_v4 - Setup a level v4 report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_level_rpt_set_v4(zwifd_p ifd, zwrep_multi_level_v4_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_SWITCH_MULTILEVEL)
+    {
+        return zwif_set_report(ifd, rpt_cb, SWITCH_MULTILEVEL_REPORT_V4);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
 
 /**
 zwif_level_get_ex - get level report through report callback
@@ -1401,11 +1501,11 @@ Their state can be read back by the generic zwif_get_report.
 zwif_switch_set - turn on/off switch
 @param[in]	ifd	interface
 @param[in]	on		0=off, 1=on
+@param[in]  duration
 @return	ZW_ERR_XXX
 */
-int zwif_switch_set(zwifd_p ifd, uint8_t on)
+int zwif_switch_set(zwifd_p ifd, uint8_t on, uint8_t duration)
 {
-    uint8_t     cmd[3];
     int         result;
 
     //Check whether the interface belongs to the right command class
@@ -1421,12 +1521,25 @@ int zwif_switch_set(zwifd_p ifd, uint8_t on)
     }
 
     //Prepare the command to set binary switch
-    cmd[0] = COMMAND_CLASS_SWITCH_BINARY;
-    cmd[1] = SWITCH_BINARY_SET;
-    cmd[2] = (on)? 0xFF : 0;
-
-    //Send the command
-    return zwif_exec(ifd, cmd, 3, zwif_exec_cb);
+    if (ifd->ver == 2)  // versing 2
+    {
+        uint8_t cmd[4];
+        cmd[0] = COMMAND_CLASS_SWITCH_BINARY;
+        cmd[1] = SWITCH_BINARY_SET;
+        cmd[2] = (on)? 0xFF : 0;
+        cmd[3] = duration;
+        //Send the command
+        return zwif_exec(ifd, cmd, 4, zwif_exec_cb);
+    }
+    else
+    {
+        uint8_t cmd[3];
+        cmd[0] = COMMAND_CLASS_SWITCH_BINARY;
+        cmd[1] = SWITCH_BINARY_SET;
+        cmd[2] = (on)? 0xFF : 0;
+        //Send the command
+        return zwif_exec(ifd, cmd, 3, zwif_exec_cb);
+    } 
 }
 
 
@@ -1437,6 +1550,16 @@ zwif_switch_rpt_set - Setup a switch report callback function
 return      ZW_ERR_XXX
 */
 int zwif_switch_rpt_set(zwifd_p ifd, zwrep_switch_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_SWITCH_BINARY)
+    {
+        return zwif_set_report(ifd, rpt_cb, SWITCH_BINARY_REPORT);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+int zwif_switch_rpt_set_v2(zwifd_p ifd, zwrep_switch_v2_fn rpt_cb)
 {
     //Check whether the command class is correct
     if (ifd->cls == COMMAND_CLASS_SWITCH_BINARY)
@@ -2690,6 +2813,23 @@ int zwif_basic_rpt_set(zwifd_p ifd, zwrep_fn rpt_cb)
 
 
 /**
+zwif_basic_rpt_set v2 - Setup a basic report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_basic_rpt_set_v2(zwifd_p ifd, zwrep_basic_v2_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_BASIC && (ifd->ver == 2))
+    {
+        return zwif_set_report(ifd, rpt_cb, BASIC_REPORT);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+
+/**
 zwif_basic_get_ex - get basic report through report callback
 @param[in]	ifd	            interface
 @param[in, out] poll_req    Poll request
@@ -3008,7 +3148,7 @@ int zwif_usrcod_set(zwifd_p ifd, zwusrcod_p usr_cod)
 
     for (i=0; i<usr_cod->code_len; i++)
     {
-        if (!isdigit(usr_cod->code[i]))
+        if (!isdigit(usr_cod->u_code[i]))
         {
             return ZW_ERR_VALUE;
         }
@@ -3025,7 +3165,7 @@ int zwif_usrcod_set(zwifd_p ifd, zwusrcod_p usr_cod)
     cmd[1] = USER_CODE_SET;
     cmd[2] = usr_cod->id;
     cmd[3] = usr_cod->id_sts;
-    memcpy(cmd + 4, usr_cod->code, usr_cod->code_len);
+    memcpy(cmd + 4, usr_cod->u_code, usr_cod->code_len);
 
     //Send the command
     return zwif_exec(ifd, cmd, 4 + usr_cod->code_len, zwif_exec_cb);
@@ -3530,7 +3670,7 @@ int zwif_thrmo_fan_md_get(zwifd_p ifd)
 zwif_thrmo_fan_md_set - set the fan mode in the device
 @param[in]	ifd	    interface
 @param[in]	off     fan off flag. Non-zero will switch the fan fully OFF.
-                    In order to activate a fan mode this flag must be set to ì0î.
+                    In order to activate a fan mode this flag must be set to ‚Äú0‚Äù.
 @param[in]	mode    fan operating mode, ZW_THRMO_FAN_MD_XXX
 @return	ZW_ERR_XXX
 */
@@ -4275,9 +4415,9 @@ int zwif_clmt_ctl_schd_set(zwifd_p ifd, zwcc_shed_p sched)
     //From "Z-Wave Command Class Specification" :
     //
     //The entire list of switchpoints in the Command must be ordered by time,
-    //ascending from 00:00 towards 23:59. Switchpoints which have a Schedule State set to ìUnusedî
+    //ascending from 00:00 towards 23:59. Switchpoints which have a Schedule State set to ‚ÄúUnused‚Äù
     //shall be placed last. No duplicates shall be allowed for Switchpoints which have a Schedule State
-    //different from ìUnusedî.
+    //different from ‚ÄúUnused‚Äù.
 
     //Check each entry (switchpoint)
     for (i=0; i < sched->total; i++)
@@ -5930,6 +6070,399 @@ int zwif_switch_all_get(zwifd_p ifd)
 
         return zwif_get_report(ifd, NULL, 0,
                                SWITCH_ALL_GET, zwif_exec_cb);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+/**
+zwif_bsensor_sup_rpt_set - Setup a binary sensor support report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_bsensor_sup_rpt_set(zwifd_p ifd, zwrep_bsensor_sup_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_SENSOR_BINARY_V2)
+    {
+        return zwif_set_report(ifd, rpt_cb, SENSOR_BINARY_SUPPORTED_SENSOR_REPORT_V2);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+/**
+zwif_bsensor_sup_get_ex - get binary sensor support report through report callback
+@param[in]  ifd         interface
+@param[in, out] poll_req    Poll request
+@return     ZW_ERR_NONE if success; else ZW_ERR_XXX on error
+*/
+static int zwif_bsensor_sup_get_ex(zwifd_p ifd, zwpoll_req_t *poll_req)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_SENSOR_BINARY_V2)
+    {
+        if (poll_req)
+        {
+            return zwif_get_report_poll(ifd, NULL, 0, SENSOR_BINARY_SUPPORTED_GET_SENSOR_V2, poll_req);
+        }
+        else
+        {
+            int result;
+            result = zwif_cmd_id_set(ifd, ZW_CID_BSENSOR_SUP_RPT_GET, 1);
+            if ( result < 0)
+            {
+                return result;
+            }
+            return zwif_get_report(ifd, NULL, 0, SENSOR_BINARY_SUPPORTED_GET_SENSOR_V2, zwif_exec_cb);
+
+        }
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+/**
+zwif_bsensor_sup_get - get binary sensor support report through report callback
+@param[in]  ifd         interface
+@return     ZW_ERR_XXX
+*/
+int zwif_bsensor_sup_get(zwifd_p ifd)
+{
+    return zwif_bsensor_sup_get_ex(ifd, NULL);
+}
+
+
+/**
+zwif_bsensor_sup_get_poll - get binary sensor support report through report callback
+@param[in]  ifd         interface
+@param[in, out] poll_req    Poll request
+@return     ZW_ERR_NONE if success; else ZW_ERR_XXX on error
+*/
+int zwif_bsensor_sup_get_poll(zwifd_p ifd, zwpoll_req_t *poll_req)
+{
+    return zwif_bsensor_sup_get_ex(ifd, poll_req);
+}
+
+/**
+hl_door_lock_record_rep_set - Setup door lock record report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_door_lock_record_rep_set(zwifd_p ifd, zwrep_drlog_rep_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_DOOR_LOCK_LOGGING)
+    {
+        return zwif_set_report(ifd, rpt_cb, RECORD_REPORT);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+/**
+zwif_lang_rep_set - Setup language get report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_lang_rep_set(zwifd_p ifd, zwrep_lang_rep_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_LANGUAGE)
+    {
+        return zwif_set_report(ifd, rpt_cb, LANGUAGE_REPORT);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+int zwif_lang_get(zwifd_p ifd)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_LANGUAGE)
+    {
+        int result;
+
+        result = zwif_cmd_id_set(ifd, ZW_CID_LANG_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        return zwif_get_report(ifd, NULL, 0,
+                               LANGUAGE_GET, zwif_exec_cb);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+// Command Class Switch Color
+
+/**
+zwif_sw_color_rep_set - Setup color get report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_sw_color_rep_set(zwifd_p ifd, zwrep_sw_color_rep_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_SWITCH_COLOR)
+    {
+        return zwif_set_report(ifd, rpt_cb, SWITCH_COLOR_REPORT);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+int zwif_sw_color_get(zwifd_p ifd, uint8_t compid)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_SWITCH_COLOR)
+    {
+        int result;
+
+        result = zwif_cmd_id_set(ifd, ZW_CID_SW_COR_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        return zwif_get_report(ifd, &compid, 1,
+                               SWITCH_COLOR_GET, zwif_exec_cb);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+/**
+zwif_sw_color_sup_rep_set - Setup color supported get report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_sw_color_sup_rep_set(zwifd_p ifd, zwrep_sw_color_sup_rep_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_SWITCH_COLOR)
+    {
+        return zwif_set_report(ifd, rpt_cb, SWITCH_COLOR_SUPPORTED_REPORT);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+int zwif_sw_color_sup_get(zwifd_p ifd)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_SWITCH_COLOR)
+    {
+        int result;
+
+        result = zwif_cmd_id_set(ifd, ZW_CID_SW_COR_SUP_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        return zwif_get_report(ifd, NULL, 0,
+                               SWITCH_COLOR_SUPPORTED_GET, zwif_exec_cb);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+// Command Class Barrier Operator
+/**<
+set barrier operator value
+@param[in]  ifd     interface
+@param[in]  val     value. The value can be either 0x00 (off/close) or 0xFF (on/open).
+@return ZW_ERR_XXX
+*/
+int zwif_barrier_op_set(zwifd_p ifd, uint8_t val)
+{
+    uint8_t     cmd[3];
+    int         result;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_BARRIER_OPERATOR)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_BARRIER_OP_SET, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Prepare the command
+    cmd[0] = COMMAND_CLASS_BARRIER_OPERATOR;
+    cmd[1] = BARRIER_OPERATOR_SET;
+    cmd[2] = val;
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 3, zwif_exec_cb);
+}
+
+/**
+zwif_barrier_op_rep_set - Setup barrier operator get report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_barrier_op_rep_set(zwifd_p ifd, zwrep_barrier_op_rep_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_BARRIER_OPERATOR)
+    {
+        return zwif_set_report(ifd, rpt_cb, BARRIER_OPERATOR_REPORT);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+int zwif_barrier_op_get(zwifd_p ifd)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_BARRIER_OPERATOR)
+    {
+        int result;
+
+        result = zwif_cmd_id_set(ifd, ZW_CID_BARRIER_OP_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        return zwif_get_report(ifd, NULL, 0,
+                               BARRIER_OPERATOR_GET, zwif_exec_cb);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+/**<
+set barrier operator signal type and state
+@param[in]  ifd            interface
+@param[in]  subSysType     subsystem type, 0x00, not supported, 0x01, Audible Notification, 
+                                           0x02, Visual Notification
+@param[in]  state          The value can be either 0x00 (off/close) or 0xFF (on/open).
+@return ZW_ERR_XXX
+*/
+int zwif_barrier_op_sig_set(zwifd_p ifd, uint8_t subSysType, uint8_t state)
+{
+    uint8_t     cmd[4];
+    int         result;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_BARRIER_OPERATOR)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_BARRIER_OP_SIG_SET, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Prepare the command
+    cmd[0] = COMMAND_CLASS_BARRIER_OPERATOR;
+    cmd[1] = BARRIER_OPERATOR_SIGNAL_SET;
+    cmd[2] = subSysType;
+    cmd[3] = state;
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 4, zwif_exec_cb);
+}
+
+/**
+zwif_barrier_op_sig_rep_set - Setup barrier operator signal get report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_barrier_op_sig_rep_set(zwifd_p ifd, zwrep_barrier_op_sig_rep_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_BARRIER_OPERATOR)
+    {
+        return zwif_set_report(ifd, rpt_cb, BARRIER_OPERATOR_SIGNAL_REPORT);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+int zwif_barrier_op_sig_get(zwifd_p ifd, uint8_t subSysType)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_BARRIER_OPERATOR)
+    {
+        int result;
+
+        result = zwif_cmd_id_set(ifd, ZW_CID_BARRIER_OP_SIG_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        return zwif_get_report(ifd, &subSysType, 1,
+                               BARRIER_OPERATOR_SIGNAL_GET, zwif_exec_cb);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+/**
+zwif_barrier_op_sig_sup_rep_set - Setup barrier operator signal supported get report callback function
+@param[in]  ifd         Interface descriptor
+@param[in]  rpt_cb      Report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_barrier_op_sig_sup_rep_set(zwifd_p ifd, zwrep_barrier_op_sig_sup_rep_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_BARRIER_OPERATOR)
+    {
+        return zwif_set_report(ifd, rpt_cb, BARRIER_OPERATOR_SIGNAL_SUPPORTED_REPORT);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+int zwif_barrier_op_sig_sup_get(zwifd_p ifd)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_BARRIER_OPERATOR)
+    {
+        int result;
+
+        result = zwif_cmd_id_set(ifd, ZW_CID_BARRIER_OP_SIG_SUP_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        return zwif_get_report(ifd, NULL, 0,
+                               BARRIER_OPERATOR_SIGNAL_SUPPORTED_GET, zwif_exec_cb);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+int zwif_basic_tariff_info_rep_set(zwifd_p ifd, zwrep_basic_tariff_info_rep_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_BASIC_TARIFF_INFO)
+    {
+        return zwif_set_report(ifd, rpt_cb, BASIC_TARIFF_INFO_REPORT);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+int zwif_basic_tariff_info_get(zwifd_p ifd)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_BASIC_TARIFF_INFO)
+    {
+        int result;
+
+        result = zwif_cmd_id_set(ifd, ZW_CID_BASIC_TAR_INFO_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        return zwif_get_report(ifd, NULL, 0,
+                               BASIC_TARIFF_INFO_GET, zwif_exec_cb);
     }
     return ZW_ERR_CLASS_NOT_FOUND;
 }

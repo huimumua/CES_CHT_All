@@ -16,7 +16,7 @@ comments: Initial release
 #include "../include/zw_poll.h"
 #include "../include/zwave/ZW_SerialAPI.h"
 #include "zw_api.h"
-
+#include "zw_sec2_wrap.h"
 
 #define ZW_LIB_CONTROLLER_STATIC  0x01
 #define ZW_LIB_CONTROLLER         0x02
@@ -63,6 +63,7 @@ static const uint16_t    supp_cmd_class[] =
 #endif
 #ifdef  SUPPORT_SECURITY
     COMMAND_CLASS_SECURITY,
+    COMMAND_CLASS_SECURITY_2,
 #endif
     COMMAND_CLASS_MANUFACTURER_SPECIFIC,
     COMMAND_CLASS_MULTI_CMD,
@@ -6525,6 +6526,28 @@ static void appl_cmd_hdlr(uint8_t cmd_len, uint8_t *cmd_buf, appl_cmd_prm_t *prm
             }
         }
     }
+    /* Need to add this ?
+    else if (cmd_buf[0] == COMMAND_CLASS_SENSOR_BINARY_V2)
+    {
+        int         result;
+
+        if (cmd_buf[1] == SENSOR_BINARY_SUPPORTED_SENSOR_REPORT_V2)
+        {
+            uint8_t c_buf[3];  // length not known
+
+            //Prepare the report
+            c_buf[0] = COMMAND_CLASS_SENSOR_BINARY_V2;
+            c_buf[1] = SENSOR_BINARY_SUPPORTED_SENSOR_REPORT_V2;
+            c_buf[2] = cmd_buf[2];
+
+            //Send the report
+            result = zwnet_rpt_send(nw, c_buf, 3, src_node, msg_type);
+            if (result < 0)
+            {
+                debug_zwapi_msg(&nw->plt_ctx, "Send sensor binary sup rpt with error:%d", result);
+            }
+        }
+    }*/
 
     // skysoft: tiny.hui end
     /***********************************************/
@@ -9227,6 +9250,37 @@ static void zwnet_sec_incl_cb(zwnet_p nw, int status, void *user)
     zwnet_add_ni_get(nw, nw->added_node_id, nw->added_node_op, nw->get_ni_sts);
 }
 
+static int zwnet_sec_incl_ver1(zwnet_p nw, uint8_t node_id, uint8_t op, int sts_sec_incl, int sts_get_ni)
+{
+    zwsec_incd_sm_param_t   param;
+
+    //Start the state-machine for secure-inclusion
+    param.cb = zwnet_sec_incl_cb;
+    param.user = nw;
+    param.delay_ms = 500; //Add delay to solve firmware bug that reports
+    //ADD_NODE_STATUS_PROTOCOL_DONE earlier than actual completion.
+
+    plt_mtx_lck(nw->sec_ctx->sec_mtx);
+    if (zwsec_add_node_sm(nw, node_id, EVT_UNSEC_INC_DONE, &param) == ZW_ERR_NONE)
+    {
+        plt_mtx_ulck(nw->sec_ctx->sec_mtx);
+        //Notify the progress of the operation
+        if (nw->init.notify)
+            nw->init.notify(nw->init.user, op, sts_sec_incl);
+
+        return ZW_ERR_NONE;
+    }
+    plt_mtx_ulck(nw->sec_ctx->sec_mtx);
+
+    return ZW_ERR_FAILED;
+}
+
+
+static int zwnet_sec_incl_ver2(zwnet_p nw, uint8_t node_id, uint8_t op, int sts_sec_incl, int sts_get_ni)
+{
+    sec2_start_add_node();
+    return ZW_ERR_FAILED;
+}
 
 /**
 zwnet_sec_incl - adding node to a secure network
@@ -9240,7 +9294,7 @@ zwnet_sec_incl - adding node to a secure network
 static int zwnet_sec_incl(zwnet_p nw, uint8_t node_id, uint8_t op, int sts_sec_incl, int sts_get_ni)
 {
     zwnode_p    node;
-    zwif_p      intf = NULL;
+    zwif_p      intf1 = NULL, intf2 = NULL;
 
     //Save the newly added node id, current operation, etc.
     nw->added_node_id = node_id;
@@ -9254,39 +9308,36 @@ static int zwnet_sec_incl(zwnet_p nw, uint8_t node_id, uint8_t op, int sts_sec_i
         //Reset sec_incl_failed flag
         node->sec_incl_failed = 0;
 
-        intf = zwif_find_cls(node->ep.intf, COMMAND_CLASS_SECURITY);
+        intf2 = zwif_find_cls(node->ep.intf, COMMAND_CLASS_SECURITY_2);
+        intf1 = zwif_find_cls(node->ep.intf, COMMAND_CLASS_SECURITY);
+    }
+
+    if(nw->sec_enable && intf2 && (!nw->ctl.sec_incl_failed))
+    {
+        if(zwnet_sec_incl_ver2(nw, node_id, op, sts_sec_incl, sts_get_ni) == ZW_ERR_NONE)
+        {
+            return ZW_ERR_NONE;
+        }
+
+        node->sec_incl_failed = 1;
     }
 
     //Check whether to include the node in secure network
-    if (nw->sec_enable && intf && (!nw->ctl.sec_incl_failed))
+    if(nw->sec_enable && intf1 && (!nw->ctl.sec_incl_failed))
     {
-        zwsec_incd_sm_param_t   param;
+        node->sec_incl_failed = 0;
 
-        //Start the state-machine for secure-inclusion
-        param.cb = zwnet_sec_incl_cb;
-        param.user = nw;
-        param.delay_ms = 500; //Add delay to solve firmware bug that reports
-        //ADD_NODE_STATUS_PROTOCOL_DONE earlier than actual completion.
-
-        plt_mtx_lck(nw->sec_ctx->sec_mtx);
-        if (zwsec_add_node_sm(nw, node_id, EVT_UNSEC_INC_DONE, &param) == ZW_ERR_NONE)
+        if(zwnet_sec_incl_ver1(nw, node_id, op, sts_sec_incl, sts_get_ni) == ZW_ERR_NONE)
         {
-            plt_mtx_ulck(nw->sec_ctx->sec_mtx);
-            //Notify the progress of the operation
-            if (nw->init.notify)
-                nw->init.notify(nw->init.user, op, sts_sec_incl);
-
             return ZW_ERR_NONE;
         }
-        plt_mtx_ulck(nw->sec_ctx->sec_mtx);
 
         //Mark the node as failed security inclusion
         node->sec_incl_failed = 1;
     }
-    return ZW_ERR_FAILED;
 
+    return  ZW_ERR_FAILED;
 }
-
 
 static const char    *add_node_sts[] =
 {   "unknown",
@@ -9386,7 +9437,6 @@ static void zwnet_node_add_cb(struct _appl_layer_ctx *appl_ctx, uint8_t sts,
 
         //Get the detailed node information
         zwnet_add_ni_get(nw, node_id, ZWNET_OP_ADD_NODE, OP_ADD_NODE_GET_NODE_INFO);
-
     }
     else if (sts >= ADD_NODE_STATUS_FAILED) //To include undocumented return
     //status 0x23 when secondary controller
