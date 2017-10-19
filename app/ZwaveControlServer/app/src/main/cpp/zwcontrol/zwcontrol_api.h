@@ -226,7 +226,7 @@ int  zwcontrol_switch_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 /*
  **  Command Class Sensor Binary v2
  */
-int  zwcontrol_sensor_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_sensor_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sensor_type);
 int  zwcontrol_sensor_binary_supported_sensor_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 
 /*

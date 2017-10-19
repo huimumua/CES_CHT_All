@@ -206,14 +206,18 @@ zwif_bsensor_get_ex - get binary sensor report through report callback
 @param[in, out] poll_req    Poll request
 @return		ZW_ERR_NONE if success; else ZW_ERR_XXX on error
 */
-static int zwif_bsensor_get_ex(zwifd_p ifd, zwpoll_req_t *poll_req)
+static int zwif_bsensor_get_ex(zwifd_p ifd, uint8_t sensor_type, zwpoll_req_t *poll_req)
 {
+    uint8_t     cmd[3];
+    cmd[0] = COMMAND_CLASS_SENSOR_BINARY_V2;
+    cmd[1] = SENSOR_BINARY_GET_V2;
+    cmd[2] = sensor_type;
     //Check whether the command class is correct
     if (ifd->cls == COMMAND_CLASS_SENSOR_BINARY_V2)
     {
         if (poll_req)
         {
-            return zwif_get_report_poll(ifd, NULL, 0, SENSOR_BINARY_GET_V2, poll_req);
+            return zwif_get_report_poll(ifd, cmd, 3, SENSOR_BINARY_GET_V2, poll_req);
         }
         else
         {
@@ -223,7 +227,7 @@ static int zwif_bsensor_get_ex(zwifd_p ifd, zwpoll_req_t *poll_req)
             {
                 return result;
             }
-            return zwif_get_report(ifd, NULL, 0, SENSOR_BINARY_GET_V2, zwif_exec_cb);
+            return zwif_get_report(ifd, cmd, 3, SENSOR_BINARY_GET_V2, zwif_exec_cb);
 
         }
     }
@@ -237,9 +241,9 @@ zwif_bsensor_get - get binary sensor report through report callback
 @param[in]	ifd	        interface
 @return		ZW_ERR_XXX
 */
-int zwif_bsensor_get(zwifd_p ifd)
+int zwif_bsensor_get(zwifd_p ifd, uint8_t sensor_type)
 {
-    return zwif_bsensor_get_ex(ifd, NULL);
+    return zwif_bsensor_get_ex(ifd, sensor_type, NULL);
 }
 
 
@@ -249,9 +253,9 @@ zwif_bsensor_get_poll - get binary sensor report through report callback
 @param[in, out] poll_req    Poll request
 @return		ZW_ERR_NONE if success; else ZW_ERR_XXX on error
 */
-int zwif_bsensor_get_poll(zwifd_p ifd, zwpoll_req_t *poll_req)
+int zwif_bsensor_get_poll(zwifd_p ifd, uint8_t sensor_type, zwpoll_req_t *poll_req)
 {
-    return zwif_bsensor_get_ex(ifd, poll_req);
+    return zwif_bsensor_get_ex(ifd, sensor_type, poll_req);
 }
 
 

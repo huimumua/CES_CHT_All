@@ -5590,12 +5590,12 @@ int  zwcontrol_switch_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
 
 // Command Class Sensor Binary v2
 
- static const char *binary_sensor_type[]=
+ const static char *binary_sensor_type[]=
  {
-    "unknown", "General purpose", "smoke","CO",
-    "CO2", "heat", "water", "freeze", 
-    "tamper", "aux", "door/window", "tilt",
-    "motion", "glass break"
+    "unknown", "General purpose", "Smoke","CO",
+    "CO2", "Heat", "Water", "freeze", 
+    "Tamper", "Aux", "Door/Window", "Tilt",
+    "Motion", "Glass break"
 };
 
 /**
@@ -5618,7 +5618,7 @@ void hl_bin_snsr_rep_cb(zwifd_p ifd, uint8_t value, uint8_t type)
 
     cJSON_AddStringToObject(jsonRoot, "MessageType", "Binary Sensor Get Information");
     cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
-    cJSON_AddNumberToObject(jsonRoot, "Event Type", type);
+    cJSON_AddStringToObject(jsonRoot, "Event Type", binary_sensor_type[type]);
     if(value == 0)
     {
         cJSON_AddStringToObject(jsonRoot, "state", "idle");  
@@ -5674,9 +5674,10 @@ int32_t hl_bin_snsr_rep_setup(hl_appl_ctx_t   *hl_appl)
 /**
 hl_bin_snsr_rep_get - Get binary sensor state report
 @param[in]  hl_appl     The high-level api context
+@param[in]  sensor_type The sensor type want to get
 @return  0 on success, negative error number on failure
 */
-int32_t hl_bin_snsr_rep_get(hl_appl_ctx_t   *hl_appl)
+int32_t hl_bin_snsr_rep_get(hl_appl_ctx_t   *hl_appl, uint8_t sensor_type)
 {
     int     result;
     zwifd_p ifd;
@@ -5692,7 +5693,7 @@ int32_t hl_bin_snsr_rep_get(hl_appl_ctx_t   *hl_appl)
 
     if (hl_appl->poll_ctl)
     {
-        result = zwif_bsensor_get_poll(ifd, &hl_appl->poll_req);
+        result = zwif_bsensor_get_poll(ifd, sensor_type, &hl_appl->poll_req);
         if (result == 0)
         {
             ALOGI("Polling request handle:%u", hl_appl->poll_req.handle);
@@ -5700,7 +5701,7 @@ int32_t hl_bin_snsr_rep_get(hl_appl_ctx_t   *hl_appl)
     }
     else
     {
-        result = zwif_bsensor_get(ifd);
+        result = zwif_bsensor_get(ifd, (uint8_t)sensor_type);
     }
 
     plt_mtx_ulck(hl_appl->desc_cont_mtx);
@@ -5713,7 +5714,7 @@ int32_t hl_bin_snsr_rep_get(hl_appl_ctx_t   *hl_appl)
     return result;
 }
 
-int  zwcontrol_sensor_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+int  zwcontrol_sensor_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sensor_type)
 {
     if(!hl_appl->is_init_done)
     {
@@ -5731,7 +5732,7 @@ int  zwcontrol_sensor_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         ALOGI("hl_bin_snsr_rep_setup done");
     }
 
-    result = hl_bin_snsr_rep_get(hl_appl);
+    result = hl_bin_snsr_rep_get(hl_appl, sensor_type);
     if(result != 0)
     {
         ALOGE("zwcontrol_sensor_binary_get with error: %d", result);
@@ -5746,10 +5747,9 @@ hl_bin_snsr_sup_rep_cb - binary sensor support report callback
 @param[in]  
 @return
 */
-void hl_bin_snsr_sup_rep_cb(zwifd_p ifd, uint8_t value[])
+void hl_bin_snsr_sup_rep_cb(zwifd_p ifd, uint8_t type_len, uint8_t *type)
 {
-    for(int i= 0; i < sizeof(value)/sizeof(value[0]) ;i++)
-        ALOGI("Binary sensor supported type: %s",binary_sensor_type[value[i]]);
+    ALOGI("Binary sensor supported number: %d",type_len);        
 
     cJSON *jsonRoot;
     jsonRoot = cJSON_CreateObject();
@@ -5761,9 +5761,10 @@ void hl_bin_snsr_sup_rep_cb(zwifd_p ifd, uint8_t value[])
 
     cJSON_AddStringToObject(jsonRoot, "MessageType", "Binary Sensor Support Get Information");
     cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
-    for( int i= 2; i < sizeof(value)/sizeof(value[0])-2; i++)
+    for(int i = 0; i < type_len; i++)
     {
-        cJSON_AddStringToObject(jsonRoot, "sensor type", binary_sensor_type[value[i]]);  
+        ALOGI("Supported binary sensor type is :%s",binary_sensor_type[type[i]]);
+        cJSON_AddStringToObject(jsonRoot, "Supported type", binary_sensor_type[type[i]]);
     }
 
     if(resCallBack)

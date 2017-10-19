@@ -3443,8 +3443,19 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
                         zwrep_bsensor_sup_fn    rpt_cb;
                         rpt_cb = (zwrep_bsensor_sup_fn)report_cb;
                         zwif_get_desc(intf, &ifd);
+
+                        int max_snsr_type = (cmd_len - 2) * 8;
+                        uint8_t snsr_type[248] = {0};
+                        uint8_t type_len = 0;
+                        for (i = 0; i < max_snsr_type; i++)
+                        {
+                            if ((cmd_buf[(i>>3) + 2] >> (i & 0x07)) & 0x01)
+                            {
+                                snsr_type[type_len++] = i;
+                            }
+                        }
                         //Callback the registered function
-                        rpt_cb(&ifd, cmd_buf);
+                        rpt_cb(&ifd, type_len, snsr_type);
                     }
                 }
             }

@@ -1568,10 +1568,11 @@ setup a binary sensor report callback function
 return      ZW_ERR_XXX
 */
 
-int zwif_bsensor_get(zwifd_p ifd);
+int zwif_bsensor_get(zwifd_p ifd, uint8_t sensor_type);
 /**<
 get binary sensor report through report callback
 @param[in]	ifd	        interface
+@param[in]  sensor_type sensor type
 @return		ZW_ERR_XXX
 */
 
@@ -3923,7 +3924,7 @@ get battery report through report callback
 @return		ZW_ERR_NONE if success; else ZW_ERR_XXX on error
 */
 
-int zwif_bsensor_get_poll(zwifd_p ifd, zwpoll_req_t *poll_req);
+int zwif_bsensor_get_poll(zwifd_p ifd, uint8_t sensor_type, zwpoll_req_t *poll_req);
 /**<
 get binary sensor report through report callback
 @param[in]	ifd	        interface
@@ -4260,7 +4261,7 @@ get the switch all mode in use by the node through report callback
 */
 
 // Command Class Sensor Binary start
-typedef void (*zwrep_bsensor_sup_fn)(zwifd_p ifd, uint8_t value[]);
+typedef void (*zwrep_bsensor_sup_fn)(zwifd_p ifd, uint8_t type_len, uint8_t *type);
 /**<
 report callback for binary sensor support
 @param[in]	ifd	        interface

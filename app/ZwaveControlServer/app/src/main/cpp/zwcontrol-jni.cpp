@@ -352,9 +352,9 @@ static int controller_getBinarySwitchState(JNIEnv *env, jclass object, jint node
     return zwcontrol_switch_binary_get(&appl_ctx, (uint32_t)nodeId);
 }
 
-static int controller_getSensorBinary(JNIEnv *env, jclass object, jint nodeId)
+static int controller_getSensorBinary(JNIEnv *env, jclass object, jint nodeId, jint sensor_type)
 {
-    return zwcontrol_sensor_binary_get(&appl_ctx, (uint32_t)nodeId);
+    return zwcontrol_sensor_binary_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)sensor_type);
 }
 
 static int controller_getSensorBinarySupportedSensor(JNIEnv *env, jclass object, jint nodeId)
@@ -632,7 +632,7 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_StartLearnMode", "()I", (void*)controller_startLearnMode},
         {"ZwController_SetBinarySwitchState", "(III)I", (void*)controller_setBinarySwitchState},
         {"ZwController_GetBinarySwitchState", "(I)I", (void*)controller_getBinarySwitchState},
-        {"ZwController_GetSensorBinary", "(I)I", (void*)controller_getSensorBinary},
+        {"ZwController_GetSensorBinary", "(II)I", (void*)controller_getSensorBinary},
         {"ZwController_GetSensorBinarySupportedSensor", "(I)I", (void*)controller_getSensorBinarySupportedSensor},
         {"ZwController_GetMeter", "(II)I", (void*)controller_getMeter},
         {"ZwController_resetMeter", "(I)I", (void*)controller_resetMeter},
