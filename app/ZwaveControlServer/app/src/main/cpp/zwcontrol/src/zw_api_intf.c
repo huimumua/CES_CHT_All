@@ -6265,6 +6265,114 @@ int zwif_sw_color_sup_get(zwifd_p ifd)
     return ZW_ERR_CLASS_NOT_FOUND;
 }
 
+int zwif_sw_color_set(zwifd_p ifd, uint8_t compid, uint8_t value)
+{
+    uint8_t     cmd[5];
+    int         result;
+
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_SWITCH_COLOR)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    //Check input values
+    if (compid > 8 || value > 0xFF || value < 0)
+    {
+        return ZW_ERR_VALUE;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_SW_COLOR_SET, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Prepare the command
+    cmd[0] = COMMAND_CLASS_SWITCH_COLOR;
+    cmd[1] = SWITCH_COLOR_SET;
+    cmd[2] = 1 & 0x1F;  // todo: default only set one color number
+    cmd[3] = compid;
+    cmd[4] = value;
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 5, zwif_exec_cb);
+}
+
+/**
+zwif_sw_color_level_start - start modifying levels
+@param[in]  ifd         interface
+@param[in]  level_ctrl  level control of switch color
+@return ZW_ERR_XXX
+*/
+int zwif_sw_color_level_start(zwifd_p ifd, zwcolor_level_p  level_ctrl)
+{
+    uint8_t     cmd[5];
+    int         result;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_SWITCH_COLOR)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    //Check input values
+    if (level_ctrl->pri_ignore_lvl)
+    {
+        level_ctrl->pri_level = 0;
+    }
+
+    if (!(level_ctrl->pri_level <= 0xFF))
+    {
+        return ZW_ERR_VALUE;
+    }
+
+    //Prepare the command to start changing level
+    cmd[0] = COMMAND_CLASS_SWITCH_COLOR;
+    cmd[1] = SWITCH_COLOR_START_LEVEL_CHANGE;
+
+    cmd[3] = level_ctrl->colorId;   // color component id
+    cmd[4] = level_ctrl->pri_level; // start level
+
+    cmd[2] = ((level_ctrl->pri_ignore_lvl & 0x01) << 5)
+                | ((level_ctrl->pri_dir & 0x01) << 6);
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_SW_COLOR_LEVEL_START, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 5, zwif_exec_cb);
+}
+
+int zwif_sw_color_level_stop(zwifd_p ifd)
+{
+    uint8_t     cmd[2];
+    int         result;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_SWITCH_COLOR)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_SW_COLOR_LEVEL_STOP, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Prepare the command to stop changing level
+    cmd[0] = COMMAND_CLASS_SWITCH_COLOR;
+    cmd[1] = SWITCH_COLOR_STOP_LEVEL_CHANGE;
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 2, zwif_exec_cb);
+}
+
 // Command Class Barrier Operator
 /**<
 set barrier operator value
@@ -6466,6 +6574,285 @@ int zwif_basic_tariff_info_get(zwifd_p ifd)
     }
     return ZW_ERR_CLASS_NOT_FOUND;
 }
+
+/*****************************************/
+// Askey: Daniel.Yang
+/**
+@{
+*/
+
+/**
+zwif_notification_rpt_set - setup an notification report callback function
+@param[in]  ifd         interface descriptor
+@param[in]  rpt_cb      report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_notification_rpt_set(zwifd_p ifd, zwrep_notification_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_NOTIFICATION_V4)
+    {
+        return zwif_set_report(ifd, rpt_cb, NOTIFICATION_REPORT_V4);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+
+}
+
+
+/**
+zwif_notification_get_ex - get the state of the alarm device through report callback
+@param[in]  ifd         interface
+@param[in]  vtype       vendor specific alarm type. Zero if this field is not used
+@param[in]  ztype       Z-wave alarm type (ZW_ALRM_XXX). Zero if this field is not used; 0xFF=to retrieve the first alarm detection.
+@param[in]  evt         Event corresponding to Z-wave alarm type. Zero if this field is not used.
+@param[in, out] poll_req    Poll request
+@return     ZW_ERR_NONE if success; else ZW_ERR_XXX on error
+*/
+static int zwif_notification_get_ex(zwifd_p ifd, uint8_t vtype, uint8_t ztype, uint8_t evt, zwpoll_req_t *poll_req)
+{
+    uint8_t     cmd[4];
+    uint8_t     cmd_len;
+
+    if (ifd->cls != COMMAND_CLASS_NOTIFICATION_V4)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    //For ztype = 0xFF, event must be set to 0
+    if (ztype == 0xFF)
+    {
+        evt = 0;
+    }
+
+    //Prepare the command
+    cmd[0] = vtype;
+    cmd[1] = ztype;
+    cmd[2] = evt;
+
+    //Determine the command length
+    cmd_len = (ifd->ver < 3)? ifd->ver : 3;
+
+    //For backwark compatibility
+    if (cmd_len == 3)
+    {
+        if ((evt == 0) && (ztype != 0xFF))
+        {
+            cmd_len--;
+        }
+
+        if (ztype == 0)
+        {
+            cmd_len--;
+        }
+    }
+    else if (cmd_len == 2)
+    {
+        if (ztype == 0)
+        {
+            cmd_len--;
+        }
+    }
+
+    //Request for report
+    if (poll_req)
+    {
+        return zwif_get_report_poll(ifd, cmd, cmd_len,
+                                    NOTIFICATION_GET_V4, poll_req);
+    }
+    else
+    {
+        int result;
+        result = zwif_cmd_id_set(ifd, ZW_CID_NOTIFICATION_RPT_GET, 1);
+        if (result < 0)
+        {
+            return result;
+        }
+        return zwif_get_report(ifd, cmd, cmd_len,
+                               NOTIFICATION_GET_V4, zwif_exec_cb);
+    }
+}
+
+
+/**
+zwif_notification_get - get the state of the alarm device through report callback
+@param[in]  ifd         interface
+@param[in]  vtype       vendor specific alarm type. Zero if this field is not used
+@param[in]  ztype       Z-wave alarm type (ZW_ALRM_XXX). Zero if this field is not used; 0xFF=to retrieve the first alarm detection.
+@param[in]  evt         Event corresponding to Z-wave alarm type. Zero if this field is not used.
+@return     ZW_ERR_XXX
+*/
+int zwif_notification_get(zwifd_p ifd, uint8_t vtype, uint8_t ztype, uint8_t evt)
+{
+    return zwif_notification_get_ex( ifd, vtype, ztype, evt, NULL);
+}
+
+/**
+zwif_notification_get_poll_get - get the state of the alarm device through report callback
+@param[in]  ifd         interface
+@param[in]  vtype       vendor specific alarm type. Zero if this field is not used
+@param[in]  ztype       Z-wave alarm type (ZW_ALRM_XXX). Zero if this field is not used; 0xFF=to retrieve the first alarm detection.
+@param[in]  evt         Event corresponding to Z-wave alarm type. Zero if this field is not used.
+@param[in, out] poll_req Poll request
+@return     ZW_ERR_NONE if success; else ZW_ERR_XXX on error
+*/
+int zwif_notification_get_poll(zwifd_p ifd, uint8_t vtype, uint8_t ztype, uint8_t evt, zwpoll_req_t *poll_req)
+{
+    return zwif_notification_get_ex( ifd, vtype, ztype, evt, poll_req);
+}
+
+
+/**
+zwif_notification_set - set the activity of the specified Z-Wave Alarm Type
+@param[in]  ifd     interface
+@param[in]  ztype   Z-wave alarm type (ZW_ALRM_XXX)
+@param[in]  sts     Z-wave alarm status. 0= deactivated; 0xFF= activated
+@return ZW_ERR_XXX
+*/
+int zwif_notification_set(zwifd_p ifd, uint8_t ztype, uint8_t sts)
+{
+    int         result;
+    uint8_t     cmd[4];
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_NOTIFICATION_V4)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    //Check version as this command is only valid for version 2 and above
+    if (ifd->ver < 2)
+    {
+        return ZW_ERR_CMD_VERSION;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_NOTIFICATION_SET, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Prepare the command
+    cmd[0] = COMMAND_CLASS_NOTIFICATION_V4;
+    cmd[1] = NOTIFICATION_SET_V4;
+    cmd[2] = ztype;
+    cmd[3] = sts;
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 4, zwif_exec_cb);
+}
+
+
+/**
+zwif_notification_sup_get - get the supported alarm types
+@param[in]  ifd     interface
+@param[in]  cb      report callback function
+@return ZW_ERR_XXX
+*/
+//   Need to modify content !!
+int zwif_notification_sup_get(zwifd_p ifd, zwrep_notification_sup_fn cb)
+{
+    int result;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_NOTIFICATION_V4)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    //Check version as this command is only valid for version 2 and above
+    if (ifd->ver < 3)
+    {
+        return ZW_ERR_CMD_VERSION;
+    }
+
+    //Setup report callback
+    result = zwif_set_report(ifd, cb, NOTIFICATION_SUPPORTED_REPORT_V4);
+
+    if (result == 0)
+    {
+        result = zwif_cmd_id_set(ifd, ZW_CID_ALRM_SUP_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        //Request for report
+        result = zwif_get_report(ifd, NULL, 0,
+                                 NOTIFICATION_SUPPORTED_GET_V4, zwif_exec_cb);
+    }
+    return result;
+
+}
+
+
+/**
+zwif_notification_sup_evt_get - get the supported events of a specified alarm type
+@param[in]  ifd     interface
+@param[in]  ztype   Z-wave alarm type (ZW_ALRM_XXX)
+@param[in]  cb      report callback function
+@return ZW_ERR_XXX
+*/
+//  Need to modify content !!
+int zwif_notification_sup_evt_get(zwifd_p ifd, uint8_t ztype, zwrep_notification_evt_fn cb)
+{
+    int     result;
+    zwif_p  intf;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_NOTIFICATION_V4)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    //Check version as this command is only valid for version 3 and above
+    if (ifd->ver < 3)
+    {
+        return ZW_ERR_CMD_VERSION;
+    }
+
+    //Check whether to use cached data
+    /*plt_mtx_lck(ifd->net->mtx);
+    intf = zwif_get_if(ifd);
+    if (intf && intf->data_cnt)
+    {
+        int                 i;
+        if_alarm_data_t     *alarm_dat;
+
+        alarm_dat = (if_alarm_data_t *)intf->data;
+
+        //Find matching alarm type in cache
+        for (i=0; i<alarm_dat->type_evt_cnt; i++)
+        {
+            if(alarm_dat->type_evt[i].ztype == ztype)
+            {
+                if (zwif_cached_cb(ifd, cb, CB_RPT_TYP_ALARM_EVENT, ztype))
+                {
+                    plt_mtx_ulck(ifd->net->mtx);
+                    return ZW_ERR_QUEUED;
+                }
+            }
+        }
+    }
+    plt_mtx_ulck(ifd->net->mtx);*/
+
+    //Setup report callback
+    result = zwif_set_report(ifd, cb, EVENT_SUPPORTED_REPORT_V4);
+
+    if (result == 0)
+    {
+        result = zwif_cmd_id_set(ifd, ZW_CID_ALRM_SUP_EVT_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        //Request for report
+        result = zwif_get_report(ifd, &ztype, 1,
+                                 EVENT_SUPPORTED_GET_V4, zwif_exec_cb);
+    }
+    return result;
+}
+
 
 // skysoft end
 /*****************************************/

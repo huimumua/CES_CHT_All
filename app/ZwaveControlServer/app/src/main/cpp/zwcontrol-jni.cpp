@@ -494,6 +494,18 @@ static int controller_getSupportedSwitchColor(JNIEnv *env, jclass object, jint n
     return zwcontrol_switch_color_supported_get(&appl_ctx, (uint32_t)nodeId);
 }
 
+static int controller_setSwitchColor(JNIEnv *env, jclass object, jint nodeId, jint compId, jint value)
+{
+    return zwcontrol_switch_color_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)compId, (uint8_t)value);
+}
+
+static int controller_startStopSwitchColorLevelChange(JNIEnv *env, jclass object, jint nodeId, jint dir, jint ignore,
+                                                      jint compId, jint startLvlVal)
+{
+    return zwcontrol_start_stop_color_levelchange(&appl_ctx, (uint32_t)nodeId, (uint8_t)dir, (uint8_t)ignore,
+                                                  (uint8_t)compId, (uint8_t)startLvlVal);
+}
+
 static int controller_setBarrierOperator(JNIEnv *env, jclass object, jint nodeId, jint value)
 {
     return zwcontrol_barrier_operator_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)value);
@@ -566,6 +578,26 @@ static int controller_getSpecificGroup(JNIEnv *env, jclass object, jint nodeId)
     return zwcontrol_get_specific_group(&appl_ctx, (uint32_t)nodeId);
 }
 
+static int controller_setNotification(JNIEnv *env, jclass object, jint nodeId, jint type, jint status)
+{
+    return zwcontrol_notification_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)type, (uint8_t)status);
+}
+
+static int controller_getNotification(JNIEnv *env, jclass object, jint nodeId, jint alarmType, jint notifType, jint status)
+{
+    return zwcontrol_notification_get(&appl_ctx,(uint32_t)nodeId, (uint8_t)alarmType, (uint8_t)notifType, (uint8_t)status);
+}
+
+static int controller_getSupportedNotification(JNIEnv *env, jclass object, jint nodeId)
+{
+    return zwcontrol_notification_supported_get(&appl_ctx, (uint32_t)nodeId);
+}
+
+static int controller_getSupportedEventNotification(JNIEnv *env, jclass object, jint nodeId, jint notifType)
+{
+    return zwcontrol_notification_supported_event_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)notifType);
+}
+
 static const JNINativeMethod gMethods[] = {
         {"CreateZwController",     "()I", (void *)create_controller},
         {"OpenZwController",       "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)I", (void *)open_controller},
@@ -628,6 +660,8 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_getLanguage", "(I)I", (void*)controller_getLanguage},
         {"ZwController_getSwitchColor", "(II)I", (void*)controller_getSwitchColor},
         {"ZwController_getSupportedSwitchColor", "(I)I", (void*)controller_getSupportedSwitchColor},
+        {"ZwController_setSwitchColor", "(III)I", (void*)controller_setSwitchColor},
+        {"ZwController_startStopSwitchColorLevelChange", "(IIIII)I", (void*)controller_startStopSwitchColorLevelChange},
         {"ZwController_setBarrierOperator", "(II)I", (void*)controller_setBarrierOperator},
         {"ZwController_getBarrierOperator", "(I)I", (void*)controller_getBarrierOperator},
         {"ZwController_setBarrierOperatorSignal", "(III)I", (void*)controller_setBarrierOperatorSignal},
@@ -639,6 +673,10 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_removeEndpointsFromGroup", "(II[I)I", (void*)controller_removeEndpointsFromGroup},
         {"ZwController_getMaxSupportedGroups", "(I)I", (void*)controller_getMaxSupportedGroups},
         {"ZwController_getSpecificGroup", "(I)I", (void*)controller_getSpecificGroup},
+        {"ZwController_setNotification", "(III)I", (void*)controller_setNotification},
+        {"ZwController_getNotification", "(IIII)I", (void*)controller_getNotification},
+        {"ZwController_getSupportedNotification", "(I)I", (void*)controller_getSupportedNotification},
+        {"ZwController_getSupportedEventNotification", "(II)I", (void*)controller_getSupportedEventNotification},
 
 };
 

@@ -59,6 +59,9 @@ static const cmd_get_resp_t cmd_get_resp_tbl[] =
     {COMMAND_CLASS_ALARM, ALARM_GET, ALARM_REPORT},
     {COMMAND_CLASS_ALARM, ALARM_TYPE_SUPPORTED_GET_V2, ALARM_TYPE_SUPPORTED_REPORT_V2},
     {COMMAND_CLASS_NOTIFICATION_V3, EVENT_SUPPORTED_GET_V3, EVENT_SUPPORTED_REPORT_V3},
+    {COMMAND_CLASS_NOTIFICATION_V4,NOTIFICATION_GET_V4, NOTIFICATION_REPORT_V4},
+    {COMMAND_CLASS_NOTIFICATION_V4,NOTIFICATION_SUPPORTED_GET_V4, NOTIFICATION_SUPPORTED_REPORT_V4},
+    {COMMAND_CLASS_NOTIFICATION_V4,EVENT_SUPPORTED_GET_V4, EVENT_SUPPORTED_REPORT_V4},
     {COMMAND_CLASS_BATTERY, BATTERY_GET, BATTERY_REPORT},
     {COMMAND_CLASS_THERMOSTAT_FAN_MODE, THERMOSTAT_FAN_MODE_GET, THERMOSTAT_FAN_MODE_REPORT},
     {COMMAND_CLASS_THERMOSTAT_FAN_MODE, THERMOSTAT_FAN_MODE_SUPPORTED_GET, THERMOSTAT_FAN_MODE_SUPPORTED_REPORT},
@@ -1950,7 +1953,7 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
             }
             break;
 
-        case COMMAND_CLASS_ALARM:
+        /*case COMMAND_CLASS_ALARM:
             {
                 static const uint8_t intf_settings[] =
                 {
@@ -1962,7 +1965,7 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
 
                 return zwif_alloc(cls, ver, propty, intf_settings, (ver < 3)? ver : 3);
             }
-            break;
+            break;*/
 
         case COMMAND_CLASS_BATTERY:
             {
@@ -2217,6 +2220,18 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
                 static const uint8_t intf_settings[] =
                 {
                     BASIC_TARIFF_INFO_REPORT
+                };
+                return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
+            }
+            break;
+
+        case COMMAND_CLASS_NOTIFICATION_V4:
+            {
+                static const uint8_t intf_settings[] =
+                {
+                    NOTIFICATION_REPORT_V4,
+                    NOTIFICATION_SUPPORTED_REPORT_V4,
+                    EVENT_SUPPORTED_REPORT_V4
                 };
                 return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
             }
@@ -4564,7 +4579,7 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
             }
             break;
 
-        case COMMAND_CLASS_ALARM:
+        /*case COMMAND_CLASS_ALARM:
             {
                 if (cmd_buf[1] == ALARM_REPORT)
                 {
@@ -4785,7 +4800,7 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
                     }
                 }
             }
-            break;
+            break;*/
 
         case COMMAND_CLASS_BATTERY:
             {
@@ -5961,6 +5976,212 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
                 }
             }
             break;
+
+            case COMMAND_CLASS_NOTIFICATION_V4:
+            {
+                if (cmd_buf[1] == NOTIFICATION_REPORT_V4)
+                {
+                    if (cmd_len >= 4)
+                    {
+                        zwnotification_p            notification_info;
+                        zwrep_notification_fn       rpt_cb;
+                        rpt_cb = (zwrep_notification_fn)report_cb;
+
+                        notification_info = (zwnotification_p)calloc(1, sizeof(zwnotification_t) + cmd_len);
+
+                        if (!notification_info)
+                        {
+                            return;
+                        }
+
+                        notification_info->type = cmd_buf[2];
+                        notification_info->level = cmd_buf[3];
+
+                        uint8_t param_len = 0;
+
+                        notification_info->reserved = cmd_buf[4];;
+                        notification_info->ex_status = cmd_buf[5];
+                        notification_info->ex_type = cmd_buf[6];
+                        notification_info->ex_event = cmd_buf[7];
+
+                        param_len = cmd_buf[8] & 0x1F;
+                        //Check whether event comes with parameter
+                        if ((cmd_len >= 9) && (param_len > 0))
+                        {
+                            if (cmd_len < (9 + param_len))
+                            {
+                                free(notification_info);
+                                return;
+                            }
+                             //Check for system failure event parameters
+                            if ((param_len > 0) && (cmd_buf[6] == ZW_NOTIFICATION_SYSTEM)
+                                && ((cmd_buf[7] == ZW_NOTIFICATION_EVT_HW_OEM_CODE) || (cmd_buf[7] == ZW_NOTIFICATION_EVT_SW_OEM_CODE)))
+                            {
+                                memcpy(notification_info->ex_evt_prm, cmd_buf + 9, param_len);
+                                notification_info->ex_evt_len = param_len;
+                                notification_info->ex_evt_type = ZW_NOTIFICATION_PARAM_OEM_ERR_CODE;
+                            }
+                            else if (param_len >= 3)
+                            {
+                                if (cmd_buf[9] == COMMAND_CLASS_USER_CODE &&
+                                    cmd_buf[10] == USER_CODE_REPORT)
+                                {
+                                    //cmd_buf[9] = COMMAND_CLASS_USER_CODE
+                                    //cmd_buf[10] = USER_CODE_REPORT
+                                    //cmd_buf[11] = User Identifier
+                                    //cmd_buf[12] = User ID Status
+                                    notification_info->ex_evt_type = ZW_NOTIFICATION_PARAM_USRID;
+                                    notification_info->ex_evt_len = 1;
+                                    notification_info->ex_evt_prm[0] = cmd_buf[11];
+                                }
+                                else if (cmd_buf[9] == COMMAND_CLASS_NODE_NAMING &&
+                                         cmd_buf[10] == NODE_NAMING_NODE_LOCATION_REPORT)
+                                {
+                                    //cmd_buf[9] = COMMAND_CLASS_NODE_NAMING
+                                    //cmd_buf[10] = NODE_NAMING_NODE_LOCATION _REPORT
+                                    //cmd_buf[11] = Char. Presentation
+                                    //cmd_buf[12] = Node location char 1
+                                    uint8_t str_len = param_len - 3;
+                                     //Check whether to convert into utf8
+                                    if ((cmd_buf[11] & 0x07) == CHAR_PRES_UTF16)
+                                    {
+                                        uint8_t *utf16_buf;
+#ifdef WIN32
+                                        char    utf8_str[ZW_LOC_STR_MAX + 1];
+#else
+                                        uint8_t utf8_str[ZW_LOC_STR_MAX + 1];
+#endif
+                                        int     result;
+                                        utf16_buf = (uint8_t *)calloc(1, str_len + 2);//additional 2 bytes for null characters
+                                        if (!utf16_buf)
+                                        {
+                                            free(notification_info);
+                                            return;
+                                        }
+                                        memcpy(utf16_buf, cmd_buf + 12, str_len);
+                                         //convert into utf8
+#ifdef WIN32
+                                        result = plt_utf16_to_8((const char *)utf16_buf, utf8_str, ZW_LOC_STR_MAX + 1, 1);
+#else
+                                        result = plt_utf16_to_8((const uint16_t *)utf16_buf, utf8_str, ZW_LOC_STR_MAX + 1, 1);
+#endif
+                                        free(utf16_buf);
+                                        if (result == 0)
+                                        {
+                                            size_t utf8_len;
+                                            utf8_len = strlen((const char *)utf8_str);
+                                            if (utf8_len > cmd_len)
+                                            {   //Not enough memory, have to realloc
+                                                zwnotification_p  tmp_buf;
+                                                tmp_buf = (zwnotification_p) realloc(notification_info, sizeof(zwnotification_t) + utf8_len);
+                                                if (tmp_buf)
+                                                {
+                                                    notification_info = tmp_buf;
+                                                }
+                                                else
+                                                {
+                                                    free(notification_info);
+                                                    return;
+                                                }
+                                            }
+                                             //Copy node location
+                                            memcpy(notification_info->ex_evt_prm, utf8_str, utf8_len);
+                                            notification_info->ex_evt_prm[utf8_len] = '\0';
+                                            notification_info->ex_evt_len = utf8_len + 1; //include NULL char
+                                         }
+                                    }
+                                    else
+                                    {
+                                        //Check for valid UTF-8 string
+                                        str_len = plt_utf8_chk(cmd_buf + 12, str_len);
+
+                                        //Copy node location to the node
+                                        memcpy(notification_info->ex_evt_prm, cmd_buf + 12, str_len);
+                                        notification_info->ex_evt_len = str_len + 1; //include NULL char
+
+                                    }
+                                    notification_info->ex_evt_type = ZW_NOTIFICATION_PARAM_LOC;
+
+                                }
+                            }
+                        }
+
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, notification_info);
+                        free(notification_info);
+                    }
+                }
+                else if (cmd_buf[1] == NOTIFICATION_SUPPORTED_REPORT_V4)
+                {
+                    if (cmd_len >= 3)
+                    {
+                        zwrep_notification_sup_fn   rpt_cb;
+                        uint8_t             ztype[248];
+                        int                 i;
+                        int                 max_notification_type;
+                        uint8_t             ztype_len;
+
+                        rpt_cb = (zwrep_notification_sup_fn)report_cb;
+
+                        ztype_len = 0;
+                        max_notification_type = (cmd_buf[2] & 0x1F) * 8;
+
+                        for (i = 0; i < max_notification_type; i++)
+                        {
+                            if ((cmd_buf[(i>>3) + 3] >> (i & 0x07)) & 0x01)
+                            {
+                                ztype[ztype_len++] = i;
+                            }
+                        }
+
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, cmd_buf[2] >> 7, ztype_len, ztype);
+                    }
+                }
+                else if (cmd_buf[1] == EVENT_SUPPORTED_REPORT_V3)
+                {
+                    if (cmd_len >= 4)
+                    {
+                        zwrep_notification_evt_fn   rpt_cb;
+                        uint8_t             sup_evt[248];
+                        int                 i;
+                        int                 max_evt;
+                        uint8_t             evt_len;
+
+                        rpt_cb = (zwrep_notification_evt_fn)report_cb;
+
+                        evt_len = cmd_buf[3] & 0x1F;
+
+                        if (evt_len && (cmd_len >= (evt_len + 4)))
+                        {
+                            if (rpt_cb == zwnet_alrm_evt_rpt_cb)
+                            {   //Return raw bitmask
+                                memcpy(sup_evt, cmd_buf + 4, evt_len);
+                            }
+                            else
+                            {   //Return individual events
+                                max_evt = evt_len * 8;
+                                evt_len = 0;
+
+                                for (i=0; i < max_evt; i++)
+                                {
+                                    if ((cmd_buf[(i>>3) + 4] >> (i & 0x07)) & 0x01)
+                                    {
+                                        sup_evt[evt_len++] = i;
+                                    }
+                                }
+                            }
+                            zwif_get_desc(intf, &ifd);
+                            //Callback the registered function
+                            rpt_cb(&ifd, cmd_buf[2], evt_len, sup_evt);
+                        }
+                    }
+                }
+            }
+            break;
+
         // skysoft: tiny.hui end
     }
 }

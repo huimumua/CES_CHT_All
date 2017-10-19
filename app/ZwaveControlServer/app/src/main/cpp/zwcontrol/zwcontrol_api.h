@@ -143,6 +143,7 @@ typedef struct _hl_appl_ctx
     dev_cfg_buf_t       dev_cfg_bufs[4];            ///< buffers that store an arrays of device specific configurations
                                                     ///< with the first buffer has the highest priority for device matching
 #endif
+    uint8_t            sw_color_lvl_change_started; ///< Flag to indicate whether switch color level change started
 
 } hl_appl_ctx_t;
 
@@ -201,6 +202,7 @@ int  zwcontrol_configuration_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_
                                  uint8_t paramSize, uint8_t useDefault, int32_t paramValue);
 int  zwcontrol_configuration_bulk_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t offset1, uint8_t offset2,
                                       uint8_t paramNumber, uint8_t paramSize, uint8_t useDefault, uint32_t* paramValue);
+// int  zwcontrol_configuration_name_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t param1, uint8_t param2);
 
 /*
  **  Command Class Power Level
@@ -290,7 +292,9 @@ int  zwcontrol_language_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
  */
 int  zwcontrol_switch_color_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t compId);
 int  zwcontrol_switch_color_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
-
+int  zwcontrol_switch_color_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t compId, uint8_t value);
+int  zwcontrol_start_stop_color_levelchange(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t dir, uint8_t ignore_start,
+                                            uint8_t color_id, uint8_t start_level);
 /*
  **  Command Class Barrier Operator
  **  Be used to control and query the status of motorized barriers.
@@ -321,5 +325,14 @@ int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t node
 int  zwcontrol_get_max_supported_groups(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 // Association specific(current active) group get
 int  zwcontrol_get_specific_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Notification
+ **  
+ */
+int  zwcontrol_notification_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t notificationType, uint8_t status);
+int  zwcontrol_notification_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t alarmType, uint8_t notificationType, uint8_t state);
+int  zwcontrol_notification_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_notification_supported_event_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t notificationType);
 
 #endif
