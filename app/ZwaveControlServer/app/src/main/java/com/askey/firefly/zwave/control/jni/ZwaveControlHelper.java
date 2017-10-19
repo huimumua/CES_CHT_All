@@ -243,6 +243,23 @@ public class ZwaveControlHelper {
     **/
     public native static int ZwController_getSwitchColor(int deviceId, int compID);
     public native static int ZwController_getSupportedSwitchColor(int deviceId);
+    /** 
+    ** @param color_id  0-8 
+    **        {"Warm Write", "Cold Write", "Red","Green", "Blue",
+    **         "Amber", "Cyan", "Purple", "Indexed Color"}
+    ** @param color_value 0x00 means 0%, 0xFF means 100%
+    **/
+    public native static int ZwController_setSwitchColor(int deviceId, int color_id, int color_value);
+
+    /** color 渐变
+    ** @param             color_id  0-8 
+    **                    {"Warm Write", "Cold Write", "Red","Green", "Blue",
+    **                     "Amber", "Cyan", "Purple", "Indexed Color"}
+    ** @param dir         change direction, 0 for increasing, 1 for decreasing
+    ** @param ignore      flag indicate wheather ignore the start_value
+    ** @param start_value the color change start value 0x00 means 0%, 0xFF means 100%
+    **/
+    public native static int ZwController_startStopSwitchColorLevelChange(int deviceId, int dir, int ignore, int color_id, int start_value);
 
     /**
     ** zwave controller jni interface
@@ -269,5 +286,14 @@ public class ZwaveControlHelper {
     public native static int ZwController_removeEndpointsFromGroup(int deviceId, int groupId, int[] arr);
     public native static int ZwController_getMaxSupportedGroups(int deviceId);
     public native static int ZwController_getSpecificGroup(int deviceId);
+
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_NOTIFICATION
+    **/
+    public native static int ZwController_setNotification(int deviceId, int type, int status);
+    public native static int ZwController_getNotification(int deviceId, int alarm_type, int notif_type, int status);
+    public native static int ZwController_getSupportedNotification(int deviceId);
+    public native static int ZwController_getSupportedEventNotification(int deviceId, int notif_type);
 
 }
