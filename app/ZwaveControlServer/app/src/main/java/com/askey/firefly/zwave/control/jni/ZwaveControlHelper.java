@@ -137,7 +137,7 @@ public class ZwaveControlHelper {
     ** zwave controller jni interface
     ** support CC: COMMAND_CLASS_SENSOR_BINARY
     **/
-    public native static int ZwController_GetSensorBinary(int deviceId);
+    public native static int ZwController_GetSensorBinary(int deviceId, int sensor_type);
     public native static int ZwController_GetSensorBinarySupportedSensor(int deviceId);
 
     /**
