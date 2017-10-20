@@ -4564,7 +4564,7 @@ void hl_cfg_report_cb(zwifd_p ifd, zwconfig_p param)
     {   //Error, default to zero
         param_value = 0;
     }
-    ALOGI("Configuration parameter:%u, value:%d", param->param_num, param_value);
+    ALOGI("Configuration parameter:%u, value:%x", param->param_num, param_value);
 
     cJSON *jsonRoot;
     jsonRoot = cJSON_CreateObject();
@@ -4577,8 +4577,10 @@ void hl_cfg_report_cb(zwifd_p ifd, zwconfig_p param)
     cJSON_AddStringToObject(jsonRoot, "MessageType", "Configuration Get Information");
     cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
 
-    cJSON_AddNumberToObject(jsonRoot, "Configuration parameter", param->param_num);
-    cJSON_AddNumberToObject(jsonRoot, "Configuration value", param_value);
+    cJSON_AddNumberToObject(jsonRoot, "Parameter number", param->param_num);
+    char str[50] = {0};
+    sprintf(str, "%x", param_value);
+    cJSON_AddStringToObject(jsonRoot, "Parameter value", str);
 
     if(resCallBack)
     {
