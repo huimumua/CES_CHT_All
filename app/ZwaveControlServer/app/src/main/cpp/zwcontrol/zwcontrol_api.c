@@ -5889,7 +5889,7 @@ static const char *meter_type[] = { "unknown", "electric", "gas", "water",/*ver 
                                     "heating", "cooling"/*ver 5*/};
 static const char *meter_rate[] = { "unknown", "import(consumed)", "export(produced)"};
 
-static const char units[3][7] = {
+static const char *units[][7] = {
     {"KWh", "kVAh", "W", "Pulse Count", "V", "A", "Power factor"},
     {"Cubic meters", "Cubic feet", "unknown", "Pulse Count", "unknown", "unknown", "unknown"},
     {"Cubic meters", "Cubic feet", "US gallons", "Pulse Count", "unknown", "unknown", "unknown"}
@@ -5912,7 +5912,7 @@ static void hl_meter_rep_cb(zwifd_p ifd, zwmeter_dat_p value)
     int32_t meter_value;
 
     ALOGI("Meter type:%s, precision:%u, unit:%s, rate type:%s",
-                 meter_type[value->type], value->precision, units[value->type+1][value->unit],
+                 meter_type[value->type], value->precision, units[value->type-1][value->unit],
                  meter_rate[value->rate_type]);
 
     cJSON *jsonRoot;
@@ -5935,14 +5935,14 @@ static void hl_meter_rep_cb(zwifd_p ifd, zwmeter_dat_p value)
 
     if (value->precision == 0)
     {
-        ALOGI("Meter reading:%d", meter_value);
+        ALOGI("Meter reading:%d %s", meter_value,units[value->type-1][value->unit]);
         cJSON_AddNumberToObject(jsonRoot, "Meter reading", meter_value);
     }
     else
     {
         char    float_str[80];
         hl_float_get(meter_value, value->precision, 80, float_str);
-        ALOGI("Meter reading:%s", float_str);
+        ALOGI("Meter reading:%s %s", float_str,units[value->type-1][value->unit]);
         cJSON_AddStringToObject(jsonRoot, "Meter reading", float_str);
     }
 
@@ -5956,7 +5956,7 @@ static void hl_meter_rep_cb(zwifd_p ifd, zwmeter_dat_p value)
 
         if (value->precision == 0)
         {
-            ALOGI("Previous Meter reading:%d, taken %us ago", meter_value, value->delta_time);
+            ALOGI("Previous Meter reading:%d %s, taken %us ago", meter_value,units[value->type-1][value->unit], value->delta_time);
             cJSON_AddNumberToObject(jsonRoot, "Previous meter reading", meter_value);
             cJSON_AddNumberToObject(jsonRoot, "Taken time(sec)", value->delta_time);
         }
@@ -5964,12 +5964,12 @@ static void hl_meter_rep_cb(zwifd_p ifd, zwmeter_dat_p value)
         {
             char    float_str[80];
             hl_float_get(meter_value, value->precision, 80, float_str);
-            ALOGI("Previous Meter reading:%s, taken %us ago", float_str, value->delta_time);
+            ALOGI("Previous Meter reading:%s %s, taken %us ago", float_str, units[value->type-1][value->unit], value->delta_time);
             cJSON_AddStringToObject(jsonRoot, "Previous meter reading", float_str);
             cJSON_AddNumberToObject(jsonRoot, "Taken time(sec)", value->delta_time);
         }
     }
-    cJSON_AddStringToObject(jsonRoot, "Meter unit", units[value->type+1][value->unit]);
+    cJSON_AddStringToObject(jsonRoot, "Meter unit", units[value->type-1][value->unit]);
 
     if(resCallBack)
     {
