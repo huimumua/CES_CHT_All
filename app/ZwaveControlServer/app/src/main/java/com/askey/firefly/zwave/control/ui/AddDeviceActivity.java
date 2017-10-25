@@ -52,7 +52,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_device);
 
-        ZwaveControlHelper.ZwController_AddDevice();
+        //ZwaveControlHelper.ZwController_AddDevice();
 
         ivBack = (ImageView) findViewById(R.id.iv_back);
         proBar = (ProgressBar) findViewById(R.id.proBar);

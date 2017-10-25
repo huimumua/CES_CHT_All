@@ -226,6 +226,7 @@ public class ZwaveControlService extends Service {
     }
 
     public int getSensorBasic(int deviceId, int sensorType){
+        Logg.i(TAG,"=====getSensorBasic==deviceId==="+deviceId+"sensor_type="+sensorType);
         int result = ZwaveControlHelper.ZwController_GetSensorBinary(deviceId,sensorType);
         return result;
     }
@@ -242,6 +243,12 @@ public class ZwaveControlService extends Service {
 
     public int getSwitchColor(int deviceId, int parameter){
         int result = ZwaveControlHelper.ZwController_getSwitchColor(deviceId,parameter);
+        return result;
+    }
+
+    public int getSensorNotification(int deviceId, int alarm_type, int notif_type, int status){
+        Logg.i(TAG,"=====getSensorNotification==deviceId==="+deviceId+"alarm_type="+alarm_type+"notif_type="+notif_type+"status="+status);
+        int result = ZwaveControlHelper.ZwController_getNotification(deviceId, alarm_type, notif_type, status);
         return result;
     }
 
@@ -402,6 +409,10 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("getSwitchMultiLevel", jniResult);
         } else if ("Switch Color Report".equals(messageType)){
             zwaveControlResultCallBack("getSwitchColor", jniResult);
+        } else if (messageType.equals("Sensor Info Report")) {
+            zwaveControlResultCallBack("getSensorMultiLevel", jniResult);
+        } else if (messageType.equals("Notification Get Information")) {
+            zwaveControlResultCallBack("getSensorNotification", jniResult);
         }
     }
 
