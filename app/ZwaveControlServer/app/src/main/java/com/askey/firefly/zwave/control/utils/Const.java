@@ -40,4 +40,6 @@ public class Const {
 	public static int TCPClientPort = 0;
 	public static String mqttClientId = Utils.getPublicTopicName();
 	public static String PublicTopicName = Utils.getPublicTopicName();
+
+	public static boolean remoteMqttFlag = false;
 }

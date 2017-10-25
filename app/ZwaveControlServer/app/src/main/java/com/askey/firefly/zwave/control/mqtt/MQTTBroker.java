@@ -74,8 +74,9 @@ public class MQTTBroker extends Service {
         //mqttConnectOptions.setPassword(serverpassword.toCharArray());
 
         /*  connect to remote mqtt server */
-        mqttRemoteConnect(mqttConnectOptions);
-
+        if (Const.remoteMqttFlag) {
+            mqttRemoteConnect(mqttConnectOptions);
+        }
         /*  connect to local mqtt server */
         mqttLocalConnect(mqttConnectOptions);
 
@@ -208,14 +209,15 @@ public class MQTTBroker extends Service {
                         else {
 
                             String[] tokens = message.split(":");
-                            if (tokens.length > 4) {
+                            if (tokens.length > 5) {
                                 Const.TCPClientPort = clientID;
                                 String tHomeId = tokens[2];
                                 int tDeviceId = Integer.parseInt(tokens[3]);
                                 String tNewName = tokens[4];
+                                String tDevType = tokens[5];
 
-                                Log.i(LOG_TAG, "zwaveService.reNameDevice(mCallback,"+tHomeId+","+tDeviceId+","+tNewName+")");
-                                zwaveService.reNameDevice(tHomeId,tDeviceId,tNewName,"");
+                                Log.i(LOG_TAG, "zwaveService.reNameDevice(mCallback,"+tHomeId+","+tDeviceId+","+tNewName+","+tDevType+")");
+                                zwaveService.reNameDevice(tHomeId,tDeviceId,tNewName,tDevType);
 
                             }
                         }
@@ -423,7 +425,7 @@ public class MQTTBroker extends Service {
 
                     Log.i(LOG_TAG, "zwaveService.getConfiguration(mCallback," + tHomeid + "," + tNodeid + ","
                                 + tParamMode + "," + tParamNumber + "," + tRangeStart + "," + tRrangeEnd + ")");
-                        zwaveService.getConfiguration(tHomeid, tNodeid,
+                        zwaveService.getConfiguration(tNodeid,
                                 tParamMode, tParamNumber, tRangeStart, tRrangeEnd);
 
                 }
@@ -440,7 +442,7 @@ public class MQTTBroker extends Service {
                     Log.i(LOG_TAG, "zwaveService.setConfiguration(mCallback," + tHomeid + "," + tNodeid + ","
                                 + tParamMode + "," + tParamNumber + "," + tRangeStart + "," + tRrangeEnd + ")");
                     try {
-                        zwaveService.setConfiguration(tHomeid, tNodeid,
+                        zwaveService.setConfiguration(tNodeid,
                                 tParamMode, tParamNumber, tRangeStart, tRrangeEnd);
                     } catch (RemoteException e) {
                         e.printStackTrace();
@@ -527,7 +529,6 @@ public class MQTTBroker extends Service {
     // subscribe mqtt topic
     private void subscribeToTopic(final String TopicName) {
         //Log.i(LOG_TAG,"mqttLocalClient.isConnected() = "+mqttLocalClient.isConnected());
-        Log.i(LOG_TAG,"mqttRemoteClient.isConnected() = "+mqttRemoteClient.isConnected());
 
         if (!DeviceInfo.localSubTopiclist.contains(TopicName)) {
             if (mqttLocalClient.isConnected()) {
@@ -556,31 +557,34 @@ public class MQTTBroker extends Service {
                 Log.i(LOG_TAG, "local mqtt server is disconnect...");
             }
         }
-        if (!DeviceInfo.remoteSubTopiclist.contains(TopicName)) {
-            if (mqttRemoteClient.isConnected()) {
-                try {
-                    mqttRemoteClient.subscribe(TopicName, 0, null, new IMqttActionListener() {
-                        @Override
-                        public void onSuccess(IMqttToken asyncActionToken) {
-                            Log.i(LOG_TAG, "remoteMQTT Subscribed : \"" + TopicName + "\" topic");
-                            DeviceInfo.remoteSubTopiclist.add(TopicName);
+        if (Const.remoteMqttFlag){
+            Log.i(LOG_TAG,"mqttRemoteClient.isConnected() = "+mqttRemoteClient.isConnected());
+            if (!DeviceInfo.remoteSubTopiclist.contains(TopicName)) {
+                if (mqttRemoteClient.isConnected()) {
+                    try {
+                        mqttRemoteClient.subscribe(TopicName, 0, null, new IMqttActionListener() {
+                            @Override
+                            public void onSuccess(IMqttToken asyncActionToken) {
+                                Log.i(LOG_TAG, "remoteMQTT Subscribed : \"" + TopicName + "\" topic");
+                                DeviceInfo.remoteSubTopiclist.add(TopicName);
 
-                            for (int idx = 0; idx < DeviceInfo.remoteSubTopiclist.size(); idx++) {
-                                Log.i(LOG_TAG, "remoteSubTopiclist[" + idx + "] = " + DeviceInfo.remoteSubTopiclist.get(idx));
+                                for (int idx = 0; idx < DeviceInfo.remoteSubTopiclist.size(); idx++) {
+                                    Log.i(LOG_TAG, "remoteSubTopiclist[" + idx + "] = " + DeviceInfo.remoteSubTopiclist.get(idx));
+                                }
                             }
-                        }
 
-                        @Override
-                        public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                            Log.i(LOG_TAG, "remoteMQTT Failed to subscribe : " + TopicName);
-                        }
-                    });
-                } catch (MqttException ex) {
-                    Log.e(LOG_TAG, "remoteMQTT Exception whilst subscribing");
-                    ex.printStackTrace();
+                            @Override
+                            public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                                Log.i(LOG_TAG, "remoteMQTT Failed to subscribe : " + TopicName);
+                            }
+                        });
+                    } catch (MqttException ex) {
+                        Log.e(LOG_TAG, "remoteMQTT Exception whilst subscribing");
+                        ex.printStackTrace();
+                    }
+                }else{
+                    Log.i(LOG_TAG,"remote mqtt server is disconnect...");
                 }
-            }else{
-                Log.i(LOG_TAG,"remote mqtt server is disconnect...");
             }
         }
     }
@@ -600,12 +604,14 @@ public class MQTTBroker extends Service {
                     }
                 }
             }
-            if (DeviceInfo.remoteSubTopiclist.contains(TopicName)) {
-                if (mqttRemoteClient.isConnected()) {
-                    mqttRemoteClient.unsubscribe(TopicName);
-                    idx = DeviceInfo.remoteSubTopiclist.indexOf(TopicName);
-                    if (idx >= 0) {
-                        DeviceInfo.remoteSubTopiclist.remove(idx);
+            if (Const.remoteMqttFlag) {
+                if (DeviceInfo.remoteSubTopiclist.contains(TopicName)) {
+                    if (mqttRemoteClient.isConnected()) {
+                        mqttRemoteClient.unsubscribe(TopicName);
+                        idx = DeviceInfo.remoteSubTopiclist.indexOf(TopicName);
+                        if (idx >= 0) {
+                            DeviceInfo.remoteSubTopiclist.remove(idx);
+                        }
                     }
                 }
             }
@@ -616,8 +622,10 @@ public class MQTTBroker extends Service {
         for (idx = 0 ; idx< DeviceInfo.localSubTopiclist.size(); idx++){
             Log.i(LOG_TAG,"localSubTopiclist["+idx+"] = "+DeviceInfo.localSubTopiclist.get(idx));
         }
-        for (idx = 0 ; idx< DeviceInfo.remoteSubTopiclist.size(); idx++){
-            Log.i(LOG_TAG,"remoteSubTopiclist["+idx+"] = "+DeviceInfo.remoteSubTopiclist.get(idx));
+        if (Const.remoteMqttFlag) {
+            for (idx = 0; idx < DeviceInfo.remoteSubTopiclist.size(); idx++) {
+                Log.i(LOG_TAG, "remoteSubTopiclist[" + idx + "] = " + DeviceInfo.remoteSubTopiclist.get(idx));
+            }
         }
     }
 
@@ -634,11 +642,13 @@ public class MQTTBroker extends Service {
                 Log.i(LOG_TAG,"[LocalMqttClient] fail to connect local mqtt server");
                 //Log.i(LOG_TAG,"[localmqtt]"+mqttLocalClient.getBufferedMessageCount() + " messages in buffer.");
             }
-            if (mqttRemoteClient.isConnected()) {
-                mqttRemoteClient.publish(publishTopic, message);
-            } else {
-                //Log.i(LOG_TAG,"[remoteMqtt]"+mqttRemoteClient.getBufferedMessageCount() + " messages in buffer.");
-                Log.i(LOG_TAG,"[LocalMqttClient] fail to connect local mqtt server");
+            if (Const.remoteMqttFlag) {
+                if (mqttRemoteClient.isConnected()) {
+                    mqttRemoteClient.publish(publishTopic, message);
+                } else {
+                    //Log.i(LOG_TAG,"[remoteMqtt]"+mqttRemoteClient.getBufferedMessageCount() + " messages in buffer.");
+                    Log.i(LOG_TAG, "[LocalMqttClient] fail to connect local mqtt server");
+                }
             }
         } catch (MqttException e) {
             System.err.println("MQTT Error Publishing: " + e.getMessage());

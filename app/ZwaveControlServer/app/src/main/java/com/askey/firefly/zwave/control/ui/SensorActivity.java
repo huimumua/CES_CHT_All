@@ -23,7 +23,8 @@ import java.util.ArrayList;
 
 public class SensorActivity extends BaseActivity {
     private static String LOG_TAG = SensorActivity.class.getSimpleName();
-    private String nodeId,nodeInfo;
+    private String nodeInfo;
+    int nodeId;
 
     private static ArrayList<textViewArray> txViewArray = new ArrayList<>();
     private TextView txName1,txName2,txName3,txValue1,txValue2,txValue3;
@@ -43,7 +44,7 @@ public class SensorActivity extends BaseActivity {
 
         initView();
         Intent intent = getIntent();
-        nodeId = intent.getStringExtra("NodeId");
+        nodeId = Integer.parseInt(intent.getStringExtra("NodeId"));
         nodeInfo = intent.getStringExtra("NodeInfoList");
         Log.i(LOG_TAG,"sensor nodeId = "+nodeId + " | nodeInfo = " +nodeInfo );
 
@@ -117,24 +118,30 @@ public class SensorActivity extends BaseActivity {
 
                 if (nodeInfo.contains("COMMAND_CLASS_BATTERY")) {
                     Log.i(LOG_TAG,"BATTTTTERY");
-                    zwaveService.getPowerLevel(Integer.parseInt(nodeId));
+                    zwaveService.getPowerLevel(nodeId);
                     txName1.setText("Battery : ");
                     txViewArray.add(new textViewArray(txName1,txValue1,"COMMAND_CLASS_BATTERY"));
                 }
                 if (nodeInfo.contains("COMMAND_CLASS_SENSOR_BINARY")){
                     txName2.setText("Sensor Binary : ");
-                    zwaveService.getSensorBasic(Integer.parseInt(nodeId));
+                    zwaveService.getSensorBasic(nodeId,0x0);
                     txViewArray.add(new textViewArray(txName2,txValue2,"COMMAND_CLASS_SENSOR_BINARY"));
                 }
                 if (nodeInfo.contains("COMMAND_CLASS_SENSOR_MULTILEVEL")){
                     txName3.setText("COMMAND_CLASS_SENSOR_MULTILEVEL : ");
                     try {
-                        zwaveService.getSensorMultiLevel(Integer.parseInt(nodeId));
+                        zwaveService.getSensorMultiLevel(nodeId);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
                     txViewArray.add(new textViewArray(txName3,txValue3,"COMMAND_CLASS_SENSOR_MULTILEVEL"));
                 }
+                if (nodeInfo.contains("COMMAND_CLASS_NOTIFICATION")){
+
+                }
+
+                zwaveService.getMeterSupported(nodeId);
+                zwaveService.GetSensorBinarySupportedSensor(nodeId);
             }
         }
 
@@ -151,8 +158,26 @@ public class SensorActivity extends BaseActivity {
 
             if (className.equals("getSensorMultiLevel")){
 
-                int idx = txViewArray.indexOf("COMMAND_CLASS_SENSOR_MULTILEVEL");
-                txViewArray.get(idx).value.setText(idx);
+                try {
+                    final JSONObject jsonObject = new JSONObject(result);
+
+                    ((Activity) mContext).runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String messageType = jsonObject.optString("MessageType");
+                            if ("Sensor Information".equals(messageType)) {
+                                String txType = jsonObject.optString("type");
+                                String txUnit = jsonObject.optString("unit");
+                                String txValue = jsonObject.optString("value");
+
+                                txName3.setText(txType + " : ");
+                                txValue3.setText(txValue + " "+txUnit);
+                            }
+                        }
+                    });
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
 
             }else if (className.equals("getPowerLevel")) {
 

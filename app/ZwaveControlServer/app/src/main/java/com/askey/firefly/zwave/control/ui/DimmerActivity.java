@@ -27,14 +27,14 @@ import org.json.JSONObject;
  * 类描述：
  * 创建人：skysoft  charles.bai
  * 创建时间：2017/8/15 9:40
- * 修改人：skysoft
- * 修改时间：2017/8/15 9:40
+ * 修改人：chiapin
+ * 修改时间：2017/10/20
  * 修改备注：
  */
 public class DimmerActivity extends BaseActivity implements View.OnClickListener {
     private static String LOG_TAG = DimmerActivity.class.getSimpleName();
     private CheckBox cbSwitch, dimmerSwitch;
-    private String nodeId;
+    private int nodeId;
     private TextView txBrightness;
     private SeekBar brightness_change;
     private int brightnessLevel;
@@ -55,7 +55,7 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
 
         initView();
         Intent intent = getIntent();
-        nodeId = intent.getStringExtra("NodeId");
+        nodeId = Integer.parseInt(intent.getStringExtra("NodeId"));
         Log.i(LOG_TAG,"Blub nodeId = "+nodeId);
 
         cbSwitch = (CheckBox) findViewById(R.id.cb_switch);
@@ -79,13 +79,13 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                zwaveService.setSwitchMultiLevel(Integer.parseInt(nodeId),brightnessLevel,1);
+                zwaveService.setSwitchMultiLevel(nodeId,brightnessLevel,1);
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                zwaveService.getBasic(Integer.parseInt(nodeId));
+                zwaveService.getBasic(nodeId);
             }
 
         });
@@ -114,16 +114,16 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
         switch (v.getId()){
             case R.id.cb_switch:
                 if (cbSwitch.isChecked()) {
-                  Log.i(LOG_TAG,"===setConfiguration===open===");
+                    Log.i(LOG_TAG,"===setConfiguration===open===");
                     try {
-                        zwaveService.setConfiguration("1",Integer.parseInt(nodeId),7,1,0,255);
+                        zwaveService.setConfiguration(nodeId,7,1,0,255);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
                 } else {
                     Log.i(LOG_TAG,"===setConfiguration===close===");
                     try {
-                        zwaveService.setConfiguration("1",Integer.parseInt(nodeId),7,1,0,0);
+                        zwaveService.setConfiguration(nodeId,7,1,0,0);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
@@ -131,20 +131,22 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
                 break;
             case R.id.dimmer_switch:
                 if (dimmerSwitch.isChecked()) {
-                    Log.i(LOG_TAG,"===setSwitchAllOn======");
-                    zwaveService.setSwitchAllOn(Integer.parseInt(nodeId));
-                    zwaveService.getBasic(Integer.parseInt(nodeId));
+                    //turn on
+                    //zwaveService.setSwitchAllOn(nodeId);
+                    zwaveService.setBasic(nodeId,255);
+                    zwaveService.getBasic(nodeId);
                 } else {
-                    Log.i(LOG_TAG,"===setSwitchAllOff======");
-                    zwaveService.setSwitchAllOff(Integer.parseInt(nodeId));
+                    //turn off
+                    zwaveService.setBasic(nodeId,0);
+                    //zwaveService.setSwitchAllOff(nodeId);
 
                     txBrightness.setText("Brightness : 00h");
                     brightness_change.setProgress(0);
                     SeekBarFlg=false;
                 }
                 break;
-            default:
 
+            default:
                 break;
         }
     }
@@ -161,35 +163,40 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
                 ((Activity) mContext).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        String messageType = jsonObject.optString("MessageType");
-                        if ("Basic Information".equals(messageType)) {
-                            String value = jsonObject.optString("value");
-                            txBrightness.setText("Brightness : " + value);
-                            if (value.equals("00h")) {
-                                //turn off
-                                dimmerSwitch.setChecked(false);
-                            } else {
-                                //turn on
-                                dimmerSwitch.setChecked(true);
 
-                                //change Hex string to Interger
-                                String tmpValue = value.substring(0,value.length()-1);
-                                int setValue = Integer.valueOf(tmpValue,16);
+                    String messageType = jsonObject.optString("MessageType");
+                    if ("Basic Information".equals(messageType)) {
 
-                                if (!SeekBarFlg && value!="00h"){
-                                    brightness_change.setProgress(setValue);
-                                    SeekBarFlg = true;
-                                }
-                            }
-                        }else if ("Configuration Get Information".equals(messageType)) {
-                            String parameter = jsonObject.optString("Configuration parameter");
-                            String value = jsonObject.optString("Configuration value");
-                            if(parameter.equals("7") && value.equals("-1")){
-                                cbSwitch.setChecked(true);
-                            }else if(parameter.equals("7") && !value.equals("-1")){
-                                cbSwitch.setChecked(false);
+                        String value = jsonObject.optString("value");
+                        txBrightness.setText("Brightness : " + value);
+
+                        if (value.equals("00h")) {
+                            //turn off
+                            dimmerSwitch.setChecked(false);
+                        } else {
+                            //turn on
+                            dimmerSwitch.setChecked(true);
+
+                            //change Hex string to Interger
+                            String tmpValue = value.substring(0,value.length()-1);
+                            int setValue = Integer.valueOf(tmpValue,16);
+
+                            if (!SeekBarFlg){
+                                brightness_change.setProgress(setValue);
+                                SeekBarFlg = true;
                             }
                         }
+                    }else if ("Configuration Get Information".equals(messageType)) {
+
+                        String parameter = jsonObject.optString("Parameter number");
+                        String value = jsonObject.optString("Parameter value");
+
+                        if(parameter.equals("7") && value.equals("-1")){
+                            cbSwitch.setChecked(true);
+                        }else if(parameter.equals("7") && !value.equals("-1")){
+                            cbSwitch.setChecked(false);
+                        }
+                    }
                     }
                 });
             } catch (JSONException e) {
@@ -208,8 +215,8 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
 
-                zwaveService.getConfiguration("1",Integer.parseInt(nodeId),1,0,1,10);
-                zwaveService.getBasic(Integer.parseInt(nodeId));
+                zwaveService.getConfiguration(nodeId,1,0,1,10);
+                zwaveService.getBasic(nodeId);
             }
         }
 
@@ -224,13 +231,12 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
         @Override
         public void zwaveControlResultCallBack(String className, String result) {
 
-            if (className.equals("setConfiguration") || className.equals("getConfiguration")
-                    || className.equals("setSwitchMultiLevel") ||className.equals("getSwitchMultiLevel")
-                    || className.equals("setBasic") ||className.equals("getBasic")){
+        if (className.equals("setConfiguration") || className.equals("getConfiguration")
+            || className.equals("setSwitchMultiLevel") ||className.equals("getSwitchMultiLevel")
+            || className.equals("setBasic") ||className.equals("getBasic")){
 
-                zwCBResult(result);
-            }
+            zwCBResult(result);
+        }
         }
     };
-
 }

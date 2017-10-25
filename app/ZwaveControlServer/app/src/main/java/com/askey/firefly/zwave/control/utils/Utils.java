@@ -135,4 +135,19 @@ public class Utils {
         }
         return true;
     }
+
+    public static final byte[] intToByteArray(int value) {
+        return new byte[] {
+                (byte)(value >>> 24),
+                (byte)(value >>> 16),
+                (byte)(value >>> 8),
+                (byte)value};
+    }
+
+    public static final int byteArrayToInt(byte[] bytes){
+        int value = ((bytes[0] & 0xFF) << 24) | ((bytes[1] & 0xFF) << 16)
+                | ((bytes[2] & 0xFF) << 8) | (bytes[3] & 0xFF);
+
+        return value;
+    }
 }

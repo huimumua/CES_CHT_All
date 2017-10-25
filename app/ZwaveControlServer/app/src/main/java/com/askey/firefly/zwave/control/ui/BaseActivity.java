@@ -50,37 +50,30 @@ public class BaseActivity extends AppCompatActivity{
 
     public void showProgressDialog(Context context,String text) {
         if (progressDialog == null) {
-            progressDialog = ProgressDialog.show(context, "Wait a moment...", text,
-                    true);
+            progressDialog = ProgressDialog.show(context, "Wait a moment...", text, true);
             progressDialog.setContentView(R.layout.custom_progress);
-            // progressDialog.setCancelable(true);
+
             progressDialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
 
                 @Override
                 public boolean onKey(DialogInterface arg0, int arg1,
                                      KeyEvent arg2) {
-                    if (arg1 == KeyEvent.KEYCODE_BACK
-                            && arg2.getRepeatCount() == 0
-                            && arg2.getAction() == KeyEvent.ACTION_UP) {
-                        new AlertDialog.Builder(BaseActivity.this)
-                                .setTitle("Warning")
-                                .setMessage("The processing has not been completed yet")
-                                .setPositiveButton("OK",
-                                        new DialogInterface.OnClickListener() {
-                                            public void onClick(
-                                                    DialogInterface dialog,
-                                                    int whichButton) {
-                                                hideProgressDialog();
-                                            }
-                                        })
-                                .setNegativeButton("Cancel",
-                                        new DialogInterface.OnClickListener() {
-                                            public void onClick(
-                                                    DialogInterface dialog,
-                                                    int whichButton) {
-                                                return;
-                                            }
-                                        }).show();
+                if (arg1 == KeyEvent.KEYCODE_BACK
+                        && arg2.getRepeatCount() == 0
+                        && arg2.getAction() == KeyEvent.ACTION_UP) {
+                    new AlertDialog.Builder(BaseActivity.this)
+                        .setTitle("Warning")
+                        .setMessage("The processing has not been completed yet")
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            public void onClick( DialogInterface dialog,int whichButton) {
+                                hideProgressDialog();
+                            }
+                        })
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,int whichButton) {
+                                return;
+                            }
+                        }).show();
                     }
                     return true;
                 }

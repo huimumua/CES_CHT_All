@@ -115,7 +115,7 @@ public class ZwaveControlService extends Service {
     }
 
     public int getDeviceInfo(int deviceId){
-        return ZwaveControlHelper.ZwController_GetDeviceList();
+        return ZwaveControlHelper.ZwController_GetDeviceInfo(deviceId);
     }
 
     public int removeFailedDevice(int deviceId){
@@ -159,11 +159,11 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_SetDefault();
     }
 
-    public int getConfiguration(String homeId, int deviceId, int paramMode, int paramNumber, int rangeStart, int rangeEnd){
+    public int getConfiguration(int deviceId, int paramMode, int paramNumber, int rangeStart, int rangeEnd){
         return ZwaveControlHelper.ZwController_GetConfiguration(deviceId, paramMode, paramNumber, rangeStart, rangeEnd);
     }
 
-    public int setConfiguration(String homeId, int deviceId, int paramNumber, int paramSize, int useDefault, int paramValue) throws RemoteException {
+    public int setConfiguration(int deviceId, int paramNumber, int paramSize, int useDefault, int paramValue) throws RemoteException {
         int result = ZwaveControlHelper.ZwController_SetConfiguration(deviceId, paramNumber, paramSize, useDefault, paramValue);
         zwaveControlResultCallBack("setConfiguration",String.valueOf(result));
         return result;
@@ -220,8 +220,28 @@ public class ZwaveControlService extends Service {
         return result;
     }
 
-    public int getSensorBasic(int deviceId){
-        int result = ZwaveControlHelper.ZwController_GetSensorBinary(deviceId);
+    public int getMeterSupported(int deviceId){
+        int result = ZwaveControlHelper.ZwController_getMeterSupported(deviceId);
+        return result;
+    }
+
+    public int getSensorBasic(int deviceId, int sensorType){
+        int result = ZwaveControlHelper.ZwController_GetSensorBinary(deviceId,sensorType);
+        return result;
+    }
+
+    public int GetSensorBinarySupportedSensor(int deviceId){
+        int result = ZwaveControlHelper.ZwController_GetSensorBinarySupportedSensor(deviceId);
+        return result;
+    }
+
+    public int setSwitchColor(int deviceId, int parameter, int value){
+        int result = ZwaveControlHelper.ZwController_setSwitchColor(deviceId,parameter,value);
+        return result;
+    }
+
+    public int getSwitchColor(int deviceId, int parameter){
+        int result = ZwaveControlHelper.ZwController_getSwitchColor(deviceId,parameter);
         return result;
     }
 
@@ -256,7 +276,7 @@ public class ZwaveControlService extends Service {
 
     private void zwaveControlResultCallBack(String className, String result){
 
-        Log.i(TAG," === "+className+"CallBack ===" + result);
+        //Log.i(TAG," === "+className+"CallBack ===" + result);
         for (zwaveCallBack callback : mCallBacks) {
             callback.zwaveControlResultCallBack(className,result);
         }
@@ -272,9 +292,11 @@ public class ZwaveControlService extends Service {
 
         Logg.i(TAG,"===isOK=="+isOK);
         String openResult = "openController:"+isOK;
-        Log.d("ZwaveControlService", "ZwaveControlService " + new String(result) + isOK);
 
-        zwaveControlResultCallBack("openController",new String(result));
+        String tmpString = new String( result );
+        //Log.d("ZwaveControlService", "ZwaveControlService " + tmpString.substring(0, tmpString.indexOf("}")+1) + isOK);
+
+        zwaveControlResultCallBack("openController",new String(tmpString.substring(0, tmpString.indexOf("}")+1)));
         return openResult;
     }
 
@@ -316,8 +338,7 @@ public class ZwaveControlService extends Service {
         }
 
         if ("Node Add Status".equals(messageType)) {
-            Log.i(TAG,"===== Node Add Status ====");
-            //doAddDevice(jniResult);
+
             zwaveControlResultCallBack("addDevice",jniResult);
             if ("Success".equals(status)) {
                flag = 2;
@@ -336,9 +357,9 @@ public class ZwaveControlService extends Service {
         } else if ("Node List Report".equals(messageType)) {
             if (flag == 1) {
                 flag = 0;
-                zwaveControlResultCallBack("getDeviceInfo",jniResult);
+                zwaveControlResultCallBack("getDeviceInfo",getDeviceInfo(jniResult));
             } else if (flag == 0) {
-               String jsonResult = getDeviceList(jniResult);//json 添加name
+                String jsonResult = getDeviceList(jniResult);//json 添加name
                 zwaveControlResultCallBack("getDeviceList",jsonResult);
             } else if (flag == 2) {
                 flag = 0;
@@ -371,17 +392,18 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("getConfiguration",jniResult);
         } else if ("  ".equals(messageType)) {////
             zwaveControlResultCallBack("getSupportedSwitchType",jniResult);
-        }else if ("Power Level Get Information".equals(messageType)) {
+        } else if ("Power Level Get Information".equals(messageType)) {
             zwaveControlResultCallBack("getPowerLevel",jniResult);
         } else if ("Basic Information".equals(messageType)) {
             zwaveControlResultCallBack("getBasic",jniResult);
-        }else if ("Meter reading".equals(messageType)){
+        } else if ("Meter report Information".equals(messageType)){
             zwaveControlResultCallBack("getMeter",jniResult);
         } else if ("  ".equals(messageType)) {////
-            zwaveControlResultCallBack("getSwitchMultiLevel",jniResult);
+            zwaveControlResultCallBack("getSwitchMultiLevel", jniResult);
+        } else if ("Switch Color Report".equals(messageType)){
+            zwaveControlResultCallBack("getSwitchColor", jniResult);
         }
     }
-
 
     private String getDeviceList(String Result) {
         JSONObject deviceListResult;
@@ -482,4 +504,5 @@ public class ZwaveControlService extends Service {
         }
         return gson.toJson(nodeInfo);
     }
+
 }

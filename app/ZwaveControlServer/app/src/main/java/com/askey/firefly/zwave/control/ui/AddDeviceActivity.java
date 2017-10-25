@@ -64,7 +64,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
         ivBack.setOnClickListener(this);
 
         timer = new Timer(true);
-        timer.schedule(new AddDeviceActivity.mTimerTask(), 1000 * 45); //延时1000ms后执行，1000ms执行一次
+        timer.schedule(new AddDeviceActivity.mTimerTask(), 1000 * 65); //延时1000ms后执行，1000ms执行一次
 
         // bind service
         Intent serviceIntent = new Intent(this, ZwaveControlService.class);
@@ -104,7 +104,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
     private ServiceConnection conn = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            Log.i(LOG_TAG,"onServiceConnected....");
+
             zwaveService = ((ZwaveControlService.MyBinder)iBinder).getService();
             //register mCallback
             if (zwaveService != null) {
@@ -125,20 +125,19 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
         // 重写handleMessage()方法，此方法在UI线程运行
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case 2001:
-                    hideProgressDialog();
-                    timerCancel();
-                    showFailedAddZaveDialog("Add Device Timeout");
-                    break;
-                case 2002:
-                    Log.i(LOG_TAG,"2002");
-                    hideProgressDialog();
-                    timerCancel();
-                    showAddDialog(msg.getData().getString("homeId"),msg.getData().getString("nodeId"));
-                    break;
-            }
+        switch (msg.what) {
+            case 2001:
+                hideProgressDialog();
+                showFailedAddZaveDialog("Add Device Timeout");
+                break;
 
+            case 2002:
+                Log.i(LOG_TAG,"2002");
+                timerCancel();
+                hideProgressDialog();
+                showAddDialog(msg.getData().getString("homeId"),msg.getData().getString("nodeId"));
+                break;
+        }
         }
     };
 
@@ -146,9 +145,9 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
         public void run() {
             Log.d(LOG_TAG,"timer on schedule");
             Message message = new Message();
+            timerCancel();
             message.what = 2001;
             mHandler.sendMessage(message);
-            timerCancel();
         }
     }
 
@@ -160,6 +159,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
     }
 
     public void showFailedAddZaveDialog(final String titleStr) {
+
         final android.support.v7.app.AlertDialog.Builder addDialog = new android.support.v7.app.AlertDialog.Builder(mContext);
         LayoutInflater layoutInflater = LayoutInflater.from(mContext);
         View view = layoutInflater.inflate(R.layout.dialog_normal_layout, null);
@@ -170,13 +170,14 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
         TextView message = (TextView) view.findViewById(R.id.message);
         title.setText("Prompt");
         message.setText(titleStr);
-        Button positiveButton = (Button) view.findViewById(R.id.positiveButton);
+
+        Button retryeButton = (Button) view.findViewById(R.id.positiveButton);
         Button negativeButton = (Button) view.findViewById(R.id.negativeButton);
-        positiveButton.setText("retry");
-        positiveButton.setOnClickListener(new View.OnClickListener() {
+        retryeButton.setText("retry");
+        retryeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //点击重试，返回添加设备界面，再次执行添加设备
+                //tap retry button
                 zwaveService.addDevice();
             }
         });
@@ -191,7 +192,6 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
     }
 
     private void showAddDialog(final String homeId ,final String nodeId) {
-        Log.i(LOG_TAG,"===showAddDialog===");
 
         final AlertDialog.Builder addDialog = new AlertDialog.Builder(AddDeviceActivity.this);
         LayoutInflater layoutInflater = LayoutInflater.from(AddDeviceActivity.this);
@@ -226,18 +226,18 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
             @Override
             public void onClick(View view) {
 
-                reName(homeId , Integer.parseInt(nodeId),message.getText().toString(),
-                        spDevType.getSelectedItem().toString());
-                alertDialog.dismiss();
-                backToHomeActivity();
+            reName(homeId , Integer.parseInt(nodeId),message.getText().toString(),
+                    spDevType.getSelectedItem().toString());
+            alertDialog.dismiss();
+            backToHomeActivity();
             }
         });
 
         negativeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                alertDialog.dismiss();
-                finish();
+            alertDialog.dismiss();
+            finish();
             }
         });
 
@@ -246,9 +246,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
     }
 
     private void reName(String homeId ,int nodeId, String newName,String devType) {
-        ZwaveControlHelper.ZwController_RemoveDevice();
         zwaveService.reNameDevice(homeId,nodeId,newName,devType);
-        //DeviceInfo.memberList.add(new zwNodeMember(nodeId, homeId, devType, newName,""));
     }
 
     private void showAddFailDialog() {
@@ -263,26 +261,27 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
         TextView message = (TextView) view.findViewById(R.id.message);
         title.setText("Prompt");
         message.setText("Add faild");
-        Button positiveButton = (Button) view.findViewById(R.id.positiveButton);
-        Button negativeButton = (Button) view.findViewById(R.id.negativeButton);
-        positiveButton.setText("retry");
-        positiveButton.setOnClickListener(new View.OnClickListener() {
+
+        Button retryButton = (Button) view.findViewById(R.id.positiveButton);
+        Button backButton = (Button) view.findViewById(R.id.negativeButton);
+        retryButton.setText("retry");
+
+        retryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //点击重试，返回添加设备界面，再次执行添加设备
-                proBar.setIndeterminate(true);
+            //tap retry button
+            proBar.setIndeterminate(true);
 
-                zwaveService.addDevice();
-                alertDialog.dismiss();
+            zwaveService.addDevice();
+            alertDialog.dismiss();
             }
         });
 
-        negativeButton.setOnClickListener(new View.OnClickListener() {
+        backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //点击取消，返回主页
-
-                backToHomeActivity();
+            //tap back button
+            backToHomeActivity();
             }
         });
 
@@ -308,13 +307,13 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
             @Override
             public void onClick(View view) {
 
-                timerCancel();
-                if (zwaveService!=null) {
-                    zwaveService.stopAddDevice();
-                }
-                alertDialog.dismiss();
+            timerCancel();
+            if (zwaveService!=null) {
+                zwaveService.stopAddDevice();
+            }
+            alertDialog.dismiss();
 
-                backToHomeActivity();
+            backToHomeActivity();
 
             }
         });
@@ -323,18 +322,18 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
             @Override
             public void onClick(View view) {
 
-                alertDialog.dismiss();
+            alertDialog.dismiss();
 
             }
         });
     }
 
-    //mqtt调用返回结果
+
     private void addDeviceResult(String result) {
         try {
 
             final JSONObject jsonObject = new JSONObject(result);
-//            final String nodeId = jsonObject.optString("NodeID");
+
                 ((Activity) mContext).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -343,19 +342,20 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
                     String status = jsonObject.optString("Status");
                     if ("Node Add Status".equals(messageType)) {
                         if ("Success".equals(status)) {
-                            //Toast.makeText(mContext,"add Success",Toast.LENGTH_SHORT).show();
-                            Log.i(LOG_TAG,"=====result=="+"Success");
+
+                            timerCancel();
                             tvStatus.setText("Success, Please wait a moment to rename");
                             proBar.setIndeterminate(false);
+
                         } else if ("Failed".equals(status)) {
-                            Log.i(LOG_TAG,"=====result=="+"Fail");
                             showAddFailDialog();
                             proBar.setIndeterminate(false);
+
                         } else if("Learn Ready".equals(status)){
                             tvStatus.setText("Please press the trigger button of the device");
                             timerCancel();
+
                         }else{
-                            Log.i(LOG_TAG,"=====result=="+status);
                             tvStatus.setText(status);
                         }
                     }
@@ -371,30 +371,28 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
         @Override
         public void zwaveControlResultCallBack(String className, String result) {
 
-            if (className.equals("addDevice")){
-                Log.i(LOG_TAG,"===addDeviceCallBack==="+result);
-                if (result.contains("addDevice:")){
-                    String[] tokens = result.split(":");
-                    if (tokens.length<3){
-                        Log.i(LOG_TAG,"AIDLResult addDevice : wrong format "+result);
-                    } else {
-                        String tHomeId = tokens[1];
-                        String tNodeId = tokens[2];
-                        Log.i(LOG_TAG,"HomeId = "+tHomeId+" | NodeId="+tNodeId);
+        if (className.equals("addDevice")){
 
-                        Message message = new Message();
-                        Bundle data = new Bundle();
-                        data.putString("nodeId", tNodeId);
-                        data.putString("homeId", tHomeId);
-                        message.setData(data);
-                        message.what = 2002;
-                        mHandler.sendMessage(message);
-                    }
-                }else {
-                    addDeviceResult(result);
+            if (result.contains("addDevice:")){
+                String[] tokens = result.split(":");
+                if (tokens.length<3){
+                    Log.i(LOG_TAG,"AIDLResult addDevice : wrong format "+result);
+                } else {
+                    String tHomeId = tokens[1];
+                    String tNodeId = tokens[2];
+
+                    Message message = new Message();
+                    Bundle data = new Bundle();
+                    data.putString("nodeId", tNodeId);
+                    data.putString("homeId", tHomeId);
+                    message.setData(data);
+                    message.what = 2002;
+                    mHandler.sendMessage(message);
                 }
+            }else {
+                addDeviceResult(result);
             }
         }
+        }
     };
-
 }

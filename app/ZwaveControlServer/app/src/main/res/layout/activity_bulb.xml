@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:colorpicker="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -51,20 +52,99 @@
             </LinearLayout>
 
             <LinearLayout
-                android:orientation="vertical"
+                android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="0.95">
+                android:layout_marginLeft="20dip"
+                android:layout_marginTop="20dip">
+
+                <TextView
+                    android:text="Adjust Brightness :"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/textView2"/>
 
                 <SeekBar
                     android:id="@+id/brightness_change"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="20dip"
                     android:layout_marginRight="20dip"
-                    android:max="99" />
+                    android:max="99"
+                    android:layout_weight="1" />
+
+
             </LinearLayout>
 
+            <LinearLayout
+                android:orientation="vertical"
+                android:id="@+id/colorLinear"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="20dip"
+                android:layout_marginTop="20dip">
+
+                <TextView
+                    android:text="Select Color :"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dip"
+                    android:layout_marginTop="20dip"
+                    android:id="@+id/txColor"
+                    android:layout_weight="1" />
+
+                <RadioGroup
+                    android:id="@+id/radiogroup"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dip"
+                    android:layout_marginTop="20dip"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/warmWhite"
+                        android:text="warm white"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <RadioButton
+                        android:id="@+id/coldWite"
+                        android:text="cold white"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <RadioButton
+                        android:id="@+id/RGBColor"
+                        android:text="RGB Color"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </RadioGroup>
+
+                <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                    xmlns:colorpicker="http://schemas.android.com/apk/res/com.askey.firefly.zwave.control"
+                    android:id="@+id/colorPickerLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" >
+
+                    <com.askey.firefly.zwave.control.ui.ColorPickView
+                        android:id="@+id/color_picker_view"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerHorizontal="true"
+                        android:gravity="center"
+                        colorpicker:center_color="#FFFFFF"
+                        colorpicker:center_radius="10dp"
+                        colorpicker:circle_radius="150dp" />
+
+                    <TextView
+                        android:id="@+id/txt_color"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@+id/color_picker_view"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginTop="37dp"
+                        android:text="color" />
+
+                </RelativeLayout>
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>

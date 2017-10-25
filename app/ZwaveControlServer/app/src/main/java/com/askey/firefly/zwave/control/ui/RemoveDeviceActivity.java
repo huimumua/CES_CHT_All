@@ -50,7 +50,7 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
         this.bindService(serviceIntent, conn, Context.BIND_AUTO_CREATE);
 
         timer = new Timer(true);
-        timer.schedule(new RemoveDeviceActivity.mTimerTask(), 1000 * 10); //延时1000ms后执行，1000ms执行一次
+        timer.schedule(new RemoveDeviceActivity.mTimerTask(), 1000 * 60); //延时1000ms后执行，1000ms执行一次
 
     }
 
@@ -70,22 +70,22 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
         // 重写handleMessage()方法，此方法在UI线程运行
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case 2001:
-                    hideProgressDialog();
-                    timerCancel();
-                    showFailedDialog("Remove Device Timeout");
-                    break;
-            }
+        switch (msg.what) {
+            case 2001:
+                hideProgressDialog();
+                timerCancel();
+                showFailedDialog("Remove Device Timeout");
+                break;
+        }
         }
     };
 
     public void showFailedDialog(final String titleStr) {
-        final android.support.v7.app.AlertDialog.Builder addDialog = new android.support.v7.app.AlertDialog.Builder(mContext);
+        final android.support.v7.app.AlertDialog.Builder removeDialog = new android.support.v7.app.AlertDialog.Builder(mContext);
         LayoutInflater layoutInflater = LayoutInflater.from(mContext);
         View view = layoutInflater.inflate(R.layout.dialog_normal_layout, null);
-        addDialog.setView(view);
-        final android.support.v7.app.AlertDialog alertDialog = addDialog.create();
+        removeDialog.setView(view);
+        final android.support.v7.app.AlertDialog alertDialog = removeDialog.create();
 
         TextView title = (TextView) view.findViewById(R.id.title);
         TextView message = (TextView) view.findViewById(R.id.message);
@@ -97,8 +97,8 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
         positiveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //点击重试，返回添加设备界面，再次执行添加设备
-                zwaveService.removeDevice();
+            //点击重试，返回添加设备界面，再次执行添加设备
+            zwaveService.removeDevice();
             }
         });
 
@@ -192,11 +192,11 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
             ((Activity) mContext).runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    String messageType = jsonObject.optString("MessageType");
-                    Log.i(LOG_TAG,"=====messageType=="+messageType);
-                    if(messageType.equals("Node Remove Status")){
+                String messageType = jsonObject.optString("MessageType");
 
-                    }
+                Log.i(LOG_TAG,"=====messageType=="+messageType);
+                if(messageType.equals("Node Remove Status")) {
+
                     String status = jsonObject.optString("Status");
 
                     tvStatus.setText(status);
@@ -207,16 +207,19 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
                         timerCancel();
 
                     } else if ("Failed".equals(status)) {
-                        Toast.makeText(mContext,"Delete Faild",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, "Delete Faild", Toast.LENGTH_SHORT).show();
                         proBar.setIndeterminate(false);
                         timerCancel();
                         backToHomeActivity();
-                    }else if("Learn Ready".equals(status)){
+
+                    } else if ("Learn Ready".equals(status)) {
                         tvStatus.setText("Please press the trigger button of the device");
-                    }else{
-                        Log.i(LOG_TAG,"=====result=="+status);
+
+                    } else {
+                        Log.i(LOG_TAG, "=====result==" + status);
                         tvStatus.setText(status);
                     }
+                }
                 }
             });
 
@@ -230,10 +233,14 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.img_back:
+                zwaveService.stopRemoveDevice();
+                timerCancel();
                 finish();
                 break;
             case R.id.btn_cancel:
                 Log.i(LOG_TAG,"TAP CANCEL BUTTON");
+                zwaveService.stopRemoveDevice();
+                timerCancel();
                 backToHomeActivity();
                 break;
         }
@@ -250,26 +257,21 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
         @Override
         public void zwaveControlResultCallBack(String className, String result) {
 
-            if (className.equals("removeDevice")){
-                Log.i(LOG_TAG,"===removeDeviceCallBack==="+result);
-                if (result.contains("removeDevice:")){
-                    String[] tokens = result.split(":");
-                    if (tokens.length<3){
-                        Log.i(LOG_TAG,"removeDevice : wrong format "+result);
-                    } else {
-                        String tHomeId = tokens[1];
-                        String tNodeId = tokens[2];
-                        Log.i(LOG_TAG,"HomeId = "+tHomeId+" | NodeId="+tNodeId);
-
-                        Log.i(LOG_TAG,"call HomeActivity");
-                        Intent intent = new Intent(mContext,HomeActivity.class);
-                        startActivity(intent);
-                        finish();
-                    }
-                }else {
-                    removeDeviceResult(result);
+        if (className.equals("removeDevice")){
+            if (result.contains("removeDevice:")){
+                String[] tokens = result.split(":");
+                if (tokens.length<3){
+                    Log.i(LOG_TAG,"removeDevice : wrong format "+result);
+                } else {
+                    // back to home activity
+                    Intent intent = new Intent(mContext,HomeActivity.class);
+                    startActivity(intent);
+                    finish();
                 }
+            }else {
+                removeDeviceResult(result);
             }
+        }
         }
     };
 

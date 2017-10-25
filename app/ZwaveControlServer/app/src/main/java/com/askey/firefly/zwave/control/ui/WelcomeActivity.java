@@ -85,13 +85,13 @@ public class WelcomeActivity extends BaseActivity{
             @Override
             public void run() {
 
-                timerCancel();
+            timerCancel();
 
-                Intent intent = new Intent();
-                intent.setClass(mContext, HomeActivity.class);
-                hideProgressDialog();
-                mContext.startActivity(intent);
-                finish();
+            Intent intent = new Intent();
+            intent.setClass(mContext, HomeActivity.class);
+            hideProgressDialog();
+            mContext.startActivity(intent);
+            finish();
             }
         });
     }
@@ -149,13 +149,13 @@ public class WelcomeActivity extends BaseActivity{
         // 重写handleMessage()方法，此方法在UI线程运行
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case 2001:
-                    timerCancel();
-                    hideProgressDialog();
-                    showZwaveControlTimeOutDialog("Zwave OpenController Timeout");
-                    break;
-            }
+        switch (msg.what) {
+            case 2001:
+                timerCancel();
+                hideProgressDialog();
+                showZwaveControlTimeOutDialog("Zwave OpenController Timeout");
+                break;
+        }
         }
     };
 
@@ -193,7 +193,6 @@ public class WelcomeActivity extends BaseActivity{
             //register mCallback
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
-
             }
         }
 

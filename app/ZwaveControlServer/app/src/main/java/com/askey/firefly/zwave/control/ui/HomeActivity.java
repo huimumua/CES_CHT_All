@@ -62,36 +62,36 @@ public class HomeActivity extends BaseActivity{
         ((Activity) mContext).runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Intent intent = null;
-                switch (type) {
-                    case "add":
-                        intent = new Intent(mContext,AddDeviceActivity.class);
-                        break;
-                    case "remove":
-                        intent = new Intent(mContext,RemoveDeviceActivity.class);
-                        intent.putExtra("title", 1);
-                        break;
-                    case "BULB":
-                        intent = new Intent(mContext,BulbActivity.class);
-                        break;
-                    case "DIMMER":
-                        intent = new Intent(mContext,DimmerActivity.class);
-                        break;
-                    case "PLUG":
-                        intent = new Intent(mContext,PlugActivity.class);
-                        break;
-                    case "SENSOR":
-                        intent = new Intent(mContext,SensorActivity.class);
-                        break;
-                    case "OTHER":
-                        break;
-                }
-                Log.i(LOG_TAG,"tap position = "+position);
-                zwNodeMember member = DeviceInfo.memberList.get(position);
-                intent.putExtra("NodeId", String.valueOf(member.getNodeId()));
-                intent.putExtra("NodeInfoList",member.getNodeInfo());
-                mContext.startActivity(intent);
-                finish();
+            Intent intent = null;
+            switch (type) {
+                case "add":
+                    intent = new Intent(mContext,AddDeviceActivity.class);
+                    break;
+                case "remove":
+                    intent = new Intent(mContext,RemoveDeviceActivity.class);
+                    intent.putExtra("title", 1);
+                    break;
+                case "BULB":
+                    intent = new Intent(mContext,BulbActivity.class);
+                    break;
+                case "DIMMER":
+                    intent = new Intent(mContext,DimmerActivity.class);
+                    break;
+                case "PLUG":
+                    intent = new Intent(mContext,PlugActivity.class);
+                    break;
+                case "SENSOR":
+                    intent = new Intent(mContext,SensorActivity.class);
+                    break;
+                case "OTHER":
+                    break;
+            }
+
+            zwNodeMember member = DeviceInfo.memberList.get(position);
+            intent.putExtra("NodeId", String.valueOf(member.getNodeId()));
+            intent.putExtra("NodeInfoList",member.getNodeInfo());
+            mContext.startActivity(intent);
+            finish();
             }
         });
     }
@@ -99,12 +99,11 @@ public class HomeActivity extends BaseActivity{
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.i(LOG_TAG,"===  onDestroy() ===");
     }
 
     private class MemberAdapter extends BaseAdapter {
+
         Context context;
-        //List<zwNodeMember> memberList;
 
         MemberAdapter(Context context, List<zwNodeMember> memberList) {
             this.context = context;
@@ -124,12 +123,9 @@ public class HomeActivity extends BaseActivity{
             }
 
             zwNodeMember member = DeviceInfo.memberList.get(position);
-            ImageView ivImage = (ImageView) itemView
-                    .findViewById(R.id.ivImage);
-            TextView tvId = (TextView) itemView
-                    .findViewById(R.id.nodeId);
-            TextView tvName = (TextView) itemView
-                    .findViewById(R.id.nodeName);
+            ImageView ivImage = (ImageView) itemView.findViewById(R.id.ivImage);
+            TextView tvId = (TextView) itemView.findViewById(R.id.nodeId);
+            TextView tvName = (TextView) itemView.findViewById(R.id.nodeName);
 
             String tmpType = member.getDeviceType();
             switch (tmpType) {
@@ -182,7 +178,7 @@ public class HomeActivity extends BaseActivity{
         List<ZwaveDevice> list = zwaveDeviceManager.queryZwaveDeviceList();
 
         for (int idx = 1 ; idx< list.size(); idx++){
-            //zwNodeMember(int nodeId,String homeId, String devType, String name)
+
             Log.i(LOG_TAG,"*** NodeId = "+list.get(idx).getNodeId()+" | HomeID = "+list.get(idx).getHomeId()
                     +"| devType="+list.get(idx).getDevType()+" | Name="+list.get(idx).getName()
                     +"| nodeInfo = "+list.get(idx).getNodeInfo());
