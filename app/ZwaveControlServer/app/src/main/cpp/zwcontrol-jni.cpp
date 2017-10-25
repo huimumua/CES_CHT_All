@@ -541,30 +541,30 @@ static int controller_getGroupInfo(JNIEnv *env, jclass object, jint nodeId, jint
     return zwcontrol_get_group_info(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId);
 }
 
-static int controller_addEndpointsToGroup(JNIEnv *env, jclass object, jint nodeId, jint groupId, jintArray arr)
+static int controller_addEndpointsToGroup(JNIEnv *env, jclass object, jint nodeId, jint groupId, jintArray intArray)
 {
-    jint *nodeList;
-    nodeList = env->GetIntArrayElements(arr, JNI_FALSE);  
-    if(nodeList == NULL) 
+    jint *node_list;
+    node_list = env->GetIntArrayElements(intArray, JNI_FALSE);
+    if(node_list == NULL)
     {
         return -1;
     }
-    int result = zwcontrol_add_endpoints_to_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint32_t*)&nodeList);
-    env->ReleaseIntArrayElements(arr, nodeList, 0);
+    int result = zwcontrol_add_endpoints_to_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint32_t*)node_list);
+    env->ReleaseIntArrayElements(intArray, node_list, 0);
     return result;
 }
 
-static int controller_removeEndpointsFromGroup(JNIEnv *env, jclass object, jint nodeId, jint groupId, jintArray arr)
+static int controller_removeEndpointsFromGroup(JNIEnv *env, jclass object, jint nodeId, jint groupId, jintArray intArray)
 {
-    jint *removeNodeList;
-    removeNodeList = env->GetIntArrayElements(arr, JNI_FALSE);  
-    if(removeNodeList == NULL) 
+    jint *node_list;
+    node_list = env->GetIntArrayElements(intArray, JNI_FALSE);
+    if(node_list == NULL)
     {
         ALOGE("GetIntArrayElements Failed");
         return -1;
     }
-    int result = zwcontrol_remove_endpoints_from_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint32_t*)&removeNodeList);
-    env->ReleaseIntArrayElements(arr, removeNodeList, 0);
+    int result = zwcontrol_remove_endpoints_from_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint32_t*)node_list);
+    env->ReleaseIntArrayElements(intArray, node_list, 0);
     return result;
 }
 

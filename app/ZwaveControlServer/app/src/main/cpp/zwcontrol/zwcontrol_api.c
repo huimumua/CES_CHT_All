@@ -9496,6 +9496,9 @@ int32_t hl_grp_add(hl_appl_ctx_t   *hl_appl)
 
 int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList)
 {
+    for (int i = 0; i < (sizeof(nodeList)/sizeof(nodeList[0])-1); ++i)
+        ALOGI("Endpoint add to group is %d", nodeList[i]);
+
     if(!hl_appl->is_init_done)
     {
         return -1;
@@ -9515,7 +9518,7 @@ int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
 
     for (i=0; i<5; i++)
     {
-        hl_appl->ep_desc_id[i] = &nodeList[i];
+        hl_appl->ep_desc_id[i] = nodeList[i];
         if (hl_appl->ep_desc_id[i] == 0)
         {
             break;
@@ -9580,6 +9583,9 @@ int32_t hl_grp_del(hl_appl_ctx_t   *hl_appl)
 
 int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList)
 {
+    for (int i = 0; i < (sizeof(nodeList)/sizeof(nodeList[0])-1); ++i)
+        ALOGI("Endpoint remove from group is %d", nodeList[i]);
+
     if(!hl_appl->is_init_done)
     {
         return -1;
@@ -9599,7 +9605,7 @@ int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t node
 
     for (i=0; i<5; i++)
     {
-        hl_appl->ep_desc_id[i] = &nodeList[i];
+        hl_appl->ep_desc_id[i] = nodeList[i];
         if (hl_appl->ep_desc_id[i] == 0)
         {
             break;
