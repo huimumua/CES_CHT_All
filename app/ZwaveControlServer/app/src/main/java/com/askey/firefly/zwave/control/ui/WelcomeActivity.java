@@ -63,7 +63,7 @@ public class WelcomeActivity extends BaseActivity{
         public void run() {
 
         timer = new Timer(true);
-        timer.schedule(new mTimerTask(), 1000 * 60); //延时1000ms后执行，1000ms执行一次
+        timer.schedule(new mTimerTask(), 1000 * 120); //延时1000ms后执行，1000ms执行一次
             while (DeviceInfo.isZwaveInitFinish == false || DeviceInfo.isMQTTInitFinish == false ) {
                 try {
                     Thread.sleep(100);

@@ -1,5 +1,6 @@
 package com.askey.firefly.zwave.control.ui;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -159,6 +160,20 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
         });
     }
 
+
+    private Runnable getDevStatus = new Runnable() {
+        @Override
+        public void run() {
+            zwaveService.getBasic(nodeId);
+            zwaveService.getSwitchColor(nodeId,0x00);
+            zwaveService.getSwitchColor(nodeId,0x01);
+            zwaveService.getSwitchColor(nodeId,0x02);
+            zwaveService.getSwitchColor(nodeId,0x03);
+            zwaveService.getSwitchColor(nodeId,0x04);
+        }
+    };
+
+
     private void enableColorPicker(){
 
         myView.setOnColorChangedListener(new ColorPickView.OnColorChangedListener() {
@@ -186,9 +201,9 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             try {
                 final JSONObject jsonObject = new JSONObject(result);
 
-                //((Activity) mContext).runOnUiThread(new Runnable() {
-                //    @Override
-                //    public void run() {
+                ((Activity) mContext).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
                         String messageType = jsonObject.optString("MessageType");
 
                         if ("Basic Information".equals(messageType)) {
@@ -229,8 +244,8 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
                             }
                             */
                         }
-                //    }
-                //});
+                    }
+                });
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -289,12 +304,8 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
 
-                zwaveService.getBasic(nodeId);
-                zwaveService.getSwitchColor(nodeId,0x00);
-                zwaveService.getSwitchColor(nodeId,0x01);
-                zwaveService.getSwitchColor(nodeId,0x02);
-                zwaveService.getSwitchColor(nodeId,0x03);
-                zwaveService.getSwitchColor(nodeId,0x04);
+                new Thread(getDevStatus).start();
+
             }
         }
 

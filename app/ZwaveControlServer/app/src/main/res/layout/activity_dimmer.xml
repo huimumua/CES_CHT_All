@@ -31,7 +31,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName"
-                    android:text="Switch LED State : " />
+                    android:text="Switch LED State : "
+                    android:textSize="24sp"/>
 
                 <CheckBox
                     android:id="@+id/cb_switch"
@@ -53,7 +54,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName"
-                    android:text="Switch State : " />
+                    android:text="Switch State : "
+                    android:textSize="24sp"/>
 
                 <CheckBox
                     android:id="@+id/dimmer_switch"
@@ -67,7 +69,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="20dip"
-                    android:id="@+id/txBrightness" />
+                    android:id="@+id/txBrightness"
+                    android:textSize="24sp"/>
 
             </LinearLayout>
 
@@ -82,7 +85,8 @@
                     android:text="Adjust Brightness :"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/textView3"/>
+                    android:id="@+id/textView3"
+                    android:textSize="24sp"/>
 
                 <SeekBar
                     android:id="@+id/brightness_change"

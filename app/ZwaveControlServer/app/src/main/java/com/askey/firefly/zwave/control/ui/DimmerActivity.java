@@ -151,6 +151,15 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
         }
     }
 
+    private Runnable getDevStatus = new Runnable() {
+        @Override
+        public void run() {
+            zwaveService.getBasic(nodeId);
+
+            zwaveService.getConfiguration(nodeId,1,0,1,10);
+            zwaveService.getBasic(nodeId);
+        }
+    };
 
     //zwave callback result
     private void zwCBResult(String result) {
@@ -215,8 +224,7 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
 
-                zwaveService.getConfiguration(nodeId,1,0,1,10);
-                zwaveService.getBasic(nodeId);
+                new Thread(getDevStatus).start();
             }
         }
 

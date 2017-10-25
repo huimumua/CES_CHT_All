@@ -21,11 +21,14 @@ import com.askey.firefly.zwave.control.utils.Utils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class PlugActivity extends BaseActivity implements View.OnClickListener {
     private static String LOG_TAG = PlugActivity.class.getSimpleName();
     private CheckBox powerSwitch,ledSwitch;
     private int nodeId;
-    private TextView txSWMode;
+    private TextView txSWMode,txParameter,txValue;
     private int brightnessLevel = 0;
 
     private ZwaveControlService zwaveService;
@@ -56,8 +59,22 @@ public class PlugActivity extends BaseActivity implements View.OnClickListener {
     private void initView() {
 
         txSWMode = (TextView) findViewById(R.id.txSWMode);
-
+        txParameter = (TextView) findViewById(R.id.txParameter);
+        txValue = (TextView) findViewById(R.id.txValue);
     }
+
+    private Runnable getDevStatus = new Runnable() {
+        @Override
+        public void run() {
+            zwaveService.getBasic(nodeId);
+            zwaveService.getConfiguration(nodeId,1,1,7,7);
+            zwaveService.getMeter(nodeId,0x02);
+            zwaveService.getMeter(nodeId,0x00);
+
+            zwaveService.getMeter(nodeId,0x04);
+            zwaveService.getMeter(nodeId,0x05);
+        }
+    };
 
     //zwave callback result
     private void zwCBResult(String result) {
@@ -66,47 +83,61 @@ public class PlugActivity extends BaseActivity implements View.OnClickListener {
 
             try {
                 final JSONObject jsonObject = new JSONObject(result);
-
-                ((Activity) mContext).runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-
+                String getNodeId = jsonObject.optString("Node id");
+                if (getNodeId.equals(String.valueOf(nodeId))) {
                     String messageType = jsonObject.optString("MessageType");
-                    if ("Basic Information".equals(messageType)) {
+                    if ("Basic Information".equals(messageType) || "Configuration Get Information".equals(messageType)
+                            ||"Meter report Information".equals((messageType))){
 
-                        String value = jsonObject.optString("value");
-                        if (value.equals("00h")) {
-                            //turn off
-                            powerSwitch.setChecked(false);
-                        } else {
-                            //turn on
-                            powerSwitch.setChecked(true);
-                        }
+                        ((Activity) mContext).runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
 
-                    }else if ("Configuration Get Information".equals(messageType)){
+                                    String messageType = jsonObject.optString("MessageType");
+                                    if ("Basic Information".equals(messageType)) {
 
-                        String parameter = jsonObject.optString("Parameter number");
-                        String value = jsonObject.optString("Parameter value");
-                        Log.i(LOG_TAG,"*** Parameter = "+parameter+" | value = "+value);
+                                        String value = jsonObject.optString("value");
+                                        if (value.equals("00h")) {
+                                            //turn off
+                                            powerSwitch.setChecked(false);
+                                        } else {
+                                            //turn on
+                                            powerSwitch.setChecked(true);
+                                        }
 
-                        if(parameter.equals("7") && value.equals("1")){
-                            ledSwitch.setChecked(true);
-                            txSWMode.setText("Show switch stste");
-                        }else if(parameter.equals("7") && value.equals("2")){
-                            ledSwitch.setChecked(false);
-                            txSWMode.setText("Show night mode");
-                        }
+                                    } else if ("Configuration Get Information".equals(messageType)) {
 
-                    }else if ("Meter report Information".equals((messageType))){
+                                        String parameter = jsonObject.optString("Parameter number");
+                                        String value = jsonObject.optString("Parameter value");
+                                        Log.i(LOG_TAG, "*** Parameter = " + parameter + " | value = " + value);
 
-                        String txRateType = jsonObject.optString("Rate type");
-                        String txMeterReading = jsonObject.optString("Meter reading");
-                        String txUnit = jsonObject.optString("Meter unit");
-                        Log.i(LOG_TAG,"****** "+txRateType+" = "+txMeterReading + " "+txUnit);
+                                        if (parameter.equals("7") && value.equals("1")) {
+                                            ledSwitch.setChecked(true);
+                                            txSWMode.setText("Show switch state");
+                                        } else if (parameter.equals("7") && value.equals("2")) {
+                                            ledSwitch.setChecked(false);
+                                            txSWMode.setText("Show night mode");
+                                        }
 
+                                    } else if ("Meter report Information".equals((messageType))) {
+
+                                        String txRateType = jsonObject.optString("Rate type");
+                                        String txMeterReading = jsonObject.optString("Meter reading");
+                                        String txUnit = jsonObject.optString("Meter unit");
+                                        Log.i(LOG_TAG, "****** " + txRateType + " = " + txMeterReading + " " + txUnit);
+
+                                        Pattern pattern = Pattern.compile("(（(\n|.)*?）)");
+                                        Matcher matcher = pattern.matcher(txRateType);
+                                        while(matcher.find()){
+                                            txParameter.setText(matcher.group()+" :");
+                                        }
+                                        txValue.setText(txMeterReading + " "+txUnit);
+
+                                    }
+                            }
+                        });
                     }
-                    }
-                });
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -181,13 +212,7 @@ public class PlugActivity extends BaseActivity implements View.OnClickListener {
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
 
-                zwaveService.getBasic(nodeId);
-                zwaveService.getConfiguration(nodeId,1,1,7,7);
-                zwaveService.getMeter(nodeId,0x02);
-                zwaveService.getMeter(nodeId,0x00);
-
-                zwaveService.getMeter(nodeId,0x04);
-                zwaveService.getMeter(nodeId,0x05);
+                new Thread(getDevStatus).start();
             }
         }
 

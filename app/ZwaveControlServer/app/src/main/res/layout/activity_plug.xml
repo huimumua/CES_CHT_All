@@ -31,7 +31,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName"
-                    android:text="LED indication mode : " />
+                    android:text="LED indication mode : "
+                    android:textSize="24sp"/>
 
                 <CheckBox
                     android:id="@+id/led_switch"
@@ -46,7 +47,8 @@
                     android:layout_height="wrap_content"
                     android:id="@+id/txSWMode"
                     android:layout_marginLeft="20dip"
-                    android:layout_weight="1" />
+                    android:layout_weight="1"
+                    android:textSize="24sp"/>
 
             </LinearLayout>
 
@@ -61,7 +63,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName"
-                    android:text="Power Mode : " />
+                    android:text="Power Mode : "
+                    android:textSize="24sp"/>
 
                 <CheckBox
                     android:id="@+id/power_switch"
@@ -70,6 +73,28 @@
                     android:background="@drawable/checkbox_switch"
                     android:button="@null" />
 
+            </LinearLayout>
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="20dip"
+                android:layout_marginTop="20dip">
+
+                <TextView
+                    android:text=""
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/txParameter"
+                    android:textSize="24sp"/>
+
+                <TextView
+                    android:text=""
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/txValue"
+                    android:textSize="24sp"/>
             </LinearLayout>
 
         </LinearLayout>
