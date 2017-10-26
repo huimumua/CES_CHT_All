@@ -67,10 +67,10 @@ public class UsbSerial {
 
             for (final UsbSerialPort port : ports)
             {
-                if(!mUsbManager.hasPermission(port.getDriver().getDevice())) {
-                    PendingIntent mPendingIntent = PendingIntent.getBroadcast(mContext, 0, new Intent(ACTION_USB_PERMISSION), 0);
-                    mUsbManager.requestPermission(port.getDriver().getDevice(), mPendingIntent);
-                }
+                //if(!mUsbManager.hasPermission(port.getDriver().getDevice())) {
+                //    PendingIntent mPendingIntent = PendingIntent.getBroadcast(mContext, 0, new Intent(ACTION_USB_PERMISSION), 0);
+                //    mUsbManager.requestPermission(port.getDriver().getDevice(), mPendingIntent);
+                //}
 
                 sPort = port;
                 found = true;

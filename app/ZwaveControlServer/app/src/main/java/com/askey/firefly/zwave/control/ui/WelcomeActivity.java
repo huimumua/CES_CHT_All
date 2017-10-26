@@ -1,10 +1,15 @@
 package com.askey.firefly.zwave.control.ui;
 
 import android.app.Activity;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -20,8 +25,12 @@ import android.widget.TextView;
 import com.askey.firefly.zwave.control.R;
 import com.askey.firefly.zwave.control.mqtt.MQTTBroker;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
+import com.askey.firefly.zwave.control.thirdparty.usbserial.driver.UsbSerialDriver;
+import com.askey.firefly.zwave.control.thirdparty.usbserial.driver.UsbSerialPort;
+import com.askey.firefly.zwave.control.thirdparty.usbserial.driver.UsbSerialProber;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
 
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -38,6 +47,8 @@ public class WelcomeActivity extends BaseActivity{
     private Timer timer;
 
     private ZwaveControlService zwaveService;
+    private BroadcastReceiver usbReceiver = null;
+    private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -48,7 +59,7 @@ public class WelcomeActivity extends BaseActivity{
 
         showProgressDialog(mContext, "Initializing，Open Zwave Controller...");
 
-        Intent MqttIntent = new Intent(WelcomeActivity.this,MQTTBroker.class);
+        Intent MqttIntent = new Intent(WelcomeActivity.this, MQTTBroker.class);
         startService(MqttIntent);
 
         // bind service
@@ -149,13 +160,13 @@ public class WelcomeActivity extends BaseActivity{
         // 重写handleMessage()方法，此方法在UI线程运行
         @Override
         public void handleMessage(Message msg) {
-        switch (msg.what) {
-            case 2001:
-                timerCancel();
-                hideProgressDialog();
-                showZwaveControlTimeOutDialog("Zwave OpenController Timeout");
-                break;
-        }
+            switch (msg.what) {
+                case 2001:
+                    timerCancel();
+                    hideProgressDialog();
+                    showZwaveControlTimeOutDialog("Zwave OpenController Timeout");
+                    break;
+            }
         }
     };
 
@@ -183,7 +194,6 @@ public class WelcomeActivity extends BaseActivity{
         }
     }
 
-
     // bind service with zwave control service
     private ServiceConnection conn = new ServiceConnection() {
         @Override
@@ -193,6 +203,7 @@ public class WelcomeActivity extends BaseActivity{
             //register mCallback
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
+                requestControlUSBPermission();
             }
         }
 
@@ -206,6 +217,8 @@ public class WelcomeActivity extends BaseActivity{
     protected void onDestroy() {
         super.onDestroy();
         zwaveService.unregister(mCallback);
+        if (usbReceiver != null)
+            unregisterReceiver(usbReceiver);
         try {
             this.unbindService(conn);
         } catch (Exception e) {
@@ -221,4 +234,57 @@ public class WelcomeActivity extends BaseActivity{
         }
     };
 
+    private void requestControlUSBPermission() {
+        UsbManager usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        final List<UsbSerialDriver> drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager);
+
+        boolean found = false;
+
+        for (final UsbSerialDriver driver : drivers) {
+            if (found) break;
+
+            final List<UsbSerialPort> ports = driver.getPorts();
+
+            for (final UsbSerialPort port : ports) {
+                if(!usbManager.hasPermission(port.getDriver().getDevice())) {
+                    PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+                    usbManager.requestPermission(port.getDriver().getDevice(), mPendingIntent);
+                    IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+                    usbReceiver = new usbReceiver();
+                    registerReceiver(usbReceiver, filter);
+                } else {
+                    openController();
+                }
+                found = true;
+                break;
+            }
+        }
+    }
+
+    private class usbReceiver extends BroadcastReceiver {
+
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        if (device != null) {
+                            openController();
+                        }
+                    } else {
+                        Log.d("USB", "permission denied for device " + device);
+                        finish();
+                    }
+                }
+            }
+        }
+    };
+
+    private void openController() {
+        String openResult = zwaveService.openController();
+        if (openResult.contains(":0")){
+            DeviceInfo.isOpenControllerFinish = true;
+        }
+    }
 }
