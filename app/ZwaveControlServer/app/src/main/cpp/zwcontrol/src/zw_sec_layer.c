@@ -1310,8 +1310,9 @@ int zwsec_depacket(zwnet_p nw, uint8_t src_node, uint8_t spp_len, uint8_t *spp, 
                 //Sequence number must be different from the previous one
                 if ((node->sec_rcv_seq_num & 0x0F) == (mac_input.payload[0] & 0x0F))
                 {
-                    plt_mtx_ulck(nw->mtx);
-                    return ZW_ERR_SEQ_NUMBER;
+                    ALOGW("Security, received payload se number: %d, node previous number:%d.",(mac_input.payload[0] & 0x0F), (node->sec_rcv_seq_num & 0x0F));
+                    /*plt_mtx_ulck(nw->mtx);
+                    return ZW_ERR_SEQ_NUMBER;*/
                 }
             }
             //Store sequence number
