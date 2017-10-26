@@ -171,6 +171,25 @@ public class ZwaveDeviceManager {
         }
     }
 
+    public List<String> getGroupNameList() {
+        ZwaveDeviceDao zwaveDeviceDao = getZwaveDeviceDao();
+        QueryBuilder<ZwaveDevice> qb = zwaveDeviceDao.queryBuilder();
+        List<ZwaveDevice> list = qb.list();
+        List<String> groupName = null;
+        for (int i = 0; i < list.size(); i++) {
+            groupName.add(i, list.get(i).getAddress());
+        }
+        return groupName;
+    }
+
+    public List<ZwaveDevice> getGroupDevicesList(String groupName) {
+        ZwaveDeviceDao zwaveDeviceDao = getZwaveDeviceDao();
+        QueryBuilder<ZwaveDevice> qb = zwaveDeviceDao.queryBuilder();
+        qb.where(ZwaveDeviceDao.Properties.Address.eq(groupName));
+        List<ZwaveDevice> list = qb.list();
+        return list;
+    }
+
     public ZwaveDeviceDao getZwaveDeviceDao() {
         DaoMaster daoMaster = new DaoMaster(getWritableDatabase());
         DaoSession daoSession = daoMaster.newSession();
