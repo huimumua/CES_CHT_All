@@ -4,10 +4,13 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.askey.firefly.zwave.control.utils.Const;
+
+import org.greenrobot.greendao.Property;
 import org.greenrobot.greendao.query.QueryBuilder;
+import org.greenrobot.greendao.query.WhereCondition;
 
+import java.util.ArrayList;
 import java.util.List;
-
 
 /**
  * Created by skysoft on 2017/1/11.
@@ -171,12 +174,13 @@ public class ZwaveDeviceManager {
     public List<String> getSceneNameList() {
         ZwaveDeviceDao zwaveDeviceDao = getZwaveDeviceDao();
         QueryBuilder<ZwaveDevice> qb = zwaveDeviceDao.queryBuilder();
+        qb.where(new WhereCondition.StringCondition(ZwaveDeviceDao.Properties.Scene.notEq("") + " GROUP BY scene"));
         List<ZwaveDevice> list = qb.list();
-        List<String> groupName = null;
+        List<String> sceneName = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
-            groupName.add(i, list.get(i).getScene());
+            sceneName.add(i, list.get(i).getScene());
         }
-        return groupName;
+        return sceneName;
     }
 
     public List<ZwaveDevice> getSceneDevicesList(String sceneName) {
