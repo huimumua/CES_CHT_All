@@ -97,6 +97,7 @@ static const cmd_get_resp_t cmd_get_resp_tbl[] =
     {COMMAND_CLASS_SWITCH_COLOR, SWITCH_COLOR_SUPPORTED_GET, SWITCH_COLOR_SUPPORTED_REPORT},
     {COMMAND_CLASS_BARRIER_OPERATOR, BARRIER_OPERATOR_GET, BARRIER_OPERATOR_REPORT},
     {COMMAND_CLASS_BASIC_TARIFF_INFO, BASIC_TARIFF_INFO_GET, BASIC_TARIFF_INFO_REPORT},
+    {COMMAND_CLASS_CENTRAL_SCENE, CENTRAL_SCENE_SUPPORTED_GET, CENTRAL_SCENE_SUPPORTED_REPORT},
 
 };
 
@@ -2232,6 +2233,16 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
                     NOTIFICATION_REPORT_V4,
                     NOTIFICATION_SUPPORTED_REPORT_V4,
                     EVENT_SUPPORTED_REPORT_V4
+                };
+                return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
+            }
+            break;
+        case COMMAND_CLASS_CENTRAL_SCENE:
+            {
+                static const uint8_t intf_settings[] =
+                {
+                    CENTRAL_SCENE_SUPPORTED_REPORT,
+                    CENTRAL_SCENE_NOTIFICATION
                 };
                 return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
             }
@@ -6188,6 +6199,51 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
                             //Callback the registered function
                             rpt_cb(&ifd, cmd_buf[2], evt_len, sup_evt);
                         }
+                    }
+                }
+            }
+            break;
+
+            case COMMAND_CLASS_CENTRAL_SCENE:
+            {
+                if (cmd_buf[1] == CENTRAL_SCENE_SUPPORTED_REPORT)
+                {
+                    if (cmd_len >= 4)
+                    {
+                        zwrep_central_scene_sup_get_fn rpt_cb;
+                        rpt_cb = (zwrep_central_scene_sup_get_fn)report_cb;
+
+                        zwcentral_scene_info_t scene_info;
+                        memset(&scene_info, 0, sizeof(zwcentral_scene_info_t));
+
+                        scene_info.sup_scene = cmd_buf[2];
+                        scene_info.num_of_bit = (cmd_buf[3] >> 1) & 0x03;
+                        scene_info.identical = cmd_buf[3] & 0x01;
+                        if (cmd_len >= 5)
+                        {
+                            memcpy(scene_info.supported_key_attr, cmd_buf+4, cmd_len-4);
+                        }
+
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, &scene_info, cmd_len-4);
+                    }
+                }
+                else if (cmd_buf[1] == CENTRAL_SCENE_NOTIFICATION)
+                {
+                    if (cmd_len >= 5)
+                    {
+                        zwrep_central_scene_notification_rep_fn rpt_cb;
+                        rpt_cb = (zwrep_central_scene_notification_rep_fn)report_cb;
+
+                        zwcentral_scene_notify_t notify_info;
+                        notify_info.seq_num = cmd_buf[2];
+                        notify_info.key_attr = cmd_buf[3] & 0x07;
+                        notify_info.scene_num = cmd_buf[4];
+
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, &notify_info);
                     }
                 }
             }

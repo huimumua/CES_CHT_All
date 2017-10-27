@@ -253,6 +253,7 @@ typedef struct _zwifd	    *zwifd_p;		/**< interface descriptor */
 #define ZW_CID_NOTIFICATION_SET	         104	   /**< zwif_notification_set */
 #define ZW_CID_NOTIFICATION_SUP_GET      105	   /**< zwif_notification_sup_get */
 #define ZW_CID_NOTIFICATION_SUP_EVT_GET  106	   /**< zwif_notification_sup_evt_get */
+#define ZW_CID_CENTRAL_SCENE_SUP_GET     107       /**< zwif_central_scene_sup_get */
 
 // Modify: skysoft end
 /**********************************************************************/
@@ -4623,6 +4624,28 @@ setup notification get report callback function
 return      ZW_ERR_XXX
 */
 
+// Command Class Central Scene
+typedef struct
+{
+    uint8_t     sup_scene;		           // supported scenes
+    uint8_t     num_of_bit;                // number of bit masks
+    uint8_t     identical;                 // indicates if all scenes are supporting the same Key Attributes
+    uint8_t     supported_key_attr[256];   // advertises the attributes supported by the corresponding scene
+}
+zwcentral_scene_info_t, *zwcentral_scene_info_p;
+
+typedef struct
+{
+    uint8_t     seq_num;		           // sequence number
+    uint8_t     key_attr;                  // key attribute
+    uint8_t     scene_num;                 // scene number
+}
+zwcentral_scene_notify_t, *zwcentral_scene_notify_p;
+
+typedef void (*zwrep_central_scene_sup_get_fn)(zwifd_p ifd, zwcentral_scene_info_p scene_info, uint8_t length);
+int zwif_central_scene_sup_get(zwifd_p ifd, zwrep_central_scene_sup_get_fn rpt_cb);
+typedef void (*zwrep_central_scene_notification_rep_fn)(zwifd_p ifd, zwcentral_scene_notify_p notify_info);
+int zwif_central_scene_notification_rep_set(zwifd_p ifd, zwrep_central_scene_notification_rep_fn rpt_cb);
 
 // skysoft end
 /*********************************************/

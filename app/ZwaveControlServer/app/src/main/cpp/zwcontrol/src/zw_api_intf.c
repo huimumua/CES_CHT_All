@@ -6844,7 +6844,7 @@ int zwif_notification_sup_evt_get(zwifd_p ifd, uint8_t ztype, zwrep_notification
 
     if (result == 0)
     {
-        result = zwif_cmd_id_set(ifd, ZW_CID_ALRM_SUP_EVT_GET, 1);
+        result = zwif_cmd_id_set(ifd, ZW_CID_NOTIFICATION_SUP_EVT_GET, 1);
         if ( result < 0)
         {
             return result;
@@ -6857,6 +6857,56 @@ int zwif_notification_sup_evt_get(zwifd_p ifd, uint8_t ztype, zwrep_notification
     return result;
 }
 
+/**
+zwif_central_scene_sup_get - get the supported central scene
+@param[in]  ifd     interface
+@param[in]  cb      report callback function
+@return ZW_ERR_XXX
+*/
+int zwif_central_scene_sup_get(zwifd_p ifd, zwrep_central_scene_sup_get_fn cb)
+{
+    int     result;
+    zwif_p  intf;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_CENTRAL_SCENE)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    //Check version as this command is only valid for version 3 and above
+    if (ifd->ver < 2)
+    {
+        return ZW_ERR_CMD_VERSION;
+    }
+
+    //Setup report callback
+    result = zwif_set_report(ifd, cb, CENTRAL_SCENE_SUPPORTED_REPORT);
+
+    if (result == 0)
+    {
+        result = zwif_cmd_id_set(ifd, ZW_CID_CENTRAL_SCENE_SUP_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        //Request for report
+        result = zwif_get_report(ifd, NULL, 0,
+                                 CENTRAL_SCENE_SUPPORTED_GET, zwif_exec_cb);
+    }
+    return result;
+}
+
+int zwif_central_scene_notification_rep_set(zwifd_p ifd, zwrep_central_scene_notification_rep_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_CENTRAL_SCENE)
+    {
+        return zwif_set_report(ifd, rpt_cb, CENTRAL_SCENE_NOTIFICATION);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
 
 // skysoft end
 /*****************************************/

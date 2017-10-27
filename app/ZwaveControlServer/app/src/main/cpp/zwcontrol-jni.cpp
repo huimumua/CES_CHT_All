@@ -598,6 +598,11 @@ static int controller_getSupportedEventNotification(JNIEnv *env, jclass object, 
     return zwcontrol_notification_supported_event_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)notifType);
 }
 
+static int controller_getSupportedCentralScene(JNIEnv *env, jclass object, jint nodeId)
+{
+    return zwcontrol_central_scene_supported_get(&appl_ctx, (uint32_t)nodeId);
+}
+
 static const JNINativeMethod gMethods[] = {
         {"CreateZwController",     "()I", (void *)create_controller},
         {"OpenZwController",       "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)I", (void *)open_controller},
@@ -677,6 +682,7 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_getNotification", "(IIII)I", (void*)controller_getNotification},
         {"ZwController_getSupportedNotification", "(I)I", (void*)controller_getSupportedNotification},
         {"ZwController_getSupportedEventNotification", "(II)I", (void*)controller_getSupportedEventNotification},
+        {"ZwController_getSupportedCentralScene", "(I)I", (void*)controller_getSupportedCentralScene},
 
 };
 

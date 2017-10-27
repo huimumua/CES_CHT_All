@@ -296,4 +296,10 @@ public class ZwaveControlHelper {
     public native static int ZwController_getSupportedNotification(int deviceId);
     public native static int ZwController_getSupportedEventNotification(int deviceId, int notif_type);
 
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_CENTRAL_SCENE
+    **/
+    public native static int ZwController_getSupportedCentralScene(int deviceId);
+
 }

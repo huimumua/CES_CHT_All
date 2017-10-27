@@ -10229,3 +10229,167 @@ int  zwcontrol_notification_supported_event_get(hl_appl_ctx_t* hl_appl, uint32_t
 
     return result;
 }
+
+
+/*
+ **  Command Class Central Scene version 2
+ **
+ */
+static const char* key_attr[] =
+{
+    "Key Pressed 1 time", "Key Released", "Key Held Down",
+    "Key Pressed 2 times", "Key Pressed 3 times", "Key Pressed 4 times",
+    "Key Pressed 5 times", "Unknown"
+};
+
+void hl_central_scene_sup_get_report_cb(zwifd_p ifd, zwcentral_scene_info_t* scene_info, length)
+{
+    ALOGI("Central scene supported report.");
+    ALOGI("supported scenes: %d, number of bitmask:%d, ",scene_info->sup_scene, scene_info->num_of_bit);
+    ALOGI("identical: %d, length= %d",scene_info->identical, length);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Central Scene Supported Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "Supported Scenes", scene_info->sup_scene);
+    cJSON_AddStringToObject(jsonRoot, "Is Same Key Attributes?", scene_info->identical ? "Yes": "No");
+
+    cJSON *sup_key_attr;
+    sup_key_attr = cJSON_CreateObject();
+
+    if(sup_key_attr == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddItemToObject(jsonRoot, "Supported Key Attr", sup_key_attr);
+    uint8_t key_attr_arr[248] = {0};
+    uint8_t type_len = 0;
+    for (int i = 0; i < length * 8; i++)
+    {
+        if ((scene_info->supported_key_attr[(i>>3)] >> (i & 0x07)) & 0x01)
+        {
+            key_attr_arr[type_len++] = i;
+        }
+    }
+
+    for(int i = 0; i< type_len; i++)
+    {
+        ALOGI("supported key attr:%s ",key_attr[key_attr_arr[i]]);
+        cJSON_AddStringToObject(sup_key_attr, "key attr", key_attr[key_attr_arr[i]]);
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+void hl_central_scene_notification_report_cb(zwifd_p ifd, zwcentral_scene_notify_t* notify_info)
+{
+    ALOGI("Central scene notification report");
+    ALOGI("sequence number: %d, key attr:%s, scene number: %d",notify_info->seq_num, key_attr[notify_info->key_attr], notify_info->scene_num);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Central Scene Notification");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddStringToObject(jsonRoot, "key attr", key_attr[notify_info->key_attr]);
+    cJSON_AddNumberToObject(jsonRoot, "Scene number", notify_info->scene_num);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_central_scene_sup_get - Setup central scene supported get
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_central_scene_sup_get(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_central_scene_sup_get(ifd, hl_central_scene_sup_get_report_cb);
+
+    if (result == 0)
+    {
+        result = zwif_central_scene_notification_rep_set(ifd, hl_central_scene_notification_report_cb);
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0)
+    {
+        ALOGE("zwif_central_scene_sup_get with error:%d",result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_central_scene_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    ALOGI("zwcontrol_central_scene_supported_get started");
+    if(!hl_appl->is_init_done)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_CENTRAL_SCENE))
+    {
+        return -1;
+    }
+
+    ALOGI("hl_appl->dst_desc_id = %d,hl_appl->rep_desc_id = %d, hl_appl->temp_desc =%d",hl_appl->dst_desc_id,hl_appl->rep_desc_id,hl_appl->temp_desc);
+
+    int result = hl_central_scene_sup_get(hl_appl);
+
+    if (result != 0)
+    {
+        ALOGE("zwcontrol_central_scene_supported_get with error:%d",result);
+    }
+
+    return result;
+}
+

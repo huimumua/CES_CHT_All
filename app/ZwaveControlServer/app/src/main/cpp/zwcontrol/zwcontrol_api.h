@@ -335,4 +335,11 @@ int  zwcontrol_notification_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t
 int  zwcontrol_notification_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_notification_supported_event_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t notificationType);
 
+/*
+ **  Command Class Central Scene version 2
+ **
+ */
+int  zwcontrol_central_scene_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+void hl_central_scene_notification_report_cb(zwifd_p ifd, zwcentral_scene_notify_t* notify_info);
+
 #endif

@@ -17,6 +17,7 @@ comments: Initial release
 #include "../include/zwave/ZW_SerialAPI.h"
 #include "zw_api.h"
 #include "zw_sec2_wrap.h"
+#include "zwcontrol_api.h"
 
 #define ZW_LIB_CONTROLLER_STATIC  0x01
 #define ZW_LIB_CONTROLLER         0x02
@@ -5950,8 +5951,25 @@ static void appl_cmd_hdlr(uint8_t cmd_len, uint8_t *cmd_buf, appl_cmd_prm_t *prm
                 //Check whether the report is the polling report
                 zwpoll_rpt_chk(intf, cmd_buf, cmd_len);
 
+                if(cmd_buf[0] == COMMAND_CLASS_CENTRAL_SCENE && cmd_buf[1] == CENTRAL_SCENE_NOTIFICATION)
+                {
+                    if (cmd_len >= 5)
+                    {
+                        zwcentral_scene_notify_t notify_info;
+                        notify_info.seq_num = cmd_buf[2];
+                        notify_info.key_attr = cmd_buf[3] & 0x07;
+                        notify_info.scene_num = cmd_buf[4];
+                        zwifd_t ifd;
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        hl_central_scene_notification_report_cb(&ifd, &notify_info);
+                    }
+                }
                 //Invoke the report handler
-                zwif_rep_hdlr(intf, cmd_buf, cmd_len, rx_sts);
+                else
+                {
+                    zwif_rep_hdlr(intf, cmd_buf, cmd_len, rx_sts);
+                }
             }
         }
     }
