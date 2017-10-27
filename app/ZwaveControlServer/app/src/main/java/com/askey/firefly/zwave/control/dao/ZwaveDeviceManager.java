@@ -3,9 +3,7 @@ package com.askey.firefly.zwave.control.dao;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
-
 import com.askey.firefly.zwave.control.utils.Const;
-
 import org.greenrobot.greendao.query.QueryBuilder;
 
 import java.util.List;
@@ -16,7 +14,6 @@ import java.util.List;
  */
 
 public class ZwaveDeviceManager {
-
 
     private volatile static ZwaveDeviceManager mInstance;
     private DaoMaster.DevOpenHelper openHelper;
@@ -133,7 +130,7 @@ public class ZwaveDeviceManager {
             upDateZwaveDevice.setName(zwaveDevice.getName());
             upDateZwaveDevice.setNodeInfo(zwaveDevice.getNodeInfo());
             upDateZwaveDevice.setDevType(zwaveDevice.getDevType());
-            upDateZwaveDevice.setAddress(zwaveDevice.getAddress());
+            upDateZwaveDevice.setScene(zwaveDevice.getScene());
             zwaveDeviceDao.update(upDateZwaveDevice);
         }
     }
@@ -171,21 +168,21 @@ public class ZwaveDeviceManager {
         }
     }
 
-    public List<String> getGroupNameList() {
+    public List<String> getSceneNameList() {
         ZwaveDeviceDao zwaveDeviceDao = getZwaveDeviceDao();
         QueryBuilder<ZwaveDevice> qb = zwaveDeviceDao.queryBuilder();
         List<ZwaveDevice> list = qb.list();
         List<String> groupName = null;
         for (int i = 0; i < list.size(); i++) {
-            groupName.add(i, list.get(i).getAddress());
+            groupName.add(i, list.get(i).getScene());
         }
         return groupName;
     }
 
-    public List<ZwaveDevice> getGroupDevicesList(String groupName) {
+    public List<ZwaveDevice> getSceneDevicesList(String sceneName) {
         ZwaveDeviceDao zwaveDeviceDao = getZwaveDeviceDao();
         QueryBuilder<ZwaveDevice> qb = zwaveDeviceDao.queryBuilder();
-        qb.where(ZwaveDeviceDao.Properties.Address.eq(groupName));
+        qb.where(ZwaveDeviceDao.Properties.Scene.eq(sceneName));
         List<ZwaveDevice> list = qb.list();
         return list;
     }

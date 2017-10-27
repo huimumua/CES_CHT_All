@@ -26,19 +26,19 @@ public class ZwaveDevice implements Parcelable {
     private String nodeInfo;
     @Property(nameInDb = "devType")
     private String devType;
-    @Property(nameInDb = "address")
-    private String address;
+    @Property(nameInDb = "scene")
+    private String scene;
 
-    @Generated(hash = 930548255)
+    @Generated(hash = 597948381)
     public ZwaveDevice(Long zwaveId, String homeId, Integer nodeId, String name,
-            String nodeInfo, String devType, String address) {
+            String nodeInfo, String devType, String scene) {
         this.zwaveId = zwaveId;
         this.homeId = homeId;
         this.nodeId = nodeId;
         this.name = name;
         this.nodeInfo = nodeInfo;
         this.devType = devType;
-        this.address = address;
+        this.scene = scene;
     }
 
     @Generated(hash = 565410297)
@@ -52,7 +52,7 @@ public class ZwaveDevice implements Parcelable {
         name = in.readString();
         nodeInfo = in.readString();
         devType = in.readString();
-        address = in.readString();
+        scene = in.readString();
     }
 
     @Override
@@ -62,7 +62,7 @@ public class ZwaveDevice implements Parcelable {
         dest.writeString(name);
         dest.writeString(nodeInfo);
         dest.writeString(devType);
-        dest.writeString(address);
+        dest.writeString(scene);
     }
 
     @Override
@@ -82,12 +82,12 @@ public class ZwaveDevice implements Parcelable {
         }
     };
 
-    public String getAddress() {
-        return this.address;
+    public String getScene() {
+        return this.scene;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setScene(String scene) {
+        this.scene = scene;
     }
 
     public String getNodeInfo() {
