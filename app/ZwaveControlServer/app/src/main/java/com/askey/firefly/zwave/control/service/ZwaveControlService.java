@@ -149,10 +149,10 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_UpdateNode(deviceId);
     }
 
-    public String reNameDevice(String homeId, int deviceId, String newName, String devType){
+    public String reNameDevice(String homeId, int deviceId, String newName, String devType, String roomName){
         //数据库
-        Logg.i(TAG,"=====reNameDevice==homeId==="+homeId +"=deviceId=="+deviceId +"=newName=="+newName+"=devType=="+devType);
-        return updateName(homeId,deviceId,newName,devType);
+        Logg.i(TAG,"=====reNameDevice==homeId==="+homeId +"=deviceId=="+deviceId +"=newName=="+newName+"=devType=="+devType+"=Room=="+roomName);
+        return updateName(homeId,deviceId,newName,devType,roomName);
     }
 
     public int setDefault(){
@@ -256,8 +256,7 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.CloseZwController();
     }
 
-    private String updateName(String homeId, int deviceId, String newName, String devType) {
-        Logg.i(TAG,"=====updateName==homeId==="+homeId +"=deviceId=="+deviceId +"=newName=="+newName+"=devType=="+devType);
+    private String updateName(String homeId, int deviceId, String newName, String devType, String roomName) {
 
         int result;
         ZwaveDevice zwaveDevice = zwaveDeviceManager.queryZwaveDevices(homeId, deviceId);
@@ -265,6 +264,7 @@ public class ZwaveControlService extends Service {
             Logg.i(TAG,"=====zwaveDevice.setName(newName)====");
             zwaveDevice.setName(newName);
             zwaveDevice.setDevType(devType);
+            zwaveDevice.setScene(roomName);
             zwaveDeviceManager.updateZwaveDevice(zwaveDevice);
             result = 0;
         } else {
@@ -487,6 +487,8 @@ public class ZwaveControlService extends Service {
                 zwaveDevice.setNodeId(Integer.valueOf(nodeInfoTemp.getNodeId()));
                 zwaveDevice.setNodeInfo(gson.toJson(nodeInfoTemp));
                 zwaveDevice.setName(nodeInfoTemp.getNodeId());
+                zwaveDevice.setDevType("");
+                zwaveDevice.setScene("");
                 zwaveDeviceManager.insertZwaveDevice(zwaveDevice);
                 Logg.i(TAG,"===#########=="+nodeInfoTemp.getNodeId());
                 Logg.i(TAG,"===####nodeInfoTemp.getNodeId().equals(1)#####=="+nodeInfoTemp.getNodeId().equals("1"));
