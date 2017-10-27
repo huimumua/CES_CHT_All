@@ -5,7 +5,6 @@ import android.database.sqlite.SQLiteDatabase;
 
 import com.askey.firefly.zwave.control.utils.Const;
 
-import org.greenrobot.greendao.Property;
 import org.greenrobot.greendao.query.QueryBuilder;
 import org.greenrobot.greendao.query.WhereCondition;
 
@@ -174,7 +173,7 @@ public class ZwaveDeviceManager {
     public List<String> getSceneNameList() {
         ZwaveDeviceDao zwaveDeviceDao = getZwaveDeviceDao();
         QueryBuilder<ZwaveDevice> qb = zwaveDeviceDao.queryBuilder();
-        qb.where(new WhereCondition.StringCondition(ZwaveDeviceDao.Properties.Scene.notEq("") + " GROUP BY scene"));
+        qb.where(new WhereCondition.StringCondition("scene != '' GROUP BY scene"));
         List<ZwaveDevice> list = qb.list();
         List<String> sceneName = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {

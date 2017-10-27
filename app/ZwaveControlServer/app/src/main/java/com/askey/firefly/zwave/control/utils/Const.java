@@ -18,6 +18,7 @@ public class Const {
 	 */
 	public static final boolean DEBUG = true;
 	public static final String PACKAGE_NAME = "com.askey.firefly.zwave.control";
+	public static final String DATABASE_NAME = "zwave.db";
 
 	public static final String DATA_PATH = "/data"
 			+ Environment.getDataDirectory().getAbsolutePath() + "/"
@@ -28,7 +29,7 @@ public class Const {
 
     public static final String SAVE_NODEINFO_FILE = DATA_PATH + "/" +"zwController_nodeInfo.txt";
 
-	public static final String DBPATH = DATA_PATH + "/" + "zwave.db";
+	public static final String DBPATH = DATA_PATH + "/" + DATABASE_NAME;
 
 	public static final int TCP_PORT = 48080;
 	public static final String remoteServerIP = "211.75.141.112";
