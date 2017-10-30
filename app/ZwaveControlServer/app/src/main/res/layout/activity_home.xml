@@ -8,12 +8,14 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin"
     tools:context=".ui.HomeActivity">
-
-    <GridView
-        android:id="@+id/gvMember"
-        android:layout_width="wrap_content"
+    <android.support.design.widget.TabLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:columnWidth="240dp"
-        android:numColumns="auto_fit" />
+        android:id="@+id/tabs"
+        />
+    <android.support.v4.view.ViewPager
+        android:id="@+id/pager"
+        android:layout_below="@id/tabs"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </LinearLayout>
