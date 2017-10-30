@@ -1,4 +1,4 @@
-package com.askey.firefly.zwave.control.mqtt;
+package com.askey.firefly.zwave.control.service;
 
 import android.app.Service;
 import android.content.ComponentName;
@@ -12,7 +12,6 @@ import android.util.Log;
 
 import com.askey.firefly.zwave.control.net.TCPServer;
 import com.askey.firefly.zwave.control.net.UDPConnectin;
-import com.askey.firefly.zwave.control.service.ZwaveControlService;
 import com.askey.firefly.zwave.control.utils.Const;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
 import com.askey.firefly.zwave.control.utils.Utils;

@@ -1,6 +1,7 @@
 package com.askey.firefly.zwave.control.utils;
 
-import com.askey.firefly.zwave.control.mqtt.zwNodeMember;
+import com.askey.firefly.zwave.control.page.zwNodeMember;
+import com.askey.firefly.zwave.control.page.zwScenceMember;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,5 +19,8 @@ public class DeviceInfo {
     public static ArrayList<String> localSubTopiclist = new ArrayList<>();
 
     public static List<zwNodeMember> memberList = new ArrayList<>();
+    public static List<zwScenceMember> roomList = new ArrayList<>();
     public static String[] deviceType = {"BULB", "DIMMER", "PLUG", "SENSOR", "OTHER"};
+    public static String[] allRoomName = {"My Home","Living Room","Bedroom"};
+
 }

@@ -44,13 +44,12 @@
             android:launchMode="singleTask"/>
         <activity android:name=".ui.SensorActivity"
             android:launchMode="singleTask"/>
+        <activity android:name=".ui.RoomActivity"
+            android:launchMode="singleTask"/>
 
         <receiver android:name=".service.BootBroadcastReceiver">
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.USER_PRESENT" />
-                <action android:name="android.intent.action.PACKAGE_ADDED" />
-                <action android:name="android.intent.action.destroy" />
             </intent-filter>
         </receiver>
 
@@ -62,7 +61,7 @@
             </intent-filter>
         </service>
         <service android:name="org.eclipse.paho.android.service.MqttService" />
-        <service android:name=".mqtt.MQTTBroker"></service>
+        <service android:name=".service.MQTTBroker"></service>
 
     </application>
 

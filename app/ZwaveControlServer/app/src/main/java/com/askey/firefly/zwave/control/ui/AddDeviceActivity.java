@@ -23,7 +23,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.askey.firefly.zwave.control.R;
-import com.askey.firefly.zwave.control.jni.ZwaveControlHelper;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
 
@@ -52,11 +51,10 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_device);
 
-        //ZwaveControlHelper.ZwController_AddDevice();
-
         ivBack = (ImageView) findViewById(R.id.iv_back);
         proBar = (ProgressBar) findViewById(R.id.proBar);
         tvStatus = (TextView) findViewById(R.id.tv_status);
+
         tvStatus.setText("Please wait a moment...");
         proBar.setIndeterminate(true);
         btnCancel = (Button) findViewById(R.id.btn_cancel);
@@ -202,6 +200,8 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
         alertDialog.show();
         TextView title = (TextView) view.findViewById(R.id.title);
         title.setText("Add Device Success");
+
+        // type spinner
         final EditText message = (EditText) view.findViewById(R.id.message);
         final Spinner spDevType = (Spinner) view.findViewById(R.id.spDevType);
         Button positiveButton = (Button) view.findViewById(R.id.positiveButton);
@@ -221,13 +221,32 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
             }
         });
 
+        // room spinner
+
+        final Spinner spRoom = (Spinner) view.findViewById(R.id.spAllRoom);
+
+        ArrayAdapter<String> roomList = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_dropdown_item,
+                DeviceInfo.allRoomName);
+
+        spRoom.setAdapter(roomList);
+        spRoom.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
         message.setText(nodeId);
         positiveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
             reName(homeId , Integer.parseInt(nodeId),message.getText().toString(),
-                    spDevType.getSelectedItem().toString());
+                    spDevType.getSelectedItem().toString(),
+                    spRoom.getSelectedItem().toString());
             alertDialog.dismiss();
             backToHomeActivity();
             }
@@ -245,8 +264,8 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
 
     }
 
-    private void reName(String homeId ,int nodeId, String newName,String devType) {
-        zwaveService.reNameDevice(homeId,nodeId,newName,devType);
+    private void reName(String homeId ,int nodeId, String newName,String devType,String roomName) {
+        zwaveService.reNameDevice(homeId,nodeId,newName,devType,roomName);
     }
 
     private void showAddFailDialog() {
@@ -365,6 +384,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
             e.printStackTrace();
         }
     }
+
 
     public ZwaveControlService.zwaveCallBack mCallback = new ZwaveControlService.zwaveCallBack() {
 

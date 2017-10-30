@@ -23,7 +23,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.askey.firefly.zwave.control.R;
-import com.askey.firefly.zwave.control.mqtt.MQTTBroker;
+import com.askey.firefly.zwave.control.service.MQTTBroker;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
 import com.askey.firefly.zwave.control.thirdparty.usbserial.driver.UsbSerialDriver;
 import com.askey.firefly.zwave.control.thirdparty.usbserial.driver.UsbSerialPort;

@@ -8,6 +8,7 @@ import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
@@ -170,6 +171,12 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             zwaveService.getSwitchColor(nodeId,0x02);
             zwaveService.getSwitchColor(nodeId,0x03);
             zwaveService.getSwitchColor(nodeId,0x04);
+
+            try {
+                zwaveService.setConfiguration(nodeId,1,1,0,1);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     };
 
@@ -219,19 +226,19 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
 
                                 //change Hex string to Interger
                                 String tmpValue = value.substring(0,value.length()-1);
-                                int basicValue = Integer.valueOf(tmpValue,16);
+                                basicValue = Integer.valueOf(tmpValue,16);
 
                                 if (!SeekBarFlg && value!="00h"){
                                     brightness_change.setProgress(basicValue);
-                                    SeekBarFlg = true;
                                 }
+                                SeekBarFlg = true;
                             }
                         } else if ("Switch Color Report".equals(messageType)){
                             String txParamater = jsonObject.optString("component id");
                             String txValue = jsonObject.optString("value");
 
                             Log.i(LOG_TAG,"Parameter = "+txParamater+" | value = "+txValue);
-                            /*
+
                             if (txParamater.equals("Warm Write") && (!txValue.equals("0"))){
                                 rGroup.check(R.id.warmWhite);
                             }
@@ -242,7 +249,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
                                 rGroup.check(R.id.RGBColor);
                                 colorPickerLayout.setVisibility(View.VISIBLE);
                             }
-                            */
+
                         }
                     }
                 });

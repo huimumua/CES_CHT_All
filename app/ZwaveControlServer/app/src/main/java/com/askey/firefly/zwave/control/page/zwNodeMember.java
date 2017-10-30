@@ -1,4 +1,4 @@
-package com.askey.firefly.zwave.control.mqtt;
+package com.askey.firefly.zwave.control.page;
 
 /**
  * Created by chiapin on 2017/9/27.
