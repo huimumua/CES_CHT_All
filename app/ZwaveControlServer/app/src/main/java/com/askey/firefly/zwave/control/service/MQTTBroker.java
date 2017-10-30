@@ -98,10 +98,10 @@ public class MQTTBroker extends Service {
 
         TCPServer.close();
 
-            if (zwaveService!=null) {
-                zwaveService.closeController();
-                //zwaveService.unRegisterListener(ZWCtlCB);
-            }
+        if (zwaveService!=null) {
+            zwaveService.closeController();
+            //zwaveService.unRegisterListener(ZWCtlCB);
+        }
 
         unbindService(ZWserviceConn);
 
@@ -692,28 +692,28 @@ public class MQTTBroker extends Service {
                 new Thread(new Runnable() {
                         @Override
                         public void run() {
-                        String openResult = zwaveService.openController();
-                        if (openResult.contains(":0")){
-                            DeviceInfo.isOpenControllerFinish = true;
-                        }
+                            /*String openResult = zwaveService.openController();
+                            if (openResult.contains(":0")) {
+                                DeviceInfo.isOpenControllerFinish = true;
+                            }*/
 
-                        for (int idx = 0;idx<250;idx++){
-                            if (DeviceInfo.isMQTTInitFinish == true && DeviceInfo.isOpenControllerFinish == true){
-                                break;
+                            for (int idx = 0; idx < 250; idx++) {
+                                if (DeviceInfo.isMQTTInitFinish == true && DeviceInfo.isOpenControllerFinish == true) {
+                                    break;
+                                }
+                                try {
+                                    //Log.i(LOG_TAG,"idx = "+idx+"|isOpenControllerFinish = "+DeviceInfo.isOpenControllerFinish);
+                                    Thread.sleep(100);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
                             }
-                            try {
-                                //Log.i(LOG_TAG,"idx = "+idx+"|isOpenControllerFinish = "+DeviceInfo.isOpenControllerFinish);
-                                Thread.sleep(100);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        zwaveService.getDevices();
+                            zwaveService.getDevices();
                         }
                     }).start();
 
-            }else{
-                Log.i(LOG_TAG,"Failed to bind service with ZWaveControlService");
+            } else {
+                Log.i(LOG_TAG, "Failed to bind service with ZWaveControlService");
             }
         }
 
