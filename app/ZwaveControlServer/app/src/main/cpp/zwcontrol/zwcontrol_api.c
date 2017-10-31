@@ -2823,6 +2823,7 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
             plt_msg_show(hl_plt_ctx_get(hl_appl), "Endpoint location:%s", ep->loc);
 
             cJSON_AddNumberToObject(EpInfo, "Endpoint id", ep->epid);
+            cJSON_AddNumberToObject(EpInfo, "Endpoint interface id", last_ep_cont->id);
 
             sprintf(str, "%02X", ep->generic);
             cJSON_AddStringToObject(EpInfo, "Device class generic", str);
