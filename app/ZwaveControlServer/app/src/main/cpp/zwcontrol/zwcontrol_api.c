@@ -3029,6 +3029,100 @@ int  zwcontrol_rm_node(hl_appl_ctx_t *hl_appl)
     return result;
 }
 
+/**
+hl_node_list_dump - dump the node list info
+@param[in]  hl_appl     The high-level api context
+@return
+*/
+static int hl_node_list_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
+{
+    int         result;
+    zwnetd_p    net_desc;
+    zwnoded_p   node;
+    zwepd_p     ep;
+    zwifd_p     intf;
+    desc_cont_t *last_node_cont;
+
+    if(jsonRoot == NULL)
+    {
+        return -1;
+    }
+
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+
+    //Check whether the descriptor container linked list is initialized
+    if (!hl_appl->desc_cont_hd)
+    {
+        result = hl_desc_init(&hl_appl->desc_cont_hd, hl_appl->zwnet);
+        if (result != 0)
+        {
+            plt_msg_ts_show(hl_plt_ctx_get(hl_appl), "hl_desc_init with error:%d", result);
+            return result;
+        }
+    }
+
+    cJSON * NodeInfoArray = cJSON_CreateArray();
+
+    if(NodeInfoArray == NULL)
+    {
+        return -1;
+    }
+
+    cJSON_AddItemToObject(jsonRoot, "Added Node List", NodeInfoArray);
+
+    //Get the first node (local controller) and home id
+    last_node_cont = hl_appl->desc_cont_hd;
+
+    net_desc = zwnet_get_desc(hl_appl->zwnet);
+
+    while (last_node_cont)
+    {
+
+        if (last_node_cont->type != DESC_TYPE_NODE)
+        {
+            plt_msg_ts_show(hl_plt_ctx_get(hl_appl), "node: wrong desc type:%u", last_node_cont->type);
+        }
+
+        node = (zwnoded_p)last_node_cont->desc;
+
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "__________________________________________________________________________");
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Node id:%u[%u], Home id:%08X", (unsigned)node->nodeid,
+                     last_node_cont->id, (unsigned)net_desc->id);
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Node status:%s", (node->alive)?  "alive" : "down/sleeping");
+
+        cJSON_AddNumberToObject(NodeInfoArray, "Node id", (unsigned)node->nodeid);
+
+        if (node->sleep_cap)
+        {
+            plt_msg_show(hl_plt_ctx_get(hl_appl), "Node is capable to sleep with wakeup interval:%us", node->wkup_intv);
+        }
+
+        if (node->sensor)
+        {
+            plt_msg_show(hl_plt_ctx_get(hl_appl), "Node is FLIRS");
+        }
+
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Node security inclusion status:%s", (node->sec_incl_failed)?  "failed" : "unknown");
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Vendor id:%04X", node->vid);
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Product type id:%04X", node->type);
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Product id:%04X", node->pid);
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Category:%s", (node->category <= DEV_WALL_CTLR)?
+                                                             dev_category_str[node->category] : "unknown");
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Z-wave library type:%u", node->lib_type);
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Z-wave protocol version:%u.%02u\n", (unsigned)(node->proto_ver >> 8),
+                     (unsigned)(node->proto_ver & 0xFF));
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Application version:%u.%02u\n", (unsigned)(node->app_ver >> 8),
+                     (unsigned)(node->app_ver & 0xFF));
+
+        //Get the next node
+        last_node_cont = last_node_cont->next;
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    return 0;
+}
+
 int  zwcontrol_get_node_list(hl_appl_ctx_t *hl_appl)
 {
     if (!hl_appl->is_init_done){
@@ -3044,7 +3138,46 @@ int  zwcontrol_get_node_list(hl_appl_ctx_t *hl_appl)
         return -1;
     }
 
-    cJSON_AddStringToObject(jsonRoot, "MessageType", "Node List Report");
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "All Node List Report");
+
+    int res =  hl_node_list_dump(hl_appl, jsonRoot);
+
+    if(res == 0)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p != NULL)
+        {
+            if(resCallBack)
+            {
+                resCallBack(p);
+            }
+
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+
+    return res;
+}
+
+int  zwcontrol_get_node_info(hl_appl_ctx_t *hl_appl)
+{
+    if (!hl_appl->is_init_done){
+        ALOGE("Controller not open, please open it and try again");
+        return -1;
+    }
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return -1;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "All Node Info Report");
 
     int res =  hl_node_desc_dump(hl_appl, jsonRoot);
 

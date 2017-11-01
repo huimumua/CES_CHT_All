@@ -163,6 +163,7 @@ void zwcontrol_exit(hl_appl_ctx_t *hl_appl);
 int  zwcontrol_add_node(hl_appl_ctx_t *hl_appl);
 int  zwcontrol_rm_node(hl_appl_ctx_t *hl_appl);
 int  zwcontrol_get_node_list(hl_appl_ctx_t *hl_appl);
+int  zwcontrol_get_node_info(hl_appl_ctx_t* hl_appl);
 int  zwcontrol_rm_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
 int  zwcontrol_rp_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
 int  zwcontrol_stop_op(hl_appl_ctx_t *hl_appl);
