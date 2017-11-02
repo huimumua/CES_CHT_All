@@ -10376,7 +10376,7 @@ static const char* key_attr[] =
     "Key Pressed 5 times", "Unknown"
 };
 
-void hl_central_scene_sup_get_report_cb(zwifd_p ifd, zwcentral_scene_info_t* scene_info, length)
+void hl_central_scene_sup_get_report_cb(zwifd_p ifd, zwcentral_scene_info_t* scene_info, uint8_t length)
 {
     ALOGI("Central scene supported report.");
     ALOGI("supported scenes: %d, number of bitmask:%d, ",scene_info->sup_scene, scene_info->num_of_bit);
