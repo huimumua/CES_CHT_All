@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -44,7 +45,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
     private TextView brightness;
     private SeekBar brightness_change;
     private int brightnessLevel = 0;
-    private boolean SeekBarFlg = false;
+    private boolean adjustFlag = true;
 
     private TextView txtColor;
     private ColorPickView myView;
@@ -55,8 +56,6 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
 
     private ZwaveControlService zwaveService;
 
-
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,27 +63,35 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
         setContentView(R.layout.activity_bulb);
         setTopLayout(true, "Bulb Manage");
 
-        Colorlayout = (LinearLayout) findViewById(R.id.colorLinear);
+        initView();
 
         // bind service
         Intent serviceIntent = new Intent(this, ZwaveControlService.class);
         this.bindService(serviceIntent, conn, Context.BIND_AUTO_CREATE);
 
-        initView();
         Intent intent = getIntent();
         nodeId = Integer.parseInt(intent.getStringExtra("NodeId"));
         nodeInfo = intent.getStringExtra("NodeInfoList");
 
+        /*try {
+            JSONObject jsonObject = new JSONObject(nodeInfo);
+
+            if (jsonObject.getString("Product id").equals("0008")) {
+
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }*/
+
         if (!nodeInfo.contains("COMMAND_CLASS_SWITCH_COLOR")){
             Log.i(LOG_TAG,"not support change color !");
-            Colorlayout.setVisibility(View.GONE);
-        }else {
+        } else {
+            Colorlayout.setVisibility(View.VISIBLE);
             enableColorPicker();
         }
 
         cbSwitch = (CheckBox) findViewById(R.id.cb_switch);
         cbSwitch.setOnClickListener(this);
-
     }
 
     private RadioGroup.OnCheckedChangeListener listener = new RadioGroup.OnCheckedChangeListener() {
@@ -109,6 +116,8 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
                 case R.id.RGBColor:
                     // enable color picker view
                     colorPickerLayout.setVisibility(View.VISIBLE);
+                    zwaveService.setSwitchColor(nodeId,0x00,0);
+                    zwaveService.setSwitchColor(nodeId,0x01,0);
                     break;
             }
         }
@@ -116,6 +125,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
 
     private void initView() {
 
+        Colorlayout = (LinearLayout) findViewById(R.id.colorLinear);
         colorPickerLayout = (RelativeLayout) findViewById(R.id.colorPickerLayout);
         myView = (ColorPickView) findViewById(R.id.color_picker_view);
         txtColor = (TextView) findViewById(R.id.txt_color);
@@ -128,7 +138,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
         rgbButton = (RadioButton) findViewById(R.id.RGBColor);
         rGroup = (RadioGroup) findViewById(R.id.radiogroup);
 
-        colorPickerLayout.setVisibility(View.GONE);
+        //colorPickerLayout.setVisibility(View.GONE);
 
         rGroup.setOnCheckedChangeListener(listener);
 
@@ -162,7 +172,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
     }
 
 
-    private Runnable getDevStatus = new Runnable() {
+    /*private Runnable getDevStatus = new Runnable() {
         @Override
         public void run() {
             zwaveService.getBasic(nodeId);
@@ -178,7 +188,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
                 e.printStackTrace();
             }
         }
-    };
+    };*/
 
 
     private void enableColorPicker(){
@@ -201,63 +211,65 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
     }
 
     //zwave callback result
-    private void zwCBResult(final String result) {
+    /*private void zwCBResult(final String result) {
 
         if (Utils.isGoodJson(result)) {
 
             try {
                 final JSONObject jsonObject = new JSONObject(result);
+                final int getNodeId = jsonObject.optInt("Node id");
 
-                ((Activity) mContext).runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        String messageType = jsonObject.optString("MessageType");
+                if (getNodeId == nodeId){
 
-                        if ("Basic Information".equals(messageType)) {
-                            String value = jsonObject.optString("value");
-                            brightness.setText("Brightness : " + value);
+                    ((Activity) mContext).runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String messageType = jsonObject.optString("MessageType");
 
-                            if (value.equals("00h")) {
-                                //turn off
-                                cbSwitch.setChecked(false);
-                            } else {
-                                //turn on
-                                cbSwitch.setChecked(true);
+                            if ("Basic Information".equals(messageType)) {
+                                String value = jsonObject.optString("value");
+                                brightness.setText("Brightness : " + value);
 
-                                //change Hex string to Interger
-                                String tmpValue = value.substring(0,value.length()-1);
-                                basicValue = Integer.valueOf(tmpValue,16);
+                                if (value.equals("00h")) {
+                                    //turn off
+                                    cbSwitch.setChecked(false);
+                                } else {
+                                    //turn on
+                                    cbSwitch.setChecked(true);
 
-                                if (!SeekBarFlg && value!="00h"){
-                                    brightness_change.setProgress(basicValue);
+                                    //change Hex string to Interger
+                                    String tmpValue = value.substring(0, value.length() - 1);
+                                    basicValue = Integer.valueOf(tmpValue, 16);
+
+                                    if (adjustFlag && value != "00h") {
+                                        brightness_change.setProgress(basicValue);
+                                        adjustFlag = false;
+                                    }
                                 }
-                                SeekBarFlg = true;
-                            }
-                        } else if ("Switch Color Report".equals(messageType)){
-                            String txParamater = jsonObject.optString("component id");
-                            String txValue = jsonObject.optString("value");
+                            } else if ("Switch Color Report".equals(messageType)) {
+                                String txParamater = jsonObject.optString("component id");
+                                String txValue = jsonObject.optString("value");
 
-                            Log.i(LOG_TAG,"Parameter = "+txParamater+" | value = "+txValue);
+                                Log.i(LOG_TAG, "Parameter = " + txParamater + " | value = " + txValue);
 
-                            if (txParamater.equals("Warm Write") && (!txValue.equals("0"))){
-                                rGroup.check(R.id.warmWhite);
-                            }
-                            else if (txParamater.equals("Cold Write") && (!txValue.equals("0"))){
-                                rGroup.check(R.id.coldWite);
-                            }
-                            else{
-                                rGroup.check(R.id.RGBColor);
-                                colorPickerLayout.setVisibility(View.VISIBLE);
-                            }
+                                if (txParamater.equals("Warm Write") && (!txValue.equals("0"))) {
+                                    rGroup.check(R.id.warmWhite);
+                                } else if (txParamater.equals("Cold Write") && (!txValue.equals("0"))) {
+                                    rGroup.check(R.id.coldWite);
+                                } else {
+                                    rGroup.check(R.id.RGBColor);
+                                    colorPickerLayout.setVisibility(View.VISIBLE);
+                                }
 
+                            }
                         }
-                    }
-                });
+                    });
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
-    }
+    }*/
 
     @Override
     protected void onStop() {
@@ -286,12 +298,12 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
                     //zwaveService.setSwitchAllOn(nodeId);
                     zwaveService.setBasic(nodeId,basicValue);
                     zwaveService.getBasic(nodeId);
+                    adjustFlag = true;
                 } else {
                     //zwaveService.setSwitchAllOff(nodeId);
                     zwaveService.setBasic(nodeId,0);
                     brightness.setText("Brightness : 00h");
                     brightness_change.setProgress(0);
-                    SeekBarFlg=false;
                 }
                 break;
             default:
@@ -311,8 +323,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
 
-                new Thread(getDevStatus).start();
-
+                new initDeviceTask().execute(zwaveService);
             }
         }
 
@@ -322,7 +333,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
         }
     };
 
-    public ZwaveControlService.zwaveCallBack mCallback = new ZwaveControlService.zwaveCallBack() {
+    private ZwaveControlService.zwaveCallBack mCallback = new ZwaveControlService.zwaveCallBack() {
 
         @Override
         public void zwaveControlResultCallBack(String className, String result) {
@@ -332,8 +343,93 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             || className.equals("setSwitchAllOff") || className.equals("setSwitchColor")
             || className.equals("getSwitchColor")){
 
-            zwCBResult(result);
+            //zwCBResult(result);
+            if (Utils.isGoodJson(result)) {
+                ((Activity) mContext).runOnUiThread(new BulbActivity.CallbackRunnable(nodeId, result));
+            }
         }
         }
     };
+
+    private class CallbackRunnable implements Runnable {
+
+        private int nodeId;
+        private String result;
+
+        public CallbackRunnable(int nodeId, String result) {
+            this.nodeId = nodeId;
+            this.result = result;
+        }
+
+        @Override
+        public void run() {
+            try {
+                final JSONObject jsonObject = new JSONObject(result);
+                final int getNodeId = jsonObject.optInt("Node id");
+
+                if (getNodeId == nodeId){
+
+                    String messageType = jsonObject.optString("MessageType");
+
+                    if ("Basic Information".equals(messageType)) {
+                        String value = jsonObject.optString("value");
+                        brightness.setText("Brightness : " + value);
+
+                        if (value.equals("00h")) {
+                            //turn off
+                            cbSwitch.setChecked(false);
+                        } else {
+                            //turn on
+                            cbSwitch.setChecked(true);
+
+                            //change Hex string to Interger
+                            String tmpValue = value.substring(0, value.length() - 1);
+                            basicValue = Integer.valueOf(tmpValue, 16);
+
+                            if (adjustFlag && value != "00h") {
+                                brightness_change.setProgress(basicValue);
+                                adjustFlag = false;
+                            }
+                        }
+                    } else if ("Switch Color Report".equals(messageType)) {
+                        String txParamater = jsonObject.optString("component id");
+                        String txValue = jsonObject.optString("value");
+
+                        Log.i(LOG_TAG, "Parameter = " + txParamater + " | value = " + txValue);
+
+                        if (txParamater.equals("Warm Write") && (!txValue.equals("0"))) {
+                            rGroup.check(R.id.warmWhite);
+                        } else if (txParamater.equals("Cold Write") && (!txValue.equals("0"))) {
+                            rGroup.check(R.id.coldWite);
+                        } else {
+                            rGroup.check(R.id.RGBColor);
+                            colorPickerLayout.setVisibility(View.VISIBLE);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class initDeviceTask extends AsyncTask<ZwaveControlService, Void, Void> {
+
+        @Override
+        protected Void doInBackground(ZwaveControlService... params) {
+            params[0].getBasic(nodeId);
+            params[0].getSwitchColor(nodeId,0x00);
+            params[0].getSwitchColor(nodeId,0x01);
+            params[0].getSwitchColor(nodeId,0x02);
+            params[0].getSwitchColor(nodeId,0x03);
+            params[0].getSwitchColor(nodeId,0x04);
+
+            try {
+                params[0].setConfiguration(nodeId,1,1,0,1);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
 }

@@ -80,59 +80,60 @@
             </LinearLayout>
 
             <LinearLayout
-                android:orientation="vertical"
                 android:id="@+id/colorLinear"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginLeft="20dip"
-                android:layout_marginTop="20dip">
+                android:layout_marginTop="20dip"
+                android:orientation="vertical"
+                android:visibility="gone">
 
                 <TextView
-                    android:text="Select Color :"
+                    android:id="@+id/txColor"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="20dip"
                     android:layout_marginTop="20dip"
-                    android:id="@+id/txColor"
                     android:layout_weight="1"
-                    android:textSize="24sp"/>
+                    android:text="Select Color :"
+                    android:textSize="24sp" />
 
                 <RadioGroup
                     android:id="@+id/radiogroup"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="20dip"
                     android:layout_marginTop="20dip"
                     android:orientation="horizontal">
 
                     <RadioButton
                         android:id="@+id/warmWhite"
-                        android:text="warm white"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="15dip"
-                        android:textSize="24sp"/>
+                        android:text="warm white"
+                        android:textSize="24sp" />
+
                     <RadioButton
                         android:id="@+id/coldWite"
-                        android:text="cold white"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="15dip"
-                        android:textSize="24sp"/>
+                        android:layout_marginLeft="15dp"
+                        android:text="cold white"
+                        android:textSize="24sp" />
+
                     <RadioButton
                         android:id="@+id/RGBColor"
-                        android:text="RGB Color"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="15dip"
-                        android:textSize="24sp"/>
+                        android:text="RGB Color"
+                        android:textSize="24sp" />
                 </RadioGroup>
 
                 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:colorpicker="http://schemas.android.com/apk/res/com.askey.firefly.zwave.control"
                     android:id="@+id/colorPickerLayout"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent" >
+                    android:layout_height="match_parent"
+                    android:visibility="gone">
 
                     <com.askey.firefly.zwave.control.ui.ColorPickView
                         android:id="@+id/color_picker_view"
