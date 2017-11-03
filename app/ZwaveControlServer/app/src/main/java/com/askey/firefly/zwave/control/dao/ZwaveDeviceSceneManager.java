@@ -2,7 +2,6 @@ package com.askey.firefly.zwave.control.dao;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
-import android.transition.Scene;
 
 import com.askey.firefly.zwave.control.utils.Const;
 
@@ -47,11 +46,37 @@ public class ZwaveDeviceSceneManager {
         zwaveDeviceSceneDao.insertInTx(zwaveDeviceSceneList);
     }
 
+    public void updateScene(ZwaveDeviceScene zwaveDeviceScene, String scene) {
+        ZwaveDeviceSceneDao zwaveDeviceSceneDao = getZwaveDeviceSceneDao();
+        ZwaveDeviceScene updateZwaveDeviceScene =
+                zwaveDeviceSceneDao.queryBuilder().where(ZwaveDeviceSceneDao.Properties.Scene.eq(scene)).build().unique();
+        if (updateZwaveDeviceScene != null) {
+            updateZwaveDeviceScene.setScene(scene);
+            updateZwaveDeviceScene.setCondition(zwaveDeviceScene.getCondition());
+            updateZwaveDeviceScene.setSceneId(zwaveDeviceScene.getSceneId());
+            zwaveDeviceSceneDao.update(updateZwaveDeviceScene);
+        }
+    }
+
+    public void  deleteScene(ZwaveDeviceScene zwaveDeviceScene) {
+        ZwaveDeviceSceneDao zwaveDeviceSceneDao = getZwaveDeviceSceneDao();
+        zwaveDeviceSceneDao.deleteInTx(zwaveDeviceScene);
+    }
+
     public List<ZwaveDeviceScene> getScene() {
         ZwaveDeviceSceneDao zwaveDeviceSceneDao = getZwaveDeviceSceneDao();
         QueryBuilder<ZwaveDeviceScene> qb = zwaveDeviceSceneDao.queryBuilder();
         List<ZwaveDeviceScene> list = qb.list();
         return list;
+    }
+
+    public ZwaveDeviceScene getScene(String sceneName) {
+        ZwaveDeviceSceneDao zwaveDeviceSceneDao = getZwaveDeviceSceneDao();
+        QueryBuilder<ZwaveDeviceScene> qb = zwaveDeviceSceneDao.queryBuilder();
+        qb.where(ZwaveDeviceSceneDao.Properties.Scene.eq(sceneName));
+        if (qb.list().isEmpty()) return null;
+        ZwaveDeviceScene zwaveDeviceScene = qb.list().get(0);
+        return zwaveDeviceScene;
     }
 
     public ZwaveDeviceSceneDao getZwaveDeviceSceneDao() {

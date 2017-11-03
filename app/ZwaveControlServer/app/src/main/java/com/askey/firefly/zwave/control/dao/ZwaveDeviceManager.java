@@ -2,6 +2,7 @@ package com.askey.firefly.zwave.control.dao;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import com.askey.firefly.zwave.control.utils.Const;
 
@@ -24,7 +25,7 @@ public class ZwaveDeviceManager {
     private ZwaveDeviceManager(){}
     public ZwaveDeviceManager(Context context) {
         this.context = context;
-        openHelper = new DaoMaster.DevOpenHelper(context, Const.DBPATH, null);
+        this.openHelper = new DaoMaster.DevOpenHelper(context, Const.DBPATH, null);
     }
 
     /**
@@ -93,8 +94,18 @@ public class ZwaveDeviceManager {
      */
     public void deleteZwaveDevice(long id) {
         ZwaveDeviceDao zwaveDeviceDao = getZwaveDeviceDao();
-        zwaveDeviceDao.deleteByKey(id);
-//        User user = userDao.queryBuilder().where(UserDao.Properties.UserId.eq(id)).build().unique();
+        QueryBuilder<ZwaveDevice> qb = zwaveDeviceDao.queryBuilder();
+        qb.where(ZwaveDeviceDao.Properties.ZwaveId.eq(id));
+        if (!qb.list().isEmpty()) {
+            List<ZwaveDevice> zwaveDeviceList = getSceneDevicesList(qb.list().get(0).getScene());
+            if (zwaveDeviceList.size() == 1) {
+                ZwaveDeviceScene zwaveDeviceScene = ZwaveDeviceSceneManager.getInstance(context).getScene(qb.list().get(0).getScene());
+                if (zwaveDeviceScene != null) {
+                    ZwaveDeviceSceneManager.getInstance(context).deleteScene(zwaveDeviceScene);
+                }
+            }
+            zwaveDeviceDao.deleteByKey(id);
+        }
     }
 
     /**

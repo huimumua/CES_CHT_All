@@ -25,7 +25,10 @@ public class ZwaveDeviceSceneDao extends AbstractDao<ZwaveDeviceScene, Long> {
         public final static Property SceneId = new Property(0, Long.class, "sceneId", true, "_id");
         public final static Property Scene = new Property(1, String.class, "scene", false, "scene");
         public final static Property Condition = new Property(2, String.class, "condition", false, "condition");
+        public final static Property SensorNodeId = new Property(3, Integer.class, "sensorNodeId", false, "sensorNodeId");
     }
+
+    private DaoSession daoSession;
 
 
     public ZwaveDeviceSceneDao(DaoConfig config) {
@@ -34,6 +37,7 @@ public class ZwaveDeviceSceneDao extends AbstractDao<ZwaveDeviceScene, Long> {
     
     public ZwaveDeviceSceneDao(DaoConfig config, DaoSession daoSession) {
         super(config, daoSession);
+        this.daoSession = daoSession;
     }
 
     @Override
@@ -53,6 +57,11 @@ public class ZwaveDeviceSceneDao extends AbstractDao<ZwaveDeviceScene, Long> {
         String condition = entity.getCondition();
         if (condition != null) {
             stmt.bindString(3, condition);
+        }
+ 
+        Integer sensorNodeId = entity.getSensorNodeId();
+        if (sensorNodeId != null) {
+            stmt.bindLong(4, sensorNodeId);
         }
     }
 
@@ -74,6 +83,17 @@ public class ZwaveDeviceSceneDao extends AbstractDao<ZwaveDeviceScene, Long> {
         if (condition != null) {
             stmt.bindString(3, condition);
         }
+ 
+        Integer sensorNodeId = entity.getSensorNodeId();
+        if (sensorNodeId != null) {
+            stmt.bindLong(4, sensorNodeId);
+        }
+    }
+
+    @Override
+    protected final void attachEntity(ZwaveDeviceScene entity) {
+        super.attachEntity(entity);
+        entity.__setDaoSession(daoSession);
     }
 
     @Override
@@ -86,7 +106,8 @@ public class ZwaveDeviceSceneDao extends AbstractDao<ZwaveDeviceScene, Long> {
         ZwaveDeviceScene entity = new ZwaveDeviceScene( //
             cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0), // sceneId
             cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1), // scene
-            cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2) // condition
+            cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2), // condition
+            cursor.isNull(offset + 3) ? null : cursor.getInt(offset + 3) // sensorNodeId
         );
         return entity;
     }
@@ -96,6 +117,7 @@ public class ZwaveDeviceSceneDao extends AbstractDao<ZwaveDeviceScene, Long> {
         entity.setSceneId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
         entity.setScene(cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1));
         entity.setCondition(cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2));
+        entity.setSensorNodeId(cursor.isNull(offset + 3) ? null : cursor.getInt(offset + 3));
      }
     
     @Override
