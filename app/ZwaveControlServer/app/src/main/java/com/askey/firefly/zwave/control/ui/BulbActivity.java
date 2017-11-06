@@ -25,7 +25,6 @@ import com.askey.firefly.zwave.control.R;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
 import com.askey.firefly.zwave.control.utils.Utils;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -302,7 +301,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
                 } else {
                     //zwaveService.setSwitchAllOff(nodeId);
                     zwaveService.setBasic(nodeId,0);
-                    brightness.setText("Brightness : 00h");
+                    brightness.setText("Brightness : 0 %");
                     brightness_change.setProgress(0);
                 }
                 break;
@@ -373,7 +372,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
 
                     if ("Basic Information".equals(messageType)) {
                         String value = jsonObject.optString("value");
-                        brightness.setText("Brightness : " + value);
+                        brightness.setText("Brightness : " + Integer.parseInt(value.substring(0,2), 16) +" %");
 
                         if (value.equals("00h")) {
                             //turn off

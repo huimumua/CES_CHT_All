@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
@@ -23,12 +24,16 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.askey.firefly.zwave.control.R;
+import com.askey.firefly.zwave.control.dao.ZwaveDevice;
+import com.askey.firefly.zwave.control.dao.ZwaveDeviceManager;
 import com.askey.firefly.zwave.control.service.MQTTBroker;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
 import com.askey.firefly.zwave.control.thirdparty.usbserial.driver.UsbSerialDriver;
 import com.askey.firefly.zwave.control.thirdparty.usbserial.driver.UsbSerialPort;
 import com.askey.firefly.zwave.control.thirdparty.usbserial.driver.UsbSerialProber;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
+
+import org.json.JSONObject;
 
 import java.util.List;
 import java.util.Timer;
@@ -47,6 +52,8 @@ public class WelcomeActivity extends BaseActivity{
     private Timer timer;
 
     private ZwaveControlService zwaveService;
+    private ZwaveDeviceManager zwDevManager;
+
     private BroadcastReceiver usbReceiver = null;
     private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
 
@@ -61,6 +68,8 @@ public class WelcomeActivity extends BaseActivity{
 
         Intent MqttIntent = new Intent(WelcomeActivity.this, MQTTBroker.class);
         startService(MqttIntent);
+
+        zwDevManager = ZwaveDeviceManager.getInstance(this);
 
         // bind service
         Intent serviceIntent = new Intent(this, ZwaveControlService.class);
@@ -87,6 +96,7 @@ public class WelcomeActivity extends BaseActivity{
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            initSensorfunc();
             initZwave();
         }
     };
@@ -234,6 +244,7 @@ public class WelcomeActivity extends BaseActivity{
         }
     };
 
+
     private void requestControlUSBPermission() {
         UsbManager usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
         final List<UsbSerialDriver> drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager);
@@ -285,6 +296,60 @@ public class WelcomeActivity extends BaseActivity{
         String openResult = zwaveService.openController();
         if (openResult.contains(":0")){
             DeviceInfo.isOpenControllerFinish = true;
+        }
+    }
+
+
+    private void initSensorfunc(){
+
+        List<ZwaveDevice> list = zwDevManager.queryZwaveDeviceList();
+
+        for (int idx = 1 ; idx< list.size(); idx++){
+
+            /*
+            Log.i(LOG_TAG,"*** NodeId = "+list.get(idx).getNodeId()+" | HomeID = "+list.get(idx).getHomeId()
+                    +"| devType="+list.get(idx).getDevType()+" | Name="+list.get(idx).getName()
+                    +"| roomName="+list.get(idx).getScene()+"| nodeInfo = "+list.get(idx).getNodeInfo());
+            */
+            int nodeId = list.get(idx).getNodeId();
+            String devType = list.get(idx).getDevType();
+
+            if (devType.equals("SENSOR")){
+                String devNodeInfo = list.get(idx).getNodeInfo();
+
+                if (devNodeInfo.contains("COMMAND_CLASS_BATTERY")) {
+                    Log.i(LOG_TAG, "BATTERY");
+                    zwaveService.getDeviceBattery(nodeId);
+                }
+
+                if (devNodeInfo.contains("COMMAND_CLASS_NOTIFICATION")) {
+                    try {
+                        JSONObject jsonObject = new JSONObject(devNodeInfo);
+                        if (jsonObject.getString("Product id").equals("001F")) {
+                            //Water
+                            zwaveService.getSensorNotification(nodeId, 0x00, 0x05, 0x00);
+                        } else if (jsonObject.getString("Product id").equals("000C")) {
+                            //Motion
+                            zwaveService.getSensorNotification(nodeId, 0x00, 0x07, 0x00);
+                            //Door/Window
+                            zwaveService.getSensorNotification(nodeId, 0x00, 0x06, 0x00);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (devNodeInfo.contains("COMMAND_CLASS_SENSOR_MULTILEVEL")){
+                    try {
+                        zwaveService.getSensorMultiLevel(nodeId);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+                zwaveService.getMeterSupported(nodeId);
+                zwaveService.GetSensorBinarySupportedSensor(nodeId);
+            }
+
+
         }
     }
 }

@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
@@ -93,24 +92,7 @@ public class SensorActivity extends BaseActivity {
     private void zwCBResult(String result) {
 
         if (Utils.isGoodJson(result)) {
-            try {
-                final JSONObject jsonObject = new JSONObject(result);
 
-                ((Activity) mContext).runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        /*
-                        String messageType = jsonObject.optString("Node List Report");
-                        if ("Interface Class".equals(messageType)) {
-                            String sSupportCommandClass = jsonObject.optString("Interface Class");
-                            Log.i(LOG_TAG,"support class = "+sSupportCommandClass);
-                        }
-                        */
-                    }
-                });
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -142,6 +124,7 @@ public class SensorActivity extends BaseActivity {
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
 
+                /*
                 if (nodeInfo.contains("COMMAND_CLASS_BATTERY")) {
                     Log.i(LOG_TAG, "BATTERY");
                     zwaveService.getDeviceBattery(nodeId);
@@ -183,6 +166,8 @@ public class SensorActivity extends BaseActivity {
 
                 zwaveService.getMeterSupported(nodeId);
                 zwaveService.GetSensorBinarySupportedSensor(nodeId);
+
+                */
             }
         }
 
@@ -252,7 +237,13 @@ public class SensorActivity extends BaseActivity {
                         String notificationType = jsonObject.optString("Notification-type");
                         String notificationEvent = jsonObject.optString("Notification-event");
                         if (notificationType.equals("Water alarm")) {
-                            txValue4.setText(notificationEvent);
+                            if (notificationEvent.contains("detected")){
+                                txValue4.setText("Water leak detected");
+                            }
+                            else{
+                                txValue4.setText("State idle");
+                            }
+
                         } else if (notificationType.equals("Home security")) {
                             if (!notificationEvent.equals("Tampering. Product covering removed")) {
                                 txValue5.setText(notificationEvent);

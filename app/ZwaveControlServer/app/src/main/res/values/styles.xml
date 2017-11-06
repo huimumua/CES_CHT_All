@@ -30,4 +30,8 @@
         <item name="android:textColor">#ff666666</item>
     </style>
 
+    <style name="spinner_style">
+        <item name="android:background">@drawable/spinner_selector</item>
+        <item name="android:paddingLeft">5dip</item>
+    </style>
 </resources>

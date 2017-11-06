@@ -104,7 +104,6 @@ public class MQTTBroker extends Service {
         unsubscribeTopic(Const.PublicTopicName);
 
         TCPServer.close();
-
         if (zwaveService != null) {
             zwaveService.closeController();
             //zwaveService.unRegisterListener(ZWCtlCB);
@@ -381,181 +380,194 @@ public class MQTTBroker extends Service {
 
     private void handleMqttIncomingMessage(String TopicName, String mqttMessage) {
         //send aidl message to zwave control app
-        if (mqttMessage.contains("getDevices")) {
-            Log.i(LOG_TAG, "zwaveService.getDevices()");
-            zwaveService.getDeviceInfo();
 
-        } else if (mqttMessage.contains("getScene")) {
-            Log.i(LOG_TAG, " MQTT incomming : getScene");
-            String[] tokens = mqttMessage.split(":");
+        String[] tmpStrArr = mqttMessage.split(":");
 
-            String tRoomName = tokens[2];
-            Log.i(LOG_TAG, "RoomName = " + tRoomName);
+        if (tmpStrArr.length > 1) {
+            String method = tmpStrArr[1];
 
-            String condtion = "null";
-            String sensorNodeId = "null";
-            String tmpNodeInfo = "[";
-
-            ZwaveDeviceScene tmpScene = zwSceneManager.getScene(tRoomName);
-            if (tmpScene != null) {
-                condtion = tmpScene.getCondition();
-                sensorNodeId = tmpScene.getCondition();
-            }
-            List<ZwaveDevice> tmpList = zwDevManager.getSceneDevicesList(tRoomName);
-            for (int idx = 0; idx < tmpList.size(); idx++) {
-
-                tmpNodeInfo = tmpNodeInfo + "{"
-                        + "\"homeId\":" + "\"" + tmpList.get(idx).getHomeId() + "\","
-                        + "\"nodeId\":" + "\"" + tmpList.get(idx).getNodeId() + "\","
-                        + "\"devType\":" + "\"" + tmpList.get(idx).getDevType() + "\","
-                        + "\"devName\":" + "\"" + tmpList.get(idx).getName() + "\"}";
-
-                if (idx == tmpList.size() - 1) {
-                    tmpNodeInfo = tmpNodeInfo + "]";
-                } else {
-                    tmpNodeInfo = tmpNodeInfo + ",";
-                }
-            }
-            String result = "GetSceneResult#" + tRoomName + "#" + sensorNodeId + "#" + condtion + "#" + tmpNodeInfo;
-            publishMessage(Const.PublicTopicName, result);
-        } else if (mqttMessage.contains("setScene")) {
-            Log.i(LOG_TAG, "MQTT incomming : setScene " + mqttMessage);
-            String[] tokens = mqttMessage.split(":");
-            if (tokens.length > 3) {
-                String roomName = tokens[1];
-                String sensorNodeId = tokens[2];
-                String condition = tokens[3];
-                Log.i(LOG_TAG, "roomName = " + roomName + " | sensorNodeId = "
-                        + sensorNodeId + " | condition = " + condition);
-
-                ZwaveDeviceScene tmpScene = zwSceneManager.getScene(roomName);
-                if (tmpScene != null) {
-                    tmpScene.setCondition(condition);
-                    tmpScene.setSensorNodeId(Integer.valueOf(sensorNodeId));
-                    tmpScene.update();
-                }
-            }
-        } else {
-            String[] tokens = TopicName.split(Const.PublicTopicName);
-
-            int tNodeid = Integer.parseInt(tokens[1]);
-
-            if (mqttMessage.contains("getStatus")) {
-
-                Log.i(LOG_TAG, "zwaveService.getDeviceInfo(mCallback," + tNodeid + ")");
+            if (method.equals("getDevices")) {
+                Log.i(LOG_TAG, "zwaveService.getDevices()");
                 zwaveService.getDeviceInfo();
-            } else if (mqttMessage.contains("getDeviceBattery")) {
 
-                Log.i(LOG_TAG, "zwaveService.getDeviceBattery(mCallback," + tNodeid + ")");
-                zwaveService.getDeviceBattery(tNodeid);
-            } else if (mqttMessage.contains("getSensorMultiLevel")) {
+            }
+            else if (method.equals("getScene")){
+                Log.i(LOG_TAG, " MQTT incomming : getScene");
+                String[] tokens = mqttMessage.split(":");
 
-                Log.i(LOG_TAG, "zwaveService.getSensorMultiLevel(mCallback," + tNodeid + ")");
-                try {
-                    zwaveService.getSensorMultiLevel(tNodeid);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
+                String tRoomName = tokens[2];
+                Log.i(LOG_TAG,"RoomName = "+tRoomName);
+
+                String condtion = "null";
+                String sensorNodeId = "null";
+                String tmpNodeInfo= "[";
+
+                ZwaveDeviceScene tmpScene = zwSceneManager.getScene(tRoomName);
+                if (tmpScene!=null) {
+                    condtion = tmpScene.getCondition();
+                    sensorNodeId = String.valueOf(tmpScene.getSensorNodeId());
                 }
-            } else if (mqttMessage.contains("updateNode")) {
+                List<ZwaveDevice> tmpList = zwDevManager.getSceneDevicesList(tRoomName);
+                for (int idx = 0; idx < tmpList.size(); idx++) {
 
-                Log.i(LOG_TAG, "zwaveService.updateNode(mCallback," + tNodeid + ")");
-                zwaveService.updateNode(tNodeid);
-            } else if (mqttMessage.contains("getConfiguration")) {
+                    tmpNodeInfo = tmpNodeInfo +"{"
+                            +"\"homeId\":"+"\""+tmpList.get(idx).getHomeId()+"\","
+                            +"\"nodeId\":"+"\""+tmpList.get(idx).getNodeId()+"\","
+                            +"\"devType\":"+"\""+tmpList.get(idx).getDevType()+"\","
+                            +"\"devName\":"+"\""+tmpList.get(idx).getName()+"\"}";
 
-                tokens = mqttMessage.split(":");
-                if (tokens.length > 7) {
-                    String tHomeid = tokens[2];
-                    int tParamMode = Integer.parseInt(tokens[4]);
-                    int tParamNumber = Integer.parseInt(tokens[5]);
-                    int tRangeStart = Integer.parseInt(tokens[6]);
-                    int tRrangeEnd = Integer.parseInt(tokens[7]);
-
-                    Log.i(LOG_TAG, "zwaveService.getConfiguration(mCallback," + tHomeid + "," + tNodeid + ","
-                            + tParamMode + "," + tParamNumber + "," + tRangeStart + "," + tRrangeEnd + ")");
-                    zwaveService.getConfiguration(tNodeid,
-                            tParamMode, tParamNumber, tRangeStart, tRrangeEnd);
-
+                    if (idx == tmpList.size() -1 ){
+                        tmpNodeInfo = tmpNodeInfo+"]";
+                    }
+                    else{
+                        tmpNodeInfo = tmpNodeInfo+",";
+                    }
                 }
-            } else if (mqttMessage.contains("setConfiguration")) {
+                String result="GetSceneResult#"+tRoomName+"#"+sensorNodeId+"#"+condtion+"#"+tmpNodeInfo;
+                publishMessage(Const.PublicTopicName, result);
+            }
+            else if (method.equals("setScene")) {
+                Log.i(LOG_TAG,"MQTT incomming : setScene "+mqttMessage);
+                String[] tokens = mqttMessage.split(":");
+                if (tokens.length > 4) {
+                    String roomName = tokens[2];
+                    String sensorNodeId = tokens[3];
+                    String condition = tokens[4];
+                    Log.i(LOG_TAG,"roomName = "+roomName+" | sensorNodeId = "
+                            +sensorNodeId+ " | condition = "+condition);
 
-                tokens = mqttMessage.split(":");
-                if (tokens.length > 7) {
-                    String tHomeid = tokens[2];
-                    int tParamMode = Integer.parseInt(tokens[4]);
-                    int tParamNumber = Integer.parseInt(tokens[5]);
-                    int tRangeStart = Integer.parseInt(tokens[6]);
-                    int tRrangeEnd = Integer.parseInt(tokens[7]);
+                    ZwaveDeviceScene tmpScene = zwSceneManager.getScene(roomName);
+                    if (tmpScene!=null) {
+                        tmpScene.setCondition(condition);
+                        tmpScene.setSensorNodeId(Integer.valueOf(sensorNodeId));
+                        tmpScene.update();
+                    }
+                }
+            }
+            else {
+                String[] tokens = TopicName.split(Const.PublicTopicName);
 
-                    Log.i(LOG_TAG, "zwaveService.setConfiguration(mCallback," + tHomeid + "," + tNodeid + ","
-                            + tParamMode + "," + tParamNumber + "," + tRangeStart + "," + tRrangeEnd + ")");
+                int tNodeid = Integer.parseInt(tokens[1]);
+
+                if (method.equals("getStatus")) {
+
+                    Log.i(LOG_TAG, "zwaveService.getDeviceInfo(mCallback," + tNodeid + ")");
+                    zwaveService.getDeviceInfo();
+                } else if (method.equals("getDeviceBattery")) {
+
+                    Log.i(LOG_TAG, "zwaveService.getDeviceBattery(mCallback," + tNodeid + ")");
+                    zwaveService.getDeviceBattery(tNodeid);
+                } else if (method.equals("getSensorMultiLevel")) {
+
+                    Log.i(LOG_TAG, "zwaveService.getSensorMultiLevel(mCallback," + tNodeid + ")");
                     try {
-                        zwaveService.setConfiguration(tNodeid,
-                                tParamMode, tParamNumber, tRangeStart, tRrangeEnd);
+                        zwaveService.getSensorMultiLevel(tNodeid);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
+                } else if (method.equals("updateNode")) {
+
+                    Log.i(LOG_TAG, "zwaveService.updateNode(mCallback," + tNodeid + ")");
+                    zwaveService.updateNode(tNodeid);
+                } else if (method.equals("getConfiguration")) {
+
+                    tokens = mqttMessage.split(":");
+                    if (tokens.length > 7) {
+                        String tHomeid = tokens[2];
+                        int tParamMode = Integer.parseInt(tokens[4]);
+                        int tParamNumber = Integer.parseInt(tokens[5]);
+                        int tRangeStart = Integer.parseInt(tokens[6]);
+                        int tRrangeEnd = Integer.parseInt(tokens[7]);
+
+                        Log.i(LOG_TAG, "zwaveService.getConfiguration(mCallback," + tHomeid + "," + tNodeid + ","
+                                + tParamMode + "," + tParamNumber + "," + tRangeStart + "," + tRrangeEnd + ")");
+                        zwaveService.getConfiguration(tNodeid,
+                                tParamMode, tParamNumber, tRangeStart, tRrangeEnd);
+
+                    }
+                } else if (method.equals("setConfiguration")) {
+
+                    tokens = mqttMessage.split(":");
+                    if (tokens.length > 7) {
+                        String tHomeid = tokens[2];
+                        int tParamMode = Integer.parseInt(tokens[4]);
+                        int tParamNumber = Integer.parseInt(tokens[5]);
+                        int tRangeStart = Integer.parseInt(tokens[6]);
+                        int tRrangeEnd = Integer.parseInt(tokens[7]);
+
+                        Log.i(LOG_TAG, "zwaveService.setConfiguration(mCallback," + tHomeid + "," + tNodeid + ","
+                                + tParamMode + "," + tParamNumber + "," + tRangeStart + "," + tRrangeEnd + ")");
+                        try {
+                            zwaveService.setConfiguration(tNodeid,
+                                    tParamMode, tParamNumber, tRangeStart, tRrangeEnd);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (method.equals("getSupportedSwitchType")) {
+
+                    Log.i(LOG_TAG, "zwaveService.getSupportedSwitchType(mCallback," + tNodeid + ")");
+                    zwaveService.getSupportedSwitchType(tNodeid);
+                } else if (method.equals("startStopSwitchLevelChange")) {
+
+                    tokens = mqttMessage.split(":");
+                    if (tokens.length > 8) {
+                        String tHomeid = tokens[2];
+                        int tstartLvlVal = Integer.parseInt(tokens[4]);
+                        int tduration = Integer.parseInt(tokens[5]);
+                        int tpmyChangeDir = Integer.parseInt(tokens[6]);
+                        int tsecChangeDir = Integer.parseInt(tokens[7]);
+                        int tsecStep = Integer.parseInt(tokens[8]);
+
+                        Log.i(LOG_TAG, "zwaveService.startStopSwitchLevelChange(mCallback," + tHomeid + "," + tNodeid + ","
+                                + tstartLvlVal + "," + tduration + "," + tpmyChangeDir + "," + tsecChangeDir + "," + tsecStep + ")");
+                        zwaveService.startStopSwitchLevelChange(tHomeid, tNodeid,
+                                tstartLvlVal, tduration, tpmyChangeDir, tsecChangeDir, tsecStep);
+                    }
+                } else if (method.equals("getPowerLevel")) {
+
+                    Log.i(LOG_TAG, "zwaveService.getPowerLevel(mCallback," + tNodeid + ")");
+                    zwaveService.getPowerLevel(tNodeid);
+                } else if (method.equals("setSwitchAllOn")) {
+
+                    Log.i(LOG_TAG, "zwaveService.setSwitchAllOn(mCallback," + tNodeid + ")");
+                    zwaveService.setSwitchAllOn(tNodeid);
+                } else if (method.equals("setSwitchAllOff")) {
+
+                    Log.i(LOG_TAG, "zwaveService.setSwitchAllOff(mCallback," + tNodeid + ")");
+                    zwaveService.setSwitchAllOff(tNodeid);
+                } else if (method.equals("getBasic")) {
+
+                    Log.i(LOG_TAG, "zwaveService.getBasic(mCallback," + tNodeid + ")");
+                    zwaveService.getBasic(tNodeid);
+                } else if (method.equals("setBasic")) {
+
+                    tokens = mqttMessage.split(":");
+                    if (tokens.length > 2) {
+                        int tValue = Integer.parseInt(tokens[2]);
+
+                        Log.i(LOG_TAG, "zwaveService.setBasic(mCallback," + tNodeid + "," + tValue + ")");
+                        zwaveService.setBasic(tNodeid, tValue);
+                    }
+                } else if (method.equals("getSwitchMultiLevel")) {
+
+                    Log.i(LOG_TAG, "zwaveService.getSwitchMultiLevel(mCallback," + tNodeid + ")");
+                    zwaveService.getSwitchMultiLevel(tNodeid);
+                } else if (method.equals("setSwitchMultiLevel")) {
+
+                    tokens = mqttMessage.split(":");
+                    if (tokens.length > 4) {
+                        int tValue = Integer.parseInt(tokens[3]);
+                        int tDuration = Integer.parseInt(tokens[4]);
+                        Log.i(LOG_TAG, "zwaveService.setSwitchMultiLevel(mCallback," + tNodeid + "," + tValue + "," + tDuration + ")");
+                        zwaveService.setSwitchMultiLevel(tNodeid, tValue, tDuration);
+                    }
                 }
-            } else if (mqttMessage.contains("getSupportedSwitchType")) {
 
-                Log.i(LOG_TAG, "zwaveService.getSupportedSwitchType(mCallback," + tNodeid + ")");
-                zwaveService.getSupportedSwitchType(tNodeid);
-            } else if (mqttMessage.contains("startStopSwitchLevelChange")) {
-
-                tokens = mqttMessage.split(":");
-                if (tokens.length > 8) {
-                    String tHomeid = tokens[2];
-                    int tstartLvlVal = Integer.parseInt(tokens[4]);
-                    int tduration = Integer.parseInt(tokens[5]);
-                    int tpmyChangeDir = Integer.parseInt(tokens[6]);
-                    int tsecChangeDir = Integer.parseInt(tokens[7]);
-                    int tsecStep = Integer.parseInt(tokens[8]);
-
-                    Log.i(LOG_TAG, "zwaveService.startStopSwitchLevelChange(mCallback," + tHomeid + "," + tNodeid + ","
-                            + tstartLvlVal + "," + tduration + "," + tpmyChangeDir + "," + tsecChangeDir + "," + tsecStep + ")");
-                    zwaveService.startStopSwitchLevelChange(tHomeid, tNodeid,
-                            tstartLvlVal, tduration, tpmyChangeDir, tsecChangeDir, tsecStep);
-                }
-            } else if (mqttMessage.contains("getPowerLevel")) {
-
-                Log.i(LOG_TAG, "zwaveService.getPowerLevel(mCallback," + tNodeid + ")");
-                zwaveService.getPowerLevel(tNodeid);
-            } else if (mqttMessage.contains("setSwitchAllOn")) {
-
-                Log.i(LOG_TAG, "zwaveService.setSwitchAllOn(mCallback," + tNodeid + ")");
-                zwaveService.setSwitchAllOn(tNodeid);
-            } else if (mqttMessage.contains("setSwitchAllOff")) {
-
-                Log.i(LOG_TAG, "zwaveService.setSwitchAllOff(mCallback," + tNodeid + ")");
-                zwaveService.setSwitchAllOff(tNodeid);
-            } else if (mqttMessage.contains("getBasic")) {
-
-                Log.i(LOG_TAG, "zwaveService.getBasic(mCallback," + tNodeid + ")");
-                zwaveService.getBasic(tNodeid);
-            } else if (mqttMessage.contains("setBasic")) {
-
-                tokens = mqttMessage.split(":");
-                if (tokens.length > 2) {
-                    int tValue = Integer.parseInt(tokens[2]);
-
-                    Log.i(LOG_TAG, "zwaveService.setBasic(mCallback," + tNodeid + "," + tValue + ")");
-                    zwaveService.setBasic(tNodeid, tValue);
-                }
-            } else if (mqttMessage.contains("getSwitchMultiLevel")) {
-
-                Log.i(LOG_TAG, "zwaveService.getSwitchMultiLevel(mCallback," + tNodeid + ")");
-                zwaveService.getSwitchMultiLevel(tNodeid);
-            } else if (mqttMessage.contains("setSwitchMultiLevel")) {
-
-                tokens = mqttMessage.split(":");
-                if (tokens.length > 4) {
-                    int tValue = Integer.parseInt(tokens[3]);
-                    int tDuration = Integer.parseInt(tokens[4]);
-                    Log.i(LOG_TAG, "zwaveService.setSwitchMultiLevel(mCallback," + tNodeid + "," + tValue + "," + tDuration + ")");
-                    zwaveService.setSwitchMultiLevel(tNodeid, tValue, tDuration);
-                }
             }
 
         }
+
     }
 
     // Synchronize the subscribe topic of local mqtt server with remote mqtt server
@@ -632,7 +644,7 @@ public class MQTTBroker extends Service {
                     }
                 } else {
                     Log.i(LOG_TAG, "remote mqtt server is disconnect...");
-                }
+                 }
             }
         }
     }
@@ -718,6 +730,13 @@ public class MQTTBroker extends Service {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
+						  
+																		  
+													   
+																	 
+						 
+						  
+
                         for (int idx = 0; idx < 250; idx++) {
                             if (DeviceInfo.isMQTTInitFinish == true && DeviceInfo.isOpenControllerFinish == true) {
                                 break;
@@ -749,7 +768,7 @@ public class MQTTBroker extends Service {
 
         for (int idx = 0; idx < NodeId.size(); idx++) {
             Log.i(LOG_TAG, tMethodName + " Node id = " + NodeId.get(idx));
-            publishMessage(Const.PublicTopicName + NodeId.get(idx), tResult);
+            publishMessage(Const.PublicTopicName+NodeId.get(idx),tMethodName+"Result#"+tResult);
         }
     }
 
@@ -796,8 +815,7 @@ public class MQTTBroker extends Service {
                     subscribeToTopic(Const.PublicTopicName + tmpLine.get(idx));
                 }
                 //publish result to MQTT public topic
-                publishMessage(Const.PublicTopicName, result);
-
+                publishMessage(Const.PublicTopicName,result);	
                 Log.i(LOG_TAG, "node cnt = " + DeviceInfo.localSubTopiclist.size());
                 if (!DeviceInfo.isZwaveInitFinish) {
                     Log.i(LOG_TAG, " ===== isZwaveInitFinish  = true ====");

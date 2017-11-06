@@ -50,6 +50,8 @@ public class devListPage extends PageView {
 
     @Override
     public void refreshView() {
+
+        Log.i(LOG_TAG,"refreshView() ");
         List<zwNodeMember> memberList = getMemberList();
         GridView gvMember = (GridView) findViewById(R.id.gvMember);
 
@@ -132,6 +134,7 @@ public class devListPage extends PageView {
 
             String tmpType = member.getDeviceType();
 
+            // show device icon
             if (tmpType==null){
                 ivImage.setImageResource(R.drawable.unknown);
             }
@@ -159,13 +162,28 @@ public class devListPage extends PageView {
                         ivImage.setImageResource(R.drawable.remove);
                         break;
                 }
-                if (tmpType == "add" || tmpType == "remove") {
-                    tvId.setText("");
-                } else {
-                    tvId.setText("Name : " + String.valueOf(member.getDeviceType()));
+            }
+
+            // set device's name in device list page
+            if (tmpType == "add" || tmpType == "remove") {
+                tvId.setText("");
+                tvName.setText(member.getName());
+            } else {
+
+                if (member.getName().equals(String.valueOf(member.getNodeId()))){
+                    tvId.setText(member.getRoomName());
+                    tvName.setText(member.getDeviceType()+member.getName());
+                }else {
+                    tvId.setText(member.getRoomName()+" : " + String.valueOf(member.getDeviceType()));
+                    tvName.setText(member.getName());
                 }
             }
-            tvName.setText(member.getName());
+
+            if (member.getName().equals(String.valueOf(member.getNodeId()))){
+                tvName.setText(member.getDeviceType()+member.getName());
+            }else {
+                tvName.setText(member.getName());
+            }
             return itemView;
         }
 
@@ -188,17 +206,19 @@ public class devListPage extends PageView {
 
         for (int idx = 1 ; idx< list.size(); idx++){
 
+            /*
             Log.i(LOG_TAG,"*** NodeId = "+list.get(idx).getNodeId()+" | HomeID = "+list.get(idx).getHomeId()
                     +"| devType="+list.get(idx).getDevType()+" | Name="+list.get(idx).getName()
-                    +"| nodeInfo = "+list.get(idx).getNodeInfo());
-
+                    +"| roomName="+list.get(idx).getScene()+"| nodeInfo = "+list.get(idx).getNodeInfo());
+            */
             DeviceInfo.memberList.add(new zwNodeMember(list.get(idx).getNodeId(),list.get(idx).getHomeId(),
-                    list.get(idx).getDevType(), list.get(idx).getName(),list.get(idx).getNodeInfo()));
+                    list.get(idx).getDevType(), list.get(idx).getName(),
+                    list.get(idx).getScene(),false,list.get(idx).getNodeInfo()));
         }
 
-        DeviceInfo.memberList.add(new zwNodeMember(1,"","add", "Add Device",""));
+        DeviceInfo.memberList.add(new zwNodeMember(1,"","add", "Add Device","",false,""));
         if (DeviceInfo.localSubTopiclist.size() > 1 ) {
-            DeviceInfo.memberList.add(new zwNodeMember(1,"" ,"remove", "Remove Device",""));
+            DeviceInfo.memberList.add(new zwNodeMember(1,"" ,"remove", "Remove Device","",false,""));
         }
         return DeviceInfo.memberList;
     }

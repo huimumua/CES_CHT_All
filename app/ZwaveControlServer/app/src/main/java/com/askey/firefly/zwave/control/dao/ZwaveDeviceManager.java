@@ -2,7 +2,6 @@ package com.askey.firefly.zwave.control.dao;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import com.askey.firefly.zwave.control.utils.Const;
 
@@ -165,6 +164,19 @@ public class ZwaveDeviceManager {
         qb.where(ZwaveDeviceDao.Properties.ZwaveId.eq(id));
         List<ZwaveDevice> list = qb.list();
         return list.get(0);
+    }
+    /**
+     */
+    public ZwaveDevice queryZwaveDevices(int nodeId) {
+        ZwaveDeviceDao zwaveDeviceDao = getZwaveDeviceDao();
+        QueryBuilder<ZwaveDevice> qb = zwaveDeviceDao.queryBuilder();
+        qb.where(ZwaveDeviceDao.Properties.NodeId.eq(nodeId));
+        List<ZwaveDevice> list = qb.list();
+        if (list != null && list.size() > 0) {
+            return list.get(0);
+        } else {
+            return null;
+        }
     }
     /**
      */

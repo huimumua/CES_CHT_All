@@ -11,15 +11,19 @@ public class zwNodeMember {
     private String devType;
     private String name;
     private String nodeInfo;
+    private String roomName;
+    private boolean status;
 
 
-    public zwNodeMember(int nodeId,String homeId, String devType, String name, String nodeInfo) {
+    public zwNodeMember(int nodeId,String homeId, String devType, String name,String roomName,boolean status ,String nodeInfo) {
         super();
         this.nodeId = nodeId;
         this.homeId = homeId;
         this.devType = devType;
         this.name = name;
+        this.roomName = roomName;
         this.nodeInfo = nodeInfo;
+        this.status = status;
     }
 
     public String getName() {
@@ -50,4 +54,9 @@ public class zwNodeMember {
     public String getNodeInfo() {
         return nodeInfo;
     }
+    public String getRoomName() {
+        return roomName;
+    }
+    public boolean getNodeStatus() {return status;}
+    public void setNodeStatus(boolean status) {this.status = status;}
 }

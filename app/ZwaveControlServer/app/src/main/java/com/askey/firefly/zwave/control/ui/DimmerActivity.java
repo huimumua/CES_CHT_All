@@ -141,7 +141,7 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
                     zwaveService.setBasic(nodeId,0);
                     //zwaveService.setSwitchAllOff(nodeId);
 
-                    txBrightness.setText("Brightness : 00h");
+                    txBrightness.setText("Brightness : 0 %");
                     brightness_change.setProgress(0);
                 }
                 break;
@@ -180,7 +180,7 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
                             if ("Basic Information".equals(messageType)) {
 
                                 String value = jsonObject.optString("value");
-                                txBrightness.setText("Brightness : " + value);
+                                txBrightness.setText("Brightness : " + Integer.parseInt(value.substring(0,2), 16) +" %");
 
                                 if (value.equals("00h")) {
                                     //turn off

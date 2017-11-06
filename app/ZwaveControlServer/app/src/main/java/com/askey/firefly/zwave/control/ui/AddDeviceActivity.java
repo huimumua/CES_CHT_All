@@ -10,10 +10,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -23,6 +23,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.askey.firefly.zwave.control.R;
+import com.askey.firefly.zwave.control.dao.ZwaveDevice;
+import com.askey.firefly.zwave.control.dao.ZwaveDeviceManager;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
 
@@ -44,12 +46,15 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
     private Button btnCancel;
     private TextView tvStatus;
     private Timer timer;
+    private ZwaveDeviceManager zwDevManager;
     private ZwaveControlService zwaveService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_device);
+
+        zwDevManager = ZwaveDeviceManager.getInstance(this);
 
         ivBack = (ImageView) findViewById(R.id.iv_back);
         proBar = (ProgressBar) findViewById(R.id.proBar);
@@ -67,6 +72,8 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
         // bind service
         Intent serviceIntent = new Intent(this, ZwaveControlService.class);
         this.bindService(serviceIntent, conn, Context.BIND_AUTO_CREATE);
+
+
     }
 
     @Override
@@ -123,19 +130,20 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
         // 重写handleMessage()方法，此方法在UI线程运行
         @Override
         public void handleMessage(Message msg) {
-        switch (msg.what) {
-            case 2001:
-                hideProgressDialog();
-                showFailedAddZaveDialog("Add Device Timeout");
-                break;
+            switch (msg.what) {
+                case 2001:
+                    hideProgressDialog();
+                    showFailedAddZaveDialog("Add Device Timeout");
+                    break;
 
-            case 2002:
-                Log.i(LOG_TAG,"2002");
-                timerCancel();
-                hideProgressDialog();
-                showAddDialog(msg.getData().getString("homeId"),msg.getData().getString("nodeId"));
-                break;
-        }
+                case 2002:
+                    Log.i(LOG_TAG,"2002");
+                    timerCancel();
+                    hideProgressDialog();
+                    initSensorfunc(msg.getData().getInt("nodeId"));
+                    showAddDialog(msg.getData().getString("homeId"), String.valueOf(msg.getData().getInt("nodeId")));
+                    break;
+            }
         }
     };
 
@@ -212,14 +220,6 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
                 DeviceInfo.deviceType);
 
         spDevType.setAdapter(devTypeList);
-        spDevType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-            }
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
 
         // room spinner
 
@@ -230,14 +230,6 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
                 DeviceInfo.allRoomName);
 
         spRoom.setAdapter(roomList);
-        spRoom.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-            }
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
 
         message.setText(nodeId);
         positiveButton.setOnClickListener(new View.OnClickListener() {
@@ -247,6 +239,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
             reName(homeId , Integer.parseInt(nodeId),message.getText().toString(),
                     spDevType.getSelectedItem().toString(),
                     spRoom.getSelectedItem().toString());
+
             alertDialog.dismiss();
             backToHomeActivity();
             }
@@ -262,6 +255,43 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
 
         alertDialog.show();
 
+    }
+
+    private void initSensorfunc(int nodeId){
+        ZwaveDevice zwSensor = zwDevManager.queryZwaveDevices(nodeId);
+        String devNodeInfo = zwSensor.getNodeInfo();
+
+        if (devNodeInfo.contains("COMMAND_CLASS_BATTERY")) {
+            Log.i(LOG_TAG, "BATTERY");
+            zwaveService.getDeviceBattery(nodeId);
+        }
+
+        if (devNodeInfo.contains("COMMAND_CLASS_NOTIFICATION")) {
+            try {
+                JSONObject jsonObject = new JSONObject(devNodeInfo);
+                if (jsonObject.getString("Product id").equals("001F")) {
+                    //Water
+                    zwaveService.getSensorNotification(nodeId, 0x00, 0x05, 0x00);
+                } else if (jsonObject.getString("Product id").equals("000C")) {
+                    //Motion
+                    zwaveService.getSensorNotification(nodeId, 0x00, 0x07, 0x00);
+                    //Door/Window
+                    zwaveService.getSensorNotification(nodeId, 0x00, 0x06, 0x00);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (devNodeInfo.contains("COMMAND_CLASS_SENSOR_MULTILEVEL")){
+            try {
+                zwaveService.getSensorMultiLevel(nodeId);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        zwaveService.getMeterSupported(nodeId);
+        zwaveService.GetSensorBinarySupportedSensor(nodeId);
     }
 
     private void reName(String homeId ,int nodeId, String newName,String devType,String roomName) {
@@ -403,7 +433,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
 
                     Message message = new Message();
                     Bundle data = new Bundle();
-                    data.putString("nodeId", tNodeId);
+                    data.putInt("nodeId", Integer.parseInt(tNodeId));
                     data.putString("homeId", tHomeId);
                     message.setData(data);
                     message.what = 2002;

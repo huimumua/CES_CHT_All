@@ -19,11 +19,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.askey.firefly.zwave.control.R;
+import com.askey.firefly.zwave.control.dao.ZwaveDeviceManager;
+import com.askey.firefly.zwave.control.dao.ZwaveDeviceScene;
+import com.askey.firefly.zwave.control.dao.ZwaveDeviceSceneManager;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -34,6 +38,8 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
     private TextView tvStatus;
     private ProgressBar proBar;
     private Timer timer;
+    private ZwaveDeviceManager zwDevManager;
+    private ZwaveDeviceSceneManager zwDevSceneManager;
     private ZwaveControlService zwaveService;
 
     @Override
@@ -41,6 +47,10 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_remove_device);
+
+        zwDevManager = ZwaveDeviceManager.getInstance(this);
+        zwDevSceneManager = ZwaveDeviceSceneManager.getInstance(this);
+
         initView();
 
         proBar.setIndeterminate(true);
@@ -252,7 +262,7 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
     }
 
 
-    public ZwaveControlService.zwaveCallBack mCallback = new ZwaveControlService.zwaveCallBack() {
+    private ZwaveControlService.zwaveCallBack mCallback = new ZwaveControlService.zwaveCallBack() {
 
         @Override
         public void zwaveControlResultCallBack(String className, String result) {
@@ -260,13 +270,41 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
         if (className.equals("removeDevice")){
             if (result.contains("removeDevice:")){
                 String[] tokens = result.split(":");
+                final int nodeId = Integer.parseInt(tokens[2]);
+
                 if (tokens.length<3){
                     Log.i(LOG_TAG,"removeDevice : wrong format "+result);
                 } else {
+                    Log.i(LOG_TAG,"remove nodeid = "+nodeId+" and backtoHome");
+
+                    Log.i(LOG_TAG,"call removeScene");
+                    new Thread(new Runnable() {
+                        public void run() {
+                        List<String> tmpNodeList = zwDevManager.getSceneNameList();
+                        if (tmpNodeList!=null) {
+
+                            for (int idx = 0; idx < tmpNodeList.size(); idx++) {
+
+                                ZwaveDeviceScene removeScene = new ZwaveDeviceScene();
+
+                                ZwaveDeviceScene tmpScene = zwDevSceneManager.getScene(tmpNodeList.get(idx));
+                                if (tmpScene != null && tmpScene.getSceneId() == nodeId) {
+                                    removeScene.setSensorNodeId(null);
+                                    removeScene.setCondition(null);
+                                    zwDevSceneManager.updateScene(removeScene,tmpNodeList.get(idx));
+                                }
+                            }
+                        }
+                        }
+                    }).start();
+
+                    Log.i(LOG_TAG,"endof call removeScene");
+
                     // back to home activity
                     Intent intent = new Intent(mContext,HomeActivity.class);
                     startActivity(intent);
                     finish();
+
                 }
             }else {
                 removeDeviceResult(result);

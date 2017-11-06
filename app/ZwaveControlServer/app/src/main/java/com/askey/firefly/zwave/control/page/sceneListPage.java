@@ -3,7 +3,6 @@ package com.askey.firefly.zwave.control.page;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +15,8 @@ import android.widget.TextView;
 import com.askey.firefly.zwave.control.R;
 import com.askey.firefly.zwave.control.dao.ZwaveDevice;
 import com.askey.firefly.zwave.control.dao.ZwaveDeviceManager;
+import com.askey.firefly.zwave.control.dao.ZwaveDeviceScene;
+import com.askey.firefly.zwave.control.dao.ZwaveDeviceSceneManager;
 import com.askey.firefly.zwave.control.ui.RoomActivity;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
 
@@ -30,6 +31,8 @@ public class sceneListPage extends PageView {
     private static String LOG_TAG = sceneListPage.class.getSimpleName();
 
     private ZwaveDeviceManager zwaveDeviceManager;
+    private ZwaveDeviceSceneManager zwaveDeviceSceneManager;
+
     private Context mContext;
 
     public sceneListPage(Context context) {
@@ -39,6 +42,7 @@ public class sceneListPage extends PageView {
         View view = LayoutInflater.from(context).inflate(R.layout.gridview, null);
         addView(view);
         zwaveDeviceManager = ZwaveDeviceManager.getInstance(mContext);
+        zwaveDeviceSceneManager = ZwaveDeviceSceneManager.getInstance(mContext);
     }
 
 
@@ -49,12 +53,10 @@ public class sceneListPage extends PageView {
 
         gvMember.setAdapter(new sceneListPage.roomAdapter(mContext, roomList));
 
-
         gvMember.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view,
                                     int position, long id) {
-
 
                 buttonevent(position);
             }
@@ -70,8 +72,25 @@ public class sceneListPage extends PageView {
                 zwScenceMember member = DeviceInfo.roomList.get(position);
 
                 Intent intent = new Intent(mContext,RoomActivity.class);
-                intent.putExtra("ScenceName", String.valueOf(member.getScenceName()));
-                intent.putExtra("NodeInfoList",member.getmember());
+                intent.putExtra("ScenceName", member.getScenceName());
+
+                ZwaveDeviceScene tmpScene = zwaveDeviceSceneManager.getScene(member.getScenceName());
+
+                if (tmpScene==null) {
+
+                    intent.putExtra("RoomCondition", "null");
+                    intent.putExtra("SensorNodeId", "null");
+                } else {
+                    ZwaveDevice sensorNode = zwaveDeviceManager.queryZwaveDevices(tmpScene.getSensorNodeId());
+
+                    if (sensorNode==null ) {
+                        intent.putExtra("RoomCondition", "null");
+                        intent.putExtra("SensorNodeId", "null");
+                    }else {
+                        intent.putExtra("RoomCondition", tmpScene.getCondition());
+                        intent.putExtra("SensorNodeId", String.valueOf(sensorNode.getNodeId()));
+                    }
+                }
 
                 mContext.startActivity(intent);
             }
@@ -136,7 +155,7 @@ public class sceneListPage extends PageView {
         }
     }
 
-    public List<zwScenceMember> getRoomList() {
+    private List<zwScenceMember> getRoomList() {
 
         DeviceInfo.roomList.clear();
 
@@ -145,12 +164,16 @@ public class sceneListPage extends PageView {
         if (tmpNodeList!=null) {
 
             for (int idx = 0; idx < tmpNodeList.size(); idx++) {
-                Log.i(LOG_TAG, "*** tmpList[" + idx + "] = " + tmpNodeList.get(idx));
+                //Log.i(LOG_TAG, "*** tmpList[" + idx + "] = " + tmpNodeList.get(idx));
+                ZwaveDeviceScene newScene = new ZwaveDeviceScene();
 
-                List<ZwaveDevice> tmpZWList = zwaveDeviceManager.getSceneDevicesList("My Home");
+                ZwaveDeviceScene tmpScene = zwaveDeviceSceneManager.getScene(tmpNodeList.get(idx));
+                if (tmpScene == null) {
 
-                for (int cnt = 0; cnt < tmpZWList.size(); cnt++) {
-                    Log.i(LOG_TAG, " ***tmpZWList[" + cnt + "].homeId = " + tmpZWList.get(cnt).getNodeId());
+                    newScene.setScene(tmpNodeList.get(idx));
+                    newScene.setSensorNodeId(0);
+                    newScene.setCondition("null");
+                    zwaveDeviceSceneManager.insertDeviceScene(newScene);
                 }
 
                 DeviceInfo.roomList.add(new zwScenceMember(idx, tmpNodeList.get(idx),

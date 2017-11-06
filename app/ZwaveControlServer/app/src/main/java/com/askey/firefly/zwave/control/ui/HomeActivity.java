@@ -30,9 +30,9 @@ public class HomeActivity extends AppCompatActivity {
     private ViewPager mViewPager;
     private List<PageView> pageList;
     private SamplePagerAdapter adapter;
+
     // Tab titles
     private String[] tabs = { "DEVICE LIST", "ROOM LIST" };
-
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,6 +55,7 @@ public class HomeActivity extends AppCompatActivity {
             view.refreshView();
         }
     }
+
 
     private void initData() {
         pageList.clear();
@@ -100,6 +101,5 @@ public class HomeActivity extends AppCompatActivity {
         public void destroyItem(ViewGroup container, int position, Object object) {
             container.removeView((View) object);
         }
-
     }
 }
