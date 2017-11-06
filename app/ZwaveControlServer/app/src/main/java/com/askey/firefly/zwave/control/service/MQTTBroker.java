@@ -10,13 +10,15 @@ import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.askey.firefly.zwave.control.dao.ZwaveDevice;
+import com.askey.firefly.zwave.control.dao.ZwaveDeviceManager;
+import com.askey.firefly.zwave.control.dao.ZwaveDeviceScene;
+import com.askey.firefly.zwave.control.dao.ZwaveDeviceSceneManager;
 import com.askey.firefly.zwave.control.net.TCPServer;
 import com.askey.firefly.zwave.control.net.UDPConnectin;
 import com.askey.firefly.zwave.control.utils.Const;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
 import com.askey.firefly.zwave.control.utils.Utils;
-//import com.askey.zwave.control.IZwaveContrlCallBack;
-//import com.askey.zwave.control.IZwaveControlInterface;
 
 import org.eclipse.moquette.server.Server;
 import org.eclipse.paho.android.service.MqttAndroidClient;
@@ -31,21 +33,23 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MQTTBroker extends Service {
 
     private static String LOG_TAG = MQTTBroker.class.getSimpleName();
 
-    MqttAndroidClient mqttLocalClient,mqttRemoteClient;
+    MqttAndroidClient mqttLocalClient, mqttRemoteClient;
 
     private UDPConnectin uDPConnecting = new UDPConnectin(this);
     private Server mqttServer = new Server();
 
     //TCP server
     private TCPServer mTCPServer;
-
-    //AIDL
-    //IZwaveControlInterface zwaveService;
+    // for get/set scene from db
+    private ZwaveDeviceSceneManager zwSceneManager;
+    // for get/set device info from db
+    private ZwaveDeviceManager zwDevManager;
     public ZwaveControlService zwaveService;
 
     @Override
@@ -59,8 +63,8 @@ public class MQTTBroker extends Service {
             e.printStackTrace();
         }
         boolean bResult = uDPConnecting.startReceiver();
-        Log.i("MQTTClient","UDP server = [" + bResult +"]");
-        Log.i("MQTTClient","MQTT Local Server = [" + mqttServer.getServerStatus() +"]");
+        Log.i("MQTTClient", "UDP server = [" + bResult + "]");
+        Log.i("MQTTClient", "MQTT Local Server = [" + mqttServer.getServerStatus() + "]");
 
         //serverusername="";
         //serverpassword="";
@@ -80,25 +84,28 @@ public class MQTTBroker extends Service {
         mqttLocalConnect(mqttConnectOptions);
 
         /*  launch tcp server and handle the tcp message */
-        Log.i(LOG_TAG,"TCPServer = [" + handleTCPMessage() +"]");
+        Log.i(LOG_TAG, "TCPServer = [" + handleTCPMessage() + "]");
 
         //bind service with ZwaveControlService
         Intent serviceIntent = new Intent(this, ZwaveControlService.class);
         this.bindService(serviceIntent, ZWserviceConn, Context.BIND_AUTO_CREATE);
         //Log.i(LOG_TAG, "AIDL status = [" + bbindResult + "]");
 
+        // init zwSceneManager and zwDevManager
+        zwSceneManager = ZwaveDeviceSceneManager.getInstance(this);
+        zwDevManager = ZwaveDeviceManager.getInstance(this);
     }
 
     @Override
-    public void onDestroy(){
-        Log.i(LOG_TAG,"===== MQTTBroker onDestroy =====");
+    public void onDestroy() {
+        Log.i(LOG_TAG, "===== MQTTBroker onDestroy =====");
         super.onDestroy();
 
         unsubscribeTopic(Const.PublicTopicName);
 
         TCPServer.close();
 
-        if (zwaveService!=null) {
+        if (zwaveService != null) {
             zwaveService.closeController();
             //zwaveService.unRegisterListener(ZWCtlCB);
         }
@@ -106,10 +113,10 @@ public class MQTTBroker extends Service {
         unbindService(ZWserviceConn);
 
         try {
-            if(mqttLocalClient.isConnected()){
+            if (mqttLocalClient.isConnected()) {
                 mqttLocalClient.disconnect();
             }
-            if(mqttRemoteClient.isConnected()){
+            if (mqttRemoteClient.isConnected()) {
                 mqttRemoteClient.disconnect();
             }
         } catch (MqttException e) {
@@ -123,7 +130,7 @@ public class MQTTBroker extends Service {
         }
 
         zwaveService.unregister(ZWCtlCB);
-        Log.i(LOG_TAG,"===== MQTTBroker endof onDestroy =====");
+        Log.i(LOG_TAG, "===== MQTTBroker endof onDestroy =====");
     }
 
     @Nullable
@@ -134,12 +141,12 @@ public class MQTTBroker extends Service {
 
     // launch tcp server and handle the tcp message
     // creates the object OnMessageReceived asked by the TCPServer constructor
-    private boolean handleTCPMessage(){
+    private boolean handleTCPMessage() {
 
         mTCPServer = new TCPServer(new TCPServer.OnMessageReceived() {
             @Override
             //TCPServer class (at while)
-            public void messageReceived(int clientID,String message) {
+            public void messageReceived(int clientID, String message) {
 
                 Log.i(LOG_TAG, "TCP received , client ID = " + clientID + " |  message : " + message);
                 if (message.contains("mobile_zwave")) {
@@ -152,8 +159,7 @@ public class MQTTBroker extends Service {
                             Log.i(LOG_TAG, "zwaveService.addDevice(mCallback)");
                             zwaveService.addDevice();
                         }
-                    }
-                    else if (message.contains("removeDevice")) {
+                    } else if (message.contains("removeDevice")) {
                         if (Const.TCPClientPort != 0) {
                             mTCPServer.sendMessage(clientID, Const.TCPSTRING + "removeDevice:other");
                         } else {
@@ -162,16 +168,14 @@ public class MQTTBroker extends Service {
                             Log.i(LOG_TAG, "zwaveService.removeDevice(mCallback)");
                             zwaveService.removeDevice();
                         }
-                    }
-                    else if (message.contains("openController")) {
+                    } else if (message.contains("openController")) {
 
-                        if (zwaveService!=null) {
+                        if (zwaveService != null) {
                             Const.TCPClientPort = clientID;
                             Log.i(LOG_TAG, "[" + Const.TCPClientPort + "]zwaveService.openController(mCallback)");
                             zwaveService.openController();
                         }
-                    }
-                    else if (message.contains("removeFailedDevice")) {
+                    } else if (message.contains("removeFailedDevice")) {
 
                         String[] tokens = message.split(":");
                         if (tokens.length > 2) {
@@ -179,8 +183,7 @@ public class MQTTBroker extends Service {
                             Log.i(LOG_TAG, "zwaveService.removeFailedDevice(mCallback, " + tNodeId + ")");
                             zwaveService.removeFailedDevice(tNodeId);
                         }
-                    }
-                    else if (message.contains("replaceFailedDevice")) {
+                    } else if (message.contains("replaceFailedDevice")) {
 
                         String[] tokens = message.split(":");
                         if (tokens.length > 2) {
@@ -189,23 +192,19 @@ public class MQTTBroker extends Service {
                             Log.i(LOG_TAG, "zwaveService.replaceFailedDevice(mCallback, " + tNodeId + ")");
                             zwaveService.replaceFailedDevice(tNodeId);
                         }
-                    }
-                    else if (message.contains("stopAddDevice")) {
+                    } else if (message.contains("stopAddDevice")) {
 
                         Log.i(LOG_TAG, "zwaveService.stopAddDevice(mCallback)");
                         zwaveService.stopAddDevice();
-                    }
-                    else if (message.contains("stopRemoveDevice")) {
+                    } else if (message.contains("stopRemoveDevice")) {
 
                         Log.i(LOG_TAG, "zwaveService.stopRemoveDevice(mCallback)");
                         zwaveService.stopRemoveDevice();
-                    }
-                    else if (message.contains("reNameDevice")) {
+                    } else if (message.contains("reNameDevice")) {
 
                         if (Const.TCPClientPort != 0) {
                             mTCPServer.sendMessage(clientID, Const.TCPSTRING + "reNameDevice:other");
-                        }
-                        else {
+                        } else {
 
                             String[] tokens = message.split(":");
                             if (tokens.length > 6) {
@@ -216,30 +215,27 @@ public class MQTTBroker extends Service {
                                 String tDevType = tokens[5];
                                 String tRoomName = tokens[6];
 
-                                Log.i(LOG_TAG, "zwaveService.reNameDevice(mCallback,"+tHomeId+","+tDeviceId+","+tNewName+"," +
-                                        tDevType+","+tRoomName+")");
-                                zwaveService.reNameDevice(tHomeId,tDeviceId,tNewName,tDevType,tRoomName);
+                                Log.i(LOG_TAG, "zwaveService.reNameDevice(mCallback," + tHomeId + "," + tDeviceId + "," + tNewName + "," +
+                                        tDevType + "," + tRoomName + ")");
+                                zwaveService.reNameDevice(tHomeId, tDeviceId, tNewName, tDevType, tRoomName);
 
                             }
                         }
-                    }
-                    else if (message.contains("setDefault")) {
+                    } else if (message.contains("setDefault")) {
 
                         if (Const.TCPClientPort != 0) {
                             mTCPServer.sendMessage(clientID, Const.TCPSTRING + "setDefault:other");
-                        }else {
+                        } else {
                             Const.TCPClientPort = clientID;
 
                             Log.i(LOG_TAG, "zwaveService.setDefault(mCallback)");
                             zwaveService.setDefault();
                         }
-                    }
-                    else if (message.contains("closeController")) {
+                    } else if (message.contains("closeController")) {
 
                         Log.i(LOG_TAG, "zwaveService.closeController(mCallback)");
                         zwaveService.closeController();
-                    }
-                    else {
+                    } else {
                         mTCPServer.sendMessage(clientID, Const.TCPSTRING + " Wrong Payload");
                     }
                 }
@@ -251,12 +247,12 @@ public class MQTTBroker extends Service {
 
 
     //***** connect to remote mqtt server *****
-    private void mqttRemoteConnect(MqttConnectOptions mqttConnectOptions){
+    private void mqttRemoteConnect(MqttConnectOptions mqttConnectOptions) {
 
         mqttRemoteClient = new MqttAndroidClient(getApplicationContext(), Const.remoteMQTTServerUri, Const.mqttClientId);
 
         try {
-            Log.i(LOG_TAG," RemoteMClient status = " + "[connecting...]");
+            Log.i(LOG_TAG, " RemoteMClient status = " + "[connecting...]");
             mqttRemoteClient.connect(mqttConnectOptions, null, new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
@@ -270,7 +266,7 @@ public class MQTTBroker extends Service {
 
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    Log.i(LOG_TAG," RemoteMClient status = " + "[failed to connect]");
+                    Log.i(LOG_TAG, " RemoteMClient status = " + "[failed to connect]");
                 }
             });
 
@@ -278,27 +274,27 @@ public class MQTTBroker extends Service {
                 @Override
                 public void connectComplete(boolean reconnect, String serverURI) {
                     if (reconnect) {
-                        Log.i(LOG_TAG," RemoteMClient status = " + "[reconnected]");
+                        Log.i(LOG_TAG, " RemoteMClient status = " + "[reconnected]");
                         syncSubscribeTopic();
                     } else {
-                        Log.i(LOG_TAG," RemoteMClient status = " + "[connected]");
+                        Log.i(LOG_TAG, " RemoteMClient status = " + "[connected]");
                         subscribeToTopic(Const.PublicTopicName);
                     }
                 }
 
                 @Override
                 public void connectionLost(Throwable cause) {
-                    Log.i(LOG_TAG," RemoteMClient status = " + "[connection was lost]");
+                    Log.i(LOG_TAG, " RemoteMClient status = " + "[connection was lost]");
                 }
 
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
                     String mqttMessage = new String(message.getPayload());
-                    Log.i(LOG_TAG,"Remote MQTT Incoming [" + topic +"] : "+ mqttMessage);
+                    Log.i(LOG_TAG, "Remote MQTT Incoming [" + topic + "] : " + mqttMessage);
 
-                    if (zwaveService!=null){
-                        handleMqttIncomingMessage(topic,mqttMessage);
-                    }else{
+                    if (zwaveService != null) {
+                        handleMqttIncomingMessage(topic, mqttMessage);
+                    } else {
                         Log.e(LOG_TAG, "zwaveService is null");
                     }
                 }
@@ -314,14 +310,14 @@ public class MQTTBroker extends Service {
     }
 
     //***** connect to local mqtt server *****
-    private void mqttLocalConnect(MqttConnectOptions mqttConnectOptions){
+    private void mqttLocalConnect(MqttConnectOptions mqttConnectOptions) {
 
-        Log.i(LOG_TAG,"local mqtt server ip = ["+ Const.localMQTTServerUri +"]");
+        Log.i(LOG_TAG, "local mqtt server ip = [" + Const.localMQTTServerUri + "]");
 
         mqttLocalClient = new MqttAndroidClient(getApplicationContext(), Const.localMQTTServerUri, Const.mqttClientId);
 
         try {
-            Log.i(LOG_TAG," LocalMClient status = " + "[connecting....]");
+            Log.i(LOG_TAG, " LocalMClient status = " + "[connecting....]");
             mqttLocalClient.connect(mqttConnectOptions, null, new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
@@ -340,7 +336,7 @@ public class MQTTBroker extends Service {
 
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    Log.i(LOG_TAG," LocalMClient status = " + "[failed to connect]");
+                    Log.i(LOG_TAG, " LocalMClient status = " + "[failed to connect]");
                 }
             });
 
@@ -348,27 +344,27 @@ public class MQTTBroker extends Service {
                 @Override
                 public void connectComplete(boolean reconnect, String serverURI) {
                     if (reconnect) {
-                        Log.i(LOG_TAG," LocalMClient status = " + "[reconnected]");
+                        Log.i(LOG_TAG, " LocalMClient status = " + "[reconnected]");
                     } else {
-                        Log.i(LOG_TAG," LocalMClient status = " + "[connected]");
+                        Log.i(LOG_TAG, " LocalMClient status = " + "[connected]");
                         subscribeToTopic(Const.PublicTopicName);
                     }
                 }
 
                 @Override
                 public void connectionLost(Throwable cause) {
-                    Log.i(LOG_TAG," LocalMClient status = " + "[connection was lost]");
+                    Log.i(LOG_TAG, " LocalMClient status = " + "[connection was lost]");
                 }
 
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
                     String mqttMessage = new String(message.getPayload());
-                    mqttMessage = mqttMessage.replaceAll("\n","");
-                    Log.i(LOG_TAG,"Local MQTT Incoming [" + topic +"] : "+ mqttMessage);
+                    mqttMessage = mqttMessage.replaceAll("\n", "");
+                    Log.i(LOG_TAG, "Local MQTT Incoming [" + topic + "] : " + mqttMessage);
 
-                    if (zwaveService!=null){
-                        handleMqttIncomingMessage(topic,mqttMessage);
-                    }else{
+                    if (zwaveService != null) {
+                        handleMqttIncomingMessage(topic, mqttMessage);
+                    } else {
                         Log.e(LOG_TAG, "zwaveService is null");
                     }
                 }
@@ -387,161 +383,191 @@ public class MQTTBroker extends Service {
         //send aidl message to zwave control app
         if (mqttMessage.contains("getDevices")) {
             Log.i(LOG_TAG, "zwaveService.getDevices()");
-            zwaveService.getDevices();
+            zwaveService.getDeviceInfo();
 
-        }
-        else if (mqttMessage.contains("getScene")){
+        } else if (mqttMessage.contains("getScene")) {
             Log.i(LOG_TAG, " MQTT incomming : getScene");
             String[] tokens = mqttMessage.split(":");
 
-            String tRoomName = tokens[1];
-            Log.i(LOG_TAG,"RoomName = "+tRoomName);
+            String tRoomName = tokens[2];
+            Log.i(LOG_TAG, "RoomName = " + tRoomName);
 
-        }
-        else if (mqttMessage.contains("setScene")) {
-            Log.i(LOG_TAG,"MQTT incomming : setScene "+mqttMessage);
+            String condtion = "null";
+            String sensorNodeId = "null";
+            String tmpNodeInfo = "[";
+
+            ZwaveDeviceScene tmpScene = zwSceneManager.getScene(tRoomName);
+            if (tmpScene != null) {
+                condtion = tmpScene.getCondition();
+                sensorNodeId = tmpScene.getCondition();
+            }
+            List<ZwaveDevice> tmpList = zwDevManager.getSceneDevicesList(tRoomName);
+            for (int idx = 0; idx < tmpList.size(); idx++) {
+
+                tmpNodeInfo = tmpNodeInfo + "{"
+                        + "\"homeId\":" + "\"" + tmpList.get(idx).getHomeId() + "\","
+                        + "\"nodeId\":" + "\"" + tmpList.get(idx).getNodeId() + "\","
+                        + "\"devType\":" + "\"" + tmpList.get(idx).getDevType() + "\","
+                        + "\"devName\":" + "\"" + tmpList.get(idx).getName() + "\"}";
+
+                if (idx == tmpList.size() - 1) {
+                    tmpNodeInfo = tmpNodeInfo + "]";
+                } else {
+                    tmpNodeInfo = tmpNodeInfo + ",";
+                }
+            }
+            String result = "GetSceneResult#" + tRoomName + "#" + sensorNodeId + "#" + condtion + "#" + tmpNodeInfo;
+            publishMessage(Const.PublicTopicName, result);
+        } else if (mqttMessage.contains("setScene")) {
+            Log.i(LOG_TAG, "MQTT incomming : setScene " + mqttMessage);
             String[] tokens = mqttMessage.split(":");
             if (tokens.length > 3) {
                 String roomName = tokens[1];
-                String roomMember = tokens[2];
+                String sensorNodeId = tokens[2];
                 String condition = tokens[3];
-                Log.i(LOG_TAG,"roomName = "+roomName+" | roomMember = "+roomMember+" | condition = "+condition);
+                Log.i(LOG_TAG, "roomName = " + roomName + " | sensorNodeId = "
+                        + sensorNodeId + " | condition = " + condition);
 
+                ZwaveDeviceScene tmpScene = zwSceneManager.getScene(roomName);
+                if (tmpScene != null) {
+                    tmpScene.setCondition(condition);
+                    tmpScene.setSensorNodeId(Integer.valueOf(sensorNodeId));
+                    tmpScene.update();
+                }
             }
-        }
-        else {
+        } else {
             String[] tokens = TopicName.split(Const.PublicTopicName);
 
-                int tNodeid = Integer.parseInt(tokens[1]);
+            int tNodeid = Integer.parseInt(tokens[1]);
 
-                if (mqttMessage.contains("getStatus")) {
+            if (mqttMessage.contains("getStatus")) {
 
-                    Log.i(LOG_TAG, "zwaveService.getDeviceInfo(mCallback," + tNodeid + ")");
-                    zwaveService.getDeviceInfo(tNodeid);
-                } else if (mqttMessage.contains("getDeviceBattery")) {
+                Log.i(LOG_TAG, "zwaveService.getDeviceInfo(mCallback," + tNodeid + ")");
+                zwaveService.getDeviceInfo();
+            } else if (mqttMessage.contains("getDeviceBattery")) {
 
-                    Log.i(LOG_TAG, "zwaveService.getDeviceBattery(mCallback," + tNodeid + ")");
-                    zwaveService.getDeviceBattery(tNodeid);
-                } else if (mqttMessage.contains("getSensorMultiLevel")) {
+                Log.i(LOG_TAG, "zwaveService.getDeviceBattery(mCallback," + tNodeid + ")");
+                zwaveService.getDeviceBattery(tNodeid);
+            } else if (mqttMessage.contains("getSensorMultiLevel")) {
 
-                    Log.i(LOG_TAG, "zwaveService.getSensorMultiLevel(mCallback," + tNodeid + ")");
+                Log.i(LOG_TAG, "zwaveService.getSensorMultiLevel(mCallback," + tNodeid + ")");
+                try {
+                    zwaveService.getSensorMultiLevel(tNodeid);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            } else if (mqttMessage.contains("updateNode")) {
+
+                Log.i(LOG_TAG, "zwaveService.updateNode(mCallback," + tNodeid + ")");
+                zwaveService.updateNode(tNodeid);
+            } else if (mqttMessage.contains("getConfiguration")) {
+
+                tokens = mqttMessage.split(":");
+                if (tokens.length > 7) {
+                    String tHomeid = tokens[2];
+                    int tParamMode = Integer.parseInt(tokens[4]);
+                    int tParamNumber = Integer.parseInt(tokens[5]);
+                    int tRangeStart = Integer.parseInt(tokens[6]);
+                    int tRrangeEnd = Integer.parseInt(tokens[7]);
+
+                    Log.i(LOG_TAG, "zwaveService.getConfiguration(mCallback," + tHomeid + "," + tNodeid + ","
+                            + tParamMode + "," + tParamNumber + "," + tRangeStart + "," + tRrangeEnd + ")");
+                    zwaveService.getConfiguration(tNodeid,
+                            tParamMode, tParamNumber, tRangeStart, tRrangeEnd);
+
+                }
+            } else if (mqttMessage.contains("setConfiguration")) {
+
+                tokens = mqttMessage.split(":");
+                if (tokens.length > 7) {
+                    String tHomeid = tokens[2];
+                    int tParamMode = Integer.parseInt(tokens[4]);
+                    int tParamNumber = Integer.parseInt(tokens[5]);
+                    int tRangeStart = Integer.parseInt(tokens[6]);
+                    int tRrangeEnd = Integer.parseInt(tokens[7]);
+
+                    Log.i(LOG_TAG, "zwaveService.setConfiguration(mCallback," + tHomeid + "," + tNodeid + ","
+                            + tParamMode + "," + tParamNumber + "," + tRangeStart + "," + tRrangeEnd + ")");
                     try {
-                        zwaveService.getSensorMultiLevel(tNodeid);
+                        zwaveService.setConfiguration(tNodeid,
+                                tParamMode, tParamNumber, tRangeStart, tRrangeEnd);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
-                } else if (mqttMessage.contains("updateNode")) {
-
-                    Log.i(LOG_TAG, "zwaveService.updateNode(mCallback," + tNodeid + ")");
-                    zwaveService.updateNode(tNodeid);
-                } else if (mqttMessage.contains("getConfiguration")) {
-
-                    tokens = mqttMessage.split(":");
-                    if (tokens.length > 7) {
-                        String tHomeid = tokens[2];
-                        int tParamMode = Integer.parseInt(tokens[4]);
-                        int tParamNumber = Integer.parseInt(tokens[5]);
-                        int tRangeStart = Integer.parseInt(tokens[6]);
-                        int tRrangeEnd = Integer.parseInt(tokens[7]);
-
-                        Log.i(LOG_TAG, "zwaveService.getConfiguration(mCallback," + tHomeid + "," + tNodeid + ","
-                                + tParamMode + "," + tParamNumber + "," + tRangeStart + "," + tRrangeEnd + ")");
-                        zwaveService.getConfiguration(tNodeid,
-                                tParamMode, tParamNumber, tRangeStart, tRrangeEnd);
-
-                    }
-                } else if (mqttMessage.contains("setConfiguration")) {
-
-                    tokens = mqttMessage.split(":");
-                    if (tokens.length > 7) {
-                        String tHomeid = tokens[2];
-                        int tParamMode = Integer.parseInt(tokens[4]);
-                        int tParamNumber = Integer.parseInt(tokens[5]);
-                        int tRangeStart = Integer.parseInt(tokens[6]);
-                        int tRrangeEnd = Integer.parseInt(tokens[7]);
-
-                        Log.i(LOG_TAG, "zwaveService.setConfiguration(mCallback," + tHomeid + "," + tNodeid + ","
-                                + tParamMode + "," + tParamNumber + "," + tRangeStart + "," + tRrangeEnd + ")");
-                        try {
-                            zwaveService.setConfiguration(tNodeid,
-                                    tParamMode, tParamNumber, tRangeStart, tRrangeEnd);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                } else if (mqttMessage.contains("getSupportedSwitchType")) {
-
-                    Log.i(LOG_TAG, "zwaveService.getSupportedSwitchType(mCallback," + tNodeid + ")");
-                    zwaveService.getSupportedSwitchType(tNodeid);
-                } else if (mqttMessage.contains("startStopSwitchLevelChange")) {
-
-                    tokens = mqttMessage.split(":");
-                    if (tokens.length > 8) {
-                        String tHomeid = tokens[2];
-                        int tstartLvlVal = Integer.parseInt(tokens[4]);
-                        int tduration = Integer.parseInt(tokens[5]);
-                        int tpmyChangeDir = Integer.parseInt(tokens[6]);
-                        int tsecChangeDir = Integer.parseInt(tokens[7]);
-                        int tsecStep = Integer.parseInt(tokens[8]);
-
-                        Log.i(LOG_TAG, "zwaveService.startStopSwitchLevelChange(mCallback," + tHomeid + "," + tNodeid + ","
-                                + tstartLvlVal + "," + tduration + "," + tpmyChangeDir + "," + tsecChangeDir + "," + tsecStep + ")");
-                        zwaveService.startStopSwitchLevelChange(tHomeid, tNodeid,
-                                tstartLvlVal, tduration, tpmyChangeDir, tsecChangeDir, tsecStep);
-                    }
-                } else if (mqttMessage.contains("getPowerLevel")) {
-
-                    Log.i(LOG_TAG, "zwaveService.getPowerLevel(mCallback," + tNodeid + ")");
-                    zwaveService.getPowerLevel(tNodeid);
-                } else if (mqttMessage.contains("setSwitchAllOn")) {
-
-                    Log.i(LOG_TAG, "zwaveService.setSwitchAllOn(mCallback," + tNodeid + ")");
-                    zwaveService.setSwitchAllOn(tNodeid);
-                } else if (mqttMessage.contains("setSwitchAllOff")) {
-
-                    Log.i(LOG_TAG, "zwaveService.setSwitchAllOff(mCallback," + tNodeid + ")");
-                    zwaveService.setSwitchAllOff(tNodeid);
-                } else if (mqttMessage.contains("getBasic")) {
-
-                    Log.i(LOG_TAG, "zwaveService.getBasic(mCallback," + tNodeid + ")");
-                    zwaveService.getBasic(tNodeid);
-                } else if (mqttMessage.contains("setBasic")) {
-
-                    tokens = mqttMessage.split(":");
-                    if (tokens.length > 2) {
-                        int tValue = Integer.parseInt(tokens[2]);
-
-                        Log.i(LOG_TAG, "zwaveService.setBasic(mCallback," + tNodeid + "," + tValue + ")");
-                        zwaveService.setBasic(tNodeid, tValue);
-                    }
-                } else if (mqttMessage.contains("getSwitchMultiLevel")) {
-
-                    Log.i(LOG_TAG, "zwaveService.getSwitchMultiLevel(mCallback," + tNodeid + ")");
-                    zwaveService.getSwitchMultiLevel(tNodeid);
-                } else if (mqttMessage.contains("setSwitchMultiLevel")) {
-
-                    tokens = mqttMessage.split(":");
-                    if (tokens.length > 4) {
-                        int tValue = Integer.parseInt(tokens[3]);
-                        int tDuration = Integer.parseInt(tokens[4]);
-                        Log.i(LOG_TAG, "zwaveService.setSwitchMultiLevel(mCallback," + tNodeid + "," + tValue + "," + tDuration + ")");
-                        zwaveService.setSwitchMultiLevel(tNodeid, tValue, tDuration);
-                    }
                 }
+            } else if (mqttMessage.contains("getSupportedSwitchType")) {
+
+                Log.i(LOG_TAG, "zwaveService.getSupportedSwitchType(mCallback," + tNodeid + ")");
+                zwaveService.getSupportedSwitchType(tNodeid);
+            } else if (mqttMessage.contains("startStopSwitchLevelChange")) {
+
+                tokens = mqttMessage.split(":");
+                if (tokens.length > 8) {
+                    String tHomeid = tokens[2];
+                    int tstartLvlVal = Integer.parseInt(tokens[4]);
+                    int tduration = Integer.parseInt(tokens[5]);
+                    int tpmyChangeDir = Integer.parseInt(tokens[6]);
+                    int tsecChangeDir = Integer.parseInt(tokens[7]);
+                    int tsecStep = Integer.parseInt(tokens[8]);
+
+                    Log.i(LOG_TAG, "zwaveService.startStopSwitchLevelChange(mCallback," + tHomeid + "," + tNodeid + ","
+                            + tstartLvlVal + "," + tduration + "," + tpmyChangeDir + "," + tsecChangeDir + "," + tsecStep + ")");
+                    zwaveService.startStopSwitchLevelChange(tHomeid, tNodeid,
+                            tstartLvlVal, tduration, tpmyChangeDir, tsecChangeDir, tsecStep);
+                }
+            } else if (mqttMessage.contains("getPowerLevel")) {
+
+                Log.i(LOG_TAG, "zwaveService.getPowerLevel(mCallback," + tNodeid + ")");
+                zwaveService.getPowerLevel(tNodeid);
+            } else if (mqttMessage.contains("setSwitchAllOn")) {
+
+                Log.i(LOG_TAG, "zwaveService.setSwitchAllOn(mCallback," + tNodeid + ")");
+                zwaveService.setSwitchAllOn(tNodeid);
+            } else if (mqttMessage.contains("setSwitchAllOff")) {
+
+                Log.i(LOG_TAG, "zwaveService.setSwitchAllOff(mCallback," + tNodeid + ")");
+                zwaveService.setSwitchAllOff(tNodeid);
+            } else if (mqttMessage.contains("getBasic")) {
+
+                Log.i(LOG_TAG, "zwaveService.getBasic(mCallback," + tNodeid + ")");
+                zwaveService.getBasic(tNodeid);
+            } else if (mqttMessage.contains("setBasic")) {
+
+                tokens = mqttMessage.split(":");
+                if (tokens.length > 2) {
+                    int tValue = Integer.parseInt(tokens[2]);
+
+                    Log.i(LOG_TAG, "zwaveService.setBasic(mCallback," + tNodeid + "," + tValue + ")");
+                    zwaveService.setBasic(tNodeid, tValue);
+                }
+            } else if (mqttMessage.contains("getSwitchMultiLevel")) {
+
+                Log.i(LOG_TAG, "zwaveService.getSwitchMultiLevel(mCallback," + tNodeid + ")");
+                zwaveService.getSwitchMultiLevel(tNodeid);
+            } else if (mqttMessage.contains("setSwitchMultiLevel")) {
+
+                tokens = mqttMessage.split(":");
+                if (tokens.length > 4) {
+                    int tValue = Integer.parseInt(tokens[3]);
+                    int tDuration = Integer.parseInt(tokens[4]);
+                    Log.i(LOG_TAG, "zwaveService.setSwitchMultiLevel(mCallback," + tNodeid + "," + tValue + "," + tDuration + ")");
+                    zwaveService.setSwitchMultiLevel(tNodeid, tValue, tDuration);
+                }
+            }
 
         }
     }
 
     // Synchronize the subscribe topic of local mqtt server with remote mqtt server
-    private void syncSubscribeTopic(){
+    private void syncSubscribeTopic() {
 
-        for (int idx = 0; idx< DeviceInfo.localSubTopiclist.size(); idx++) {
+        for (int idx = 0; idx < DeviceInfo.localSubTopiclist.size(); idx++) {
             if (!DeviceInfo.remoteSubTopiclist.contains(DeviceInfo.localSubTopiclist.get(idx))) {
                 subscribeToTopic(DeviceInfo.localSubTopiclist.get(idx));
             }
         }
 
-        for (int idx=0;idx<DeviceInfo.remoteSubTopiclist.size();idx++) {
+        for (int idx = 0; idx < DeviceInfo.remoteSubTopiclist.size(); idx++) {
             if (!DeviceInfo.localSubTopiclist.contains(DeviceInfo.remoteSubTopiclist.get(idx))) {
                 unsubscribeTopic(DeviceInfo.localSubTopiclist.get(idx));
             }
@@ -579,8 +605,8 @@ public class MQTTBroker extends Service {
                 Log.i(LOG_TAG, "local mqtt server is disconnect...");
             }
         }
-        if (Const.remoteMqttFlag){
-            Log.i(LOG_TAG,"mqttRemoteClient.isConnected() = "+mqttRemoteClient.isConnected());
+        if (Const.remoteMqttFlag) {
+            Log.i(LOG_TAG, "mqttRemoteClient.isConnected() = " + mqttRemoteClient.isConnected());
             if (!DeviceInfo.remoteSubTopiclist.contains(TopicName)) {
                 if (mqttRemoteClient.isConnected()) {
                     try {
@@ -604,17 +630,17 @@ public class MQTTBroker extends Service {
                         Log.e(LOG_TAG, "remoteMQTT Exception whilst subscribing");
                         ex.printStackTrace();
                     }
-                }else{
-                    Log.i(LOG_TAG,"remote mqtt server is disconnect...");
+                } else {
+                    Log.i(LOG_TAG, "remote mqtt server is disconnect...");
                 }
             }
         }
     }
 
     // unsubscribe mqtt topic
-    private void unsubscribeTopic(final String TopicName){
+    private void unsubscribeTopic(final String TopicName) {
         int idx;
-        Log.i(LOG_TAG,"unsubscribeTopic : "+TopicName);
+        Log.i(LOG_TAG, "unsubscribeTopic : " + TopicName);
         try {
             if (DeviceInfo.localSubTopiclist.contains(TopicName)) {
                 if (mqttLocalClient.isConnected()) {
@@ -641,8 +667,8 @@ public class MQTTBroker extends Service {
             e.printStackTrace();
         }
 
-        for (idx = 0 ; idx< DeviceInfo.localSubTopiclist.size(); idx++){
-            Log.i(LOG_TAG,"localSubTopiclist["+idx+"] = "+DeviceInfo.localSubTopiclist.get(idx));
+        for (idx = 0; idx < DeviceInfo.localSubTopiclist.size(); idx++) {
+            Log.i(LOG_TAG, "localSubTopiclist[" + idx + "] = " + DeviceInfo.localSubTopiclist.get(idx));
         }
         if (Const.remoteMqttFlag) {
             for (idx = 0; idx < DeviceInfo.remoteSubTopiclist.size(); idx++) {
@@ -657,11 +683,11 @@ public class MQTTBroker extends Service {
         try {
             MqttMessage message = new MqttMessage();
             message.setPayload(publishMessage.getBytes());
-            Log.i(LOG_TAG,publishTopic + ":" + publishMessage);
+            Log.i(LOG_TAG, publishTopic + ":" + publishMessage);
             if (mqttLocalClient.isConnected()) {
                 mqttLocalClient.publish(publishTopic, message);
             } else {
-                Log.i(LOG_TAG,"[LocalMqttClient] fail to connect local mqtt server");
+                Log.i(LOG_TAG, "[LocalMqttClient] fail to connect local mqtt server");
                 //Log.i(LOG_TAG,"[localmqtt]"+mqttLocalClient.getBufferedMessageCount() + " messages in buffer.");
             }
             if (Const.remoteMqttFlag) {
@@ -683,34 +709,29 @@ public class MQTTBroker extends Service {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
 
-            zwaveService = ((ZwaveControlService.MyBinder)service).getService();
-            if (zwaveService != null){
+            zwaveService = ((ZwaveControlService.MyBinder) service).getService();
+            if (zwaveService != null) {
 
-                Log.i(LOG_TAG,"bind service with ZWaveControlService");
+                Log.i(LOG_TAG, "bind service with ZWaveControlService");
                 zwaveService.register(ZWCtlCB);
 
                 new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            /*String openResult = zwaveService.openController();
-                            if (openResult.contains(":0")) {
-                                DeviceInfo.isOpenControllerFinish = true;
-                            }*/
-
-                            for (int idx = 0; idx < 250; idx++) {
-                                if (DeviceInfo.isMQTTInitFinish == true && DeviceInfo.isOpenControllerFinish == true) {
-                                    break;
-                                }
-                                try {
-                                    //Log.i(LOG_TAG,"idx = "+idx+"|isOpenControllerFinish = "+DeviceInfo.isOpenControllerFinish);
-                                    Thread.sleep(100);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
+                    @Override
+                    public void run() {
+                        for (int idx = 0; idx < 250; idx++) {
+                            if (DeviceInfo.isMQTTInitFinish == true && DeviceInfo.isOpenControllerFinish == true) {
+                                break;
                             }
-                            zwaveService.getDevices();
+                            try {
+                                //Log.i(LOG_TAG,"idx = "+idx+"|isOpenControllerFinish = "+DeviceInfo.isOpenControllerFinish);
+                                Thread.sleep(100);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
-                    }).start();
+                        zwaveService.getDeviceInfo();
+                    }
+                }).start();
 
             } else {
                 Log.i(LOG_TAG, "Failed to bind service with ZWaveControlService");
@@ -722,13 +743,13 @@ public class MQTTBroker extends Service {
         }
     };
 
-    private void handleNormalCallback(String tMethodName, String tResult){
+    private void handleNormalCallback(String tMethodName, String tResult) {
 
-        ArrayList<String>  NodeId = Utils.searchString(tResult, "Node id");
+        ArrayList<String> NodeId = Utils.searchString(tResult, "Node id");
 
-        for( int idx = 0; idx < NodeId.size(); idx++){
-            Log.i(LOG_TAG,tMethodName+" Node id = "+NodeId.get(idx));
-            publishMessage(Const.PublicTopicName+NodeId.get(idx),tResult);
+        for (int idx = 0; idx < NodeId.size(); idx++) {
+            Log.i(LOG_TAG, tMethodName + " Node id = " + NodeId.get(idx));
+            publishMessage(Const.PublicTopicName + NodeId.get(idx), tResult);
         }
     }
 
@@ -739,61 +760,60 @@ public class MQTTBroker extends Service {
         @Override
         public void zwaveControlResultCallBack(String className, String result) {
 
-            Log.i(LOG_TAG,"AIDLResult " +className+ " ["+Const.TCPClientPort+"]: "+result);
+            Log.i(LOG_TAG, "AIDLResult " + className + " [" + Const.TCPClientPort + "]: " + result);
 
-            if (className.equals("addDevice") || className.equals("removeDevice")){
+            if (className.equals("addDevice") || className.equals("removeDevice")) {
 
-                mTCPServer.sendMessage(Const.TCPClientPort,result);
+                mTCPServer.sendMessage(Const.TCPClientPort, result);
 
-                if (result.contains("Success") || result.contains("Failed")){
-                    Const.TCPClientPort =0;
+                if (result.contains("Success") || result.contains("Failed")) {
+                    Const.TCPClientPort = 0;
                 }
 
-                if (result.contains("addDevice:") || result.contains("removeDevice:")){
+                if (result.contains("addDevice:") || result.contains("removeDevice:")) {
                     String[] tokens = result.split(":");
-                    if (tokens.length<3){
-                        Log.i(LOG_TAG,"AIDLResult " +className+" : wrong format "+result);
+                    if (tokens.length < 3) {
+                        Log.i(LOG_TAG, "AIDLResult " + className + " : wrong format " + result);
                     } else {
                         //String tHomeId = tokens[1];
                         String tNodeId = tokens[2];
                         if (className.equals("addDevice")) {
                             subscribeToTopic(Const.PublicTopicName + tNodeId);
                             publishMessage(Const.PublicTopicName, result);
-                        }else{
+                        } else {
                             publishMessage(Const.PublicTopicName, "removeDevice:" + tNodeId);
                             unsubscribeTopic(Const.PublicTopicName + tNodeId);
                         }
                     }
                 }
 
-            } else if (className.equals("getDeviceList")){
+            } else if (className.equals("getDeviceInfo")) {
 
                 ArrayList<String> tmpLine = Utils.searchString(result, "Node id");
 
-                for( int idx = 1; idx < tmpLine.size(); idx++){
-                    Log.i(LOG_TAG,"Node id ("+idx+") = "+tmpLine.get(idx));
-                    subscribeToTopic(Const.PublicTopicName+tmpLine.get(idx));
+                for (int idx = 1; idx < tmpLine.size(); idx++) {
+                    Log.i(LOG_TAG, "Node id (" + idx + ") = " + tmpLine.get(idx));
+                    subscribeToTopic(Const.PublicTopicName + tmpLine.get(idx));
                 }
                 //publish result to MQTT public topic
-                publishMessage(Const.PublicTopicName,result);
+                publishMessage(Const.PublicTopicName, result);
 
-                Log.i(LOG_TAG,"node cnt = "+DeviceInfo.localSubTopiclist.size());
+                Log.i(LOG_TAG, "node cnt = " + DeviceInfo.localSubTopiclist.size());
                 if (!DeviceInfo.isZwaveInitFinish) {
                     Log.i(LOG_TAG, " ===== isZwaveInitFinish  = true ====");
                     DeviceInfo.isZwaveInitFinish = true;
                 }
 
-            }else if ( className.equals("openController")|| className.equals("removeFailedDevice") ||
-                className.equals("replaceFailedDevice")|| className.equals("stopAddDevice") ||
-                className.equals("stopRemoveDevice") ){
+            } else if (className.equals("openController") || className.equals("removeFailedDevice") ||
+                    className.equals("replaceFailedDevice") || className.equals("stopAddDevice") ||
+                    className.equals("stopRemoveDevice") || className.equals("reNameDevice")) {
 
-                mTCPServer.sendMessage(Const.TCPClientPort,result);
+                mTCPServer.sendMessage(Const.TCPClientPort, result);
                 Const.TCPClientPort = 0;
 
-            }else{
-                handleNormalCallback(className,result);
+            } else {
+                handleNormalCallback(className, result);
             }
-
         }
     };
 }

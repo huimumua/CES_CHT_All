@@ -38,19 +38,18 @@ import static com.askey.firefly.zwave.control.utils.Const.ZWCONTROL_CFG_PATH;
 public class ZwaveControlService extends Service {
 
     private final String TAG = "ZwaveControlService";
-    private UsbSerial mUsbSerial = new UsbSerial(this);
     public static ZwaveControlService mService;
     private int flag;
-    private int nodeId;
     private ZwaveDeviceManager zwaveDeviceManager;
     private static ArrayList <zwaveCallBack> mCallBacks = new ArrayList<>();
 
     @Override
     public void onCreate() {
         super.onCreate();
+        new UsbSerial(this);
         mService = this;
-        ImportData.importFile(this,"zw_api.cfg");
-        ImportData.importFile(this,"device_settings.csv");
+        ImportData.importFile(this, "zw_api.cfg");
+        ImportData.importFile(this, "device_settings.csv");
         ImportData.importDatabase(this);
         zwaveDeviceManager = ZwaveDeviceManager.getInstance(this);
     }
@@ -67,10 +66,10 @@ public class ZwaveControlService extends Service {
         Logg.i(TAG, "=====onBind=========");
 
         int creatResult = ZwaveControlHelper.CreateZwController(); //测试返回0
-        if(creatResult==0){
-            Logg.i(TAG,"==CreateZwController=creatResult="+creatResult);
-        }else{
-            Logg.e(TAG,"==CreateZwController=creatResult="+creatResult);
+        if (creatResult == 0) {
+            Logg.i(TAG, "==CreateZwController=creatResult=" + creatResult);
+        } else {
+            Logg.e(TAG, "==CreateZwController=creatResult=" + creatResult);
         }
         return myBinder;
     }
@@ -82,7 +81,6 @@ public class ZwaveControlService extends Service {
             return ZwaveControlService.this;
         }
     }
-
 
     @Override
     public void onDestroy() {
@@ -110,12 +108,12 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_RemoveDevice();
     }
 
-    public int getDevices(){
+    public int getDeviceList(){
         return ZwaveControlHelper.ZwController_GetDeviceList();
     }
 
-    public int getDeviceInfo(int deviceId){
-        return ZwaveControlHelper.ZwController_GetDeviceInfo(deviceId);
+    public int getDeviceInfo(){
+        return ZwaveControlHelper.ZwController_GetDeviceInfo();
     }
 
     public int removeFailedDevice(int deviceId){
@@ -261,7 +259,7 @@ public class ZwaveControlService extends Service {
         int result;
         ZwaveDevice zwaveDevice = zwaveDeviceManager.queryZwaveDevices(homeId, deviceId);
         if (zwaveDevice != null) {
-            Logg.i(TAG,"=====zwaveDevice.setName(newName)====");
+            Logg.i(TAG, "=====zwaveDevice.setName(newName)====");
             zwaveDevice.setName(newName);
             zwaveDevice.setDevType(devType);
             zwaveDevice.setScene(roomName);
@@ -270,8 +268,9 @@ public class ZwaveControlService extends Service {
         } else {
             result = -1;
         }
-        String reNameResult = "reNameDevice:"+result;
-        Log.i(TAG,"reNameResult = "+reNameResult);
+        String reNameResult = "reNameDevice:" + result;
+        Log.i(TAG, "reNameResult = " + reNameResult);
+        zwaveControlResultCallBack("reNameDevice", reNameResult);
         return reNameResult;
     }
 
@@ -280,12 +279,10 @@ public class ZwaveControlService extends Service {
         void zwaveControlResultCallBack(String className, String result);
     }
 
-
-    private void zwaveControlResultCallBack(String className, String result){
-
+    private void zwaveControlResultCallBack(String className, String result) {
         //Log.i(TAG," === "+className+"CallBack ===" + result);
         for (zwaveCallBack callback : mCallBacks) {
-            callback.zwaveControlResultCallBack(className,result);
+            callback.zwaveControlResultCallBack(className, result);
         }
     }
 
@@ -295,23 +292,23 @@ public class ZwaveControlService extends Service {
             return null;
         }
         byte[] result = new byte[500];
-        int isOK = ZwaveControlHelper.OpenZwController(ZWCONTROL_CFG_PATH, FILE_PATH, SAVE_NODEINFO_FILE,result);
+        int isOK = ZwaveControlHelper.OpenZwController(ZWCONTROL_CFG_PATH, FILE_PATH, SAVE_NODEINFO_FILE, result);
 
-        Logg.i(TAG,"===isOK=="+isOK);
-        String openResult = "openController:"+isOK;
+        Logg.i(TAG, "===isOK==" + isOK);
+        String openResult = "openController:" + isOK;
 
-        String tmpString = new String( result );
+        String tmpString = new String(result);
         //Log.d("ZwaveControlService", "ZwaveControlService " + tmpString.substring(0, tmpString.indexOf("}")+1) + isOK);
 
-        zwaveControlResultCallBack("openController",new String(tmpString.substring(0, tmpString.indexOf("}")+1)));
+        zwaveControlResultCallBack("openController", new String(tmpString.substring(0, tmpString.indexOf("}") + 1)));
         return openResult;
     }
 
     private void insertHomeDevice(String result) {
         try {
             JSONObject json = new JSONObject(result);
-           String homeId = json.optString("Home Id");
-           int nodeId = json.optInt("Node Id");
+            String homeId = json.optString("Home Id");
+            int nodeId = json.optInt("Node Id");
             ZwaveDevice homeDevice = zwaveDeviceManager.queryZwaveDevices(homeId, nodeId);
             if (homeDevice == null) {
                 if (!homeId.toString().trim().equals("") && nodeId == 1) {
@@ -327,11 +324,10 @@ public class ZwaveControlService extends Service {
         }
     }
 
-
-    public void zwaveCallBack(byte[] result, int len)  {
+    public void zwaveCallBack(byte[] result, int len) {
         // jni callback
         String jniResult = new String(result);
-        Logg.i(TAG," jniResult==="+jniResult);
+        Logg.i(TAG, " jniResult===" + jniResult);
         String messageType = null;
         String status = null;
         try {
@@ -340,34 +336,30 @@ public class ZwaveControlService extends Service {
             status = jsonObject.optString("Status");
 
         } catch (JSONException e) {
-            Log.i(TAG,"JSONExceptionJSONExceptionJSONException");
+            Log.i(TAG, "JSONException");
             e.printStackTrace();
         }
 
         if ("Node Add Status".equals(messageType)) {
-
-            zwaveControlResultCallBack("addDevice",jniResult);
+            zwaveControlResultCallBack("addDevice", jniResult);
             if ("Success".equals(status)) {
-               flag = 2;
-                Logg.i(TAG,"=======Node Add Status=Success=");
+                flag = 2;
+                Logg.i(TAG, "=======Node Add Status=Success=");
                 ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
-                ZwaveControlHelper.ZwController_GetDeviceList();
+                ZwaveControlHelper.ZwController_GetDeviceInfo();
             }
         } else if ("Node Remove Status".equals(messageType)) {
-            zwaveControlResultCallBack("removeDevice",jniResult);
+            zwaveControlResultCallBack("removeDevice", jniResult);
             if ("Success".equals(status)) {
-                Logg.i(TAG,"=======Node Remove Status=Success=");
+                Logg.i(TAG, "=======Node Remove Status=Success=");
                 flag = 3;
                 ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
-                ZwaveControlHelper.ZwController_GetDeviceList();
+                ZwaveControlHelper.ZwController_GetDeviceInfo();
             }
-        } else if ("Node List Report".equals(messageType)) {
-            if (flag == 1) {
-                flag = 0;
-                zwaveControlResultCallBack("getDeviceInfo",getDeviceInfo(jniResult));
-            } else if (flag == 0) {
-                String jsonResult = getDeviceList(jniResult);//json 添加name
-                zwaveControlResultCallBack("getDeviceList",jsonResult);
+        } else if (messageType.equals("All Node Info Report")) {
+            if (flag == 0) {
+                String jsonResult = getDeviceInfo(jniResult);
+                zwaveControlResultCallBack("getDeviceInfo", jsonResult);
             } else if (flag == 2) {
                 flag = 0;
                 insertDevice(jniResult);
@@ -375,39 +367,39 @@ public class ZwaveControlService extends Service {
                 flag = 0;
                 deleteDevice(jniResult);
             }
-        } else if ("Node List Report".equals(messageType)) {/////
-            zwaveControlResultCallBack("removeFail",jniResult);
-            if(jniResult.contains("Success")){
+        } else if (messageType.equals("All Node Info Report")) {
+            zwaveControlResultCallBack("removeFail", jniResult);
+            if (jniResult.contains("Success")) {
                 ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
             }
-        } else if ("Node List Report".equals(messageType)) {/////
-            zwaveControlResultCallBack("replaceFail",jniResult);
-            if(jniResult.contains("Success")){
+        } else if (messageType.equals("All Node Info Report")) {
+            zwaveControlResultCallBack("replaceFail", jniResult);
+            if (jniResult.contains("Success")) {
                 ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
             }
-        } else if ("Node List Report".equals(messageType)) {/////
-            zwaveControlResultCallBack("stopAddDevice",jniResult);
-        } else if ("Node List Report".equals(messageType)) {/////
-            zwaveControlResultCallBack("stopRemoveDevice",jniResult);
+        } else if (messageType.equals("All Node Info Report")) {
+            zwaveControlResultCallBack("stopAddDevice", jniResult);
+        } else if (messageType.equals("All Node Info Report")) {
+            zwaveControlResultCallBack("stopRemoveDevice", jniResult);
         } else if ("Node Battery Value".equals(messageType)) {
-            zwaveControlResultCallBack("getDeviceBattery",jniResult);
+            zwaveControlResultCallBack("getDeviceBattery", jniResult);
         } else if ("Sensor Information".equals(messageType)) {
-            zwaveControlResultCallBack("getSensorMultiLevel",jniResult);
-        } else if ("Node List Report".equals(messageType)) {/////
-            zwaveControlResultCallBack("updateNode",jniResult);
+            zwaveControlResultCallBack("getSensorMultiLevel", jniResult);
+        } else if (messageType.equals("All Node Info Report")) {
+            zwaveControlResultCallBack("updateNode", jniResult);
         } else if ("Configuration Get Information".equals(messageType)) {
-            zwaveControlResultCallBack("getConfiguration",jniResult);
-        } else if ("  ".equals(messageType)) {////
-            zwaveControlResultCallBack("getSupportedSwitchType",jniResult);
+            zwaveControlResultCallBack("getConfiguration", jniResult);
+        } else if ("  ".equals(messageType)) {
+            zwaveControlResultCallBack("getSupportedSwitchType", jniResult);
         } else if ("Power Level Get Information".equals(messageType)) {
-            zwaveControlResultCallBack("getPowerLevel",jniResult);
+            zwaveControlResultCallBack("getPowerLevel", jniResult);
         } else if ("Basic Information".equals(messageType)) {
-            zwaveControlResultCallBack("getBasic",jniResult);
-        } else if ("Meter report Information".equals(messageType)){
-            zwaveControlResultCallBack("getMeter",jniResult);
-        } else if ("  ".equals(messageType)) {////
+            zwaveControlResultCallBack("getBasic", jniResult);
+        } else if ("Meter report Information".equals(messageType)) {
+            zwaveControlResultCallBack("getMeter", jniResult);
+        } else if ("  ".equals(messageType)) {
             zwaveControlResultCallBack("getSwitchMultiLevel", jniResult);
-        } else if ("Switch Color Report".equals(messageType)){
+        } else if ("Switch Color Report".equals(messageType)) {
             zwaveControlResultCallBack("getSwitchColor", jniResult);
         } else if (messageType.equals("Sensor Info Report")) {
             zwaveControlResultCallBack("getSensorMultiLevel", jniResult);
@@ -416,16 +408,16 @@ public class ZwaveControlService extends Service {
         }
     }
 
-    private String getDeviceList(String Result) {
+    private String getDeviceInfo(String Result) {
         JSONObject deviceListResult;
         try {
             deviceListResult = new JSONObject(Result);
             JSONArray list = deviceListResult.getJSONArray("Node Info List");
-            for (int i = 0; i < list.length();i++ ) {
+            for (int i = 0; i < list.length(); i++) {
                 JSONObject temp = list.getJSONObject(i);
                 String homeId = temp.getString("Home id");
                 String nodeId = temp.getString("Node id");
-               ZwaveDevice zwaveDevice = zwaveDeviceManager.queryZwaveDevices(homeId, Integer.parseInt(nodeId));
+                ZwaveDevice zwaveDevice = zwaveDeviceManager.queryZwaveDevices(homeId, Integer.parseInt(nodeId));
                 if (zwaveDevice != null) {
                     temp.put("deviceName", zwaveDevice.getName());
                 } else {
@@ -441,20 +433,20 @@ public class ZwaveControlService extends Service {
     }
 
     private void deleteDevice(String result) {
-        Logg.i(TAG,"=======deleteDevice==");
+        Logg.i(TAG, "=======deleteDevice==");
         Gson gson = new Gson();
-        DeviceList deviceList =gson.fromJson(result, DeviceList.class);
-        List<DeviceList.NodeInfoList> temp =  deviceList.getNodeList();
+        DeviceList deviceList = gson.fromJson(result, DeviceList.class);
+        List<DeviceList.NodeInfoList> temp = deviceList.getNodeList();
         List<ZwaveDevice> list = zwaveDeviceManager.queryZwaveDeviceList();
-        Logg.i(TAG,"===deleteDevice====temp.size()=="+temp.size());
-        Logg.i(TAG,"==deleteDevice=====list.size()=="+list.size());
-        int i,j;
-        for (ZwaveDevice zwaveDevice :list) {//db
+        Logg.i(TAG, "===deleteDevice====temp.size()==" + temp.size());
+        Logg.i(TAG, "==deleteDevice=====list.size()==" + list.size());
+        int i, j;
+        for (ZwaveDevice zwaveDevice : list) {//db
             i = 0;
             for (DeviceList.NodeInfoList nodeInfoTemp : temp) {//jni
 
                 if (zwaveDevice.getHomeId().toString().trim().equals(nodeInfoTemp.getHomeId().toString().trim())) {
-                    if(!zwaveDevice.getNodeId().toString().trim().equals(nodeInfoTemp.getNodeId().toString().trim())){
+                    if (!zwaveDevice.getNodeId().toString().trim().equals(nodeInfoTemp.getNodeId().toString().trim())) {
                         i++;
                     }
                 }
@@ -462,26 +454,26 @@ public class ZwaveControlService extends Service {
                 if (temp.size() == i) {
                     zwaveDeviceManager.deleteZwaveDevice(zwaveDevice.getZwaveId());
                     String removeResult = "removeDevice:" + zwaveDevice.getHomeId() + ":" + zwaveDevice.getNodeId();
-                    Logg.i(TAG,"==deleteDevice=====removeResult=="+removeResult);
-                    zwaveControlResultCallBack("removeDevice",removeResult);
+                    Logg.i(TAG, "==deleteDevice=====removeResult==" + removeResult);
+                    zwaveControlResultCallBack("removeDevice", removeResult);
                 }
             }
         }
     }
 
     private void insertDevice(String result) {
-        Logg.i(TAG,"=======insertDevice==");
+        Logg.i(TAG, "=======insertDevice==");
         Gson gson = new Gson();
-        DeviceList deviceList =gson.fromJson(result, DeviceList.class);
-        List<DeviceList.NodeInfoList> temp =  deviceList.getNodeList();
-        Logg.i(TAG,"==insertDevice=====temp.size()=="+temp.size());
+        DeviceList deviceList = gson.fromJson(result, DeviceList.class);
+        List<DeviceList.NodeInfoList> temp = deviceList.getNodeList();
+        Logg.i(TAG, "==insertDevice=====temp.size()==" + temp.size());
         for (DeviceList.NodeInfoList nodeInfoTemp : temp) {
-            Logg.i(TAG,"==insertDevice====nodeInfoTemp.getHomeId()=="+nodeInfoTemp.getHomeId());
-            Logg.i(TAG,"==insertDevice====nodeInfoTemp.getNodeId()=="+nodeInfoTemp.getNodeId());
+            Logg.i(TAG, "==insertDevice====nodeInfoTemp.getHomeId()==" + nodeInfoTemp.getHomeId());
+            Logg.i(TAG, "==insertDevice====nodeInfoTemp.getNodeId()==" + nodeInfoTemp.getNodeId());
             ZwaveDevice device = zwaveDeviceManager.queryZwaveDevices(nodeInfoTemp.getHomeId(),
                     Integer.parseInt(nodeInfoTemp.getNodeId()));
-            Logg.i(TAG,"==insertDevice====device==");
-            if (device == null ) {
+            Logg.i(TAG, "==insertDevice====device==");
+            if (device == null) {
                 ZwaveDevice zwaveDevice = new ZwaveDevice();
                 zwaveDevice.setHomeId(nodeInfoTemp.getHomeId());
                 zwaveDevice.setNodeId(Integer.valueOf(nodeInfoTemp.getNodeId()));
@@ -490,22 +482,22 @@ public class ZwaveControlService extends Service {
                 zwaveDevice.setDevType("");
                 zwaveDevice.setScene("");
                 zwaveDeviceManager.insertZwaveDevice(zwaveDevice);
-                Logg.i(TAG,"===#########=="+nodeInfoTemp.getNodeId());
-                Logg.i(TAG,"===####nodeInfoTemp.getNodeId().equals(1)#####=="+nodeInfoTemp.getNodeId().equals("1"));
-                Logg.i(TAG,"===#########=="+nodeInfoTemp.getNodeId().toString().trim().equals("1"));
-                if(!nodeInfoTemp.getNodeId().toString().trim().equals("1")){
+                Logg.i(TAG, "===#########==" + nodeInfoTemp.getNodeId());
+                Logg.i(TAG, "===####nodeInfoTemp.getNodeId().equals(1)#####==" + nodeInfoTemp.getNodeId().equals("1"));
+                Logg.i(TAG, "===#########==" + nodeInfoTemp.getNodeId().toString().trim().equals("1"));
+                if (!nodeInfoTemp.getNodeId().toString().trim().equals("1")) {
                     String addResult = "addDevice:" + nodeInfoTemp.getHomeId() + ":" + nodeInfoTemp.getNodeId();
-                    Logg.i(TAG,"===insertDevice====addResult=="+addResult);
-                    zwaveControlResultCallBack("addDevice",addResult);
+                    Logg.i(TAG, "===insertDevice====addResult==" + addResult);
+                    zwaveControlResultCallBack("addDevice", addResult);
                     break;
                 }
-            }else{
-                Logg.i(TAG,"==insertDevice====device=="+device.getHomeId()+"===="+device.getNodeId());
+            } else {
+                Logg.i(TAG, "==insertDevice====device==" + device.getHomeId() + "====" + device.getNodeId());
             }
         }
     }
 
-    private String getDeviceInfo(String jniResult) {
+    /*private String getDeviceInfo(String jniResult) {
         Gson gson = new Gson();
         DeviceList deviceList =gson.fromJson(jniResult, DeviceList.class);
         List<DeviceList.NodeInfoList> temp =  deviceList.getNodeList();
@@ -516,6 +508,5 @@ public class ZwaveControlService extends Service {
             }
         }
         return gson.toJson(nodeInfo);
-    }
-
+    }*/
 }
