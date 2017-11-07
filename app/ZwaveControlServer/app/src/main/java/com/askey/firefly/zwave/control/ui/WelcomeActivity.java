@@ -49,7 +49,7 @@ public class WelcomeActivity extends BaseActivity{
     private static String LOG_TAG = WelcomeActivity.class.getSimpleName();
 
     private AlertDialog alertDialog;
-    private Timer timer;
+    private Timer timer = new Timer(true);
 
     private ZwaveControlService zwaveService;
     private ZwaveDeviceManager zwDevManager;
@@ -81,38 +81,33 @@ public class WelcomeActivity extends BaseActivity{
     public Runnable checkInitStatus = new Runnable() {
         @Override
         public void run() {
-
-        timer = new Timer(true);
-        timer.schedule(new mTimerTask(), 1000 * 120); //延时1000ms后执行，1000ms执行一次
-            while (DeviceInfo.isZwaveInitFinish == false || DeviceInfo.isMQTTInitFinish == false ) {
+            while (!DeviceInfo.isZwaveInitFinish || !DeviceInfo.isMQTTInitFinish) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-            try {
-                Thread.sleep(1500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            //try {
+            //    Thread.sleep(1500);
+            //} catch (InterruptedException e) {
+            //    e.printStackTrace();
+            //}
             initSensorfunc();
             initZwave();
         }
     };
 
-    private void initZwave(){
+    private void initZwave() {
         ((Activity) mContext).runOnUiThread(new Runnable() {
             @Override
             public void run() {
-
-            timerCancel();
-
-            Intent intent = new Intent();
-            intent.setClass(mContext, HomeActivity.class);
-            hideProgressDialog();
-            mContext.startActivity(intent);
-            finish();
+                timerCancel();
+                Intent intent = new Intent();
+                intent.setClass(mContext, HomeActivity.class);
+                hideProgressDialog();
+                mContext.startActivity(intent);
+                finish();
             }
         });
     }
@@ -138,12 +133,7 @@ public class WelcomeActivity extends BaseActivity{
                 @Override
                 public void onClick(View view) {
                     //retry to opencontroller
-
-                    String openResult = zwaveService.openController();
-                    if (openResult.contains(":0")){
-                        DeviceInfo.isOpenControllerFinish = true;
-                    }
-
+                    openController();
                     showProgressDialog(mContext, "OpenController....");
                     alertDialogCancel();
                 }
@@ -152,22 +142,21 @@ public class WelcomeActivity extends BaseActivity{
             negativeButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                //tap cancel button and exit to main screen
-                finish();
-                timerCancel();
+                    //tap cancel button and exit to main screen
+                    finish();
+                    timerCancel();
 
-                alertDialogCancel();
-                DeviceInfo.isMQTTInitFinish = false;
-                DeviceInfo.isOpenControllerFinish = false;
-                DeviceInfo.isZwaveInitFinish = false;
-                System.exit(0);
+                    alertDialogCancel();
+                    DeviceInfo.isMQTTInitFinish = false;
+                    DeviceInfo.isOpenControllerFinish = false;
+                    DeviceInfo.isZwaveInitFinish = false;
+                    System.exit(0);
                 }
             });
         }
     }
 
     public Handler mHandler = new Handler() {
-        // 重写handleMessage()方法，此方法在UI线程运行
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -182,6 +171,7 @@ public class WelcomeActivity extends BaseActivity{
 
     class mTimerTask extends TimerTask {
         public void run() {
+            zwaveService.closeController();
             Log.d(LOG_TAG,"timer on schedule");
             Message message = new Message();
             message.what = 2001;
@@ -244,7 +234,6 @@ public class WelcomeActivity extends BaseActivity{
         }
     };
 
-
     private void requestControlUSBPermission() {
         UsbManager usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
         final List<UsbSerialDriver> drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager);
@@ -285,26 +274,28 @@ public class WelcomeActivity extends BaseActivity{
                         }
                     } else {
                         Log.d("USB", "permission denied for device " + device);
+                        progressDialog.cancel();
                         finish();
+                        System.exit(0);
                     }
                 }
             }
         }
-    };
+    }
 
     private void openController() {
+        timer.schedule(new mTimerTask(), 1000 * 120);
         String openResult = zwaveService.openController();
         if (openResult.contains(":0")){
             DeviceInfo.isOpenControllerFinish = true;
         }
     }
 
-
-    private void initSensorfunc(){
+    private void initSensorfunc() {
 
         List<ZwaveDevice> list = zwDevManager.queryZwaveDeviceList();
 
-        for (int idx = 1 ; idx< list.size(); idx++){
+        for (int idx = 1; idx < list.size(); idx++) {
 
             /*
             Log.i(LOG_TAG,"*** NodeId = "+list.get(idx).getNodeId()+" | HomeID = "+list.get(idx).getHomeId()
@@ -314,7 +305,7 @@ public class WelcomeActivity extends BaseActivity{
             int nodeId = list.get(idx).getNodeId();
             String devType = list.get(idx).getDevType();
 
-            if (devType.equals("SENSOR")){
+            if (devType.equals("SENSOR")) {
                 String devNodeInfo = list.get(idx).getNodeInfo();
 
                 if (devNodeInfo.contains("COMMAND_CLASS_BATTERY")) {
@@ -338,7 +329,7 @@ public class WelcomeActivity extends BaseActivity{
                         e.printStackTrace();
                     }
                 }
-                if (devNodeInfo.contains("COMMAND_CLASS_SENSOR_MULTILEVEL")){
+                if (devNodeInfo.contains("COMMAND_CLASS_SENSOR_MULTILEVEL")) {
                     try {
                         zwaveService.getSensorMultiLevel(nodeId);
                     } catch (RemoteException e) {
@@ -348,8 +339,6 @@ public class WelcomeActivity extends BaseActivity{
                 zwaveService.getMeterSupported(nodeId);
                 zwaveService.GetSensorBinarySupportedSensor(nodeId);
             }
-
-
         }
     }
 }

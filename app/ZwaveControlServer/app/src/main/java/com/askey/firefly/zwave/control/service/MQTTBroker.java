@@ -730,28 +730,26 @@ public class MQTTBroker extends Service {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-						  
-																		  
-													   
-																	 
-						 
-						  
-
-                        for (int idx = 0; idx < 250; idx++) {
-                            if (DeviceInfo.isMQTTInitFinish == true && DeviceInfo.isOpenControllerFinish == true) {
-                                break;
-                            }
+                        while (!DeviceInfo.isMQTTInitFinish || !DeviceInfo.isOpenControllerFinish) {
                             try {
-                                //Log.i(LOG_TAG,"idx = "+idx+"|isOpenControllerFinish = "+DeviceInfo.isOpenControllerFinish);
                                 Thread.sleep(100);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
                         }
                         zwaveService.getDeviceInfo();
+                        /*for (int idx = 0; idx < 250; idx++) {
+                            if (DeviceInfo.isMQTTInitFinish == true && DeviceInfo.isOpenControllerFinish == true) {
+                                break;
+                            }
+                            try {
+                                Thread.sleep(100);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }*/
                     }
                 }).start();
-
             } else {
                 Log.i(LOG_TAG, "Failed to bind service with ZWaveControlService");
             }
@@ -805,7 +803,6 @@ public class MQTTBroker extends Service {
                         }
                     }
                 }
-
             } else if (className.equals("getDeviceInfo")) {
 
                 ArrayList<String> tmpLine = Utils.searchString(result, "Node id");
@@ -821,7 +818,6 @@ public class MQTTBroker extends Service {
                     Log.i(LOG_TAG, " ===== isZwaveInitFinish  = true ====");
                     DeviceInfo.isZwaveInitFinish = true;
                 }
-
             } else if (className.equals("openController") || className.equals("removeFailedDevice") ||
                     className.equals("replaceFailedDevice") || className.equals("stopAddDevice") ||
                     className.equals("stopRemoveDevice") || className.equals("reNameDevice")) {
