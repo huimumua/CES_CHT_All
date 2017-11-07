@@ -44,7 +44,6 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
     private TextView brightness;
     private SeekBar brightness_change;
     private int brightnessLevel = 0;
-    private boolean adjustFlag = true;
 
     private TextView txtColor;
     private ColorPickView myView;
@@ -71,16 +70,6 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
         Intent intent = getIntent();
         nodeId = Integer.parseInt(intent.getStringExtra("NodeId"));
         nodeInfo = intent.getStringExtra("NodeInfoList");
-
-        /*try {
-            JSONObject jsonObject = new JSONObject(nodeInfo);
-
-            if (jsonObject.getString("Product id").equals("0008")) {
-
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }*/
 
         if (!nodeInfo.contains("COMMAND_CLASS_SWITCH_COLOR")){
             Log.i(LOG_TAG,"not support change color !");
@@ -170,26 +159,6 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
         });
     }
 
-
-    /*private Runnable getDevStatus = new Runnable() {
-        @Override
-        public void run() {
-            zwaveService.getBasic(nodeId);
-            zwaveService.getSwitchColor(nodeId,0x00);
-            zwaveService.getSwitchColor(nodeId,0x01);
-            zwaveService.getSwitchColor(nodeId,0x02);
-            zwaveService.getSwitchColor(nodeId,0x03);
-            zwaveService.getSwitchColor(nodeId,0x04);
-
-            try {
-                zwaveService.setConfiguration(nodeId,1,1,0,1);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-    };*/
-
-
     private void enableColorPicker(){
 
         myView.setOnColorChangedListener(new ColorPickView.OnColorChangedListener() {
@@ -208,67 +177,6 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
 
         });
     }
-
-    //zwave callback result
-    /*private void zwCBResult(final String result) {
-
-        if (Utils.isGoodJson(result)) {
-
-            try {
-                final JSONObject jsonObject = new JSONObject(result);
-                final int getNodeId = jsonObject.optInt("Node id");
-
-                if (getNodeId == nodeId){
-
-                    ((Activity) mContext).runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            String messageType = jsonObject.optString("MessageType");
-
-                            if ("Basic Information".equals(messageType)) {
-                                String value = jsonObject.optString("value");
-                                brightness.setText("Brightness : " + value);
-
-                                if (value.equals("00h")) {
-                                    //turn off
-                                    cbSwitch.setChecked(false);
-                                } else {
-                                    //turn on
-                                    cbSwitch.setChecked(true);
-
-                                    //change Hex string to Interger
-                                    String tmpValue = value.substring(0, value.length() - 1);
-                                    basicValue = Integer.valueOf(tmpValue, 16);
-
-                                    if (adjustFlag && value != "00h") {
-                                        brightness_change.setProgress(basicValue);
-                                        adjustFlag = false;
-                                    }
-                                }
-                            } else if ("Switch Color Report".equals(messageType)) {
-                                String txParamater = jsonObject.optString("component id");
-                                String txValue = jsonObject.optString("value");
-
-                                Log.i(LOG_TAG, "Parameter = " + txParamater + " | value = " + txValue);
-
-                                if (txParamater.equals("Warm Write") && (!txValue.equals("0"))) {
-                                    rGroup.check(R.id.warmWhite);
-                                } else if (txParamater.equals("Cold Write") && (!txValue.equals("0"))) {
-                                    rGroup.check(R.id.coldWite);
-                                } else {
-                                    rGroup.check(R.id.RGBColor);
-                                    colorPickerLayout.setVisibility(View.VISIBLE);
-                                }
-
-                            }
-                        }
-                    });
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-    }*/
 
     @Override
     protected void onStop() {
@@ -297,7 +205,6 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
                     //zwaveService.setSwitchAllOn(nodeId);
                     zwaveService.setBasic(nodeId,basicValue);
                     zwaveService.getBasic(nodeId);
-                    adjustFlag = true;
                 } else {
                     //zwaveService.setSwitchAllOff(nodeId);
                     zwaveService.setBasic(nodeId,0);
@@ -385,9 +292,8 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
                             String tmpValue = value.substring(0, value.length() - 1);
                             basicValue = Integer.valueOf(tmpValue, 16);
 
-                            if (adjustFlag && value != "00h") {
+                            if ( value != "00h") {
                                 brightness_change.setProgress(basicValue);
-                                adjustFlag = false;
                             }
                         }
                     } else if ("Switch Color Report".equals(messageType)) {

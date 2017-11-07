@@ -39,7 +39,6 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
     private TextView txBrightness;
     private SeekBar brightness_change;
     private int brightnessLevel;
-    private boolean adjustFlag = true;
 
     private ZwaveControlService zwaveService;
 
@@ -135,7 +134,6 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
                     //zwaveService.setSwitchAllOn(nodeId);
                     zwaveService.setBasic(nodeId,255);
                     zwaveService.getBasic(nodeId);
-                    adjustFlag = true;
                 } else {
                     //turn off
                     zwaveService.setBasic(nodeId,0);
@@ -193,10 +191,8 @@ public class DimmerActivity extends BaseActivity implements View.OnClickListener
                                     String tmpValue = value.substring(0,value.length()-1);
                                     int setValue = Integer.valueOf(tmpValue,16);
 
-                                    if (adjustFlag){
-                                        brightness_change.setProgress(setValue);
-                                        adjustFlag = false;
-                                    }
+                                    brightness_change.setProgress(setValue);
+
                                 }
                             }else if ("Configuration Get Information".equals(messageType)) {
 
