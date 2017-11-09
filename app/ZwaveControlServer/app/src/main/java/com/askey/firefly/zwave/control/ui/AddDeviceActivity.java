@@ -277,6 +277,15 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
                     zwaveService.getSensorNotification(nodeId, 0x00, 0x07, 0x00);
                     //Door/Window
                     zwaveService.getSensorNotification(nodeId, 0x00, 0x06, 0x00);
+                } else if (jsonObject.getString("Product id").equals("0036")) {
+                    //Door/Window
+                    zwaveService.getSensorNotification(nodeId, 0x00, 0x06, 0x00);
+                } else if (jsonObject.getString("Product id").equals("001E")) {
+                    //SMOKE
+                    zwaveService.getSensorNotification(nodeId, 0x00, 0x01, 0x00);
+                } else if (jsonObject.getString("Product id").equals("0050")) {
+                    //Motion
+                    zwaveService.getSensorNotification(nodeId, 0x00, 0x07, 0x00);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

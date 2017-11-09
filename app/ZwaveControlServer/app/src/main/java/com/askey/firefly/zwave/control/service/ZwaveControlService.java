@@ -250,6 +250,48 @@ public class ZwaveControlService extends Service {
         return result;
     }
 
+    public int getGroupInfo(int deviceId, int groupId){
+        Logg.i(TAG,"=====getGroupInfo==deviceId==="+deviceId+"groupId="+groupId);
+        int result = ZwaveControlHelper.ZwController_getGroupInfo(deviceId,groupId);
+        return result;
+    }
+
+    public int addEndpointsToGroup(int deviceId, int groupId, int[] arr){
+        Logg.i(TAG,"=====addEndpointsToGroup==deviceId==="+deviceId+"groupId="+groupId);
+        int result = ZwaveControlHelper.ZwController_addEndpointsToGroup(deviceId,groupId,arr);
+        return result;
+    }
+
+    public int removeEndpointsFromGroup(int deviceId, int groupId, int[] arr){
+        Logg.i(TAG,"=====removeEndpointsFromGroup==deviceId==="+deviceId+"groupId="+groupId);
+        int result = ZwaveControlHelper.ZwController_removeEndpointsFromGroup(deviceId,groupId,arr);
+        return result;
+    }
+
+    public int getMaxSupportedGroups(int deviceId){
+        Logg.i(TAG,"=====getMaxSupportedGroups==deviceId==="+deviceId);
+        int result = ZwaveControlHelper.ZwController_getMaxSupportedGroups(deviceId);
+        return result;
+    }
+
+    public int getSpecificGroup(int deviceId){
+        Logg.i(TAG,"=====getSpecificGroup==deviceId==="+deviceId);
+        int result = ZwaveControlHelper.ZwController_getSpecificGroup(deviceId);
+        return result;
+    }
+
+    public int getSupportedNotification(int deviceId){
+        Logg.i(TAG,"=====getSupportedNotification==deviceId==="+deviceId);
+        int result = ZwaveControlHelper.ZwController_getSupportedNotification(deviceId);
+        return result;
+    }
+
+    public int getSupportedEventNotification(int deviceId, int typeDef){
+        Logg.i(TAG,"=====ZwController_getSupportedEventNotification==deviceId==="+deviceId+"===typeDef==="+typeDef);
+        int result = ZwaveControlHelper.ZwController_getSupportedEventNotification(deviceId,typeDef);
+        return result;
+    }
+
     public int closeController(){
         return ZwaveControlHelper.CloseZwController();
     }
@@ -405,6 +447,16 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("getSensorMultiLevel", jniResult);
         } else if (messageType.equals("Notification Get Information")) {
             zwaveControlResultCallBack("getSensorNotification", jniResult);
+        } else if (messageType.equals("Supported Groupings Report")) {
+            zwaveControlResultCallBack("getMaxSupportedGroups", jniResult);
+        } else if (messageType.equals("Binary Sensor Support Get Information")) {
+            zwaveControlResultCallBack("GetSensorBinarySupportedSensor", jniResult);
+        } else if (messageType.equals("Notification Supported Report")) {
+            zwaveControlResultCallBack("getSupportedNotification", jniResult);
+        } else if (messageType.equals("Group Info Report")) {
+            zwaveControlResultCallBack("getGroupInfo", jniResult);
+        } else if (messageType.equals("Notification Supported Report")) {
+            zwaveControlResultCallBack("getSupportedNotification", jniResult);
         }
     }
 
