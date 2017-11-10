@@ -98,6 +98,7 @@ static const cmd_get_resp_t cmd_get_resp_tbl[] =
     {COMMAND_CLASS_BARRIER_OPERATOR, BARRIER_OPERATOR_GET, BARRIER_OPERATOR_REPORT},
     {COMMAND_CLASS_BASIC_TARIFF_INFO, BASIC_TARIFF_INFO_GET, BASIC_TARIFF_INFO_REPORT},
     {COMMAND_CLASS_CENTRAL_SCENE, CENTRAL_SCENE_SUPPORTED_GET, CENTRAL_SCENE_SUPPORTED_REPORT},
+    {COMMAND_CLASS_SCENE_ACTUATOR_CONF, SCENE_ACTUATOR_CONF_GET, SCENE_ACTUATOR_CONF_REPORT},
 
 };
 
@@ -2243,6 +2244,15 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
                 {
                     CENTRAL_SCENE_SUPPORTED_REPORT,
                     CENTRAL_SCENE_NOTIFICATION
+                };
+                return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
+            }
+            break;
+            case COMMAND_CLASS_SCENE_ACTUATOR_CONF:
+            {
+                static const uint8_t intf_settings[] =
+                {
+                    SCENE_ACTUATOR_CONF_REPORT
                 };
                 return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
             }
@@ -6244,6 +6254,21 @@ void zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint8_t cmd_len, uint8_t rx_st
                         zwif_get_desc(intf, &ifd);
                         //Callback the registered function
                         rpt_cb(&ifd, &notify_info);
+                    }
+                }
+            }
+            break;
+            case COMMAND_CLASS_SCENE_ACTUATOR_CONF:
+            {
+                if(cmd_buf[1] == SCENE_ACTUATOR_CONF_REPORT)
+                {
+                    if(cmd_len >= 5)
+                    {
+                        zwrep_scene_actuator_conf_get_fn rpt_cb;
+                        rpt_cb = (zwrep_scene_actuator_conf_get_fn)report_cb;
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, cmd_buf[2], cmd_buf[3], cmd_buf[4]);
                     }
                 }
             }

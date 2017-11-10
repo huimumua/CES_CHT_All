@@ -10618,3 +10618,145 @@ int  zwcontrol_central_scene_supported_get(hl_appl_ctx_t* hl_appl, uint32_t node
     return result;
 }
 
+/*
+ **  Command Class Scene Actuator Conf ver 1
+ */
+
+static void hl_scene_actuator_conf_get_report_cb(zwifd_p ifd, uint8_t sceneId, uint8_t level, uint8_t dimDuration)
+{
+    ALOGI("scene actuator conf report, sceneId: %d, level: %d, dimDuration: %d", sceneId, level, dimDuration);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Scene Actuator Conf Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "Scene id", sceneId);
+    cJSON_AddNumberToObject(jsonRoot, "Level", level);
+    cJSON_AddNumberToObject(jsonRoot, "Dimming duration", dimDuration);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_scene_actuator_conf_get - Setup scene actuator conf get & report
+@param[in]  hl_appl     The high-level api context
+@param[in]  sceneId     The scene id
+@return  0 on success, negative error number on failure
+*/
+int hl_scene_actuator_conf_get(hl_appl_ctx_t   *hl_appl, uint8_t sceneId)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_scene_actuator_conf_get(ifd, sceneId, hl_scene_actuator_conf_get_report_cb);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 1 && result != 0)
+    {
+        ALOGE("zwif_scene_actuator_conf_get with error:%d",result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_scene_actuator_conf_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sceneId)
+{
+    if(!hl_appl->is_init_done)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SCENE_ACTUATOR_CONF))
+    {
+        return -1;
+    }
+
+    int result = hl_scene_actuator_conf_get(hl_appl, (uint8_t)sceneId);
+    if (result != 1 && result != 0)
+    {
+        ALOGE("zwcontrol_scene_actuator_conf_get with error:%d",result);
+    }
+
+    return result;
+}
+
+/**
+hl_scene_actuator_conf_set - scene actuator conf set
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_scene_actuator_conf_set(hl_appl_ctx_t   *hl_appl, uint8_t sceneId, uint8_t dimDuration, uint8_t override, uint8_t level)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_scene_actuator_conf_set(ifd, (uint8_t)sceneId, (uint8_t)dimDuration, (uint8_t)override, (uint8_t)level);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0)
+    {
+        ALOGE("zwif_scene_actuator_conf_set with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_scene_actuator_conf_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sceneId, uint8_t dimDuration,
+                                       uint8_t override, uint8_t level)
+{
+    if(!hl_appl->is_init_done)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SCENE_ACTUATOR_CONF))
+    {
+        return -1;
+    }
+
+    int result = hl_scene_actuator_conf_set(hl_appl, sceneId, dimDuration, override, level);
+    if (result != 1 && result != 0)
+    {
+        ALOGE("zwcontrol_scene_actuator_conf_set with error:%d",result);
+    }
+
+    return result;
+}
+

@@ -343,4 +343,11 @@ int  zwcontrol_notification_supported_event_get(hl_appl_ctx_t* hl_appl, uint32_t
 int  zwcontrol_central_scene_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 void hl_central_scene_notification_report_cb(zwifd_p ifd, zwcentral_scene_notify_t* notify_info);
 
+/*
+ **  Command Class Scene Actuator Conf ver 1
+ */
+int  zwcontrol_scene_actuator_conf_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sceneId);
+int  zwcontrol_scene_actuator_conf_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sceneId, uint8_t dimDuration,
+                                       uint8_t override, uint8_t level);
+
 #endif

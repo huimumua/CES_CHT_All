@@ -302,4 +302,14 @@ public class ZwaveControlHelper {
     **/
     public native static int ZwController_getSupportedCentralScene(int deviceId);
 
+    /**
+    ** @param scene_id     The scene id  0-255
+    ** @param dim_duration 变化的时间 1-99 单位秒
+    ** @param override
+    **        If the Override bit is set to 0, the current settings in the device is associated with the Scene ID.
+    **        If the Override bit is set to 1, the Level value in the Command is associated to the Scene ID.
+    ** @param level 0x00-0xFF
+    **/
+    public native static int ZwController_setSceneActuatorConf(int deviceId, int scene_id, int dim_duration, int override, int level);
+
 }

@@ -6908,6 +6908,71 @@ int zwif_central_scene_notification_rep_set(zwifd_p ifd, zwrep_central_scene_not
     return ZW_ERR_CLASS_NOT_FOUND;
 }
 
+/**
+zwif_scene_actuator_conf_get - get the scene actuator conf
+@param[in]  ifd     interface
+@param[in]  sceneId scene id
+@param[in]  cb      report callback function
+@return ZW_ERR_XXX
+*/
+int zwif_scene_actuator_conf_get(zwifd_p ifd, uint8_t sceneId, zwrep_scene_actuator_conf_get_fn cb)
+{
+    int     result;
+    zwif_p  intf;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_SCENE_ACTUATOR_CONF)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    //Setup report callback
+    result = zwif_set_report(ifd, cb, SCENE_ACTUATOR_CONF_REPORT);
+
+    if (result == 0)
+    {
+        result = zwif_cmd_id_set(ifd, ZW_CID_SCENE_ACT_CONF_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        //Request for report
+        result = zwif_get_report(ifd, &sceneId, 1,
+                                 SCENE_ACTUATOR_CONF_GET, zwif_exec_cb);
+    }
+    return result;
+}
+
+int zwif_scene_actuator_conf_set(zwifd_p ifd, uint8_t sceneId, uint8_t dimDuration, uint8_t override, uint8_t level)
+{
+    int         result;
+    uint8_t     cmd[6];
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_SCENE_ACTUATOR_CONF)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_SCENE_ACT_CONF_SET, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Prepare the command
+    cmd[0] = COMMAND_CLASS_SCENE_ACTUATOR_CONF;
+    cmd[1] = SCENE_ACTUATOR_CONF_SET;
+    cmd[2] = sceneId;
+    cmd[3] = dimDuration;
+    cmd[4] = override & 0x80;
+    cmd[5] = level;
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 6, zwif_exec_cb);
+}
+
 // skysoft end
 /*****************************************/
 /**
