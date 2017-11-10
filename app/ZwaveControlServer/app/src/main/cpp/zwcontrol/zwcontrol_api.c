@@ -2524,6 +2524,102 @@ static void hl_dev_id_show(hl_appl_ctx_t *hl_appl, dev_id_t *dev_id)
     }
 }
 
+// Transfer zwave plus icon type to device type
+static char* hl_zwaveplus_icon_to_device_type(uint16_t  usr_icon)
+{
+    switch(usr_icon)
+    {
+        case ICON_TYPE_GENERIC_ON_OFF_POWER_SWITCH:
+        {
+            return "On/Off Power Switch";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_DIMMER_WALL_SWITCH_FOUR_BUTTONS:
+        {
+            return "Wall Switch-4 buttons";
+        }
+        break;
+        case ICON_TYPE_GENERIC_LIGHT_DIMMER_SWITCH:
+        {
+            return "Light Dimmer Switch";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_LIGHT_DIMMER_SWITCH_PLUGIN:
+        {
+            return "Light Dimmer with plugin";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_SENSOR_NOTIFICATION_SMOKE_ALARM:
+        {
+            return "Smoke Alarm Notification Sensor";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_SENSOR_NOTIFICATION_WATER_ALARM:
+        {
+            return "Water Alarm Notification Sensor";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_SENSOR_NOTIFICATION_ACCESS_CONTROL:
+        {
+            return "Access Control Notification Sensor";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_SENSOR_NOTIFICATION_HOME_SECURITY:
+        {
+            return "Home Security Notification Sensor";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_SENSOR_NOTIFICATION_POWER_MANAGEMENT:
+        {
+            return "Power Management Notification Sensor";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_SENSOR_NOTIFICATION_SYSTEM:
+        {
+            return "System Notification Sensor";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_SENSOR_NOTIFICATION_CLOCK:
+        {
+            return "Clock Notification Sensor";
+        }
+        break;
+        case ICON_TYPE_GENERIC_SENSOR_MULTILEVEL:
+        {
+            return "Sensor Multilevel";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_SENSOR_MULTILEVEL_AIR_TEMPERATURE:
+        {
+            return "Air Temperature Sensor";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_SENSOR_MULTILEVEL_LUMINANCE:
+        {
+            return "Luminance Sensor";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_SENSOR_MULTILEVEL_POWER:
+        {
+            return "Power Sensor";
+        }
+        break;
+        case ICON_TYPE_SPECIFIC_SENSOR_MULTILEVEL_HUMIDITY:
+        {
+            return "Humidity Sensor";
+        }
+        break;
+
+        case ICON_TYPE_UNASSIGNED:
+        {
+            return "unknown device";
+        }
+        break;
+        default:
+            return "unknown device";
+    }
+}
+
 /**
 hl_zwaveplus_show - Show Z-Wave+ information
 @param[in]	hl_appl   The high-level api context
@@ -2574,8 +2670,7 @@ static void hl_zwaveplus_show(hl_appl_ctx_t *hl_appl, zwplus_info_t *info, cJSON
     cJSON_AddStringToObject(EpInfo, "ZWave+ installer icon", str);
 
     plt_msg_show(hl_plt_ctx_get(hl_appl), "ZWave+ user icon:%04Xh", (unsigned)(info->usr_icon));
-    sprintf(str, "%04Xh", info->usr_icon);
-    cJSON_AddStringToObject(EpInfo, "ZWave+ user icon", str);
+    cJSON_AddStringToObject(EpInfo, "ZWave+ device type", hl_zwaveplus_icon_to_device_type(info->usr_icon));
 }
 
 /**
