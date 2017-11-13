@@ -143,6 +143,14 @@ public class ZwaveControlHelper {
     /**
     ** zwave controller jni interface
     ** support CC: COMMAND_CLASS_METER
+    **
+    **    static const char *meter_type[] = { "unknown", "electric", "gas", "water", "heating", "cooling"};
+    **
+    **    meter unit 0-6
+    **    {"KWh", "kVAh", "W", "Pulse Count", "V", "A", "Power factor"},  // for electric
+    **    {"Cubic meters", "Cubic feet", "unknown", "Pulse Count", "unknown", "unknown", "unknown"},   // for gas
+    **    {"Cubic meters", "Cubic feet", "US gallons", "Pulse Count", "unknown", "unknown", "unknown"} // for water
+    **
     **/
     public native static int ZwController_GetMeter(int deviceId, int meter_unit);
     public native static int ZwController_resetMeter(int deviceId);
