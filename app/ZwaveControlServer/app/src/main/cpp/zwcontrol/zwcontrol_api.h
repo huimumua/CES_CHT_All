@@ -176,7 +176,7 @@ int  zwcontrol_start_learn_mode(hl_appl_ctx_t* hl_appl);
  **  Command Class Battery
  */
 int  zwcontrol_battery_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
-int  zwcontrol_sensor_multilevel_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
+int  zwcontrol_sensor_multilevel_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId/*, uint8_t sensor_type, uint8_t unit*/);
 
 
 /*
@@ -316,19 +316,19 @@ int  zwcontrol_basic_tariff_info_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
  **  Command Class Association & Multi-Channel Association
  **  
  */
-int  zwcontrol_get_group_info(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id);
+int  zwcontrol_get_group_info(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint8_t endpoindId);
 
 // Association set 
-int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList);
+int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList, uint8_t endpoindId);
 // Association remove
-int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList);
+int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList, uint8_t endpoindId);
 // Association groupings get
-int  zwcontrol_get_max_supported_groups(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_get_max_supported_groups(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId);
 // Association specific(current active) group get
-int  zwcontrol_get_specific_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_get_specific_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId);
 
 /*
- **  Command Class Notification
+ **  Command Class Notification version 4
  **  
  */
 int  zwcontrol_notification_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t notificationType, uint8_t status);
@@ -338,9 +338,8 @@ int  zwcontrol_notification_supported_event_get(hl_appl_ctx_t* hl_appl, uint32_t
 
 /*
  **  Command Class Central Scene version 2
- **
  */
-int  zwcontrol_central_scene_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_central_scene_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId);
 void hl_central_scene_notification_report_cb(zwifd_p ifd, zwcentral_scene_notify_t* notify_info);
 
 /*

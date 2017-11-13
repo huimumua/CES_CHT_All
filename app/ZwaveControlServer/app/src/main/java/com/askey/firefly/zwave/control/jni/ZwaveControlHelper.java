@@ -289,11 +289,11 @@ public class ZwaveControlHelper {
     ** zwave controller jni interface
     ** support CC: COMMAND_CLASS_ASSOCIATION
     **/
-    public native static int ZwController_getGroupInfo(int deviceId, int groupId);
-    public native static int ZwController_addEndpointsToGroup(int deviceId, int groupId, int[] arr);
-    public native static int ZwController_removeEndpointsFromGroup(int deviceId, int groupId, int[] arr);
-    public native static int ZwController_getMaxSupportedGroups(int deviceId);
-    public native static int ZwController_getSpecificGroup(int deviceId);
+    public native static int ZwController_getGroupInfo(int deviceId, int groupId, int endpointId);
+    public native static int ZwController_addEndpointsToGroup(int deviceId, int groupId, int[] arr, int endpointId);
+    public native static int ZwController_removeEndpointsFromGroup(int deviceId, int groupId, int[] arr, int endpointId);
+    public native static int ZwController_getMaxSupportedGroups(int deviceId, int endpointId);
+    public native static int ZwController_getSpecificGroup(int deviceId, int endpointId);
 
     /**
     ** zwave controller jni interface
@@ -308,8 +308,14 @@ public class ZwaveControlHelper {
     ** zwave controller jni interface
     ** support CC: COMMAND_CLASS_CENTRAL_SCENE
     **/
-    public native static int ZwController_getSupportedCentralScene(int deviceId);
+    public native static int ZwController_getSupportedCentralScene(int deviceId, int endpointId);
 
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_SCENE_ACTUATOR_CONF
+    **/
+
+    public native static int ZwController_getSceneActuatorConf(int deviceId, int scene_id);
     /**
     ** @param scene_id     The scene id  0-255
     ** @param dim_duration 变化的时间 1-99 单位秒

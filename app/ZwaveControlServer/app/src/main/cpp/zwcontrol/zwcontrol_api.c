@@ -1735,7 +1735,7 @@ static int hl_desc_init(desc_cont_t **head, zwnet_p nw)
     return 0;
 }
 
-static int hl_destid_get(hl_appl_ctx_t *hl_appl, int nodeId, int cmd)
+static int hl_destid_get(hl_appl_ctx_t *hl_appl, int nodeId, int cmd, uint8_t endpoindId)
 {
     int result, find = 0;
     zwnetd_p    net_desc;
@@ -1820,9 +1820,9 @@ static int hl_destid_get(hl_appl_ctx_t *hl_appl, int nodeId, int cmd)
                   last_intf_cont->id, (intf->propty & IF_PROPTY_SECURE)? '*' : ' ',
                   (intf->propty & IF_PROPTY_UNSECURE)? '^' : ' ');*/
 
-            if((unsigned)intf->cls == cmd)
+            if((intf->epid == endpoindId) && (unsigned)intf->cls == cmd)
             {
-                ALOGD("required interface found");
+                ALOGD("required interface found, nodeid:%d, cmd intf id:%d, EndPoint id:%d(%d)",nodeId,last_intf_cont->id,intf->epid, last_ep_cont->id);
                 hl_appl->dst_desc_id = last_intf_cont->id;
                 hl_appl->rep_desc_id = last_intf_cont->id;
                 hl_appl->temp_desc = last_intf_cont->id;
@@ -2670,6 +2670,7 @@ static void hl_zwaveplus_show(hl_appl_ctx_t *hl_appl, zwplus_info_t *info, cJSON
     cJSON_AddStringToObject(EpInfo, "ZWave+ installer icon", str);
 
     plt_msg_show(hl_plt_ctx_get(hl_appl), "ZWave+ user icon:%04Xh", (unsigned)(info->usr_icon));
+    //sprintf(str, "%04Xh", info->usr_icon);
     cJSON_AddStringToObject(EpInfo, "ZWave+ device type", hl_zwaveplus_icon_to_device_type(info->usr_icon));
 }
 
@@ -3635,7 +3636,7 @@ int zwcontrol_battery_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BATTERY))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BATTERY, 0))
     {
         return -1;
     }
@@ -3904,6 +3905,7 @@ zwepd_p    hl_ep_desc_get(desc_cont_t *head, uint32_t desc_id)
 
     if (desc_cont->type != DESC_TYPE_EP)
     {
+        ALOGE("hl_ep_desc_get desc id %d is not type endpoint", desc_id);
         //plt_msg_ts_show("hl_ep_desc_get desc id:%u is not type endpoint", desc_id);
         return NULL;
     }
@@ -3975,14 +3977,14 @@ static int32_t hl_nameloc_set(hl_appl_ctx_t   *hl_appl)
     return result;
 }
 
-int zwcontrol_sensor_multilevel_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId)
+int zwcontrol_sensor_multilevel_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId/*, uint8_t sensor_type, uint8_t unit*/)
 {
     if(!hl_appl->is_init_done)
     {
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SENSOR_MULTILEVEL))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SENSOR_MULTILEVEL, 0))
     {
         return -1;
     }
@@ -3992,7 +3994,8 @@ int zwcontrol_sensor_multilevel_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId)
     if(result == 0)
     {
         ALOGD("sensor report setup done.");
-        
+        /*hl_appl->sensor_type = sensor_type;
+        hl_appl->sensor_unit = unit;*/
         result = hl_ml_snsr_rep_get(hl_appl);
     }
 
@@ -4258,7 +4261,7 @@ int zwcontrol_basic_get(hl_appl_ctx_t *hl_appl, int nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BASIC))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BASIC, 0))
     {
         return -1;
     }
@@ -4312,7 +4315,7 @@ int  zwcontrol_basic_set(hl_appl_ctx_t *hl_appl, int nodeId, int value)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BASIC))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BASIC, 0))
     {
         return -1;
     }
@@ -4501,7 +4504,7 @@ int zwcontrol_switch_multilevel_get(hl_appl_ctx_t* hl_appl, int nodeId)
     }
 
     ALOGI("zwcontroller_switch_multilevel_get started");
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL, 0))
     {
         return -1;
     }
@@ -4599,7 +4602,7 @@ int zwcontrol_get_support_switch_type(hl_appl_ctx_t* hl_appl, int nodeId)
     }
 
     ALOGI("zwcontroller_get_support_switch started");
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL, 0))
     {
         return -1;
     }
@@ -4653,7 +4656,7 @@ int zwcontrol_switch_multilevel_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uin
     }
 
     ALOGI("zwcontrol_switch_level_set started");
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL, 0))
     {
         return -1;
     }
@@ -4740,7 +4743,7 @@ int zwcontrol_start_stop_switchlevel_change(hl_appl_ctx_t* hl_appl, uint32_t nod
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL, 0))
     {
         return -1;
     }
@@ -4808,7 +4811,7 @@ void hl_cfg_report_cb(zwifd_p ifd, zwconfig_p param)
 
     cJSON_AddNumberToObject(jsonRoot, "Parameter number", param->param_num);
     char str[50] = {0};
-    sprintf(str, "%x", param_value);
+    sprintf(str, "%X", param_value);
     cJSON_AddStringToObject(jsonRoot, "Parameter value", str);
 
     if(resCallBack)
@@ -4926,7 +4929,7 @@ int  zwcontrol_configuration_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_CONFIGURATION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_CONFIGURATION, 0))
     {
         return -1;
     }
@@ -5030,7 +5033,7 @@ int zwcontrol_configuration_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_CONFIGURATION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_CONFIGURATION, 0))
     {
         return -1;
     }
@@ -5136,7 +5139,7 @@ int  zwcontrol_configuration_bulk_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_CONFIGURATION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_CONFIGURATION, 0))
     {
         return -1;
     }
@@ -5281,7 +5284,7 @@ int  zwcontrol_powerLevel_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_POWERLEVEL))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_POWERLEVEL, 0))
     {
         return -1;
     }
@@ -5337,7 +5340,7 @@ int  zwcontrol_swith_all_on(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL, 0))
     {
         return -1;
     }
@@ -5388,7 +5391,7 @@ int  zwcontrol_swith_all_off(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL, 0))
     {
         return -1;
     }
@@ -5438,7 +5441,7 @@ int  zwcontrol_swith_all_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t va
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL, 0))
     {
         return -1;
     }
@@ -5561,7 +5564,7 @@ int  zwcontrol_swith_all_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL, 0))
     {
         return -1;
     }
@@ -5620,7 +5623,7 @@ int zwcontrol_switch_binary_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_BINARY))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_BINARY, 0))
     {
         return -1;
     }
@@ -5800,7 +5803,7 @@ int  zwcontrol_switch_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_BINARY))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_BINARY, 0))
     {
         return -1;
     }
@@ -5952,7 +5955,7 @@ int  zwcontrol_sensor_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SENSOR_BINARY_V2))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SENSOR_BINARY_V2, 0))
     {
         return -1;
     }
@@ -6092,7 +6095,7 @@ int  zwcontrol_sensor_binary_supported_sensor_get(hl_appl_ctx_t* hl_appl, uint32
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SENSOR_BINARY_V2))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SENSOR_BINARY_V2, 0))
     {
         return -1;
     }
@@ -6139,9 +6142,9 @@ hl_meter_rep_cb - meter report callback
 static void hl_meter_rep_cb(zwifd_p ifd, zwmeter_dat_p value)
 {
     int32_t meter_value;
-
-    ALOGI("Meter type:%s, precision:%u, unit:%s, rate type:%s",
-                 meter_type[value->type], value->precision, units[value->type-1][value->unit],
+    ALOGI("Meter type:%d, precision:%d, rate type:%d, delta_time:%d ", value->type, value->precision,value->rate_type,value->delta_time);
+    ALOGI("Meter type:%s, precision:%d, unit:%s, rate type:%s",
+                 meter_type[value->type], value->precision, (units[value->type-1][value->unit]),
                  meter_rate[value->rate_type]);
 
     cJSON *jsonRoot;
@@ -6164,14 +6167,14 @@ static void hl_meter_rep_cb(zwifd_p ifd, zwmeter_dat_p value)
 
     if (value->precision == 0)
     {
-        ALOGI("Meter reading:%d %s", meter_value,units[value->type-1][value->unit]);
+        ALOGI("Meter reading:%d %s", meter_value, units[value->type-1][value->unit]);
         cJSON_AddNumberToObject(jsonRoot, "Meter reading", meter_value);
     }
     else
     {
         char    float_str[80];
         hl_float_get(meter_value, value->precision, 80, float_str);
-        ALOGI("Meter reading:%s %s", float_str,units[value->type-1][value->unit]);
+        ALOGI("Meter reading:%s %s", float_str, units[value->type-1][value->unit]);
         cJSON_AddStringToObject(jsonRoot, "Meter reading", float_str);
     }
 
@@ -6185,7 +6188,7 @@ static void hl_meter_rep_cb(zwifd_p ifd, zwmeter_dat_p value)
 
         if (value->precision == 0)
         {
-            ALOGI("Previous Meter reading:%d %s, taken %us ago", meter_value,units[value->type-1][value->unit], value->delta_time);
+            ALOGI("Previous Meter reading:%d %s, taken %us ago", meter_value, units[value->type-1][value->unit], value->delta_time);
             cJSON_AddNumberToObject(jsonRoot, "Previous meter reading", meter_value);
             cJSON_AddNumberToObject(jsonRoot, "Taken time(sec)", value->delta_time);
         }
@@ -6283,7 +6286,7 @@ int  zwcontrol_meter_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t meter_
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_METER_V3))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_METER_V3, 0))
     {
         return -1;
     }
@@ -6384,7 +6387,7 @@ int  zwcontrol_meter_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_METER_V3))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_METER_V3, 0))
     {
         return -1;
     }
@@ -6436,7 +6439,7 @@ int  zwcontrol_meter_reset(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_METER_V3))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_METER_V3, 0))
     {
         return -1;
     }
@@ -6560,7 +6563,7 @@ int  zwcontrol_wake_up_interval_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_WAKE_UP))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_WAKE_UP, 0))
     {
         return -1;
     }
@@ -6620,7 +6623,7 @@ int  zwcontrol_wake_up_interval_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uin
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_WAKE_UP))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_WAKE_UP, 0))
     {
         return -1;
     }
@@ -6759,7 +6762,7 @@ int  zwcontrol_door_lock_operation_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK, 0))
     {
         return -1;
     }
@@ -6811,7 +6814,7 @@ int  zwcontrol_door_lock_operation_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, 
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK, 0))
     {
         return -1;
     }
@@ -6921,7 +6924,7 @@ int  zwcontrol_door_lock_config_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK, 0))
     {
         return -1;
     }
@@ -6975,7 +6978,7 @@ int  zwcontrol_door_lock_config_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uin
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK, 0))
     {
         return -1;
     }
@@ -7104,7 +7107,7 @@ int  zwcontrol_user_code_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t us
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_USER_CODE))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_USER_CODE, 0))
     {
         return -1;
     }
@@ -7158,7 +7161,7 @@ int  zwcontrol_user_code_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t us
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_USER_CODE))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_USER_CODE, 0))
     {
         return -1;
     }
@@ -7258,7 +7261,7 @@ int  zwcontrol_user_code_number_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_USER_CODE))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_USER_CODE, 0))
     {
         return -1;
     }
@@ -7406,7 +7409,7 @@ int  zwcontrol_protection_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
     {
         return -1;
     }
@@ -7540,7 +7543,7 @@ int  zwcontrol_supported_protection_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
     {
         return -1;
     }
@@ -7592,7 +7595,7 @@ int  zwcontrol_protection_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t l
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
     {
         return -1;
     }
@@ -7728,7 +7731,7 @@ int  zwcontrol_protection_exclusive_control_node_get(hl_appl_ctx_t* hl_appl, uin
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
     {
         return -1;
     }
@@ -7785,7 +7788,7 @@ int  zwcontrol_protection_exclusive_control_node_set(hl_appl_ctx_t* hl_appl, uin
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
     {
         return -1;
     }
@@ -7927,7 +7930,7 @@ int  zwcontrol_protection_timeout_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
     {
         return -1;
     }
@@ -7984,7 +7987,7 @@ int  zwcontrol_protection_timeout_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
     {
         return -1;
     }
@@ -8134,7 +8137,7 @@ int  zwcontrol_indicator_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_INDICATOR))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_INDICATOR, 0))
     {
         return -1;
     }
@@ -8191,7 +8194,7 @@ int  zwcontrol_indicator_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint16_t v
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_INDICATOR))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_INDICATOR, 0))
     {
         return -1;
     }
@@ -8285,7 +8288,7 @@ int  zwcontrol_door_lock_logging_supported_records_get(hl_appl_ctx_t* hl_appl, u
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK_LOGGING))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK_LOGGING, 0))
     {
         return -1;
     }
@@ -8437,7 +8440,7 @@ int  zwcontrol_door_lock_logging_records_get(hl_appl_ctx_t* hl_appl, uint32_t no
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK_LOGGING))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK_LOGGING, 0))
     {
         return -1;
     }
@@ -8558,7 +8561,7 @@ int  zwcontrol_language_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_LANGUAGE))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_LANGUAGE, 0))
     {
         return -1;
     }
@@ -8693,7 +8696,7 @@ int  zwcontrol_switch_color_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR, 0))
     {
         return -1;
     }
@@ -8837,7 +8840,7 @@ int  zwcontrol_switch_color_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeI
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR, 0))
     {
         return -1;
     }
@@ -8894,7 +8897,7 @@ int  zwcontrol_switch_color_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR, 0))
     {
         return -1;
     }
@@ -8903,6 +8906,10 @@ int  zwcontrol_switch_color_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t
     if(result != 0)
     {
         ALOGE("zwcontrol_switch_color_set with error: %d",result);
+    }
+    if(result == 0)
+    {
+        ALOGI("zwcontrol_switch_color_set done");
     }
 
     return result;
@@ -8982,7 +8989,7 @@ int  zwcontrol_start_stop_color_levelchange(hl_appl_ctx_t* hl_appl, uint32_t nod
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR, 0))
     {
         return -1;
     }
@@ -9046,7 +9053,7 @@ int  zwcontrol_barrier_operator_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uin
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BARRIER_OPERATOR))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BARRIER_OPERATOR, 0))
     {
         return -1;
     }
@@ -9135,7 +9142,7 @@ int  zwcontrol_barrier_operator_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BARRIER_OPERATOR))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BARRIER_OPERATOR, 0))
     {
         return -1;
     }
@@ -9192,7 +9199,7 @@ int  zwcontrol_barrier_operator_signal_set(hl_appl_ctx_t* hl_appl, uint32_t node
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BARRIER_OPERATOR))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BARRIER_OPERATOR, 0))
     {
         return -1;
     }
@@ -9281,7 +9288,7 @@ int  zwcontrol_barrier_operator_signal_get(hl_appl_ctx_t* hl_appl, uint32_t node
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BARRIER_OPERATOR))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BARRIER_OPERATOR, 0))
     {
         return -1;
     }
@@ -9400,7 +9407,7 @@ int  zwcontrol_barrier_operator_signal_supported_get(hl_appl_ctx_t* hl_appl, uin
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BARRIER_OPERATOR))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BARRIER_OPERATOR, 0))
     {
         return -1;
     }
@@ -9542,7 +9549,7 @@ int  zwcontrol_basic_tariff_info_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BASIC_TARIFF_INFO))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_BASIC_TARIFF_INFO, 0))
     {
         return -1;
     }
@@ -9655,14 +9662,14 @@ int32_t hl_grp_rep_get(hl_appl_ctx_t   *hl_appl)
     return result;
 }
 
-int  zwcontrol_get_group_info(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id)
+int  zwcontrol_get_group_info(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint8_t endpoindId)
 {
     if(!hl_appl->is_init_done)
     {
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
     {
         return -1;
     }
@@ -9724,14 +9731,14 @@ int32_t hl_grp_add(hl_appl_ctx_t   *hl_appl)
 }
 
 
-int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList)
+int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList, uint8_t endpoindId)
 {
     if(!hl_appl->is_init_done)
     {
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
     {
         return -1;
     }
@@ -9745,6 +9752,7 @@ int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
 
     for (i=0; i<5; i++)
     {
+        ALOGI("zwcontrol_add_endpoints_to_group, epid:%d",nodeList[i]);
         hl_appl->ep_desc_id[i] = nodeList[i];
         if (hl_appl->ep_desc_id[i] == 0)
         {
@@ -9793,7 +9801,7 @@ int32_t hl_grp_del(hl_appl_ctx_t   *hl_appl)
         if (ep)
         {
             ep_desc[ep_cnt++] = *ep;
-            ALOGI("Nodeid: %d(Endpoint %d) will delete from group %d(nodeid:%d).",ep->nodeid, ep->epid, hl_appl->group_id, ifd->nodeid);
+            ALOGI("Nodeid:%d(Endpoint %d) will delete from group %d(nodeid:%d).",ep->nodeid, ep->epid, hl_appl->group_id, ifd->nodeid);
         }
     }
 
@@ -9809,14 +9817,14 @@ int32_t hl_grp_del(hl_appl_ctx_t   *hl_appl)
     return result;
 }
 
-int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList)
+int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList, uint8_t endpoindId)
 {
     if(!hl_appl->is_init_done)
     {
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
     {
         return -1;
     }
@@ -9915,14 +9923,14 @@ int32_t hl_grp_sup(hl_appl_ctx_t   *hl_appl)
     return result;
 }
 
-int  zwcontrol_get_max_supported_groups(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+int  zwcontrol_get_max_supported_groups(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId)
 {
     if(!hl_appl->is_init_done)
     {
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
     {
         return -1;
     }
@@ -10003,14 +10011,14 @@ int32_t hl_grp_specific(hl_appl_ctx_t   *hl_appl)
     return result;
 }
 
-int  zwcontrol_get_specific_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+int  zwcontrol_get_specific_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId)
 {
     if(!hl_appl->is_init_done)
     {
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
     {
         return -1;
     }
@@ -10094,7 +10102,7 @@ int  zwcontrol_notification_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_NOTIFICATION_V4))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_NOTIFICATION_V4, 0))
     {
         return -1;
     }
@@ -10241,7 +10249,7 @@ int  zwcontrol_notification_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_NOTIFICATION_V4))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_NOTIFICATION_V4, 0))
     {
         return -1;
     }
@@ -10337,7 +10345,7 @@ int  zwcontrol_notification_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeI
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_NOTIFICATION_V4))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_NOTIFICATION_V4, 0))
     {
         return -1;
     }
@@ -10403,6 +10411,7 @@ void hl_notification_sup_evt_get_report_cb(zwifd_p ifd, uint8_t ztype, uint8_t e
 
     cJSON_Delete(jsonRoot);
 }
+
 /**
 hl_notification_sup_evt_get - Setup notification supported event get
 @param[in]  hl_appl     The high-level api context
@@ -10441,7 +10450,7 @@ int  zwcontrol_notification_supported_event_get(hl_appl_ctx_t* hl_appl, uint32_t
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_NOTIFICATION_V4))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_NOTIFICATION_V4, 0))
     {
         return -1;
     }
@@ -10460,6 +10469,7 @@ int  zwcontrol_notification_supported_event_get(hl_appl_ctx_t* hl_appl, uint32_t
  **  Command Class Central Scene version 2
  **
  */
+
 static const char* key_attr[] =
 {
     "Key Pressed 1 time", "Key Released", "Key Held Down",
@@ -10593,7 +10603,7 @@ int hl_central_scene_sup_get(hl_appl_ctx_t   *hl_appl)
     return result;
 }
 
-int  zwcontrol_central_scene_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+int  zwcontrol_central_scene_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId)
 {
     ALOGI("zwcontrol_central_scene_supported_get started");
     if(!hl_appl->is_init_done)
@@ -10601,12 +10611,10 @@ int  zwcontrol_central_scene_supported_get(hl_appl_ctx_t* hl_appl, uint32_t node
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_CENTRAL_SCENE))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_CENTRAL_SCENE, endpoindId))
     {
         return -1;
     }
-
-    ALOGI("hl_appl->dst_desc_id = %d,hl_appl->rep_desc_id = %d, hl_appl->temp_desc =%d",hl_appl->dst_desc_id,hl_appl->rep_desc_id,hl_appl->temp_desc);
 
     int result = hl_central_scene_sup_get(hl_appl);
 
@@ -10693,7 +10701,7 @@ int  zwcontrol_scene_actuator_conf_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, 
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SCENE_ACTUATOR_CONF))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SCENE_ACTUATOR_CONF, 0))
     {
         return -1;
     }
@@ -10746,7 +10754,7 @@ int  zwcontrol_scene_actuator_conf_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, 
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SCENE_ACTUATOR_CONF))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SCENE_ACTUATOR_CONF, 0))
     {
         return -1;
     }
@@ -10759,4 +10767,3 @@ int  zwcontrol_scene_actuator_conf_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, 
 
     return result;
 }
-

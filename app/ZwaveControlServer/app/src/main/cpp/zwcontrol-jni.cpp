@@ -234,9 +234,9 @@ static int controller_getDeviceBattery(JNIEnv *env, jclass object, jint nodeId)
     return zwcontrol_battery_get(&appl_ctx, (uint32_t)nodeId);
 }
 
-static int controller_getSensorMultiLevel(JNIEnv *env, jclass object, jint nodeId)
+static int controller_getSensorMultiLevel(JNIEnv *env, jclass object, jint nodeId/*, jint sensor_type, jint unit*/)
 {
-    return zwcontrol_sensor_multilevel_get(&appl_ctx, (uint32_t)nodeId);
+    return zwcontrol_sensor_multilevel_get(&appl_ctx, (uint32_t)nodeId/*, (uint8_t)sensor_type, (uint8_t)unit*/);
 }
 
 static int control_update_node(JNIEnv *env, jclass object, jint nodeId)
@@ -305,7 +305,7 @@ static int controller_setConfigurationBulk(JNIEnv *env, jclass object, jint node
         return -1;
     }
     int result = zwcontrol_configuration_bulk_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)offset1, (uint8_t)offset2,
-                                                  (uint8_t)paramNumber, (uint8_t)paramSize, (uint8_t)useDefault, (uint32_t*)&param_value);
+                                                  (uint8_t)paramNumber, (uint8_t)paramSize, (uint8_t)useDefault, (uint32_t*)param_value);
     env->ReleaseIntArrayElements(paramValue, param_value, 0);
     return result;
 }
@@ -541,46 +541,48 @@ static int controller_getBasicTariffInfo(JNIEnv *env, jclass object, jint nodeId
     return zwcontrol_basic_tariff_info_get(&appl_ctx, (uint32_t)nodeId);
 }
 
-static int controller_getGroupInfo(JNIEnv *env, jclass object, jint nodeId, jint groupId)
+static int controller_getGroupInfo(JNIEnv *env, jclass object, jint nodeId, jint groupId, jint endpointId)
 {
-    return zwcontrol_get_group_info(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId);
+    return zwcontrol_get_group_info(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint8_t)endpointId);
 }
 
-static int controller_addEndpointsToGroup(JNIEnv *env, jclass object, jint nodeId, jint groupId, jintArray intArray)
+static int controller_addEndpointsToGroup(JNIEnv *env, jclass object, jint nodeId, jint groupId, jintArray intArray, jint endpointId)
 {
-    jint *node_list;
-    node_list = env->GetIntArrayElements(intArray, JNI_FALSE);
+    jint *node_list = NULL;
+    node_list = env->GetIntArrayElements(intArray, 0);
     if(node_list == NULL)
     {
         return -1;
     }
-    int result = zwcontrol_add_endpoints_to_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint32_t*)node_list);
+
+    int result = zwcontrol_add_endpoints_to_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint32_t*)node_list, (uint8_t)endpointId);
     env->ReleaseIntArrayElements(intArray, node_list, 0);
     return result;
 }
 
-static int controller_removeEndpointsFromGroup(JNIEnv *env, jclass object, jint nodeId, jint groupId, jintArray intArray)
+static int controller_removeEndpointsFromGroup(JNIEnv *env, jclass object, jint nodeId, jint groupId, jintArray intArray, jint endpointId)
 {
-    jint *node_list;
+    jint *node_list = NULL;
     node_list = env->GetIntArrayElements(intArray, JNI_FALSE);
     if(node_list == NULL)
     {
         ALOGE("GetIntArrayElements Failed");
         return -1;
     }
-    int result = zwcontrol_remove_endpoints_from_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint32_t*)node_list);
+
+    int result = zwcontrol_remove_endpoints_from_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint32_t*)node_list, (uint8_t)endpointId);
     env->ReleaseIntArrayElements(intArray, node_list, 0);
     return result;
 }
 
-static int controller_getMaxSupportedGroups(JNIEnv *env, jclass object, jint nodeId)
+static int controller_getMaxSupportedGroups(JNIEnv *env, jclass object, jint nodeId, jint endpointId)
 {
-    return zwcontrol_get_max_supported_groups(&appl_ctx, (uint32_t)nodeId);
+    return zwcontrol_get_max_supported_groups(&appl_ctx, (uint32_t)nodeId, (uint8_t)endpointId);
 }
 
-static int controller_getSpecificGroup(JNIEnv *env, jclass object, jint nodeId)
+static int controller_getSpecificGroup(JNIEnv *env, jclass object, jint nodeId, jint endpointId)
 {
-    return zwcontrol_get_specific_group(&appl_ctx, (uint32_t)nodeId);
+    return zwcontrol_get_specific_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)endpointId);
 }
 
 static int controller_setNotification(JNIEnv *env, jclass object, jint nodeId, jint type, jint status)
@@ -603,9 +605,9 @@ static int controller_getSupportedEventNotification(JNIEnv *env, jclass object, 
     return zwcontrol_notification_supported_event_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)notifType);
 }
 
-static int controller_getSupportedCentralScene(JNIEnv *env, jclass object, jint nodeId)
+static int controller_getSupportedCentralScene(JNIEnv *env, jclass object, jint nodeId, jint endpointId)
 {
-    return zwcontrol_central_scene_supported_get(&appl_ctx, (uint32_t)nodeId);
+    return zwcontrol_central_scene_supported_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)endpointId);
 }
 
 static int controller_getSceneActuatorConf(JNIEnv *env, jclass object, jint nodeId, jint sceneId)
@@ -624,9 +626,9 @@ static const JNINativeMethod gMethods[] = {
         {"CloseZwController",    "()I", (void *)close_controller},
         {"DestoryZwController",    "()I", (void *)destroy_controller},
         {"ZwController_AddDevice", "()I", (void*)controller_adddevice},
-        {"ZwController_RemoveDevice",    "()I", (void *)controller_removedevice},
-        {"ZwController_GetDeviceList",    "()I", (void *)controller_getDeviceList},
-        {"ZwController_GetDeviceInfo",    "()I", (void *)controller_getDeviceInfo},
+        {"ZwController_RemoveDevice", "()I", (void *)controller_removedevice},
+        {"ZwController_GetDeviceList", "()I", (void *)controller_getDeviceList},
+        {"ZwController_GetDeviceInfo", "()I", (void *)controller_getDeviceInfo},
         {"ZwController_RemoveFailedDevice",    "(I)I", (void *)controller_removeFailedDevice},
         {"ZwController_ReplaceFailedDevice",    "(I)I", (void *)controller_replaceFailedDevice},
         {"ZwController_SetDefault", "()I", (void*)controller_setDefault},
@@ -689,16 +691,16 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_getBarrierOperatorSignal", "(II)I", (void*)controller_getBarrierOperatorSignal},
         {"ZwController_getSupportedBarrierOperatorSignal", "(I)I", (void*)controller_getSupportedBarrierOperatorSignal},
         {"ZwController_getBasicTariffInfo", "(I)I", (void*)controller_getBasicTariffInfo},
-        {"ZwController_getGroupInfo", "(II)I", (void*)controller_getGroupInfo},
-        {"ZwController_addEndpointsToGroup", "(II[I)I", (void*)controller_addEndpointsToGroup},
-        {"ZwController_removeEndpointsFromGroup", "(II[I)I", (void*)controller_removeEndpointsFromGroup},
-        {"ZwController_getMaxSupportedGroups", "(I)I", (void*)controller_getMaxSupportedGroups},
-        {"ZwController_getSpecificGroup", "(I)I", (void*)controller_getSpecificGroup},
+        {"ZwController_getGroupInfo", "(III)I", (void*)controller_getGroupInfo},
+        {"ZwController_addEndpointsToGroup", "(II[II)I", (void*)controller_addEndpointsToGroup},
+        {"ZwController_removeEndpointsFromGroup", "(II[II)I", (void*)controller_removeEndpointsFromGroup},
+        {"ZwController_getMaxSupportedGroups", "(II)I", (void*)controller_getMaxSupportedGroups},
+        {"ZwController_getSpecificGroup", "(II)I", (void*)controller_getSpecificGroup},
         {"ZwController_setNotification", "(III)I", (void*)controller_setNotification},
         {"ZwController_getNotification", "(IIII)I", (void*)controller_getNotification},
         {"ZwController_getSupportedNotification", "(I)I", (void*)controller_getSupportedNotification},
         {"ZwController_getSupportedEventNotification", "(II)I", (void*)controller_getSupportedEventNotification},
-        {"ZwController_getSupportedCentralScene", "(I)I", (void*)controller_getSupportedCentralScene},
+        {"ZwController_getSupportedCentralScene", "(II)I", (void*)controller_getSupportedCentralScene},
         {"ZwController_getSceneActuatorConf", "(II)I", (void*)controller_getSceneActuatorConf},
         {"ZwController_setSceneActuatorConf", "(IIIII)I", (void*)controller_setSceneActuatorConf},
 
