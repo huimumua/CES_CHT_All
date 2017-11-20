@@ -747,7 +747,7 @@ typedef struct  _zwnoded
 	uint16_t	pid;			/**< Product ID */
 	uint8_t		nodeid;			/**< Node ID */
 	uint8_t		alive;		    /**< Flag to indicate node is alive. 1= alive; 0= down or sleeping*/
-    uint8_t     sec_incl_failed;/**< Flag to mark a node who failed the inclusion process. 1=failed, 0=success */
+    uint8_t     sec_incl_failed;/**< Flag to mark a node who failed the inclusion process. 1=failed, 0=success, 2=normal inclusion */
     zwnet_p     net;            /**< Network that the node belongs to */
     dev_id_t    dev_id;         /**< Device ID */
 	uint16_t	proto_ver;		/**< Z-Wave Protocol Version*/

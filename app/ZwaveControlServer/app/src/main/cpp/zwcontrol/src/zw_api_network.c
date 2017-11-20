@@ -9337,22 +9337,27 @@ static int zwnet_sec_incl(zwnet_p nw, uint8_t node_id, uint8_t op, int sts_sec_i
             return ZW_ERR_NONE;
         }
 
-        node->sec_incl_failed = 1;
+        node->sec_incl_failed = 2;
     }
 
     //Check whether to include the node in secure network
     if(nw->sec_enable && intf1 && (!nw->ctl.sec_incl_failed))
     {
+        ALOGI("The Device support S0 inclusion");
         node->sec_incl_failed = 0;
 
         if(zwnet_sec_incl_ver1(nw, node_id, op, sts_sec_incl, sts_get_ni) == ZW_ERR_NONE)
         {
+            ALOGI("Device S0 inclusion success");
             return ZW_ERR_NONE;
         }
 
         //Mark the node as failed security inclusion
-        node->sec_incl_failed = 1;
+        node->sec_incl_failed = 2;
     }
+
+    ALOGI("Device not using security, go normal inclusion!");
+    node->sec_incl_failed = 2;
 
     return  ZW_ERR_FAILED;
 }

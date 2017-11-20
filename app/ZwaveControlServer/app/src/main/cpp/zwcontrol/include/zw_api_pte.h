@@ -251,7 +251,7 @@ typedef struct _zwnode
     ret_route_t add_grp_rr;     /**< Return route to configure after the add group command */
 
     /* Security */
-    uint8_t     sec_incl_failed;/**< Flag to mark a node who failed the inclusion process. 1=failed, 0=success */
+    uint8_t     sec_incl_failed;/**< Flag to mark a node who failed the inclusion process. 1=failed, 0=success, 2=narmal inclusion */
     uint8_t     sec_snd_seq_num;/**< 4-bit sequence number used when sending split original payload package (OPP)*/
     uint8_t     sec_rcv_seq_num;/**< 4-bit sequence number used when receiving split original payload package (OPP)
                                      Note: lower 4 bits are used for sequence number; bit-7 is used to indicate

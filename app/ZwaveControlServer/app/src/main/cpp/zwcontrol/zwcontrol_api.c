@@ -2620,6 +2620,30 @@ static char* hl_zwaveplus_icon_to_device_type(uint16_t  usr_icon)
     }
 }
 
+
+// Indicate whether the device security inclusion success or not
+static char* hl_is_security_inclusion(uint16_t  status)
+{
+    switch(status)
+    {
+        case 0:
+        {
+            return "Success";
+        }
+        case 1:
+        {
+            return "Error";
+        }
+        case 2:
+        {
+            return "Normal";
+        }
+
+        default:
+            return "Unknown";
+    }
+}
+
 /**
 hl_zwaveplus_show - Show Z-Wave+ information
 @param[in]	hl_appl   The high-level api context
@@ -2842,7 +2866,7 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
             plt_msg_show(hl_plt_ctx_get(hl_appl), "Node is FLIRS");
         }
 
-        plt_msg_show(hl_plt_ctx_get(hl_appl), "Node security inclusion status:%s", (node->sec_incl_failed)?  "failed" : "unknown");
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Node security inclusion status:%s", hl_is_security_inclusion(node->sec_incl_failed));
         plt_msg_show(hl_plt_ctx_get(hl_appl), "Vendor id:%04X", node->vid);
         plt_msg_show(hl_plt_ctx_get(hl_appl), "Product type id:%04X", node->type);
         plt_msg_show(hl_plt_ctx_get(hl_appl), "Product id:%04X", node->pid);
@@ -2854,7 +2878,7 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
         plt_msg_show(hl_plt_ctx_get(hl_appl), "Application version:%u.%02u\n", (unsigned)(node->app_ver >> 8),
                      (unsigned)(node->app_ver & 0xFF));
 
-        cJSON_AddStringToObject(NodeInfo, "Node security inclusion status", (node->sec_incl_failed)?  "failed" : "unknown");
+        cJSON_AddStringToObject(NodeInfo, "Node security inclusion status", hl_is_security_inclusion(node->sec_incl_failed));
 
         sprintf(str, "%04X", node->vid);
         cJSON_AddStringToObject(NodeInfo, "Vendor id", str);
@@ -3198,7 +3222,7 @@ static int hl_node_list_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
             plt_msg_show(hl_plt_ctx_get(hl_appl), "Node is FLIRS");
         }
 
-        plt_msg_show(hl_plt_ctx_get(hl_appl), "Node security inclusion status:%s", (node->sec_incl_failed)?  "failed" : "unknown");
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Node security inclusion status:%s", hl_is_security_inclusion(node->sec_incl_failed));
         plt_msg_show(hl_plt_ctx_get(hl_appl), "Vendor id:%04X", node->vid);
         plt_msg_show(hl_plt_ctx_get(hl_appl), "Product type id:%04X", node->type);
         plt_msg_show(hl_plt_ctx_get(hl_appl), "Product id:%04X", node->pid);
