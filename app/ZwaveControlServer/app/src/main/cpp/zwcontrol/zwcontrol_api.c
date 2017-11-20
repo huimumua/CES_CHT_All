@@ -4958,10 +4958,15 @@ int  zwcontrol_configuration_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_
     }
 
     result = hl_cfg_get(hl_appl);
-    if(result != 0)
+    if (result != 0 && result != 1)
     {
-        ALOGE("hl_cfg_get with error:%d",result);
+        ALOGE("zwcontrol_configuration_get with error:%d",result);
     }
+    if(result == 1){
+        result = 0;
+        ALOGI("zwcontrol_configuration_get command queued");
+    }
+
     return result;
 }
 
@@ -5055,10 +5060,15 @@ int zwcontrol_configuration_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t
     ALOGI("configuration set, param:%d, useDefault:%d, value:%d",paramNumber,useDefault,hl_appl->cfg_value);
 
     int result = hl_cfg_set(hl_appl);
-    if (result != 0)
+    if (result != 0 && result != 1)
     {
-        ALOGE("hl_cfg_set with error:%d", result);
+        ALOGE("zwcontrol_configuration_set with error:%d",result);
     }
+    if(result == 1){
+        result = 0;
+        ALOGI("zwcontrol_configuration_set command queued");
+    }
+
     return result;
 }
 
@@ -9676,9 +9686,13 @@ int  zwcontrol_get_group_info(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t g
 
     hl_appl->group_id = group_id;
     int result = hl_grp_rep_get(hl_appl);
-    if (result != 0)
+    if (result != 0 && result != 1)
     {
         ALOGE("zwcontrol_get_group_info with error:%d",result);
+    }
+    if(result == 1){
+        result = 0;
+        ALOGI("zwcontrol_get_group_info command queued");
     }
 
     return result;
@@ -9738,9 +9752,13 @@ int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
         return -1;
     }
 
-    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V2, endpoindId))
     {
-        return -1;
+        ALOGI("This device not supported Multi-Channel, try nomal Association.");
+        if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
+        {
+            return -1;
+        }
     }
 
     int i;
@@ -9763,9 +9781,13 @@ int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
     hl_appl->group_id = group_id;
 
     int result = hl_grp_add(hl_appl);
-    if (result != 0)
+    if (result != 0 && result != 1)
     {
         ALOGE("zwcontrol_add_endpoint_to_group with error:%d",result);
+    }
+    if(result == 1){
+        result = 0;
+        ALOGI("zwcontrol_add_endpoint_to_group command queued");
     }
 
     return result;
@@ -9848,9 +9870,13 @@ int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t node
     hl_appl->group_id = group_id;
 
     int result = hl_grp_del(hl_appl);
-    if (result != 0)
+    if (result != 0 && result != 1)
     {
         ALOGE("zwcontrol_remove_endpoints_from_group with error:%d",result);
+    }
+    if(result == 1){
+        result = 0;
+        ALOGI("zwcontrol_remove_endpoints_from_group command queued");
     }
 
     return result;
@@ -9936,9 +9962,13 @@ int  zwcontrol_get_max_supported_groups(hl_appl_ctx_t* hl_appl, uint32_t nodeId,
     }
 
     int result = hl_grp_sup(hl_appl);
-    if(result != 0)
+    if (result != 0 && result != 1)
     {
         ALOGE("zwcontrol_get_max_supported_groups with error:%d",result);
+    }
+    if(result == 1){
+        result = 0;
+        ALOGI("zwcontrol_get_max_supported_groups command queued");
     }
 
     return result;
