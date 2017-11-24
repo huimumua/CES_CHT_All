@@ -2609,6 +2609,11 @@ static char* hl_zwaveplus_icon_to_device_type(uint16_t  usr_icon)
             return "Humidity Sensor";
         }
         break;
+        case ICON_TYPE_GENERIC_REPEATER:
+        {
+            return "Repeater";
+        }
+        break;
 
         case ICON_TYPE_UNASSIGNED:
         {
