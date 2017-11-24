@@ -3650,7 +3650,7 @@ int32_t hl_battery_rep_get(hl_appl_ctx_t   *hl_appl)
 
     plt_mtx_ulck(hl_appl->desc_cont_mtx);
 
-    if (result != 0)
+    if (result != 0 && result != 1)
     {
         ALOGD("hl_battery_rep_get with error:%d", result);
     }
@@ -3676,6 +3676,11 @@ int zwcontrol_battery_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId)
     {
         ALOGD("battery report setup done");
         result = hl_battery_rep_get(hl_appl);
+        if (result == 1)
+        {
+            ALOGW("zwcontrol_battery_get command queued.");
+            result = 0;
+        }
     }
 
     return result;
@@ -3865,7 +3870,7 @@ int32_t hl_ml_snsr_rep_setup(hl_appl_ctx_t   *hl_appl)
 
     if (result != 0)
     {
-        ALOGD("hl_bin_snsr_rep_setup with error:%d", result);
+        ALOGD("hl_ml_snsr_rep_setup with error:%d", result);
     }
 
     return result;
@@ -3905,7 +3910,7 @@ int32_t hl_ml_snsr_rep_get(hl_appl_ctx_t   *hl_appl)
 
     plt_mtx_ulck(hl_appl->desc_cont_mtx);
 
-    if (result != 0)
+    if (result != 0 && result != 1)
     {
         ALOGD("hl_ml_snsr_rep_get with error:%d", result);
     }
@@ -4026,6 +4031,11 @@ int zwcontrol_sensor_multilevel_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId/*, u
         /*hl_appl->sensor_type = sensor_type;
         hl_appl->sensor_unit = unit;*/
         result = hl_ml_snsr_rep_get(hl_appl);
+        if (result == 1)
+        {
+            ALOGW("zwcontrol_sensor_multilevel_get command queued.");
+            result = 0;
+        }
     }
 
     return result;
