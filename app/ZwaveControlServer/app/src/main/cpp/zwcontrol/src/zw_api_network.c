@@ -9512,7 +9512,17 @@ int zwnet_add(zwnet_p net, uint8_t add)
     plt_mtx_lck(net->mtx);
     if (net->curr_op != ZWNET_OP_NONE)
     {
+        net->retry_times ++;
         debug_zwapi_msg(&net->plt_ctx, "Current operation not completed yet, try again later");
+
+        if(net->retry_times == 2)
+        {
+            ALOGI("Current operation retried %d times, abort it.",net->retry_times);
+            net->retry_times = 0;
+            result = zwnet_abort(net);
+            plt_mtx_ulck(net->mtx);
+            return (result == 0)? ZW_ERR_NONE : ZW_ERR_OP_FAILED;
+        }
         plt_mtx_ulck(net->mtx);
         return ZW_ERR_LAST_OP_NOT_DONE;
     }

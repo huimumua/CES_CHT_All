@@ -683,6 +683,7 @@ typedef struct _zwnet
     volatile int            rst_cb_sts;     /**< Reset callback status. 0=callback not arrived yet; 1=reset done*/
 	uint8_t		            ctl_lib_type;   /**< Controller Z-Wave Library Type*/
     uint8_t                 curr_op;        /**< Current executing operation*/
+    uint8_t                 retry_times;    /**< retry times about add/remove node, value>2 will abort current op*/
     uint8_t                 failed_id;      /**< Failed node id either to be removed or replaced*/
     uint8_t                 added_ctlr_id;  /**< Node id of the just added controller*/
     uint8_t                 added_node_new; /**< Flag to determine whether the just added node is new*/
