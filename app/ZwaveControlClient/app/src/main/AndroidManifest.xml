@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.askey.mobile.zwave.control">
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+    <application
+        android:name=".application.ZwaveClientApplication"
+        android:allowBackup="true"
+        android:configChanges="orientation|screenSize"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+
+        <activity android:name=".welcome.ui.WelcomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".deviceContr.ui.DimmerManageActivity"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustUnspecified|stateHidden" />
+        <activity
+            android:name=".deviceContr.ui.SensorManageActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".deviceContr.ui.RemoveActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".deviceContr.ui.BulbManageActivity"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustUnspecified|stateHidden" />
+        <meta-data
+            android:name="com.askeycloud.webservice.sdk.ApiKey"
+            android:value="oVBRnoD59u7zBG2hFvHUb6gvkdclf6E75JUmrD1b" />
+        <meta-data
+            android:name="com.askeycloud.webservice.sdk.clientid"
+            android:value="GXJKBA63QGFFQT5WG4PAIZAMCUAAAAK6ZUP4HMAAAC45PECRKDIQ.auis.askeycloud.com" />
+        <activity android:name=".welcome.ui.GuideActivity" />
+        <activity android:name=".deviceContr.ui.NotificationActivity" />
+        <activity android:name=".login.ui.LoginPageActivity" />
+        <activity android:name=".login.ui.SignUpActivity" />
+        <activity android:name=".login.ui.LogInActivity" />
+        <activity android:name=".login.ui.LogInHomeActivity" />
+        <activity android:name=".guideSetting.ui.SetupHomeActivity" />
+        <activity android:name=".guideSetting.ui.DeviceGuideActivity" />
+        <activity android:name=".guideSetting.ui.DeviceGuideHomeActivity" />
+        <activity
+            android:name=".deviceContr.rooms.ui.BaseDeviceActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.DeviceSettingActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ConsumptionActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.NotifyActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ScheduleActivity"
+            android:theme="@style/AppTheme.DeviceDialog">
+        </activity>
+        <activity
+            android:name=".deviceContr.rooms.ui.TriggerActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.PlugActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.DetailActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.NotificationSetting"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".home.activity.HomeActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/HomeActivityThem">
+        </activity>
+        <activity
+            android:name=".deviceContr.rooms.ui.VacationModeActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.BulbActivity"
+            android:theme="@style/AppTheme.DeviceDialog" >
+            </activity>
+        <activity
+            android:name=".deviceContr.rooms.ui.WallMoteLivingActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.AvailableActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.SetupKeyActivity"
+            android:theme="@style/AppTheme.DeviceDialog"></activity>
+        <activity
+            android:name=".deviceContr.rooms.ui.ActionChooseActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ChooseDeviceActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.DoActionActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ToggleActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.TimerActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ActionSummaryActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".home.activity.addDevice.AddDeviceActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".home.activity.addDevice.SelectBrandActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".home.activity.addDevice.InstallDeviceActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".home.activity.addDevice.InstallSuccessActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".home.activity.addDevice.DeviceListActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.scenes.NewScenceActivity"
+            android:theme="@style/AppTheme.DeviceDialog">
+        </activity>
+        <activity
+            android:name=".deviceContr.scenes.DiningEveningActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.scenes.SceneActionsActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.scenes.ScheduleRunTimeActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".deviceContr.scenes.SetTimerActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".home.activity.FavoriteEditActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/Translucent" />
+        <activity
+            android:name=".deviceContr.scenes.NewScenceActionActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".guideSetting.ui.WifiSetupOneActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.WifiSetupSecondActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.WifSetupThirdActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.WpsOneActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.WpsFindingActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.WpsNotFoundActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.WpsFoundActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.CableConnectOneActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.CableConnectSecondActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.RouterConnectOneActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.RouterConnectSecondActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.RouterConnectThirdActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".guideSetting.ui.RouterConnectFourActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".home.activity.addRoom.AddRoomActivity"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity
+            android:name=".home.activity.addRoom.DeleteRoomActivity"
+            android:theme="@style/AppTheme.DeviceDialog"
+            />
+
+        <service
+            android:name="com.askeycloud.webservice.sdk.iot.MqttService"
+            android:exported="true" />
+        <!-- Mqtt Service -->
+        <service android:name="org.eclipse.paho.android.service.MqttService" />
+
+    </application>
+
+</manifest>

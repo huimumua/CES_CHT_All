@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_add"
+            android:checked="true"
+            android:icon="@drawable/ic_add"
+            android:title="Add Device" />
+
+    </group>
+
+
+    <group
+        android:id="@+id/group_account"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_account"
+            android:checked="false"
+            android:icon="@drawable/ic_acount"
+            android:title="Account" />
+    </group>
+
+    <group
+        android:id="@+id/group_help"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_help"
+            android:checked="false"
+            android:icon="@drawable/ic_help"
+            android:title="Help" />
+        <item
+            android:id="@+id/item_send"
+            android:checked="false"
+            android:icon="@drawable/ic_send"
+            android:title="Send Feedback" />
+    </group>
+
+    <group
+        android:id="@+id/group_about"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_about"
+            android:checked="false"
+            android:icon="@drawable/ic_about"
+            android:title="About" />
+        <item
+            android:id="@+id/item_terms"
+            android:checked="false"
+            android:icon="@drawable/ic_terms"
+            android:title="Terms and Conditions" />
+    </group>
+
+    <group
+        android:id="@+id/group_out"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_out"
+            android:checked="false"
+            android:icon="@drawable/ic_log_out"
+            android:title="Log out" />
+    </group>
+</menu>

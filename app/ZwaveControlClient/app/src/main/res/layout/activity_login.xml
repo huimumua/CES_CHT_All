@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_login"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    >
+<RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    >
+    </RelativeLayout>
+    <TextView
+        android:id="@+id/tv_device_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        />
+    <TextView
+        android:id="@+id/tv_device_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+        <TextView
+            android:id="@+id/tv_module"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="装置的型号： "
+            />
+        <EditText
+            android:id="@+id/et_module"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/tv_module"
+            />
+        </RelativeLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+        <TextView
+            android:id="@+id/tv_unique_id"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="装置唯一码： "
+            />
+        <EditText
+            android:id="@+id/et_unique_id"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/tv_unique_id"
+            />
+        </RelativeLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+        <TextView
+            android:id="@+id/tv_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="装置的注册名称： "
+            />
+        <EditText
+            android:id="@+id/et_device_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/tv_name"
+            />
+        </RelativeLayout>
+    <Button
+        android:id="@+id/create_iot_device"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="create device"
+        />
+   <Button
+       android:id="@+id/btn_connect_aws"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:text="connect aws"
+       />
+    <Button
+       android:id="@+id/btn_get"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:text="connect aws"
+       />
+</LinearLayout>

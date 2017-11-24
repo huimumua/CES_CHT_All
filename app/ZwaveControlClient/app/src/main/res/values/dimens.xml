@@ -1,0 +1,12 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="margin_5dp">5dp</dimen>
+    <dimen name="text_firefly">30sp</dimen>
+    <dimen name="text_welcome">40sp</dimen>
+    <dimen name="sign_up_title_text">20sp</dimen>
+    <dimen name="device_width">300dp</dimen>
+    <dimen name="device_heigh">500dp</dimen>
+    <dimen name="device_title_20sp">20sp</dimen>
+</resources>
