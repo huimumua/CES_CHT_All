@@ -93,6 +93,7 @@ Some utility/miscellaneous functions.
 #define ZW_SUBTAG_UNUSED_2          24       /**< Unused*/
 #define ZW_SUBTAG_UNUSED_3          25       /**< Unused*/
 #define ZW_SUBTAG_DEV_ID_TYPE       26       /**< Device ID type */
+#define ZW_SUBTAG_WAKEUP_INT        27       /**< Node wake up interval value */
 
 
 /** End point sub-tag identifier definition */

@@ -287,6 +287,11 @@ static int zwutl_node_load(zwnet_p nw, uint8_t *subtag_buf, uint16_t len, zwnode
                 node->enable_cmd_q = node->sleep_cap = subtag[2];//enable command queuing if the node is able to sleep
                 break;
 
+            case ZW_SUBTAG_WAKEUP_INT:
+                node->wkup_intv = ((uint32_t)subtag[2])<<24 | ((uint32_t)subtag[3])<<16
+                   | ((uint32_t)subtag[4])<<8 | ((uint32_t)subtag[5]);
+                   break;
+
             case ZW_SUBTAG_SND_SEQ_N:
                 node->sec_snd_seq_num = subtag[2];
                 break;
@@ -1400,6 +1405,7 @@ int zwutl_ni_save(zwnet_p nw, const char *ni_file)
         zwutl_subtag_wr8(ZW_SUBTAG_MULCH_VER, curr_node->mul_ch_ver, &subtag, &tag->len);
         zwutl_subtag_wr8(ZW_SUBTAG_EP_CNT, curr_node->num_of_ep, &subtag, &tag->len);
         zwutl_subtag_wr8(ZW_SUBTAG_SLEEP_CAP, curr_node->sleep_cap, &subtag, &tag->len);
+        zwutl_subtag_wr32(ZW_SUBTAG_WAKEUP_INT, curr_node->wkup_intv, &subtag, &tag->len);
         zwutl_subtag_wr8(ZW_SUBTAG_SND_SEQ_N, curr_node->sec_snd_seq_num, &subtag, &tag->len);
         zwutl_subtag_wr8(ZW_SUBTAG_SEC_INC_FAILED, curr_node->sec_incl_failed, &subtag, &tag->len);
 #ifdef CRC16_ENCAP
