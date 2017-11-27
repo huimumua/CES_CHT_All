@@ -630,6 +630,23 @@ static int controller_setSceneActuatorConf(JNIEnv *env, jclass object, jint node
     return zwcontrol_scene_actuator_conf_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)sceneId, (uint8_t)dimDuration, (uint8_t)override, (uint8_t)level);
 }
 
+static int controller_getFirmwareUpdateInfo(JNIEnv *env, jclass object, jint nodeId)
+{
+    return zwcontrol_firmwareupdate_info_get(&appl_ctx, (uint32_t)nodeId);
+}
+
+static int controller_requestFirmwareUpdate(JNIEnv *env, jclass object, jint nodeId, jint vendorId, jint firmwareId,
+                                            jint firmwareTarget, jint fragmentSize, jstring firmwareFile)
+{
+    const char *updateFile = env->GetStringUTFChars(firmwareFile, 0);
+    int result = zwcontrol_firmwareupdate_request(&appl_ctx, (uint32_t)nodeId, (uint8_t)vendorId, (uint8_t)firmwareId,
+                                            (uint8_t)firmwareTarget, (uint16_t)fragmentSize, updateFile);
+
+    env->ReleaseStringUTFChars(firmwareFile, updateFile);
+
+    return result;
+}
+
 static const JNINativeMethod gMethods[] = {
         {"CreateZwController",     "()I", (void *)create_controller},
         {"OpenZwController",       "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)I", (void *)open_controller},
@@ -715,6 +732,8 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_getSupportedCentralScene", "(II)I", (void*)controller_getSupportedCentralScene},
         {"ZwController_getSceneActuatorConf", "(II)I", (void*)controller_getSceneActuatorConf},
         {"ZwController_setSceneActuatorConf", "(IIIII)I", (void*)controller_setSceneActuatorConf},
+        {"ZwController_getFirmwareUpdateInfo", "(I)I", (void*)controller_getFirmwareUpdateInfo},
+        {"ZwController_requestFirmwareUpdate", "(IIIIILjava/lang/String;)I", (void*)controller_requestFirmwareUpdate},
 
 };
 

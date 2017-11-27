@@ -329,4 +329,12 @@ public class ZwaveControlHelper {
     **/
     public native static int ZwController_setSceneActuatorConf(int deviceId, int scene_id, int dim_duration, int override, int level);
 
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_FIRMWARE_UPDATE_MD
+    **/
+    public native static int ZwController_getFirmwareUpdateInfo(int deviceId);
+    public native static int ZwController_requestFirmwareUpdate(int nodeId, int vendorId, int firmwareId,int firmwareTarget,
+                                                                int fragmentSize, String firmwareFile);
+
 }

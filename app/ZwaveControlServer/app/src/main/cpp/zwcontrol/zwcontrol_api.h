@@ -351,4 +351,11 @@ int  zwcontrol_scene_actuator_conf_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, 
 int  zwcontrol_scene_actuator_conf_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sceneId, uint8_t dimDuration,
                                        uint8_t override, uint8_t level);
 
+/*
+ **  Command Class Firmware Update Md
+ */
+int  zwcontrol_firmwareupdate_info_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_firmwareupdate_request(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t vendorId, uint8_t firmwareId,
+                                      uint8_t firmwareTarget, uint16_t fragmentSize, const char* firmwareFile);
+
 #endif
