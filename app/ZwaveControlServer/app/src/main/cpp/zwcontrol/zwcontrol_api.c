@@ -6419,6 +6419,25 @@ void hl_meter_sup_cb(zwifd_p ifd, zwmeter_cap_p meter_cap)
     cJSON_AddStringToObject(jsonRoot, "Meter type", meter_type[meter_cap->type]);
     cJSON_AddStringToObject(jsonRoot, "Can be reset?", (meter_cap->reset_cap)? "can" : "can not");
 
+    cJSON *sup_unit_attr;
+    sup_unit_attr = cJSON_CreateObject();
+
+    if(sup_unit_attr == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddItemToObject(jsonRoot, "Supported units", sup_unit_attr);
+
+    for (int i=0; i<8; i++)
+    {
+        if (meter_cap->unit_sup & (0x01 << i))
+        {
+            cJSON_AddStringToObject(sup_unit_attr,"unit", units[meter_cap->type-1][i]);
+            ALOGI("supported meter unit: %s",units[meter_cap->type-1][i]);
+        }
+    }
+
     if(resCallBack)
     {
         char *p = cJSON_Print(jsonRoot);
