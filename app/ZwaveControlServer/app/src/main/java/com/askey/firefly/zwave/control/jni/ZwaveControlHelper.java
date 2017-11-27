@@ -337,4 +337,10 @@ public class ZwaveControlHelper {
     public native static int ZwController_requestFirmwareUpdate(int nodeId, int vendorId, int firmwareId,int firmwareTarget,
                                                                 int fragmentSize, String firmwareFile);
 
+    /**
+    ** zwave controller jni interface
+    ** support CC: COMMAND_CLASS_MULTI_CMD
+    **/
+    public native static int ZwController_multiCmdEncap(int deviceId);
+
 }

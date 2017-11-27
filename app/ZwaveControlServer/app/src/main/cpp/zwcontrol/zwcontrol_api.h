@@ -358,4 +358,9 @@ int  zwcontrol_firmwareupdate_info_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_firmwareupdate_request(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t vendorId, uint8_t firmwareId,
                                       uint8_t firmwareTarget, uint16_t fragmentSize, const char* firmwareFile);
 
+/*
+ **  Command Class Multi Cmd
+ */
+int  zwcontrol_multi_cmd_encap(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
 #endif

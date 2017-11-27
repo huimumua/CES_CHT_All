@@ -647,6 +647,11 @@ static int controller_requestFirmwareUpdate(JNIEnv *env, jclass object, jint nod
     return result;
 }
 
+static int controller_multiCmdEncap(JNIEnv *env, jclass object, jint nodeId)
+{
+    return zwcontrol_multi_cmd_encap(&appl_ctx, (uint32_t)nodeId);
+}
+
 static const JNINativeMethod gMethods[] = {
         {"CreateZwController",     "()I", (void *)create_controller},
         {"OpenZwController",       "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)I", (void *)open_controller},
@@ -734,6 +739,7 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_setSceneActuatorConf", "(IIIII)I", (void*)controller_setSceneActuatorConf},
         {"ZwController_getFirmwareUpdateInfo", "(I)I", (void*)controller_getFirmwareUpdateInfo},
         {"ZwController_requestFirmwareUpdate", "(IIIIILjava/lang/String;)I", (void*)controller_requestFirmwareUpdate},
+        {"ZwController_multiCmdEncap", "(I)I", (void*)controller_multiCmdEncap},
 
 };
 

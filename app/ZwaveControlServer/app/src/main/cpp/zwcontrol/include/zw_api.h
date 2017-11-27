@@ -256,6 +256,7 @@ typedef struct _zwifd	    *zwifd_p;		/**< interface descriptor */
 #define ZW_CID_CENTRAL_SCENE_SUP_GET     107       /**< zwif_central_scene_sup_get */
 #define ZW_CID_SCENE_ACT_CONF_GET        108       /**< zwif_scene_actuator_conf_get */
 #define ZW_CID_SCENE_ACT_CONF_SET        109       /**< zwif_scene_actuator_conf_set */
+#define ZW_CID_MUL_CMD                   110       /**< zwif_multi_cmd_encap */
 
 // Modify: skysoft end
 /**********************************************************************/
@@ -4661,6 +4662,11 @@ int zwif_central_scene_notification_rep_set(zwifd_p ifd, zwrep_central_scene_not
 typedef void (*zwrep_scene_actuator_conf_get_fn)(zwifd_p ifd, uint8_t sceneId, uint8_t level, uint8_t dimDuration);
 int zwif_scene_actuator_conf_get(zwifd_p ifd, uint8_t sceneId, zwrep_scene_actuator_conf_get_fn rpt_cb);
 int zwif_scene_actuator_conf_set(zwifd_p ifd, uint8_t sceneId, uint8_t dimDuration, uint8_t override, uint8_t level);
+
+/*
+ **  Command Class Multi Cmd
+ */
+int zwif_multi_cmd_encap(zwifd_p ifd);
 
 // skysoft end
 /*********************************************/

@@ -11365,3 +11365,59 @@ int  zwcontrol_firmwareupdate_request(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
 
     return result;
 }
+
+/*
+ **  Command Class Multi Cmd
+ */
+int hl_multi_cmd_encap(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_multi_cmd_encap(ifd);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0)
+    {
+        ALOGE("hl_multi_cmd_encap with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_multi_cmd_encap(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+   if(!hl_appl->is_init_done)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_MULTI_CMD, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_multi_cmd_encap(hl_appl);
+
+    if (result != 1 && result != 0)
+    {
+        ALOGE("zwcontrol_multi_cmd_encap with error:%d",result);
+    }
+    if(result == 1)
+    {
+        result = 0;
+        ALOGI("zwcontrol_multi_cmd_encap command queued");
+    }
+
+    return result;
+}
