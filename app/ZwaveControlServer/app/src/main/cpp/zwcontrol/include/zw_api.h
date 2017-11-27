@@ -4222,12 +4222,18 @@ zwif_switch_all_on - set switch all on
 */
 int zwif_switch_all_on(zwifd_p ifd);
 
+// For broadcast
+int zwif_switch_all_on_broadcast(zwnet_p net);
+
 /**<
 zwif_switch_all_off - set switch all off
 @param[in]  ifd     interface
 @return ZW_ERR_XXX
 */
 int zwif_switch_all_off(zwifd_p ifd);
+
+// For broadcast
+int zwif_switch_all_off_broadcast(zwnet_p net);
 
 /**
 zwif_switch_all_set - set switch all value

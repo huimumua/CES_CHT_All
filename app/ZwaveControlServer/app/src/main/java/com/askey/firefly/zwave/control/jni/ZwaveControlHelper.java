@@ -125,6 +125,9 @@ public class ZwaveControlHelper {
     public native static int ZwController_SetSwitchAll(int deviceId, int value);
     public native static int ZwController_GetSwitchAll(int deviceId);
     public native static int ZwController_StartLearnMode();
+    // For broadcast request
+    public native static int ZwController_SetSwitchAllOnBroadcast();
+    public native static int ZwController_SetSwitchAllOffBroadcast();
 
     /**
     ** zwave controller jni interface

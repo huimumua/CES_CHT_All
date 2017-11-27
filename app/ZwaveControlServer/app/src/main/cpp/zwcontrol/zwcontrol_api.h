@@ -217,6 +217,8 @@ int  zwcontrol_swith_all_on(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_swith_all_off(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_swith_all_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t value);
 int  zwcontrol_swith_all_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_swith_all_on_broadcast(hl_appl_ctx_t* hl_appl);
+int  zwcontrol_swith_all_off_broadcast(hl_appl_ctx_t* hl_appl);
 
 /*
  **  Command Class Switch Binary ver 1~2

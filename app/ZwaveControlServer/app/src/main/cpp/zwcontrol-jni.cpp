@@ -327,9 +327,19 @@ static int controller_setSwitchAllOn(JNIEnv *env, jclass object, jint nodeId)
     return zwcontrol_swith_all_on(&appl_ctx,(uint32_t)nodeId);
 }
 
+static int controller_setSwitchAllOnBroadcast(JNIEnv *env, jclass object)
+{
+    return zwcontrol_swith_all_on_broadcast(&appl_ctx);
+}
+
 static int controller_setSwitchAllOff(JNIEnv *env, jclass object, jint nodeId)
 {
     return zwcontrol_swith_all_off(&appl_ctx,(uint32_t)nodeId);
+}
+
+static int controller_setSwitchAllOffBroadcast(JNIEnv *env, jclass object)
+{
+    return zwcontrol_swith_all_off_broadcast(&appl_ctx);
 }
 
 static int controller_setSwitchAll(JNIEnv *env, jclass object, jint nodeId, jint value)
@@ -652,6 +662,8 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_SetSwitchAllOff", "(I)I", (void*)controller_setSwitchAllOff},
         {"ZwController_SetSwitchAll", "(II)I", (void*)controller_setSwitchAll},
         {"ZwController_GetSwitchAll", "(I)I", (void*)controller_getSwitchAll},
+        {"ZwController_setSwitchAllOnBroadcast", "()I", (void*)controller_setSwitchAllOnBroadcast},
+        {"ZwController_setSwitchAllOffBroadcast", "()I", (void*)controller_setSwitchAllOffBroadcast},
         {"ZwController_StartLearnMode", "()I", (void*)controller_startLearnMode},
         {"ZwController_SetBinarySwitchState", "(III)I", (void*)controller_setBinarySwitchState},
         {"ZwController_GetBinarySwitchState", "(I)I", (void*)controller_getBinarySwitchState},

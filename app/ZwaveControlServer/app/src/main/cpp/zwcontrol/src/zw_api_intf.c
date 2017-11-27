@@ -6079,6 +6079,76 @@ int zwif_switch_all_get(zwifd_p ifd)
 }
 
 /**
+zwif_switch_all_on_broadcast - set switch all on
+@param[in]  net     internet
+@return ZW_ERR_XXX
+*/
+int zwif_switch_all_on_broadcast(zwnet_p net)
+{
+    appl_snd_data_t *prm;
+    plt_mtx_lck(net->mtx);
+
+    prm = (appl_snd_data_t *)calloc(1, sizeof(appl_snd_data_t) + 2);
+    if (!prm)
+    {
+        debug_zwapi_msg(&net->plt_ctx, "zwnet_reset memory error");
+        plt_mtx_ulck(net->mtx);
+        return ZW_ERR_MEMORY;
+    }
+    prm->tx_opt = TRANSMIT_OPTION_ACK | TRANSMIT_OPTION_AUTO_ROUTE | TRANSMIT_OPTION_EXPLORE;
+    prm->dat_buf[0] = COMMAND_CLASS_SWITCH_ALL;
+    prm->dat_buf[1] = SWITCH_ALL_ON;
+    prm->dat_len = 2;
+    prm->node_id = 0xFF;
+    int result = zw_send_data(&net->appl_ctx, prm, NULL, NULL);
+    free(prm);
+    if(result < 0)
+    {
+        debug_zwapi_msg(&net->plt_ctx, "send switch all on notification with error:%d", result);
+        plt_mtx_ulck(net->mtx);
+        return ZW_ERR_OP_FAILED;
+    }
+    plt_mtx_ulck(net->mtx);
+
+    return ZW_ERR_NONE;
+}
+
+/**
+zwif_switch_all_off_broadcast - set switch all off
+@param[in]  net     internet
+@return ZW_ERR_XXX
+*/
+int zwif_switch_all_off_broadcast(zwnet_p net)
+{
+    appl_snd_data_t *prm;
+    plt_mtx_lck(net->mtx);
+
+    prm = (appl_snd_data_t *)calloc(1, sizeof(appl_snd_data_t) + 2);
+    if (!prm)
+    {
+        debug_zwapi_msg(&net->plt_ctx, "zwnet_reset memory error");
+        plt_mtx_ulck(net->mtx);
+        return ZW_ERR_MEMORY;
+    }
+    prm->tx_opt = TRANSMIT_OPTION_ACK | TRANSMIT_OPTION_AUTO_ROUTE | TRANSMIT_OPTION_EXPLORE;
+    prm->dat_buf[0] = COMMAND_CLASS_SWITCH_ALL;
+    prm->dat_buf[1] = SWITCH_ALL_OFF;
+    prm->dat_len = 2;
+    prm->node_id = 0xFF;
+    int result = zw_send_data(&net->appl_ctx, prm, NULL, NULL);
+    free(prm);
+    if(result < 0)
+    {
+        debug_zwapi_msg(&net->plt_ctx, "send switch all off notification with error:%d", result);
+        plt_mtx_ulck(net->mtx);
+        return ZW_ERR_OP_FAILED;
+    }
+    plt_mtx_ulck(net->mtx);
+
+    return ZW_ERR_NONE;
+}
+
+/**
 zwif_bsensor_sup_rpt_set - Setup a binary sensor support report callback function
 @param[in]  ifd         Interface descriptor
 @param[in]  rpt_cb      Report callback function

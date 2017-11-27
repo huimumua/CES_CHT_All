@@ -5452,6 +5452,42 @@ int  zwcontrol_swith_all_off(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
     return result;
 }
 
+int  zwcontrol_swith_all_on_broadcast(hl_appl_ctx_t* hl_appl)
+{
+    if(!hl_appl->is_init_done)
+    {
+        return -1;
+    }
+
+    int result = zwif_switch_all_on_broadcast(hl_appl->zwnet);
+    if(result != 0)
+    {
+        ALOGW("zwcontrol_swith_all_on_broadcast with error:%d",result);
+    }
+    return result;
+}
+
+/**
+zwcontrol_swith_all_off - set switch all off
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int  zwcontrol_swith_all_off_broadcast(hl_appl_ctx_t* hl_appl)
+{
+    if(!hl_appl->is_init_done)
+    {
+        return -1;
+    }
+
+    int result = zwif_switch_all_off_broadcast(hl_appl->zwnet);
+
+    if(result != 0)
+    {
+        ALOGW("zwcontrol_swith_all_off_broadcast with error:%d",result);
+    }
+    return result;
+}
+
 /**
 hl_switch_all_set - switch all command set value
 @param[in]  hl_appl     The high-level api context
