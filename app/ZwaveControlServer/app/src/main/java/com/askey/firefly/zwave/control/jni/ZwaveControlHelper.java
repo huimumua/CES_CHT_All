@@ -343,4 +343,14 @@ public class ZwaveControlHelper {
     **/
     public native static int ZwController_multiCmdEncap(int deviceId);
 
+    /**
+    ** zwave controller jni interface
+    ** Add for command queue control
+    **/
+    public native static int ZwController_getCommandQueueState(int deviceId);
+    // Commmand queuing control state: 0 = disable, 1 = enable
+    public native static int ZwController_controlCommandQueue(int deviceId, int state);
+    public native static int ZwController_viewCommandQueue(int deviceId);
+    public native static int ZwController_cancelAllCommandQueue(int deviceId);
+
 }

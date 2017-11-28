@@ -652,6 +652,26 @@ static int controller_multiCmdEncap(JNIEnv *env, jclass object, jint nodeId)
     return zwcontrol_multi_cmd_encap(&appl_ctx, (uint32_t)nodeId);
 }
 
+static int controller_getCommandQueueState(JNIEnv *env, jclass object, jint nodeId)
+{
+    return zwcontrol_command_queue_state_get(&appl_ctx, (uint32_t)nodeId);
+}
+
+static int controller_controlCommandQueue(JNIEnv *env, jclass object, jint nodeId, jint state)
+{
+    return zwcontrol_command_queue_turn_on_off(&appl_ctx, (uint32_t)nodeId, (uint8_t)state);
+}
+
+static int controller_viewCommandQueue(JNIEnv *env, jclass object, jint nodeId)
+{
+    return zwcontrol_command_queue_view(&appl_ctx, (uint32_t)nodeId);
+}
+
+static int controller_cancelAllCommandQueue(JNIEnv *env, jclass object, jint nodeId)
+{
+    return zwcontrol_command_queue_cancel(&appl_ctx, (uint32_t)nodeId);
+}
+
 static const JNINativeMethod gMethods[] = {
         {"CreateZwController",     "()I", (void *)create_controller},
         {"OpenZwController",       "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)I", (void *)open_controller},
@@ -740,6 +760,10 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_getFirmwareUpdateInfo", "(I)I", (void*)controller_getFirmwareUpdateInfo},
         {"ZwController_requestFirmwareUpdate", "(IIIIILjava/lang/String;)I", (void*)controller_requestFirmwareUpdate},
         {"ZwController_multiCmdEncap", "(I)I", (void*)controller_multiCmdEncap},
+        {"ZwController_getCommandQueueState", "(I)I", (void*)controller_getCommandQueueState},
+        {"ZwController_controlCommandQueue", "(II)I", (void*)controller_controlCommandQueue},
+        {"ZwController_viewCommandQueue", "(I)I", (void*)controller_viewCommandQueue},
+        {"ZwController_cancelAllCommandQueue", "(I)I", (void*)controller_cancelAllCommandQueue},
 
 };
 

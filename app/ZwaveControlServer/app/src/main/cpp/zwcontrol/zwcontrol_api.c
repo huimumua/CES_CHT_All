@@ -11440,3 +11440,260 @@ int  zwcontrol_multi_cmd_encap(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
 
     return result;
 }
+
+/*
+ **  For command queue control
+ */
+int32_t hl_cmd_q_ctl_get(hl_appl_ctx_t   *hl_appl, uint8_t *q_ctl_state)
+{
+    int         result;
+    zwnoded_p   noded;
+
+    //Get the node descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    noded = hl_node_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!noded)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_NODE_NOT_FOUND;
+    }
+
+    result = zwnode_cmd_q_ena_get(noded, q_ctl_state);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return ZW_ERR_MEMORY;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Command Queue State Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", noded->nodeid);
+
+    if (result != 0)
+    {
+        ALOGE("hl_cmd_q_ctl_get with error:%d", result);
+        cJSON_AddStringToObject(jsonRoot, "Queue state", "error");
+    }
+    else
+    {
+        ALOGI("Command queuing is:%s", (*q_ctl_state)? "on" : "off");
+        cJSON_AddStringToObject(jsonRoot, "Queue state", (*q_ctl_state)? "on" : "off");
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+
+    return result;
+}
+
+int  zwcontrol_command_queue_state_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->is_init_done)
+    {
+        return -1;
+    }
+
+    hl_appl->dst_desc_id = hl_get_node_interface_id(hl_appl, nodeId);
+    ALOGI("get command queue state for node id %d, interface id: %d", nodeId, hl_appl->dst_desc_id);
+
+    int result = hl_cmd_q_ctl_get(hl_appl, &hl_appl->cmd_q_ctl);
+
+    if (result != 0)
+    {
+        ALOGE("zwcontrol_command_queue_state_get with error:%d",result);
+    }
+
+    return result;
+}
+
+int32_t hl_cmd_q_ctl_set(hl_appl_ctx_t   *hl_appl)
+{
+    int         result;
+    zwnoded_p   noded;
+
+    //Get the node descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    noded = hl_node_desc_get(hl_appl->desc_cont_hd, hl_appl->temp_desc);
+    if (!noded)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_NODE_NOT_FOUND;
+    }
+
+    result = zwnode_cmd_q_ena_set(noded, hl_appl->cmd_q_ctl);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0)
+    {
+        ALOGE("hl_cmd_q_ctl_set with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_command_queue_turn_on_off(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t state)
+{
+    if(!hl_appl->is_init_done)
+    {
+        return -1;
+    }
+
+    hl_appl->temp_desc = hl_get_node_interface_id(hl_appl, nodeId);
+
+    if (!hl_appl->temp_desc)
+        return ZW_ERR_NODE_NOT_FOUND;
+
+    hl_appl->cmd_q_ctl = state;
+    ALOGI("zwcontrol_command_queue_turn_on_off, state: %s", (state? "on":"off"));
+    int result = hl_cmd_q_ctl_set(hl_appl);
+
+    return result;
+}
+
+int hl_cmd_q_view(hl_appl_ctx_t   *hl_appl)
+{
+    int         result;
+    zwnoded_p   noded;
+    uint16_t    *cmd_queue;
+    uint16_t    i;
+
+    //Get the node descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    noded = hl_node_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!noded)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_NODE_NOT_FOUND;
+    }
+
+    result = zwnode_cmd_q_get(noded, &cmd_queue);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return ZW_ERR_MEMORY;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Command Queue Info Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", noded->nodeid);
+
+    cJSON *commandQueue;
+    commandQueue = cJSON_CreateObject();
+
+    if(commandQueue == NULL)
+    {
+        return ZW_ERR_MEMORY;
+    }
+
+    cJSON_AddItemToObject(jsonRoot, "command queue", commandQueue);
+
+    if (result > 0)
+    {
+        ALOGI("Command queue:");
+        for (i=0; i<result; i++)
+        {
+            cJSON_AddNumberToObject(commandQueue,"command id", cmd_queue[i]);
+            ALOGI("%u", cmd_queue[i]);
+        }
+        free(cmd_queue);
+    }
+    else
+    {
+        cJSON_AddStringToObject(commandQueue,"command id", "is empty");
+        plt_msg_show(hl_plt_ctx_get(hl_appl), "Command queue is empty");
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+
+    return ZW_ERR_NONE;
+}
+
+int  zwcontrol_command_queue_view(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->is_init_done)
+    {
+        return -1;
+    }
+
+    hl_appl->dst_desc_id = hl_get_node_interface_id(hl_appl, nodeId);
+    if (!hl_appl->dst_desc_id)
+        return ZW_ERR_NODE_NOT_FOUND;
+
+    int result = hl_cmd_q_view(hl_appl);
+}
+
+int hl_cmd_q_cancel(hl_appl_ctx_t   *hl_appl)
+{
+    int         result;
+    zwnoded_p   noded;
+
+    //Get the node descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    noded = hl_node_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!noded)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_NODE_NOT_FOUND;
+    }
+
+    result = zwnode_cmd_q_cancel(noded);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0)
+    {
+        ALOGI("hl_cmd_q_cancel with error:%d", result);
+    }
+    return result;
+}
+
+int  zwcontrol_command_queue_cancel(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->is_init_done)
+    {
+        return -1;
+    }
+
+    hl_appl->dst_desc_id = hl_get_node_interface_id(hl_appl, nodeId);
+    if (!hl_appl->dst_desc_id)
+        return ZW_ERR_NODE_NOT_FOUND;
+
+    int result = hl_cmd_q_cancel(hl_appl);
+
+    if(result == 0)
+    {
+        ALOGI("zwcontrol_command_queue_cancel success, node id: %d",nodeId);
+    }
+
+    return result;
+}

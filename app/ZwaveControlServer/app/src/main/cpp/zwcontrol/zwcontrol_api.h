@@ -363,4 +363,12 @@ int  zwcontrol_firmwareupdate_request(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
  */
 int  zwcontrol_multi_cmd_encap(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 
+/*
+ **  For command queue control
+ */
+int  zwcontrol_command_queue_state_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_command_queue_turn_on_off(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t state);
+int  zwcontrol_command_queue_view(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_command_queue_cancel(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
 #endif
