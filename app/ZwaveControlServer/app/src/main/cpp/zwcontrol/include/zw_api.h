@@ -322,6 +322,7 @@ control and data in the mesh network.
 /** Final progress status for all operations */
 #define     OP_DONE                     0       /**< Operation completed*/
 #define     OP_FAILED                   0x00FF  /**< Operation failed*/
+#define     OP_TIMEOUT                  0x01FF  /**< Operation timeout, 1 minute*/
 
 /** Progress status of all getting node information */
 #define     OP_GET_NI_TOTAL_NODE_MASK   0xFF00  /**< Mask to get the total number of nodes*/

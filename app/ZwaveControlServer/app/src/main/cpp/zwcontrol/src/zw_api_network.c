@@ -8967,6 +8967,11 @@ int zwnet_abort(zwnet_p net)
                 {
                     debug_zwapi_msg(&net->plt_ctx, "zw_remove_node_from_network with error:%d", result);
                 }
+
+                plt_mtx_lck(net->mtx);
+                plt_tmr_stop(&net->plt_ctx, net->sm_tmr_ctx);
+                net->sm_tmr_ctx = NULL;//make sure timer context is null, else restart timer will crash
+                plt_mtx_ulck(net->mtx);
             }
             break;
 
@@ -9091,6 +9096,24 @@ int zwnet_abort(zwnet_p net)
 
 }
 
+static void zwnet_remove_node_time_out_cb(void *data)
+{
+    zwnet_p   nw = (zwnet_p)data;
+
+    //Stop send timer
+    plt_mtx_lck(nw->mtx);
+    plt_tmr_stop(&nw->plt_ctx, nw->sm_tmr_ctx);
+    nw->sm_tmr_ctx = NULL;//make sure timer context is null, else restart timer will crash
+    plt_mtx_ulck(nw->mtx);
+
+    //Callback to notify timeout status
+    if (nw->init.notify)
+    {
+        nw->init.notify(nw->init.user, ZWNET_OP_RM_NODE, OP_TIMEOUT);
+    }
+
+    zwnet_abort(nw);
+}
 
 /**
 zwnet_node_rm_cb - Remove node from network callback function
@@ -9175,9 +9198,16 @@ static void zwnet_node_rm_cb(struct _appl_layer_ctx *appl_ctx, uint8_t sts,
         {
             nw->init.notify(nw->init.user, ZWNET_OP_RM_NODE, OP_RM_NODE_LEARN_READY);
         }
+        ALOGI("Start a timer in remove node process, timeout: 60s");
+        nw->sm_tmr_ctx = plt_tmr_start(&nw->plt_ctx, 60000, zwnet_remove_node_time_out_cb, nw);
     }
     else if (sts == REMOVE_NODE_STATUS_NODE_FOUND)
     {
+        plt_mtx_lck(nw->mtx);
+        plt_tmr_stop(&nw->plt_ctx, nw->sm_tmr_ctx);
+        nw->sm_tmr_ctx = NULL;//make sure timer context is null, else restart timer will crash
+        plt_mtx_ulck(nw->mtx);
+
         //Notify the progress of the operation
         if (nw->init.notify)
         {
@@ -9373,6 +9403,24 @@ static const char    *add_node_sts[] =
     "failed"
 };
 
+static void zwnet_add_node_time_out_cb(void *data)
+{
+    zwnet_p   nw = (zwnet_p)data;
+
+    //Stop send timer
+    plt_mtx_lck(nw->mtx);
+    plt_tmr_stop(&nw->plt_ctx, nw->sm_tmr_ctx);
+    nw->sm_tmr_ctx = NULL;//make sure timer context is null, else restart timer will crash
+    plt_mtx_ulck(nw->mtx);
+
+    //Call state-machine
+    if (nw->init.notify)
+    {
+        nw->init.notify(nw->init.user, ZWNET_OP_ADD_NODE, OP_TIMEOUT);
+    }
+
+    zwnet_abort(nw);
+}
 
 /**
 zwnet_node_add_cb - Add node to network callback function
@@ -9478,9 +9526,16 @@ static void zwnet_node_add_cb(struct _appl_layer_ctx *appl_ctx, uint8_t sts,
         {
             nw->init.notify(nw->init.user, ZWNET_OP_ADD_NODE, OP_ADD_NODE_LEARN_READY);
         }
+        ALOGI("Start a timer in add node process, timeout, 60s");
+        nw->sm_tmr_ctx = plt_tmr_start(&nw->plt_ctx, 60000, zwnet_add_node_time_out_cb, nw);
     }
     else if (sts == ADD_NODE_STATUS_NODE_FOUND)
     {
+        plt_mtx_lck(nw->mtx);
+        plt_tmr_stop(&nw->plt_ctx, nw->sm_tmr_ctx);
+        nw->sm_tmr_ctx = NULL;//make sure timer context is null, else restart timer will crash
+        plt_mtx_ulck(nw->mtx);
+
         //Notify the progress of the operation
         if (nw->init.notify)
         {

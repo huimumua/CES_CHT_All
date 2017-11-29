@@ -2048,6 +2048,10 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Success");
         }
+        else if(sts == OP_TIMEOUT)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Timeout");
+        }
 
         char *p = cJSON_Print(jsonRoot);
 
@@ -2084,6 +2088,10 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
         else if(sts == OP_DONE)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Success");
+        }
+        else if(sts == OP_TIMEOUT)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Timeout");
         }
 
         char *p = cJSON_Print(jsonRoot);
