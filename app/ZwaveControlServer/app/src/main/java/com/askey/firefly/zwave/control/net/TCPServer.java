@@ -25,9 +25,8 @@ public class TCPServer extends Thread {
     public static final int MAX_CLIENT = 10;
     private boolean running = false;
     private final String LOG_TAG = "TCPServer";
-    private PrintWriter[] mOuts = new PrintWriter[MAX_CLIENT];
-    private int[] mClients = new int[MAX_CLIENT];
-    private static int avialableClient = 0;
+    private ArrayList<PrintWriter> mOuts = new ArrayList<>();
+    private ArrayList<Integer> mClients = new ArrayList<>();
     private OnMessageReceived messageListener;
     public static ServerSocket m_serverSocket = null;
 
@@ -44,10 +43,10 @@ public class TCPServer extends Thread {
     }
 
     public void sendMessage(int clientID, String message) {
-        for (int index = 0; index < avialableClient; index++) {
-            if (mClients[index] == clientID) {
-                mOuts[index].println(message);
-            }
+        int index = mClients.indexOf(clientID);
+        Log.i(LOG_TAG,"TCP sendMessage : ["+clientID+"]:"+message+" #index="+index);
+        if (index>=0) {
+            mOuts.get(index).println(message);
         }
     }
 
@@ -64,7 +63,7 @@ public class TCPServer extends Thread {
         try {
             ServerSocket serverSocket = null;
             Socket socket = null;
-            Log.i(LOG_TAG,"Connecting...");
+            Log.i(LOG_TAG,"START TCP server");
             m_serverSocket = new ServerSocket(Const.TCP_PORT);
             while (true) {
                 socket = m_serverSocket.accept();
@@ -72,7 +71,7 @@ public class TCPServer extends Thread {
                 handler.start();
             }
         } catch (IOException ex) {
-            Log.i(LOG_TAG,"Error");
+            Log.e(LOG_TAG,"Failed to start TCP server");
         }
     }
 
@@ -90,7 +89,7 @@ public class TCPServer extends Thread {
 
     // add for multiclient
     class ChatHandler extends Thread {
-        ArrayList handlers = new ArrayList(MAX_CLIENT);
+        ArrayList handlers = new ArrayList();
 
         private Socket socket;
         private BufferedReader read;
@@ -101,20 +100,16 @@ public class TCPServer extends Thread {
                 this.read = new BufferedReader(new InputStreamReader(
                         socket.getInputStream()));
 
+                Log.i(LOG_TAG,"Client count = "+ mOuts.size());
                 // Check if there are too many clients.
-                if (avialableClient >= MAX_CLIENT) {
-                    for (int index = 0; index < avialableClient; index++) {
-                        sendMessage(mClients[index],"Client Limit Exceed!!!!!!");
-                    }
-
+                if (mOuts.size() >= MAX_CLIENT) {
+                    sendMessage(socket.getPort(),"TCP client Limit Exceed!!!!!!");
                 } else {
-                    mOuts[avialableClient] = new PrintWriter(
+                    mOuts.add(new PrintWriter(
                             new BufferedWriter(new OutputStreamWriter(
-                                    socket.getOutputStream())), true);
-                    mClients[avialableClient] =  socket.getPort();
-                    avialableClient++;
+                                    socket.getOutputStream())), true));
+                    mClients.add(socket.getPort());
                 }
-
             } catch (IOException ex) {
                 Logger.getLogger(ChatHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -129,23 +124,34 @@ public class TCPServer extends Thread {
                 synchronized (handlers) {
 
                     while (running) {
-                        clientString = read.readLine();
-                        if (clientString != null && messageListener != null) {
-                            for (int index = 0; index < handlers.size(); index++) {
+                        try {
+                            clientString = read.readLine();
 
-                                ChatHandler handler = (ChatHandler) handlers.get(index);
-                                clientId =handler.socket.getPort();
-                                messageListener.messageReceived(clientId,clientString);
+                            if (clientString != null && messageListener != null) {
+                                for (int index = 0; index < handlers.size(); index++) {
 
+                                    ChatHandler handler = (ChatHandler) handlers.get(index);
+                                    clientId = handler.socket.getPort();
+
+                                    messageListener.messageReceived(clientId, clientString);
+                                }
                             }
+                            else if (clientString == null){
+                                Log.e(LOG_TAG,"SOCKET#"+socket.getPort()+" DISCONNECT!!!");
+                                break;
+                            }
+                        }
+                        catch  (IOException ie) {
+                            Log.e(LOG_TAG,"SOCKET#"+socket.getPort()+" read error!!!");
+                            break;
                         }
                     }
                 }
-
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
             } finally {
                 try {
+                    int index = mClients.indexOf(socket.getPort());
+                    mOuts.remove(index);
+                    mClients.remove(index);
                     read.close();
                     socket.close();
                 } catch (IOException ioe) {
