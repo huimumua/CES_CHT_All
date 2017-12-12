@@ -18,11 +18,7 @@
         android:text="@string/do_title"
         android:textSize="20sp"
         />
-<View
-    android:layout_width="match_parent"
-    android:layout_height="1dp"
-    android:background="@color/gray"
-    />
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -51,12 +47,13 @@
                 colorpicker:center_radius="10dp"
                 colorpicker:circle_radius="100dp"
                 />
-            <ImageView
+            <CheckBox
                 android:id="@+id/iv_off_one"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@mipmap/ic_launcher"
+                android:background="@drawable/device_on_off"
                 android:layout_centerInParent="true"
+                android:button="@null"
                 />
         </RelativeLayout>
         <RelativeLayout
@@ -75,12 +72,13 @@
                 colorpicker:center_radius="10dp"
                 colorpicker:circle_radius="100dp"
                 />
-            <ImageView
+            <CheckBox
                 android:id="@+id/iv_off_two"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@mipmap/ic_launcher"
+                android:background="@drawable/device_on_off"
                 android:layout_centerInParent="true"
+                android:button="@null"
                 />
         </RelativeLayout>
         <RelativeLayout
@@ -109,10 +107,17 @@
         android:id="@+id/iv_right"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@mipmap/ic_launcher"
+        android:src="@mipmap/arrow_right_03"
         android:layout_toRightOf="@+id/fl_color"
         />
 </RelativeLayout>
+
+    <View
+    android:layout_width="match_parent"
+    android:layout_height="1dp"
+    android:background="@color/gray"
+    />
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

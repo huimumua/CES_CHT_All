@@ -53,11 +53,23 @@ public abstract class TcpClient implements Runnable {
 
 
 	public void rigister(TCPReceive callback){
-		meaasgemap.add(callback);
+		clearTcpArrived();
+		if (meaasgemap != null) {
+			meaasgemap.add(callback);
+		}
+
 	}
 
 	public void unrigister(TCPReceive callback){
-		meaasgemap.remove(callback);
+		if (meaasgemap != null) {
+			meaasgemap.remove(callback);
+		}
+	}
+
+	public void clearTcpArrived(){
+		if (meaasgemap != null) {
+			meaasgemap.clear();
+		}
 	}
 
 	/**
@@ -76,6 +88,7 @@ public abstract class TcpClient implements Runnable {
 	 */
 	public void connect(String hostIP, int port) {
 		this.hostIP = hostIP;
+		Logg.i(TAG,"&&&&&&&&&&&&&+====connect=======");
 		this.port = port;
 		new Thread(this).start();
 	}

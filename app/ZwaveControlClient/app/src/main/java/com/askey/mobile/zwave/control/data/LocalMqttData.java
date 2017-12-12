@@ -2,10 +2,15 @@ package com.askey.mobile.zwave.control.data;
 
 import android.util.Log;
 
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.SetupKeyActivity;
 
+import com.askey.mobile.zwave.control.deviceContr.model.ScenesInfo;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 项目名称：ZwaveControlClient
@@ -174,6 +179,82 @@ public class LocalMqttData {
         Log.d("json",result);
         return result;
     }
+//    public static String editNodeInfo(List<String> add, List<String> remove){
+//        String result = "";
+//        String addStr = "[{}]";
+//        String removeStr = "[{}]";
+//        JSONObject parameter = new JSONObject();
+//        JSONObject obj = null;
+//        JSONArray addList = new JSONArray();
+//        JSONArray removeList = new JSONArray();
+//        try {
+//            parameter.put("function", "editFavoriteList");
+//            if (add.size() > 0) {
+//                for (int i = 0; i < add.size(); i++) {
+//                    obj = new JSONObject();
+//                    obj.put("nodeId", add.get(i));
+//                    addList.put(obj);
+//                    obj = null;
+//                }
+//                addStr = addList.toString();
+//            }
+//            parameter.put("addFavorite", addStr);
+//
+//            if (remove.size() > 0) {
+//                for (int i = 0; i < remove.size(); i++) {
+//                    obj = new JSONObject();
+//                    obj.put("nodeId", remove.get(i));
+//                    removeList.put(obj);
+//                    obj = null;
+//                }
+//                removeStr = removeList.toString();
+//            }
+//            parameter.put("removeFavorite", removeStr);
+//
+//            result = getPublicJson(parameter).toString();
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//        Log.d("json", result);
+//        return result;
+//    }
+    public static String editNodeInfo(List<String> add, List<String> remove){
+        String result = "";
+        JSONObject parameter = new JSONObject();
+        JSONObject obj = null;
+        JSONArray addList = new JSONArray();
+        JSONArray removeList = new JSONArray();
+        try {
+            parameter.put("function", "editFavoriteList");
+            if (add.size() > 0) {
+                for (int i = 0; i < add.size(); i++) {
+                    obj = new JSONObject();
+                    obj.put("nodeId", add.get(i));
+                    addList.put(obj);
+                    obj = null;
+                }
+            }
+            parameter.put("addFavorite", addList.toString());
+
+            if (remove.size() > 0) {
+                for (int i = 0; i < remove.size(); i++) {
+                    obj = new JSONObject();
+                    obj.put("nodeId", remove.get(i));
+                    removeList.put(obj);
+                    obj = null;
+                }
+
+            }
+            parameter.put("removeFavorite", removeList.toString());
+
+            result = getPublicJson(parameter).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Log.d("json", result);
+        return result;
+    }
+
 
 
 
@@ -411,7 +492,447 @@ public class LocalMqttData {
         return result;
     }
 
+//    {
+//        "desired": {
+//        "function": "getGroupInfo",
+//                "nodeId": "1234567",
+//                "endpointId": "7"
+//        "groupId": "0"
+//    },
+//    }
 
+    public static String getGroupInfo(String deviceId,String endpointId , String groupId) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "getGroupInfo");
+            function.put("nodeId", deviceId);
+            function.put("endpointId", endpointId);
+            function.put("maxGroupId", groupId);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+//    {
+//        "desired": {
+//        "function": "addEndpointsToGroup"
+//        "nodeId": "8"
+//       “arr”: [{
+//            "nodeInterFace": "23"},
+//        {"nodeInterFace": "39"}]
+//        "endpointId": "55"
+//    },
+//    }
+public static String addEndpointsToGroup(String deviceId,String endpointId ,String groupId , ArrayList nodeInterFaceList ) {
+    String result = "";
+    JSONObject function = new JSONObject();
+    try {
+        JSONArray jsonArray = new JSONArray();
+        JSONObject tmpObj = null;
+        int count = nodeInterFaceList.size();
+        for(int i = 0; i < count; i++) {
+            tmpObj = new JSONObject();
+            tmpObj.put("controlNodeId" , nodeInterFaceList.get(i));
+            jsonArray.put(tmpObj);
+            tmpObj = null;
+        }
+        String personInfos = jsonArray.toString(); // 将JSONArray转换得到String
+        function.put("function", "addEndpointsToGroup");
+        function.put("nodeId", deviceId);
+        function.put("endpointId", endpointId);
+        function.put("groupId", groupId);
+        function.put("arr" , personInfos);   // 获得JSONObject的String
+        result = getPublicJson(function).toString();
+    } catch (JSONException e) {
+        e.printStackTrace();
+    }
+    return result;
+}
+
+//    {
+//        "desired": {
+//        "function": "removeEndpointsFromGroup"
+//        "nodeId": "8"
+//“arr”: [
+//        "nodeInterface": "23"
+//        "nodeInterface": "39"}]
+//        "endpointId": "55"
+//    },
+//}
+
+    public static String removeEndpointsFromGroup(String deviceId,String endpointId ,String groupId, ArrayList nodeInterFaceList ) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            JSONArray jsonArray = new JSONArray();
+            JSONObject tmpObj = null;
+            int count = nodeInterFaceList.size();
+            for(int i = 0; i < count; i++) {
+                tmpObj = new JSONObject();
+                tmpObj.put("controlNodeId" , nodeInterFaceList.get(i));
+                jsonArray.put(tmpObj);
+                tmpObj = null;
+            }
+            String personInfos = jsonArray.toString(); // 将JSONArray转换得到String
+            function.put("function", "removeEndpointsFromGroup");
+            function.put("nodeId", deviceId);
+            function.put("endpointId", endpointId);
+            function.put("groupId", groupId);
+            function.put("arr" , personInfos);   // 获得JSONObject的String
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+//    {
+//        "desired": {
+//        "function": "getMaxSupperedGroups"
+//        "nodeId": "8"
+//        "endpointId": "55"
+//    },
+//    }
+    public static String getMaxSupperedGroups(String deviceId,String endpointId) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "getMaxSupperedGroups");
+            function.put("nodeId", deviceId);
+            function.put("endpointId", endpointId);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+//    {
+//        "desired": {
+//        "function": "setScheduleActive",
+//                "deviceType": "Zwave",
+//                "nodeId": "23",
+//                "active": “true",    //true or false
+//    }
+
+    public static String setScheduleActive(String deviceId,boolean active) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "setScheduleActive");
+            function.put("nodeId", deviceId);
+            function.put("deviceType", "Zwave");
+            function.put("active", active);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+//    {
+//        "desired": {
+//        "function": "getScheduleActive",
+//                "nodeId": "23",
+//    },
+//    }
+
+
+    public static String getScheduleActive(String deviceId ) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "getScheduleActive");
+            function.put("nodeId", deviceId);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+//    {
+//        "desired": {
+//        "function": "getScheduleList",
+//                "nodeId": "23",
+//    },
+//    }
+
+    public static String getScheduleList(String deviceId ) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "getScheduleList");
+            function.put("nodeId", deviceId);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+//    {
+//        "desired": {
+//        "function": "setSchedule",
+//                "nodeId": "23",
+//                "variableValue": "99",
+//                "dayOfWeek": "Mon",
+//                "StartTime": "01:00",
+//                "EndTime": "19:00",
+//
+//    }
+//    }
+
+    public static String setSchedule(String deviceId ,String variableValue,String dayOfWeek,String StartTime,String EndTime,String active) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "setSchedule");
+            function.put("nodeId", deviceId);
+            function.put("variableValue", variableValue);
+            function.put("dayOfWeek", dayOfWeek);
+            function.put("StartTime", StartTime);
+            function.put("EndTime", EndTime);
+            function.put("active", active);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+//    {
+//        "desired": {
+//        "function": "removeSchedule",
+//                "nodeId": "23",
+//                "dayOfWeek": "Mon",
+//    }
+//    }
+
+    public static String removeSchedule(String deviceId ,String dayOfWeek) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "removeSchedule");
+            function.put("nodeId", deviceId);
+            function.put("dayOfWeek", dayOfWeek);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String getFavoriteList() {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "getFavoriteList");
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    //    {
+//        "desired": {
+//        "function": "getScene",
+//    }
+    public static String getScene() {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "getSceneList");
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+
+    //    {
+//        "desired": {
+//        "function": "setScene",
+//                "sceneName": "test12345",
+//                "iconName": "test12345",
+//                "condition":[{
+//            "nodeId": "13",
+//                    "category": "bulb",
+//                    "targetSatus": 255",  // 255 = on, 0 = off
+//            "currentStatus": "0",
+//                    "targetColor": "RGB”,  // warmWhite/coldWhite/RGB
+//            "currentColor": "warmWhite”,
+//            "timer": "12:30:22” //HH:MM:SS
+//        },{
+//            "nodeId": "14",
+//                    "category": "plug",
+//                    "targetSatus": 255",  // 255 = on, 0 = off
+//            "currentStatus": "0",
+//                    "timer": "12:30:22” //HH:MM:SS
+//        },
+//    }
+    public static String setSceneAction(String sceneName,String iconName , ArrayList<ScenesInfo> sceneInfoList ) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            JSONArray jsonArray = new JSONArray();
+            JSONObject tmpObj = null;
+            int count = sceneInfoList.size();
+            for(int i = 0; i < count; i++) {
+                tmpObj = new JSONObject();
+                ScenesInfo scenesInfo = sceneInfoList.get(i);
+//                tmpObj.put("scenesId" ,scenesInfo.getScenesId());
+//                tmpObj.put("scenesName" ,scenesInfo.getScenesName());
+                tmpObj.put("nodeId" ,scenesInfo.getNodeId() );
+                tmpObj.put("category" ,scenesInfo.getCategory() );
+                tmpObj.put("targetSatus" ,scenesInfo.getTargetSatus() );
+                tmpObj.put("currentStatus" ,scenesInfo.getCurrentStatus() );
+                tmpObj.put("targetColor" ,scenesInfo.getTargetColor());
+                tmpObj.put("currentColor" ,scenesInfo.getCurrentColor() );
+                tmpObj.put("timer" ,scenesInfo.getTimer());
+                jsonArray.put(tmpObj);
+                tmpObj = null;
+            }
+            String conditions = jsonArray.toString(); // 将JSONArray转换得到String
+            function.put("function", "setSceneAction");
+            function.put("sceneName", sceneName);
+            function.put("iconName", iconName);
+            function.put("condition", conditions);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String removeSceneAction(String sceneName,String iconName , ArrayList<ScenesInfo> sceneInfoList ) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            JSONArray jsonArray = new JSONArray();
+            JSONObject tmpObj = null;
+            int count = sceneInfoList.size();
+            for(int i = 0; i < count; i++) {
+                tmpObj = new JSONObject();
+                ScenesInfo scenesInfo = sceneInfoList.get(i);
+//                tmpObj.put("scenesId" ,scenesInfo.getScenesId());
+//                tmpObj.put("scenesName" ,scenesInfo.getScenesName());
+                tmpObj.put("nodeId" ,scenesInfo.getNodeId() );
+                tmpObj.put("category" ,scenesInfo.getCategory() );
+                tmpObj.put("targetSatus" ,scenesInfo.getTargetSatus() );
+                tmpObj.put("currentStatus" ,scenesInfo.getCurrentStatus() );
+                tmpObj.put("targetColor" ,scenesInfo.getTargetColor());
+                tmpObj.put("currentColor" ,scenesInfo.getCurrentColor() );
+                tmpObj.put("timer" ,scenesInfo.getTimer());
+                jsonArray.put(tmpObj);
+                tmpObj = null;
+            }
+            String conditions = jsonArray.toString(); // 将JSONArray转换得到String
+            function.put("function", "removeSceneAction");
+            function.put("sceneName", sceneName);
+            function.put("iconName", iconName);
+            function.put("condition", conditions);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+//    {
+//        "desired": {
+//        "function": "removeSceneAction",
+//                "sceneName": "test12345",
+//                "iconName": "test12345",
+//    }
+    public static String removeSceneAction(String sceneName,String iconName) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "removeSceneAction");
+            function.put("sceneName", sceneName);
+            function.put("iconName", iconName);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+
+//    {
+//        "desired": {
+//        "function": "removeScene",
+//                "sceneName": "test12345",
+//                "iconName": "test12345",
+//    }
+
+    public static String removeScene(String sceneName,String iconName) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "removeScene");
+            function.put("sceneName", sceneName);
+            function.put("iconName", iconName);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+//    {
+//        "desired": {
+//        "function": "editScene",
+//                "sceneName": "test12345",
+//                "iconName": "test12345",
+//                "newName": "aaa",
+//                "newName": "aaaa",
+//
+//    }
+
+    public static String editScene(String sceneName,String iconName,String newName,String isFavorite) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "removeScene");
+            function.put("sceneName", sceneName);
+            function.put("iconName", iconName);
+            function.put("newName", newName);
+            function.put("isFavorite", isFavorite);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+//    {
+//        "desired": {
+//        "function": "executeScene",
+//                "action": "run",   // run or stop
+//                "sceneName": "test12345",
+//                "iconName": "test12345",
+//
+//    }
+public static String executeScene(String sceneName,String iconName,String action) {
+    String result = "";
+    JSONObject function = new JSONObject();
+    try {
+        function.put("function", "executeScene");
+        function.put("sceneName", sceneName);
+        function.put("action", action);//run or stop
+        result = getPublicJson(function).toString();
+    } catch (JSONException e) {
+        e.printStackTrace();
+    }
+    return result;
+}
 
 
 

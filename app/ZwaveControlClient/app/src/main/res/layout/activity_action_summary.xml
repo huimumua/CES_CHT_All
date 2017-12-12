@@ -42,6 +42,7 @@
             android:src="@mipmap/ic_launcher"
             />
         <TextView
+            android:id="@+id/tv_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Wall Mote"
@@ -52,7 +53,7 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@mipmap/ic_launcher"
+            android:src="@mipmap/arrow_right_03"
             android:layout_alignParentRight="true"
             />
     </RelativeLayout>
@@ -64,42 +65,42 @@
         android:layout_marginTop="10dp"
         />
 
-    <RelativeLayout
-        android:id="@+id/rl_second"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        >
-        <ImageView
-            android:id="@+id/iv_icon_second"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@mipmap/ic_launcher"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Dinner table-50%"
-            android:layout_toRightOf="@id/iv_icon_second"
-            android:layout_centerVertical="true"
-            android:layout_marginLeft="10dp"
-            />
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@mipmap/ic_launcher"
-            android:layout_alignParentRight="true"
-            />
+    <!--<RelativeLayout-->
+        <!--android:id="@+id/rl_second"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--&gt;-->
+        <!--<ImageView-->
+            <!--android:id="@+id/iv_icon_second"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:src="@mipmap/ic_launcher"-->
+            <!--android:layout_alignParentTop="true"-->
+            <!--android:layout_alignParentLeft="true"-->
+            <!--android:layout_alignParentStart="true" />-->
+        <!--<TextView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="Dinner table-50%"-->
+            <!--android:layout_toRightOf="@id/iv_icon_second"-->
+            <!--android:layout_centerVertical="true"-->
+            <!--android:layout_marginLeft="10dp"-->
+            <!--/>-->
+        <!--<ImageView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:src="@mipmap/ic_launcher"-->
+            <!--android:layout_alignParentRight="true"-->
+            <!--/>-->
 
-    </RelativeLayout>
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/gray"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
-        />
+    <!--</RelativeLayout>-->
+    <!--<View-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="1dp"-->
+        <!--android:background="@color/gray"-->
+        <!--android:layout_marginTop="10dp"-->
+        <!--android:layout_marginBottom="10dp"-->
+        <!--/>-->
     <RelativeLayout
         android:id="@+id/rl_third"
         android:layout_width="match_parent"
@@ -125,7 +126,7 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@mipmap/ic_launcher"
+            android:src="@mipmap/arrow_right_03"
             android:layout_alignParentRight="true"
             />
 
@@ -146,7 +147,7 @@
             android:id="@+id/iv_icon_four"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@mipmap/ic_launcher"
+            android:src="@drawable/vector_drawable_ic_88"
             />
         <TextView
             android:id="@+id/tv_timer"
@@ -160,7 +161,7 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@mipmap/ic_launcher"
+            android:src="@mipmap/arrow_right_03"
             android:layout_alignParentRight="true"
             />
     </RelativeLayout>

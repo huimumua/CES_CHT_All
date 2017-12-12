@@ -16,6 +16,9 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.askey.mobile.zwave.control.deviceContr.model.ScheduleInfo;
+import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ScheduleActivity;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -62,6 +65,15 @@ public class CalendarScheduleView extends View {
     // 可选的日期（排班日期）
     // 已选日期（已预约日期）
     private List<Integer> mSelectedDates = new ArrayList<Integer>();
+    private List<Integer> mMonSelectedDates = new ArrayList<Integer>();
+    private List<Integer> mTueSelectedDates = new ArrayList<Integer>();
+    private List<Integer> mWedSelectedDates = new ArrayList<Integer>();
+    private List<Integer> mThuSelectedDates = new ArrayList<Integer>();
+    private List<Integer> mFriSelectedDates = new ArrayList<Integer>();
+    private List<Integer> mSatSelectedDates = new ArrayList<Integer>();
+    private List<Integer> mSunSelectedDates = new ArrayList<Integer>();
+
+    private int[] mMonDays = new int[12];
     // 本月日期-在绘图时将数据储存在此，点击日历时做出判断
     // 7行7列（第一行没有数据，为了计算位置方便，将星期那一行考虑进去）
     private int[][] days = new int[NUMS_ROW - 1][NUMS_COLUMN -1];//7 12
@@ -79,6 +91,19 @@ public class CalendarScheduleView extends View {
     private Canvas mCanvas;
     private int lastRow, lastColumn;
     private int currentRow = 0, currentColumn = 0;
+    private List<ScheduleInfo> scheduleInfoList;
+    private String Mon = "Mon";
+    private String Tue = "Tue";
+    private String Wed = "Wed";
+    private String Thu = "Thu";
+    private String Fri = "Fri";
+    private String Sat = "Sat";
+    private String Sun = "Sun";
+    public String currentWeek;
+    public int mStartTime;
+    public int mEndTime;
+    public boolean isFirst;
+
 
     /**
      * 构造函数
@@ -127,7 +152,15 @@ public class CalendarScheduleView extends View {
         // 计算每一行高度
         mRowHeight = getHeight() / NUMS_ROW;
         // 绘制本月日期
-        drawDateText(canvas);
+        if (isFirst) {
+            scheduleInfoList = getScheduleDate();
+            for (ScheduleInfo scheduleInfo:scheduleInfoList) {
+                setInitalSelectedDates(scheduleInfo);
+            }
+            isFirst = false;
+        }
+
+            drawDateText(canvas);
         // 绘制星期
         drawDayOfWeekText(canvas);
 
@@ -140,7 +173,55 @@ public class CalendarScheduleView extends View {
 
     }
 
-    private int downX = 0, downY = 0, upX = 0, upY = 0;
+    private void setInitalSelectedDates(ScheduleInfo scheduleInfo) {
+        int startTime = Integer.parseInt(scheduleInfo.getStartTime().split(":")[0]);
+        int endTime = Integer.parseInt(scheduleInfo.getEndTime().split(":")[0]);
+        if (Mon.equals(scheduleInfo.getDateName())) {
+            mMonSelectedDates.clear();
+            while (startTime < endTime) {
+                mMonSelectedDates.add(startTime);
+                startTime = startTime + 2;
+            }
+        } else if(Tue.equals(scheduleInfo.getDateName())) {
+            mTueSelectedDates.clear();
+            while (startTime < endTime) {
+                mTueSelectedDates.add(startTime);
+                startTime = startTime + 2;
+            }
+        }else if(Wed.equals(scheduleInfo.getDateName())) {
+            mWedSelectedDates.clear();
+            while (startTime < endTime) {
+                mWedSelectedDates.add(startTime);
+                startTime = startTime + 2;
+            }
+        }else if(Thu.equals(scheduleInfo.getDateName())) {
+            mThuSelectedDates.clear();
+            while (startTime < endTime) {
+                mThuSelectedDates.add(startTime);
+                startTime = startTime + 2;
+            }
+        }else if(Fri.equals(scheduleInfo.getDateName())) {
+            mFriSelectedDates.clear();
+            while (startTime < endTime) {
+                mFriSelectedDates.add(startTime);
+                startTime = startTime + 2;
+            }
+        }else if(Sat.equals(scheduleInfo.getDateName())) {
+            mSatSelectedDates.clear();
+            while (startTime < endTime) {
+                mSatSelectedDates.add(startTime);
+                startTime = startTime + 2;
+            }
+        }else if(Sun.equals(scheduleInfo.getDateName())) {
+            mSunSelectedDates.clear();
+            while (startTime < endTime) {
+                mSunSelectedDates.add(startTime);
+                startTime = startTime + 2;
+            }
+        }
+    }
+
+    private int downX = 0, downY = 0, upX = 0, upY = 0,movX = 0,movY = 0;
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
@@ -154,14 +235,20 @@ public class CalendarScheduleView extends View {
             case MotionEvent.ACTION_UP:
                 upX = (int) event.getX();
                 upY = (int) event.getY();
-                if(Math.abs(downX - upX) < 10 && Math.abs(downY - upY) < 10) {
-                    // （点击事件）因为这里返回true，导致事件不会往上传，因此“手动”上传
+//                if(Math.abs(downX - upX) < 10 && Math.abs(downY - upY) < 10) {
+//                    // （点击事件）因为这里返回true，导致事件不会往上传，因此“手动”上传
                     performClick();
-                    // 处理点击事件
-                    handleClick((upX + downX) / 2, (upY + downY) / 2);
-                }
-                break;
+//                    // 处理点击事件
+//
+//                }
+                handleClick();
 
+                break;
+            case MotionEvent.ACTION_MOVE:
+                movX = (int) event.getX();
+                movY = (int) event.getY();
+
+                break;
             default:
                 break;
 
@@ -177,62 +264,168 @@ public class CalendarScheduleView extends View {
 
     /**
      * 处理点击事件
-     * @param x
-     * @param y
      */
-    private void handleClick(int x, int y) {
-        lastRow = currentRow;
-        lastColumn = currentColumn;
+    public void handleClick() {
+//        lastRow = currentRow;
+//        lastColumn = currentColumn;
+//        // 获取行
+//        currentRow = y / mRowHeight;
+//        // 获取列
+//        currentColumn = x / mColumnWidth;
+
+        lastRow =  downY / mRowHeight;//1开始
+        lastColumn = downX / mColumnWidth;
         // 获取行
-        currentRow = y / mRowHeight;
+        currentRow = movY  /mRowHeight;
         // 获取列
-        currentColumn = x / mColumnWidth;
-        mSelectedDates.clear();
-//        Log.i("aaaaaaaaaaa", "row=" + row);
-//        Log.i("aaaaaaaaaaa", "column=" + column);
-        if (currentRow != 0 && currentColumn != 0) {
-            // 获取点击的日期
-        int clickedDay = days[currentRow - 1][currentColumn - 1];
-            Log.i("aaaaaaaaaaa", "day=" + clickedDay);
+        currentColumn = movX / mColumnWidth;
+        Log.i("aaaaaaaaaaaaaaaaa", "=====lastRow==" + lastRow);
+        Log.i("aaaaaaaaaaaaaaaaa", "=====lastColumn==" + lastColumn);
+        Log.i("aaaaaaaaaaaaaaaaa", "=====currentRow==" +currentRow);
+        Log.i("aaaaaaaaaaaaaaaaa", "=====currentColumn==" +currentColumn);
+        if (lastColumn >= 1 && lastColumn == currentColumn && lastColumn <=7) {
 
-            if (lastRow == 0 || lastColumn == 0) {
-                mSelectedDates.add(clickedDay);//
-            } else {
-                if (lastRow <= currentRow && lastColumn <= currentColumn) {
-                    for (int i = lastRow; i < currentRow + 1; i++) {
-                        for (int j = lastColumn; j < currentColumn + 1; j++) {
-                            mSelectedDates.add(days[i - 1][j - 1]);//
-                        }
-                    }
-                } else if (lastRow >= currentRow && lastColumn <= currentColumn) {
-                    for (int i = currentRow; i < lastRow + 1; i++) {
-                        for (int j = lastColumn; j < currentColumn + 1; j++) {
-                            mSelectedDates.add(days[i - 1][j - 1]);//
-                        }
-                    }
-                }else if (lastRow <= currentRow && lastColumn >= currentColumn) {
-                    for (int i = lastRow; i < currentRow + 1; i++) {
-                        for (int j = currentColumn; j < lastColumn + 1; j++) {
-                            mSelectedDates.add(days[i - 1][j - 1]);//
-                        }
-                    }
-                }else if (lastRow >= currentRow && lastColumn >= currentColumn) {
-                    for (int i = currentRow; i < lastRow + 1; i++) {
-                        for (int j = currentColumn; j < lastColumn + 1; j++) {
-                            mSelectedDates.add(days[i - 1][j - 1]);//
-                        }
-                    }
-                }
-
+            if (lastRow < 1) {
+                lastRow = 1;
+            } else if (lastRow > 12) {
+                lastRow = 12;
             }
+            if (currentRow < 1) {
+                currentRow = 1;
+            } else if (currentRow > 12) {
+                currentRow = 12;
+            }
+
+                    if (lastRow <= currentRow) {
+                        mStartTime = 2 * (lastRow - 1);
+                        mEndTime = 2 * (currentRow);
+
+//                        for (int temp = lastRow; temp <= currentRow; temp++) {
+//                            mMonSelectedDates.add(2 * (temp - 1));
+//                        }
+                    } else if (lastRow > currentRow) {
+
+                        mStartTime = 2 * (currentRow - 1);
+                        mEndTime = 2 * (lastRow);
+
+//                        for (int temp = currentRow; temp < lastRow; temp++) {
+//                            mMonSelectedDates.add(2 * (temp - 1));
+//                        }
+
+                    }
+
+                        switch (lastColumn) {
+                            case 1:
+                                mMonSelectedDates.clear();//remove
+                                currentWeek = Mon;
+                                for (int temp = mStartTime; temp < mEndTime; ) {
+                                    Log.i("aaaaaaaaaaaa", temp + "==" + mStartTime + "==" + mEndTime);
+                                    mMonSelectedDates.add(temp);
+                                    temp = temp + 2;
+                                }
+                                break;
+                            case 2:
+                                mTueSelectedDates.clear();//remove
+                                currentWeek = Tue;
+                                for (int temp = mStartTime; temp < mEndTime; ) {
+                                    mTueSelectedDates.add(temp);
+                                    temp = temp + 2;
+                                }
+                                break;
+                            case 3:
+                                mWedSelectedDates.clear();//remove
+                                currentWeek = Wed;
+                                for (int temp = mStartTime; temp < mEndTime; ) {
+                                    mWedSelectedDates.add(temp);
+                                    temp = temp + 2;
+                                }
+                                break;
+                            case 4:
+                                mThuSelectedDates.clear();//remove
+                                currentWeek = Thu;
+                                for (int temp = mStartTime; temp < mEndTime; ) {
+                                    mThuSelectedDates.add(temp);
+                                    temp = temp + 2;
+                                }
+                                break;
+                            case 5:
+                                mFriSelectedDates.clear();//remove
+                                currentWeek = Fri;
+                                for (int temp = mStartTime; temp < mEndTime; ) {
+                                    mFriSelectedDates.add(temp);
+                                    temp = temp + 2;
+                                }
+                                break;
+                            case 6:
+                                mSatSelectedDates.clear();//remove
+                                currentWeek = Sat;
+                                for (int temp = mStartTime; temp < mEndTime; ) {
+                                    mSatSelectedDates.add(temp);
+                                    temp = temp + 2;
+                                }
+                                break;
+                            case 7:
+                                mSunSelectedDates.clear();//remove
+                                currentWeek = Sun;
+                                for (int temp = mStartTime; temp < mEndTime; ) {
+                                    mSunSelectedDates.add(temp);
+                                    temp = temp + 2;
+                                }
+                                break;
+
+                        }
+            onDateClick.onClick(1,1,1);
             invalidate();
+            }
+
         }
+
+//        mSelectedDates.clear();
+////        Log.i("aaaaaaaaaaa", "row=" + row);
+////        Log.i("aaaaaaaaaaa", "column=" + column);
+//        if (currentRow != 0 && currentColumn != 0) {
+//            // 获取点击的日期
+//        int clickedDay = days[currentRow - 1][currentColumn - 1];
+//            Log.i("aaaaaaaaaaa", "day=" + clickedDay);
+//
+//            if (lastRow == 0 || lastColumn == 0) {
+//                mSelectedDates.add(clickedDay);//
+//            } else {
+//                if (lastRow <= currentRow && lastColumn <= currentColumn) {
+//                    for (int i = lastRow; i < currentRow + 1; i++) {
+//                        for (int j = lastColumn; j < currentColumn + 1; j++) {
+//                            mSelectedDates.add(days[i - 1][j - 1]);//
+//                        }
+//                    }
+//                } else if (lastRow >= currentRow && lastColumn <= currentColumn) {
+//                    for (int i = currentRow; i < lastRow + 1; i++) {
+//                        for (int j = lastColumn; j < currentColumn + 1; j++) {
+//                            mSelectedDates.add(days[i - 1][j - 1]);//
+//                        }
+//                    }
+//                }else if (lastRow <= currentRow && lastColumn >= currentColumn) {
+//                    for (int i = lastRow; i < currentRow + 1; i++) {
+//                        for (int j = currentColumn; j < lastColumn + 1; j++) {
+//                            mSelectedDates.add(days[i - 1][j - 1]);//
+//                        }
+//                    }
+//                }else if (lastRow >= currentRow && lastColumn >= currentColumn) {
+//                    for (int i = currentRow; i < lastRow + 1; i++) {
+//                        for (int j = currentColumn; j < lastColumn + 1; j++) {
+//                            mSelectedDates.add(days[i - 1][j - 1]);//
+//                        }
+//                    }
+//                }
+//
+//            }
+
+//        }
 
         // 将点击的日期传给接口
 //        onDateClick.onClick(mCurrentYear, mCurrentMonth, clickedDay);
 //        invalidate(drawSelectedBackground(row,column,x,y));
+//        invalidate();
 
-    }
 
     /**
      * 绘制星期
@@ -287,27 +480,89 @@ public class CalendarScheduleView extends View {
      * @param canvas
      */
     private void drawDateText(Canvas canvas) {
-        int row = 0;
-        int day = 0;
-            for (int i = 0;i < (NUMS_ROW - 1);i++) {
-                for (int j = 0;j < (NUMS_COLUMN - 1);j++) {
-                    day++;
-                    days[i][j] = day;//day 里面存时间 改
+//        int row = 0;
+//        int day = 0;
+//            for (int i = 0;i < (NUMS_ROW - 1);i++) {
+//                for (int j = 0;j < (NUMS_COLUMN - 1);j++) {
+//                    day++;
+//                    days[i][j] = day;//day 里面存时间 改
+//                }
+//            }
+//
+//            // 若是可选日期，绘制背景
+//            for (int dayTemp : mSelectedDates) {//装数据
+//                for (int i=0;i < days.length;i++) {
+//                    for (int j = 0;j < days[i].length;j++) {
+//                        if (days[i][j] == dayTemp) {
+//                            drawSelectedBackground(canvas, i + 1, j + 1);
+//                        }
+//                    }
+//
+//                }
+//
+//            }
+
+
+        for (int i = 0;i < (NUMS_ROW - 1);i++) {
+            mMonDays[i] = 2 * i;
+        }
+
+        for (int temp : mMonSelectedDates) {
+            for (int i = 0; i < mMonDays.length; i++) {
+                if (temp == mMonDays[i]) {
+                    drawSelectedBackground(canvas, i + 1, 1);
                 }
             }
+        }
 
-            // 若是可选日期，绘制背景
-            for (int dayTemp : mSelectedDates) {//装数据
-                for (int i=0;i < days.length;i++) {
-                    for (int j = 0;j < days[i].length;j++) {
-                        if (days[i][j] == dayTemp) {
-                            drawSelectedBackground(canvas, i + 1, j + 1);
-                        }
-                    }
-
+        for (int temp : mTueSelectedDates) {
+            for (int i = 0; i < mMonDays.length; i++) {
+                if (temp == mMonDays[i]) {
+                    drawSelectedBackground(canvas, i + 1, 2);
                 }
-
             }
+        }
+
+        for (int temp : mWedSelectedDates) {
+            for (int i = 0; i < mMonDays.length; i++) {
+                if (temp == mMonDays[i]) {
+                    drawSelectedBackground(canvas, i + 1, 3);
+                }
+            }
+        }
+
+        for (int temp : mThuSelectedDates) {
+            for (int i = 0; i < mMonDays.length; i++) {
+                if (temp == mMonDays[i]) {
+                    drawSelectedBackground(canvas, i + 1, 4);
+                }
+            }
+        }
+
+        for (int temp : mFriSelectedDates) {
+            for (int i = 0; i < mMonDays.length; i++) {
+                if (temp == mMonDays[i]) {
+                    drawSelectedBackground(canvas, i + 1, 5);
+                }
+            }
+        }
+
+        for (int temp : mSatSelectedDates) {
+            for (int i = 0; i < mMonDays.length; i++) {
+                if (temp == mMonDays[i]) {
+                    drawSelectedBackground(canvas, i + 1, 6);
+                }
+            }
+        }
+
+        for (int temp : mSunSelectedDates) {
+            for (int i = 0; i < mMonDays.length; i++) {
+                if (temp == mMonDays[i]) {
+                    drawSelectedBackground(canvas, i + 1, 7);
+                }
+            }
+        }
+
     }
 
     /**
@@ -521,6 +776,15 @@ public class CalendarScheduleView extends View {
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         return calendar.getTimeInMillis();
+    }
+
+    public List getScheduleDate() {
+        return scheduleInfoList;
+    }
+
+    public void setScheduleDate(List<ScheduleInfo> scheduleInfoList) {
+        this.scheduleInfoList = scheduleInfoList;
+        invalidate();
     }
 }
 

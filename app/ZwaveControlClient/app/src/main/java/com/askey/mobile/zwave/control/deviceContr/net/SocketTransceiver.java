@@ -77,17 +77,22 @@ public abstract class SocketTransceiver implements Runnable {
 	 *            字符串
 	 * @return 发送成功返回true
 	 */
-	public boolean send(String s) {
-		if (out != null) {
-			try {
-				out.println(s);
-				out.flush();
-				return true;
-			} catch (Exception e) {
-				e.printStackTrace();
+	public void send(final String s) {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				if (out != null) {
+					try {
+						out.println(s);
+						out.flush();
+
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
 			}
-		}
-		return false;
+		}).start();
+
 	}
 
 	/**
@@ -122,10 +127,7 @@ public abstract class SocketTransceiver implements Runnable {
 					CharBuffer b = CharBuffer.wrap(buffer, 0, leng);
 					String s = b.toString();
 					Log.i("TCPConnect", "========TCPConnect========" + s);
-
-
 					this.onReceive(addr, s);
-
 				}
 			} catch (Exception e) {
 				// 连接被断开(被动)

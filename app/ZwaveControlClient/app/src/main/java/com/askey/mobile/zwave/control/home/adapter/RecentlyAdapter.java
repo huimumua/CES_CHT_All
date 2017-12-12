@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
+import com.askey.mobile.zwave.control.util.Logg;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ import java.util.List;
  */
 
 public class RecentlyAdapter extends RecyclerView.Adapter<RecentlyAdapter.MyViewHolder> implements View.OnClickListener{
-
+    private static final String TAG = RecentlyAdapter.class.getSimpleName();
     private List<DeviceInfo> dataList;
     private OnItemClickListener onItemClickListener = null;
 
@@ -35,6 +36,21 @@ public class RecentlyAdapter extends RecyclerView.Adapter<RecentlyAdapter.MyView
     @Override
     public void onBindViewHolder(MyViewHolder holder, int position) {
         DeviceInfo info = dataList.get(position);
+        String deviceType = info.getDeviceType();
+        Logg.i(TAG,"=====deviceType==="+deviceType);
+        if ("BULB".equals(deviceType)) {
+            holder.device_img.setBackgroundResource(R.mipmap.bulb_icon);
+            holder. device_toggle_state.setVisibility(View.VISIBLE);
+        } else if ("PLUG".equals(deviceType)) {
+            holder.device_img.setBackgroundResource(R.mipmap.switch_icon);
+            holder. device_toggle_state.setVisibility(View.VISIBLE);
+        } else if ("WALLMOTE".equals(deviceType)) {
+            holder.device_img.setBackgroundResource(R.mipmap.wallmote_icon);
+            holder. device_toggle_state.setVisibility(View.GONE);
+        } else if ("EXTENDER".equals(deviceType)) {
+            holder.device_img.setBackgroundResource(R.drawable.ic_zwgeneral);
+            holder. device_toggle_state.setVisibility(View.GONE);
+        }
         holder.device_name.setText(info.getDisplayName());
         holder.linear.setTag(dataList.get(position));
         holder.linear.setOnClickListener(this);

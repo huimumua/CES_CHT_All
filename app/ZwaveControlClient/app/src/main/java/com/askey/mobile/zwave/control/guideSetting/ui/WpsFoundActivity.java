@@ -4,16 +4,19 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 
 import com.askey.mobile.zwave.control.R;
+import com.askey.mobile.zwave.control.base.BaseActivity;
 import com.askey.mobile.zwave.control.welcome.ui.GuideActivity;
 
-public class WpsFoundActivity extends AppCompatActivity implements View.OnClickListener{
+public class WpsFoundActivity extends BaseActivity implements View.OnClickListener{
     private ImageView right;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wps_found);
 
@@ -25,8 +28,9 @@ public class WpsFoundActivity extends AppCompatActivity implements View.OnClickL
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.iv_right:
-                Intent intent = new Intent(this, GuideActivity.class);
+                Intent intent = new Intent(this, DeviceGuideActivity.class);
                 startActivity(intent);
+                finish();
                 break;
         }
     }

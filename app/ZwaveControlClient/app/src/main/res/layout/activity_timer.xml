@@ -27,13 +27,19 @@
   <RelativeLayout
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
+      android:layout_gravity="center_vertical"
+      android:gravity="center_vertical"
       >
       <ImageView
           android:id="@+id/iv_icon"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
-          android:src="@mipmap/ic_launcher"
-          />
+          android:layout_gravity="center_vertical"
+          android:gravity="center_vertical"
+          android:src="@drawable/vector_drawable_ic_58_black"
+          android:layout_centerVertical="true"
+          android:layout_alignParentLeft="true"
+          android:layout_alignParentStart="true" />
       <TextView
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
@@ -41,11 +47,11 @@
           android:layout_toRightOf="@id/iv_icon"
           android:layout_centerVertical="true"
           android:layout_marginLeft="10dp"
-          />
+          android:id="@+id/textView2" />
       <ImageView
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
-          android:src="@mipmap/ic_launcher"
+          android:src="@mipmap/arrow_right_03"
           android:layout_alignParentRight="true"
           />
       </RelativeLayout>
@@ -66,8 +72,10 @@
             android:id="@+id/iv_icon_second"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@mipmap/ic_launcher"
-            />
+            android:src="@drawable/vector_drawable_ic_58_black"
+            android:layout_centerVertical="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true" />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -79,25 +87,20 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@mipmap/ic_launcher"
+            android:src="@mipmap/arrow_right_03"
             android:layout_alignParentRight="true"
             />
         </RelativeLayout>
 
-    <Chronometer
-        android:id="@+id/chronometer"
-        android:layout_width="match_parent"
+    <TimePicker
+        android:timePickerMode="spinner"
+        android:id="@+id/time_picker"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/stroke_rectangle"
-        android:gravity="center"
-        android:padding="5dp"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:layout_marginTop="20dp"
-        android:textSize="25sp"
-        android:format="00:00:00"
+        android:layout_marginTop="5dip"
+        android:layout_gravity="center" >
+    </TimePicker>
 
-        />
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"

@@ -28,6 +28,9 @@ public class RouterConnectFourActivity extends AppCompatActivity implements View
                 finish();
                 break;
             case R.id.iv_right:
+                Intent intent = new Intent(this,DeviceGuideActivity.class);
+                startActivity(intent);
+                finish();
                 break;
         }
     }

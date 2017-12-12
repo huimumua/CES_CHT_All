@@ -31,6 +31,7 @@ public class RouterConnectSecondActivity extends AppCompatActivity implements Vi
             case R.id.iv_right:
                 Intent intent = new Intent(this,RouterConnectThirdActivity.class);
                 startActivity(intent);
+                finish();
                 break;
         }
     }

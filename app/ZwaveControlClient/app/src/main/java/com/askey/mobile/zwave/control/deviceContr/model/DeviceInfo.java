@@ -106,6 +106,15 @@ public class DeviceInfo implements Comparable<DeviceInfo>, Serializable {
      */
     private String DeviceTriggersType;
 
+    private String nodeInfo;
+
+    public String getNodeInfo() {
+        return nodeInfo;
+    }
+
+    public void setNodeInfo(String nodeInfo) {
+        this.nodeInfo = nodeInfo;
+    }
 
     public String getDeviceId() {
         return DeviceId;

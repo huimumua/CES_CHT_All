@@ -17,7 +17,7 @@ import java.util.List;
  * Created by skysoft on 2017/11/21.
  */
 
-public class ScenesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements View.OnClickListener{
+public class ScenesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements View.OnClickListener, View.OnLongClickListener{
 
     private List<ScenesInfo> dataList;
     private final static int ITEM = 0;
@@ -48,6 +48,7 @@ public class ScenesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             ((MyViewHolder)holder).scene_name.setText(info.getScenesName());
             ((MyViewHolder)holder).linear.setTag(info);
             ((MyViewHolder)holder).linear.setOnClickListener(this);
+            ((MyViewHolder)holder).linear.setOnLongClickListener(this);
         }
 
         if (holder instanceof AddItem) {
@@ -79,8 +80,20 @@ public class ScenesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         }
     }
 
+    @Override
+    public boolean onLongClick(View v) {
+        switch (v.getId()) {
+            case R.id.linear:
+                onItemClickListener.onItemLongClick(v , (ScenesInfo) v.getTag());
+                break;
+        }
+        return true;
+    }
+
     public static interface OnItemClickListener {
         void onItemClick(View view, ScenesInfo scenesInfo);
+
+        void onItemLongClick(View view, ScenesInfo scenesInfo);
 
         void addItemClick();
     }

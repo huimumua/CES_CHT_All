@@ -90,6 +90,7 @@
                 android:text="@string/password_strength"
                 />
             <TextView
+                android:id="@+id/tv_password_strong"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="start typing"

@@ -40,6 +40,7 @@ public class SetupHomeActivity extends AppCompatActivity implements View.OnClick
             case R.id.iv_router:
                 intent = new Intent(this, RouterConnectOneActivity.class);
                 startActivity(intent);
+                finish();
                 break;
         }
     }

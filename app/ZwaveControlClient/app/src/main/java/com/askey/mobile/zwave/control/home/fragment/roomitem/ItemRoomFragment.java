@@ -7,41 +7,36 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.askey.mobile.zwave.control.R;
-import com.askey.mobile.zwave.control.application.ZwaveClientApplication;
-import com.askey.mobile.zwave.control.data.CloudIotData;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttManagement;
-import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttMessageCallback;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
-import com.askey.mobile.zwave.control.deviceContr.net.SocketTransceiver;
-import com.askey.mobile.zwave.control.deviceContr.net.TCPReceive;
-import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.BulbActivity;
+import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ExtenderDeviceActivity;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.PlugActivity;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.WallMoteLivingActivity;
-import com.askey.mobile.zwave.control.deviceContr.ui.DimmerManageActivity;
-import com.askey.mobile.zwave.control.deviceContr.ui.SensorManageActivity;
-import com.askey.mobile.zwave.control.home.activity.HomeActivity;
-import com.askey.mobile.zwave.control.home.activity.addDevice.AddDeviceActivity;
+import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDeviceActivity;
+import com.askey.mobile.zwave.control.home.activity.addDevice.SelectBrandActivity;
 import com.askey.mobile.zwave.control.home.adapter.DeviceAdapter;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
 import com.askey.mobile.zwave.control.widget.MyDialog;
-import com.askeycloud.webservice.sdk.iot.message.builder.MqttDesiredJStrBuilder;
+import com.askeycloud.webservice.sdk.iot.callback.ShadowReceiveListener;
 import com.askeycloud.webservice.sdk.service.iot.AskeyIoTService;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -56,7 +51,7 @@ import java.util.List;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemClickListener{
+public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemClickListener {
     public static String LOG_TAG = "ItemRoomFragment";
     private RecyclerView recyclerView;
     private DeviceAdapter adapter;
@@ -71,7 +66,7 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
     private MyDialog myDialog;
     private List<DeviceInfo> deviceInfoList;
     private boolean isFirstLoadData = true;
-    private static int clickPositon;
+    private int clickPosition;
 
     public ItemRoomFragment() {
         // Required empty public constructor
@@ -92,14 +87,22 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
         Logg.i(LOG_TAG,"===setUserVisibleHint=====");
         if (isVisibleToUser) {
             Log.d(LOG_TAG,"正常加载,fragment可见"+roomName);
-            TcpClient.getInstance().rigister(tcpReceive);
             MQTTManagement.getSingInstance().rigister( mqttMessageArrived);
+            /*
+                在第一次点击底部tab跳转到房间页面的时候会初始化所有fragment，此时My Home页面是可见的，其他子页面是不可见的。这里处理的是本页面第一次
+                可见时发送消息，若后续通过滑动再次回到本页面则不会发送消息，这样做是为了避免快速滑动时本页面的消息被其他页面接收到。
+             */
             if (isFirstLoadData) {
                 isFirstLoadData = false;
-                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand(roomName));
+                if(Const.isRemote){
+
+                }else{
+
+                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand(roomName));
+                }
             }
         } else {
-            Log.d("taggg","正常加载,fragment不可见");
+            Log.d(LOG_TAG,"正常加载,fragment不可见");
             unrigister();
         }
     }
@@ -143,6 +146,7 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
     public void onResume() {
         super.onResume();
         Logg.i(LOG_TAG,"===onResume=====");
+//        Toast.makeText(getActivity(), roomName+", size: "+deviceInfoList.size(), Toast.LENGTH_SHORT).show();
 /*       new Thread(new Runnable() {
             @Override
             public void run() {
@@ -164,16 +168,13 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
     @Override
     public void onPause() {
         super.onPause();
-        Logg.i(LOG_TAG,"===onPause=====");
+        Logg.i(LOG_TAG,"===onPause====="+roomName);
         unrigister();
     }
 
     private void unrigister() {
         if(mqttMessageArrived!=null){
             MQTTManagement.getSingInstance().unrigister(mqttMessageArrived);
-        }
-        if (tcpReceive != null) {
-            TcpClient.getInstance().unrigister(tcpReceive);
         }
     }
 
@@ -218,33 +219,20 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
 
 
     private void initIotMqttMessage() {
-
-        IotMqttManagement.getInstance().setIotMqttMessageCallback(new IotMqttMessageCallback() {
+        //以下这句为注册监听
+        AskeyIoTService.getInstance(getContext()).setShadowReceiverListener(new ShadowReceiveListener() {
             @Override
-            public void receiveMqttMessage(String s, String s1, String s2) {
-                //处理结果
-                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s=" + s);
-                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s1=" + s1);
-                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s2=" + s2);
+            public void receiveShadowDocument(String s, String s1, String s2) {
+                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s=" + s);
+                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s1=" + s1);
+                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s2=" + s2);
+                IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
                 if(s2.contains("desired")){
                     return;
                 }
                 getSceneResult(s2);
             }
-
         });
-
-        //以下这句为注册监听
-//        AskeyIoTService.getInstance(getContext()).setShadowReceiverListener(new ShadowReceiveListener() {
-//            @Override
-//            public void receiveShadowDocument(String s, String s1, String s2) {
-//                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s=" + s);
-//                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s1=" + s1);
-//                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s2=" + s2);
-//                IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
-//                getSceneResult(s2);
-//            }
-//        });
     }
 
     private void getSceneResult(String mqttResult) {
@@ -269,14 +257,14 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
                     String isFavorite = info.getString("isFavorite");
                     String name = info.getString("name");
                     Logg.i(LOG_TAG,"==getDeviceResult=JSONArray===devName=="+name);
-
+//                    String nodeInfo = info.getString("nodeInfo");
                     DeviceInfo deviceInfo = new DeviceInfo();
                     deviceInfo.setDeviceId(nodeId);
                     deviceInfo.setDisplayName(name);
                     deviceInfo.setDeviceType(category);
                     deviceInfo.setRooms(Room);
                     deviceInfo.setIsFavorite(isFavorite);
-
+//                    deviceInfo.setNodeInfo(nodeInfo);
                     deviceInfoList.add(deviceInfo);
 
                     String nodeTopic = Const.subscriptionTopic+"Zwave" + nodeId;
@@ -308,10 +296,6 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
         edit_layout = (LinearLayout) view.findViewById(R.id.edit_layout);
         recyclerView = (RecyclerView) view.findViewById(R.id.recyclerview);
         recyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
-        DefaultItemAnimator defaultItemAnimator = new DefaultItemAnimator();
-        defaultItemAnimator.setAddDuration(200);
-        defaultItemAnimator.setRemoveDuration(200);
-        recyclerView.setItemAnimator(defaultItemAnimator);
     }
 
 
@@ -322,7 +306,6 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
         adapter.setDeviceInfoList(deviceInfoList);
         adapter.setOnItemClickListener(this);
         recyclerView.setAdapter(adapter);
-
     }
 
     public void setCurrentMode(int flag) {
@@ -354,135 +337,96 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
         adapter.notifyDataSetChanged();
     }
 
+    public void removeDevice() {
+        deviceInfoList.remove(clickPosition);
+        adapter.notifyDataSetChanged();
+    }
+
     @Override
     public void onItemClick(View view, DeviceInfo deviceInfo) {
-        Toast.makeText(getActivity(), "item", Toast.LENGTH_SHORT).show();
         Intent intent = null;
-        if ("SENSOR".equals(deviceInfo.getDeviceType())) {
-            intent = new Intent(getActivity(), SensorManageActivity.class);
-            intent.putExtra("roomName",deviceInfo.getRooms());
-        } else if ("BULB".equals(deviceInfo.getDeviceType())) {
+        if ("BULB".equals(deviceInfo.getDeviceType())) {
             intent = new Intent(getActivity(), BulbActivity.class);
-        } else if ("DIMMER".equals(deviceInfo.getDeviceType())) {
-            intent = new Intent(getActivity(), DimmerManageActivity.class);
         } else if ("PLUG".equals(deviceInfo.getDeviceType())) {
             intent = new Intent(getActivity(), PlugActivity.class);
         } else if ("WALLMOTE".equals(deviceInfo.getDeviceType())) {
             intent = new Intent(getActivity(), WallMoteLivingActivity.class);
-        } else if ("SWITCH".equals(deviceInfo.getDeviceType())) {
-            intent = new Intent(getActivity(), WallMoteLivingActivity.class);
-        }  else {
+        }  else if ("EXTENDER".equals(deviceInfo.getDeviceType())) {
+            intent = new Intent(getActivity(), ExtenderDeviceActivity.class);
+        } else {
             intent = new Intent(getActivity(), BulbActivity.class);//原有的经验证过的可以正常使用
             intent.putExtra("uniqueid",deviceInfo.getUniqueId());
         }
         intent.putExtra("nodeId",deviceInfo.getDeviceId());
-        intent.putExtra("displayName",deviceInfo.getDisplayName());
+        intent.putExtra("type", deviceInfo.getDeviceType());
+        intent.putExtra("room", deviceInfo.getRooms());
+        intent.putExtra("displayName", deviceInfo.getDisplayName());
+        startActivity(intent);
+    }
+
+    @Override
+    public void onItemLongClick(View view, DeviceInfo deviceInfo) {
+        Intent intent = null;
+        if ("BULB".equals(deviceInfo.getDeviceType())) {
+            intent = new Intent(getActivity(), BulbActivity.class);
+        } else if ("PLUG".equals(deviceInfo.getDeviceType())) {
+            intent = new Intent(getActivity(), PlugActivity.class);
+        } else if ("WALLMOTE".equals(deviceInfo.getDeviceType())) {
+            intent = new Intent(getActivity(), WallMoteLivingActivity.class);
+        }  else if ("EXTENDER".equals(deviceInfo.getDeviceType())) {
+            intent = new Intent(getActivity(), ExtenderDeviceActivity.class);
+        } else {
+            intent = new Intent(getActivity(), BulbActivity.class);//原有的经验证过的可以正常使用
+            intent.putExtra("uniqueid",deviceInfo.getUniqueId());
+        }
+        intent.putExtra("nodeId",deviceInfo.getDeviceId());
+        intent.putExtra("type", deviceInfo.getDeviceType());
+        intent.putExtra("room", deviceInfo.getRooms());
+        intent.putExtra("displayName", deviceInfo.getDisplayName());
         startActivity(intent);
     }
 
     @Override
     public void deleteItemClick(final int position) {
-/*        myDialog = new MyDialog(getActivity());
-        myDialog.setYesOnclickListener("Proceed", new MyDialog.onYesOnclickListener() {
-            @Override
-            public void onYesClick() {
-                if (TcpClient.getInstance().isConnected()) {
-                    Logg.i(LOG_TAG,"=removeDevice="+"mobile_zwave:removeDevice");
-                    String nodeId = deviceInfoList.get(position).getDeviceId();
-                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:removeDevice"+nodeId);
-//                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.removeDevice(nodeId));
-                }
-                deviceInfoList.remove(position);
-                adapter.notifyItemRemoved(position);
-                adapter.notifyItemRangeChanged(position, deviceInfoList.size());
-                myDialog.dismiss();
-            }
-        });
-
-        myDialog.show();
-        Toast.makeText(getActivity(), position + "", Toast.LENGTH_SHORT).show();*/
-
-        myDialog = new MyDialog(getActivity());
-        myDialog.setYesOnclickListener("Proceed", new MyDialog.onYesOnclickListener() {
-            @Override
-            public void onYesClick() {
-                if (TcpClient.getInstance().isConnected()) {
-                    String nodeId = deviceInfoList.get(position).getDeviceId();
-                    Logg.i(LOG_TAG, "=removeDevice=" +"mobile_zwave:removeDevice:Zwave:"+ nodeId);
-                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:removeDevice:Zwave:"+ nodeId);
-                }
-            }
-        });
-        clickPositon = position;
-        myDialog.show();
+//        Toast.makeText(getActivity(), position+" ,size: "+deviceInfoList.size(), Toast.LENGTH_SHORT).show();
+        DeviceInfo info = deviceInfoList.get(position);
+        //deviceId就是nodeId
+        showDialog(getActivity(), info.getDisplayName(), info.getDeviceId());
+        clickPosition = position;
     }
 
     @Override
     public void addItemClick() {
-        startActivity(new Intent(getActivity(), AddDeviceActivity.class));
+        startActivity(new Intent(getActivity(), SelectBrandActivity.class));
         Const.currentRoomName = roomName;
-//        Toast.makeText(getActivity(), roomId+"", Toast.LENGTH_SHORT).show();
     }
 
-
-
-    TCPReceive tcpReceive = new TCPReceive() {
-        @Override
-        public void onConnect(SocketTransceiver transceiver) {
-
-        }
-
-        @Override
-        public void onConnectFailed() {
-
-        }
-
-        @Override
-        public void receiveMessage(SocketTransceiver transceiver, String tcpMassage) {
-            //处理结果
-            Logg.i(LOG_TAG,"==tcpMassage=="+tcpMassage);
-            removeDeviceResult(tcpMassage);
-        }
-
-        @Override
-        public void onDisconnect(SocketTransceiver transceiver) {
-
-        }
-
-    };
-
-
-    private void removeDeviceResult(final String result) {
-        Log.d(LOG_TAG,"======removeDeviceResult======" + result);
-        if (result.contains("removeDevice:other")) {
-            return;
-        }
-        ((Activity) getContext()).runOnUiThread(new Runnable() {
+    void showDialog(final Context context, String deviceName, final String nodeId) {
+        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+        final AlertDialog alertDialog = alertDialogBuilder.show();
+        alertDialog.setCancelable(false);
+        View view = LayoutInflater.from(context).inflate(R.layout.dialog_delete_device, null);
+        ImageView icon = (ImageView) view.findViewById(R.id.iv_icon);
+        icon.setImageResource(R.drawable.ic_del_icon);
+        alertDialog.setContentView(view);
+        Button cancel = (Button) view.findViewById(R.id.btn_cancel);
+        Button proceed = (Button) view.findViewById(R.id.btn_proceed);
+        cancel.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
-                try {
-                    final JSONObject jsonObject = new JSONObject(result);
-                    String messageType = jsonObject.optString("MessageType");
-                    if (messageType.equals("Node Remove Status")) {
-                        String status = jsonObject.optString("Status");
-//            String nodeId = jsonObject.optString("NodeID");
-                        if ("Success".equals(status)) {
-                            //删除成功则返回主页，否则提示删除失败，返回设备管理界面
-                            deviceInfoList.remove(clickPositon);
-                            adapter.notifyItemRemoved(clickPositon);
-                            adapter.notifyItemRangeChanged(clickPositon, deviceInfoList.size());
-                            myDialog.dismiss();
-                        } else {
-                            Toast.makeText(getActivity(), status, Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+            public void onClick(View v) {
+                alertDialog.dismiss();
+            }
+        });
+        proceed.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(context, DeleteDeviceActivity.class);
+                intent.putExtra("deviceId", nodeId);
+                intent.putExtra("roomName", roomName);
+                startActivity(intent);
+                alertDialog.dismiss();
             }
         });
 
     }
-
-
 }

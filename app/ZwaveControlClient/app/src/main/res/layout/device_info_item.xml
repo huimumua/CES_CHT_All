@@ -8,6 +8,7 @@
         android:layout_width="110dp"
         android:layout_height="110dp"
         android:orientation="vertical"
+        android:gravity="center"
         android:background="@drawable/device_info_item"
         android:layout_margin="3dp"
         >
@@ -49,7 +50,7 @@
                 android:layout_width="65dp"
                 android:layout_height="55dp"
                 android:layout_marginTop="5dp"
-                android:src="@drawable/nophoto"
+                android:background="@drawable/nophoto"
                 />
             <ImageView
                 android:layout_width="10dp"
@@ -87,6 +88,7 @@
                 android:layout_height="wrap_content"
                 android:text="connecting"
                 android:textSize="10sp"
+                android:visibility="gone"
                 android:layout_gravity="center"
                 />
         </LinearLayout>

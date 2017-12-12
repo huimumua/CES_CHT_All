@@ -3,15 +3,12 @@ package com.askey.mobile.zwave.control.home.activity.addDevice;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Spinner;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,10 +29,11 @@ import org.json.JSONObject;
 
 public class InstallSuccessActivity extends BaseActivity implements View.OnClickListener {
     public static String LOG_TAG = "InstallSuccessActivity";
-    private TextView notify_msg;
+    private TextView notify_msg, room_name_tv;
+    private LinearLayout linear_click;
     private ImageView device_icon;
     private EditText device_name;
-    private Spinner roomSpinner;
+//    private Spinner roomSpinner;
     private CheckBox add_favorite;
     private Button done;
     private static AddDeviceSuccessListener addDeviceSuccessListener;
@@ -45,8 +43,7 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
     private String roomName = "";
     private String displsyName;
     private int isFavorite = 0;
-    private String[] items;
-    private int targetPosition;
+    private final int CHOOSE_ROOM = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,6 +102,7 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
                                 Intent intent = new Intent();
                                 intent.setClass(mContext,HomeActivity.class);
                                 startActivity(intent);
+                                Const.setIsDataChange(true);
                                 finish();
                             }else{
                                 ((Activity) mContext).runOnUiThread(new Runnable() {
@@ -127,48 +125,64 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
 
 
     private void initView() {
-        targetPosition = 0;
+        linear_click = (LinearLayout) findViewById(R.id.linear_click);
+        linear_click.setOnClickListener(this);
+        room_name_tv = (TextView) findViewById(R.id.room_name_tv);
         notify_msg = (TextView) findViewById(R.id.notify_msg);
         device_icon = (ImageView) findViewById(R.id.device_icon);
         device_name = (EditText) findViewById(R.id.device_name);
-        roomSpinner = (Spinner) findViewById(R.id.spinner);
+//        roomSpinner = (Spinner) findViewById(R.id.spinner);
         add_favorite = (CheckBox) findViewById(R.id.add_favorite);
         done = (Button) findViewById(R.id.done);
         done.setOnClickListener(this);
 
-        items = new String[RoomsFragment.roomInfoList.size()];
-
-        for (int i = 0; i < RoomsFragment.roomInfoList.size(); i++) {
-            items[i] = RoomsFragment.roomInfoList.get(i).getRoomName();
-            if (RoomsFragment.roomInfoList.get(i).getRoomName().equals(Const.currentRoomName)) {
-                targetPosition = i;
-                roomName = RoomsFragment.roomInfoList.get(i).getRoomName();
+//        "BULB","PLUG","WALLMOTE"
+        if(deviceType.equals("BULB")){
+            device_icon.setBackgroundResource(R.mipmap.bulb_icon);
+        }else if(deviceType.equals("PLUG")){
+            device_icon.setBackgroundResource(R.mipmap.switch_icon);
+        }else if(deviceType.equals("WALLMOTE")){
+            device_icon.setBackgroundResource(R.mipmap.wallmote_icon);
+        }
+        RoomsFragment.getRoomList();
+        if(RoomsFragment.roomInfoList!=null){
+            for (int i = 0; i < RoomsFragment.roomInfoList.size(); i++) {
+                if (RoomsFragment.roomInfoList.get(i).getRoomName().equals(Const.currentRoomName)) {
+                    roomName = RoomsFragment.roomInfoList.get(i).getRoomName();
+                    room_name_tv.setText(roomName);
+                    break;
+                }
             }
         }
 
-        ArrayAdapter<String> source=new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, items);
-        roomSpinner.setAdapter(source);
-        roomSpinner.setSelection(targetPosition,true);
+        if (roomName.equals("")) {
+            room_name_tv.setText("My Home");
+        }
 
-        roomSpinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener(){
 
-            @Override
-            public void onItemSelected(AdapterView<?> arg0, View arg1,
-                                       int arg2, long arg3) {
-                new AlertDialog.Builder(mContext)
-                        .setTitle("Prompt")
-                        .setMessage("Selected : "+items[arg2])
-                        .setPositiveButton("OK", null)
-                        .show();
-                roomName = items[arg2] ;
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> arg0) {
-
-            }
-
-        });
+//        ArrayAdapter<String> source=new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, items);
+//        roomSpinner.setAdapter(source);
+//        roomSpinner.setSelection(targetPosition,true);
+//
+//        roomSpinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener(){
+//
+//            @Override
+//            public void onItemSelected(AdapterView<?> arg0, View arg1,
+//                                       int arg2, long arg3) {
+//                new AlertDialog.Builder(mContext)
+//                        .setTitle("Prompt")
+//                        .setMessage("Selected : "+items[arg2])
+//                        .setPositiveButton("OK", null)
+//                        .show();
+//                roomName = items[arg2] ;
+//            }
+//
+//            @Override
+//            public void onNothingSelected(AdapterView<?> arg0) {
+//
+//            }
+//
+//        });
 
     }
 
@@ -186,7 +200,7 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
                     isFavorite = 1;
                 }
                 if(roomName.equals("")){
-                    roomName = items[0] ;
+                    roomName = "My Home" ;
                 }
 
                 Logg.i(LOG_TAG,"=====nodeId====="+nodeId);
@@ -197,9 +211,26 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
                 MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.editNodeInfo(nodeId,roomName,isFavorite+"",displsyName,deviceType));
 
                 break;
+
+            case R.id.linear_click:
+                startActivityForResult(new Intent(this, ChooseRoomActivity.class), CHOOSE_ROOM);
+                break;
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            switch (requestCode) {
+                case CHOOSE_ROOM:
+                    String result = data.getStringExtra("roomName");
+                    roomName = result;
+                    room_name_tv.setText(result);
+                    break;
+            }
+        }
+    }
 
     public static interface AddDeviceSuccessListener {
         void addDeviceSuccess(String roomName, DeviceInfo deviceInfo);

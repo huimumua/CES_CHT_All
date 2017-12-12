@@ -16,6 +16,9 @@ public class BaseDeviceActivity extends AppCompatActivity implements View.OnClic
     public Intent intent;
     public boolean isDetailStatus = true;
     public String nodeId;
+    public String type;
+    public String name;
+    public String room;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,26 +29,26 @@ public class BaseDeviceActivity extends AppCompatActivity implements View.OnClic
         deviceName = (TextView) findViewById(R.id.tv_device_name);
         nodeId = getIntent().getStringExtra("nodeId");//需要穿nodeId
 
-        consumption = (ImageView) findViewById(R.id.iv_consumption);
+//        consumption = (ImageView) findViewById(R.id.iv_consumption);
         notify = (ImageView) findViewById(R.id.iv_notify);
         schedule = (ImageView) findViewById(R.id.iv_schedule);
         vacation = (ImageView) findViewById(R.id.iv_vacation);
-        trigger = (ImageView) findViewById(R.id.iv_trigger);
+//        trigger = (ImageView) findViewById(R.id.iv_trigger);
 
-        consumptionSetted = (ImageView) findViewById(R.id.iv_consumption_setted);
+//        consumptionSetted = (ImageView) findViewById(R.id.iv_consumption_setted);
         notifySetted = (ImageView) findViewById(R.id.iv_notify_setted);
         scheduleSetted = (ImageView) findViewById(R.id.iv_schedule_setted);
         vacationSetted = (ImageView) findViewById(R.id.iv_vacation_setted);
-        triggerSetted = (ImageView) findViewById(R.id.iv_trigger_setted);
+//        triggerSetted = (ImageView) findViewById(R.id.iv_trigger_setted);
 
         setting = (ImageView) findViewById(R.id.iv_setting);
         info = (ImageView) findViewById(R.id.iv_info);
 
-        consumption.setOnClickListener(this);
+//        consumption.setOnClickListener(this);
         notify.setOnClickListener(this);
         schedule.setOnClickListener(this);
         vacation.setOnClickListener(this);
-        trigger.setOnClickListener(this);
+//        trigger.setOnClickListener(this);
 
         setting.setOnClickListener(this);
         info.setOnClickListener(this);
@@ -55,9 +58,9 @@ public class BaseDeviceActivity extends AppCompatActivity implements View.OnClic
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.iv_consumption:
-                consume();
-                break;
+//            case R.id.iv_consumption:
+//                consume();
+//                break;
             case R.id.iv_notify:
                 notifyMessage();
                 break;
@@ -67,9 +70,9 @@ public class BaseDeviceActivity extends AppCompatActivity implements View.OnClic
             case R.id.iv_vacation:
                 vacation();
                 break;
-            case R.id.iv_trigger:
-                trigger();
-                break;
+//            case R.id.iv_trigger:
+//                trigger();
+//                break;
             case R.id.iv_setting:
                 setting();
                 break;
@@ -90,6 +93,9 @@ public class BaseDeviceActivity extends AppCompatActivity implements View.OnClic
     public void setting() {
         intent = new Intent(this,DeviceSettingActivity.class);
         intent.putExtra("nodeId",nodeId);
+        intent.putExtra("type",type);
+        intent.putExtra("name",name);
+        intent.putExtra("room",room);
         startActivity(intent);
 
     }

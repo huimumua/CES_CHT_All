@@ -16,5 +16,6 @@ public class WpsFindingActivity extends AppCompatActivity {
         //test
         Intent intent = new Intent(this,WpsFoundActivity.class);
         startActivity(intent);
+        finish();
     }
 }

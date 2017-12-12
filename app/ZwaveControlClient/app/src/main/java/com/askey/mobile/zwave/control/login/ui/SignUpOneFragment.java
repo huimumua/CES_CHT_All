@@ -1,5 +1,6 @@
 package com.askey.mobile.zwave.control.login.ui;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
@@ -9,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.interf.FragmentCallback;
@@ -29,6 +31,7 @@ public class SignUpOneFragment extends Fragment implements View.OnClickListener{
     private ImageView emailIcon,passwordIcon,left;
     private SignUpActivity signUpActivity;
     private View view;
+    private TextView passwordStrong;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -90,9 +93,18 @@ public class SignUpOneFragment extends Fragment implements View.OnClickListener{
             @Override
             public void afterTextChanged(Editable editable) {
                 if (editable.length() >= 6) {
+                    passwordStrong.setText(getResources().getString(R.string.password_strong));
+                    passwordStrong.setTextColor(Color.RED);
                     passwordIcon.setVisibility(View.VISIBLE);
                 } else {
                     passwordIcon.setVisibility(View.INVISIBLE);
+                    if (editable.length() <= 0) {
+                        passwordStrong.setText(getResources().getString(R.string.password_start));
+                        passwordStrong.setTextColor(Color.GRAY);
+                    } else {
+                        passwordStrong.setText(getResources().getString(R.string.password_weak));
+                        passwordStrong.setTextColor(Color.RED);
+                    }
                 }
 
                 if (emailIcon.getVisibility() == View.VISIBLE && passwordIcon.getVisibility() == View.VISIBLE) {
@@ -111,6 +123,7 @@ public class SignUpOneFragment extends Fragment implements View.OnClickListener{
 
     private void initView() {
         signUpActivity =  ((SignUpActivity) getActivity());
+        passwordStrong = (TextView) view.findViewById(R.id.tv_password_strong);
         etEmailAdress = (EditText) view.findViewById(R.id.et_email_adress);
         tvPassword = (EditText) view.findViewById(R.id.et_password);
         emailIcon = (ImageView) view.findViewById(R.id.iv_enter_email);

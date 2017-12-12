@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.ImageView;
+import android.widget.RadioButton;
 import android.widget.SimpleAdapter;
 
 import com.askey.mobile.zwave.control.R;
@@ -27,6 +29,31 @@ public class SelectBrandActivity extends BaseActivity implements AdapterView.OnI
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_device);
+
+        RadioButton zwaveGeneral = (RadioButton) this.findViewById(R.id.zwave_general_img);
+        RadioButton btGeneral = (RadioButton) this.findViewById(R.id.bt_geneeral_img);
+        zwaveGeneral.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setClass(mContext,DeviceListActivity.class);
+                intent.putExtra("brand",getString(R.string.aeotec));
+                startActivity(intent);
+                finish();
+            }
+        });
+
+        btGeneral.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setClass(mContext,DeviceListActivity.class);
+                intent.putExtra("brand",getString(R.string.aeotec));
+                startActivity(intent);
+                finish();
+            }
+        });
+
 
         brand_list = (GridView) findViewById(R.id.brand_list);
         brand_list.setOnItemClickListener(this);

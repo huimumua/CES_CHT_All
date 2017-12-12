@@ -13,30 +13,95 @@ public class ScenesInfo {
     /**
      * 情景模式Id
      * */
-    private String ScenesId;
+    private String scenesId;
     /**
      * 情景模式名称
      * */
-    private String ScenesName;
+    private String scenesName;
 
-    public ScenesInfo(String scenesId, String scenesName) {
-        ScenesId = scenesId;
-        ScenesName = scenesName;
-    }
+    private String nodeId;
+
+    private String category;
+
+    private String targetSatus;
+
+    private String currentStatus;
+
+    private String targetColor;
+
+    private String currentColor;
+
+    private String timer;
 
     public String getScenesId() {
-        return ScenesId;
+        return scenesId;
     }
 
     public void setScenesId(String scenesId) {
-        ScenesId = scenesId;
+        this.scenesId = scenesId;
     }
 
     public String getScenesName() {
-        return ScenesName;
+        return scenesName;
     }
 
     public void setScenesName(String scenesName) {
-        ScenesName = scenesName;
+        this.scenesName = scenesName;
+    }
+
+    public String getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(String nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getTargetSatus() {
+        return targetSatus;
+    }
+
+    public void setTargetSatus(String targetSatus) {
+        this.targetSatus = targetSatus;
+    }
+
+    public String getCurrentStatus() {
+        return currentStatus;
+    }
+
+    public void setCurrentStatus(String currentStatus) {
+        this.currentStatus = currentStatus;
+    }
+
+    public String getTargetColor() {
+        return targetColor;
+    }
+
+    public void setTargetColor(String targetColor) {
+        this.targetColor = targetColor;
+    }
+
+    public String getCurrentColor() {
+        return currentColor;
+    }
+
+    public void setCurrentColor(String currentColor) {
+        this.currentColor = currentColor;
+    }
+
+    public String getTimer() {
+        return timer;
+    }
+
+    public void setTimer(String timer) {
+        this.timer = timer;
     }
 }

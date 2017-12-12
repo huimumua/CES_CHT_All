@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -15,6 +16,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.interf.FragmentPage;
@@ -43,6 +45,7 @@ public class LogInOneFragment extends Fragment implements View.OnClickListener{
     private LinearLayout llEmail;
     private Context mContext;
     private int[] location = new int[2];
+    private PopupWindow popupWindow;
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -58,13 +61,11 @@ public class LogInOneFragment extends Fragment implements View.OnClickListener{
 
                 if (logInHomeActivity.isNextPage) {
                     logInHomeActivity.goNextPage(null);
+                    return;
+                } else {
+                    forgotPassword();
                 }
 
-                if (!isSended) {
-                    forgotPassword();
-                } else {
-                    //提示已经发到邮箱
-                }
             }
         });
 
@@ -113,6 +114,7 @@ public class LogInOneFragment extends Fragment implements View.OnClickListener{
                             isSended = false;
                             logInHomeActivity.isNextPage = false;
                             logInHomeActivity.right.setImageResource(R.drawable.vector_drawable_ic_66);
+                            showVerificationPopu();
                         }
                         Log.i(LOG_TAG, "===forgotPassword========getCode====" + response.getCode());
                         Log.i(LOG_TAG, "===forgotPassword========getMessage====" + response.getMessage());
@@ -160,17 +162,32 @@ public class LogInOneFragment extends Fragment implements View.OnClickListener{
         return m.matches();
     }
 
-    private void showInvaildPopu() {
-        View popupView = LayoutInflater.from(mContext).inflate(R.layout.popup_verification_invaild, null);
-        PopupWindow popupWindow = new PopupWindow(mContext);
+
+    private void showVerificationPopu() {
+        View popupView = LayoutInflater.from(mContext).inflate(R.layout.popup_verification_view, null);
+        popupWindow = new PopupWindow(mContext);
         popupWindow.setBackgroundDrawable(null);
         popupWindow.setContentView(popupView);
         popupWindow.setFocusable(true);
 
+        TextView content = (TextView) popupView.findViewById(R.id.tv_content);
+        content.setText(getResources().getString(R.string.invalid_email));
+        LinearLayout linearLayout = (LinearLayout) popupView.findViewById(R.id.ll_popu);
+        linearLayout.setBackground(ContextCompat.getDrawable(mContext,R.drawable.vector_drawable_ic_125));
+
+        int[] location = new int[2];
         int popupWidth = popupView.getMeasuredWidth();
         int popupHeight =  popupView.getMeasuredHeight();
-        llEmail.getLocationOnScreen(location);
-        popupWindow.showAtLocation(llEmail, Gravity.NO_GRAVITY, ((location[0]+llEmail.getWidth()/2)-popupWidth/2)/2,
-                location[1]-popupHeight - llEmail.getHeight() * 2);
+        email.getLocationOnScreen(location);
+        popupWindow.showAtLocation(email, Gravity.NO_GRAVITY, ((location[0]+email.getWidth()/2)-popupWidth/2)/2,
+                location[1]-popupHeight - email.getHeight() * 2);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (popupWindow != null) {
+            popupWindow.dismiss();
+        }
     }
 }

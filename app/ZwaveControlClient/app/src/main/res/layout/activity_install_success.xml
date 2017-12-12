@@ -30,7 +30,6 @@
         android:id="@+id/device_icon"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_launcher"
         android:padding="10dp"
         />
 
@@ -51,7 +50,7 @@
         >
         <EditText
             android:id="@+id/device_name"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="30dp"
             android:layout_weight="4"
             android:gravity="center"
@@ -62,7 +61,7 @@
         <ImageView
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:src="@drawable/ic_launcher"
+            android:src="@drawable/ic_edit"
             />
     </LinearLayout>
     <View
@@ -72,17 +71,36 @@
         android:layout_gravity="center"
         />
     <LinearLayout
+        android:id="@+id/linear_click"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
+        android:background="@drawable/stroke_rectangle"
         android:orientation="horizontal"
         android:layout_margin="5dp"
+        android:padding="5dp"
         android:layout_gravity="center"
         >
-        <Spinner
-            android:id="@+id/spinner"
-            android:layout_width="match_parent"
+        <!--<Spinner-->
+            <!--android:id="@+id/spinner"-->
+            <!--android:background="@drawable/stroke_rectangle"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_marginBottom="20dip"/>-->
+        <TextView
+            android:id="@+id/room_name_tv"
+            android:layout_width="0dp"
+            android:layout_weight="4"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dip"/>
+            android:textSize="18sp"
+            android:textColor="@android:color/holo_red_dark"
+            android:gravity="center"
+            android:text="My Home"
+            />
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_orientation_down"
+            />
     </LinearLayout>
 
     <TextView
@@ -98,14 +116,14 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         />
+
     <Button
         android:id="@+id/done"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/button_style"
-        android:textColor="@android:color/background_light"
-        android:text="Done"
         android:layout_gravity="center"
         android:layout_margin="10dp"
-        />
+        android:background="@drawable/button_style"
+        android:text="Done"
+        android:textColor="@android:color/background_light" />
 </LinearLayout>

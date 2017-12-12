@@ -1,5 +1,6 @@
 package com.askey.mobile.zwave.control.home.adapter;
 
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,11 @@ import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
+import com.askey.mobile.zwave.control.deviceContr.rooms.ui.BulbActivity;
+import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ExtenderDeviceActivity;
+import com.askey.mobile.zwave.control.deviceContr.rooms.ui.PlugActivity;
+import com.askey.mobile.zwave.control.deviceContr.rooms.ui.WallMoteLivingActivity;
+import com.askey.mobile.zwave.control.util.Logg;
 
 import java.util.List;
 
@@ -17,8 +23,8 @@ import java.util.List;
  * Created by skysoft on 2017/10/23.
  */
 
-public class DeviceAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements View.OnClickListener {
-
+public class DeviceAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements View.OnClickListener, View.OnLongClickListener {
+    private static final String TAG = DeviceAdapter.class.getSimpleName();
     private List<DeviceInfo> deviceInfoList;
     private int flag = 0;
     private OnItemClickListener onItemClickListener = null;
@@ -53,17 +59,35 @@ public class DeviceAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof MyViewHolder) {
             DeviceInfo info = deviceInfoList.get(position);
+            String deviceType = info.getDeviceType();
+            Logg.i(TAG,"=====deviceType==="+deviceType);
+            if ("BULB".equals(deviceType)) {
+                ((MyViewHolder) holder).device_img.setBackgroundResource(R.mipmap.bulb_icon);
+                ((MyViewHolder) holder). device_toggle_state.setVisibility(View.VISIBLE);
+            } else if ("PLUG".equals(deviceType)) {
+                ((MyViewHolder) holder).device_img.setBackgroundResource(R.mipmap.switch_icon);
+                ((MyViewHolder) holder). device_toggle_state.setVisibility(View.VISIBLE);
+            } else if ("WALLMOTE".equals(deviceType)) {
+                ((MyViewHolder) holder).device_img.setBackgroundResource(R.mipmap.wallmote_icon);
+                ((MyViewHolder) holder). device_toggle_state.setVisibility(View.GONE);
+            } else if ("EXTENDER".equals(deviceType)) {
+                ((MyViewHolder) holder).device_img.setBackgroundResource(R.drawable.ic_zwgeneral);
+                ((MyViewHolder) holder). device_toggle_state.setVisibility(View.GONE);
+            }
+
             ((MyViewHolder) holder).device_name.setText(info.getDisplayName());
             if (flag == NORMAL_MODE) {
                 ((MyViewHolder) holder).delete_device.setVisibility(View.INVISIBLE);
                 ((MyViewHolder) holder).linear.setTag(deviceInfoList.get(position));
                 ((MyViewHolder) holder).linear.setOnClickListener(this);
+                ((MyViewHolder) holder).linear.setOnLongClickListener(this);
             }
             if (flag == EDIT_MODE) {
                 ((MyViewHolder) holder).delete_device.setVisibility(View.VISIBLE);
                 ((MyViewHolder) holder).delete_device.setTag(position);
                 ((MyViewHolder) holder).delete_device.setOnClickListener(this);
                 ((MyViewHolder) holder).linear.setOnClickListener(null);
+                ((MyViewHolder) holder).linear.setOnLongClickListener(null);
             }
         }
         if (flag == NORMAL_MODE && holder instanceof AddItem) {
@@ -101,8 +125,22 @@ public class DeviceAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         }
     }
 
+    @Override
+    public boolean onLongClick(View v) {
+        if (onItemClickListener != null) {
+            switch (v.getId()) {
+                case R.id.linear :
+                    onItemClickListener.onItemLongClick(v, (DeviceInfo) v.getTag());
+                    break;
+            }
+        }
+        return true;
+    }
+
     public static interface OnItemClickListener {
         void onItemClick(View view, DeviceInfo deviceInfo);
+
+        void onItemLongClick(View view, DeviceInfo deviceInfo);
 
         void deleteItemClick(int position);
 

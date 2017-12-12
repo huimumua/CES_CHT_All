@@ -1,12 +1,10 @@
 package com.askey.mobile.zwave.control.welcome.ui;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -15,12 +13,9 @@ import android.widget.LinearLayout;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.welcome.adapter.GuidePageAdapter;
-import com.askey.mobile.zwave.control.deviceContr.ui.NotificationActivity;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.security.AccessController.getContext;
 
 public class GuideActivity extends AppCompatActivity {
 

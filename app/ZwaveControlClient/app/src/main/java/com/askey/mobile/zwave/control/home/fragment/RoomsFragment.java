@@ -21,12 +21,14 @@ import com.askey.mobile.zwave.control.application.ZwaveClientApplication;
 import com.askey.mobile.zwave.control.data.CloudIotData;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttManagement;
-import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttMessageCallback;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
 import com.askey.mobile.zwave.control.deviceContr.model.RoomInfo;
+import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.home.activity.HomeActivity;
+import com.askey.mobile.zwave.control.home.activity.TakePictureActivity;
+import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDeviceActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.InstallSuccessActivity;
 import com.askey.mobile.zwave.control.home.activity.addRoom.AddRoomActivity;
 import com.askey.mobile.zwave.control.home.adapter.DeviceAdapter;
@@ -36,6 +38,7 @@ import com.askey.mobile.zwave.control.home.fragment.roomitem.MyHomeRoomFragment;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
 import com.askey.mobile.zwave.control.widget.MyViewPager;
+import com.askeycloud.webservice.sdk.iot.callback.ShadowReceiveListener;
 import com.askeycloud.webservice.sdk.iot.message.builder.MqttDesiredJStrBuilder;
 import com.askeycloud.webservice.sdk.service.iot.AskeyIoTService;
 
@@ -50,7 +53,7 @@ import java.util.List;
  * A simple {@link Fragment} subclass.
  */
 public class RoomsFragment extends Fragment implements View.OnClickListener, InstallSuccessActivity.AddDeviceSuccessListener
-        , ViewPager.OnPageChangeListener, AddRoomActivity.ModifyRoomListener {
+        , ViewPager.OnPageChangeListener, AddRoomActivity.ModifyRoomListener, DeleteDeviceActivity.DeleteDeviceListener {
     public static String LOG_TAG = "RoomsFragment";
     private MyViewPager roomPager;
     private List<Fragment> fragmentList;
@@ -104,23 +107,7 @@ public class RoomsFragment extends Fragment implements View.OnClickListener, Ins
     }
 
     private void initFragment() {
-        roomInfoList = new ArrayList<>();
-
-        RoomInfo info = new RoomInfo();
-        info.setRoomId(1);
-        info.setRoomName("My Home");
-        roomInfoList.add(info);
-
-        RoomInfo info1 = new RoomInfo();
-        info1.setRoomId(2);
-        info1.setRoomName("Living Room");
-        roomInfoList.add(info1);
-
-        RoomInfo info2 = new RoomInfo();
-        info2.setRoomId(3);
-        info2.setRoomName("Bedroom");
-        roomInfoList.add(info2);
-
+        getRoomList();
         fragmentList = new ArrayList<>();
         for (int i = 0; i < roomInfoList.size(); i++) {
             if (roomInfoList.get(i).getRoomName().equals("My Home")) {
@@ -142,6 +129,7 @@ public class RoomsFragment extends Fragment implements View.OnClickListener, Ins
         voice.setOnClickListener(this);
         InstallSuccessActivity.setAddDeviceListener(this);
         AddRoomActivity.setModifyRoomListener(this);
+        DeleteDeviceActivity.setDeleteDeviceListener(this);
         o = adapter.instantiateItem(roomPager, roomPager.getCurrentItem());
     }
 
@@ -276,6 +264,17 @@ public class RoomsFragment extends Fragment implements View.OnClickListener, Ins
                 }
                 break;
             case R.id.voice:
+                if (o instanceof MyHomeRoomFragment) {
+                    MyHomeRoomFragment myHomeRoomFragment = (MyHomeRoomFragment) o;
+                    switch (myHomeRoomFragment.getCurrentMode()) {
+                        case DeviceAdapter.NORMAL_MODE:
+                            Toast.makeText(getActivity(), "voice", Toast.LENGTH_SHORT).show();
+                            break;
+                        case DeviceAdapter.EDIT_MODE:
+                            startActivity(new Intent(getActivity(), TakePictureActivity.class));
+                            break;
+                    }
+                }
                 if (o instanceof ItemRoomFragment) {
                     ItemRoomFragment itemFragment = (ItemRoomFragment) o;
                     switch (itemFragment.getCurrentMode()) {
@@ -283,7 +282,7 @@ public class RoomsFragment extends Fragment implements View.OnClickListener, Ins
                             Toast.makeText(getActivity(), "voice", Toast.LENGTH_SHORT).show();
                             break;
                         case DeviceAdapter.EDIT_MODE:
-                            Toast.makeText(getActivity(), "camera", Toast.LENGTH_SHORT).show();
+                            startActivity(new Intent(getActivity(), TakePictureActivity.class));
                             break;
                     }
                 }
@@ -307,16 +306,6 @@ public class RoomsFragment extends Fragment implements View.OnClickListener, Ins
     @Override
     public void addDeviceSuccess(String roomName, DeviceInfo deviceInfo) {
         Logg.i(LOG_TAG, "==addDeviceSuccess=deviceInfo.getDisplayName()=====" + deviceInfo.getDisplayName());
-//        if(o instanceof ItemRoomFragment){
-//            ItemRoomFragment itemFragment = (ItemRoomFragment) o;
-//            itemFragment.notifyFragmentData(deviceInfo);
-//            Logg.i(LOG_TAG,"==11=deviceInfo.getDisplayName()====="+deviceInfo.getDisplayName());
-//        }
-//        if(o instanceof MyHomeRoomFragment){
-//            MyHomeRoomFragment myHomeRoomFragment = (MyHomeRoomFragment) o;
-//            myHomeRoomFragment.notifyFragmentData(deviceInfo);
-//            Logg.i(LOG_TAG,"==22=deviceInfo.getDisplayName()====="+deviceInfo.getDisplayName());
-//        }
         Logg.d("addDeviceSuccess", roomName);
         for (Fragment roomFragment : fragmentList) {
             if (roomFragment instanceof ItemRoomFragment) {
@@ -328,6 +317,23 @@ public class RoomsFragment extends Fragment implements View.OnClickListener, Ins
             if (roomFragment instanceof MyHomeRoomFragment) {
                 if (((MyHomeRoomFragment) roomFragment).getRoomName().equals(roomName)) {
                     ((MyHomeRoomFragment) roomFragment).notifyFragmentData(deviceInfo);
+                    break;
+                }
+            }
+        }
+    }
+    @Override
+    public void deleteSuccess(String roomName) {
+        for (Fragment roomFragment : fragmentList) {
+            if (roomFragment instanceof ItemRoomFragment) {
+                if (((ItemRoomFragment) roomFragment).getRoomName().equals(roomName)) {
+                    ((ItemRoomFragment) roomFragment).removeDevice();
+                    break;
+                }
+            }
+            if (roomFragment instanceof MyHomeRoomFragment) {
+                if (((MyHomeRoomFragment) roomFragment).getRoomName().equals(roomName)) {
+                    ((MyHomeRoomFragment) roomFragment).deleteDevice();
                     break;
                 }
             }
@@ -378,23 +384,7 @@ public class RoomsFragment extends Fragment implements View.OnClickListener, Ins
     }
 
     private void initIotMqttMessage() {
-
-        IotMqttManagement.getInstance().setIotMqttMessageCallback(new IotMqttMessageCallback() {
-            @Override
-            public void receiveMqttMessage(String s, String s1, String s2) {
-                //处理结果
-                Logg.i(LOG_TAG, "==IotMqttMessageCallback======s=" + s);
-                Logg.i(LOG_TAG, "==IotMqttMessageCallback======s1=" + s1);
-                Logg.i(LOG_TAG, "==IotMqttMessageCallback======s2=" + s2);
-                if(s2.contains("desired")){
-                    return;
-                }
-                mqttMessageResult(s2);
-            }
-
-        });
-
-/*        //以下这句为注册监听
+       //以下这句为注册监听
         AskeyIoTService.getInstance(getContext()).setShadowReceiverListener(new ShadowReceiveListener() {
             @Override
             public void receiveShadowDocument(String s, String s1, String s2) {
@@ -402,11 +392,13 @@ public class RoomsFragment extends Fragment implements View.OnClickListener, Ins
                 Logg.i(LOG_TAG, "======setShadowReceiverListener==s1=" + s1);
                 Logg.i(LOG_TAG, "======setShadowReceiverListener==s2=" + s2);
                 IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
-
-
+                if(s2.contains("desired")){
+                    return;
+                }
                 mqttMessageResult(s2);
+
             }
-        });*/
+        });
     }
 
     MqttMessageArrived mqttMessageArrived = new MqttMessageArrived() {
@@ -462,9 +454,42 @@ public class RoomsFragment extends Fragment implements View.OnClickListener, Ins
     }
     public void register(){
         Log.d(LOG_TAG,"register");
+        if (o instanceof MyHomeRoomFragment) {
+            ((MyHomeRoomFragment)o).setUserVisibleHint(true);
+        }
+        if (o instanceof ItemRoomFragment) {
+            ((ItemRoomFragment)o).setUserVisibleHint(true);
+        }
     }
     public void unRegister(){
         Log.d(LOG_TAG,"unregister");
+        MQTTManagement.getSingInstance().clearMessageArrived();
+        unrigister();
+    }
+
+    private void unrigister() {
+        if(mqttMessageArrived!=null){
+            MQTTManagement.getSingInstance().unrigister(mqttMessageArrived);
+        }
+    }
+    public static void getRoomList() {
+        roomInfoList = new ArrayList<>();
+
+        RoomInfo info = new RoomInfo();
+        info.setRoomId(1);
+        info.setRoomName("My Home");
+        roomInfoList.add(info);
+
+        RoomInfo info1 = new RoomInfo();
+        info1.setRoomId(2);
+        info1.setRoomName("Living Room");
+        roomInfoList.add(info1);
+
+        RoomInfo info2 = new RoomInfo();
+        info2.setRoomId(3);
+        info2.setRoomName("Kitchen Room");
+//        info2.setRoomName("Bedroom");
+        roomInfoList.add(info2);
     }
 
 }

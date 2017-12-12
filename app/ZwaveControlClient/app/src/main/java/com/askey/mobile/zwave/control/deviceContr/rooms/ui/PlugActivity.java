@@ -21,9 +21,11 @@ import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.home.activity.HomeActivity;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
+import com.askeycloud.sdk.device.response.IoTDeviceInfoResponse;
 import com.askeycloud.webservice.sdk.iot.MqttService;
 import com.askeycloud.webservice.sdk.iot.callback.ShadowReceiveListener;
 import com.askeycloud.webservice.sdk.iot.message.builder.MqttDesiredJStrBuilder;
+import com.askeycloud.webservice.sdk.service.device.AskeyIoTDeviceService;
 import com.askeycloud.webservice.sdk.service.iot.AskeyIoTService;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -40,6 +42,9 @@ public class PlugActivity extends BaseDeviceActivity {
     private TextView tvActiveMode,tvTriggerDevice,tvModes,tvDetail,tvEnergyOption,tvAlarms,tvScheduler,tvVacation,tvTrigger;
     private CheckBox mOnOff;
     private Context mContext;
+    private TextView scheduleExplain,notifyExplain, vacationExplain;
+    private IoTDeviceInfoResponse ioTDeviceInfoResponse;
+    private  String shadowTopic="";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,11 +57,14 @@ public class PlugActivity extends BaseDeviceActivity {
         tvTriggerDevice = (TextView) findViewById(R.id.tv_trigger_device);
         tvModes = (TextView) findViewById(R.id.tv_modes);
         tvDetail = (TextView) findViewById(R.id.tv_detail);
-        tvEnergyOption = (TextView) findViewById(R.id.tv_energy_option);
-        tvAlarms = (TextView) findViewById(R.id.tv_alarm);
-        tvScheduler = (TextView) findViewById(R.id.tv_scheduler);
-        tvVacation = (TextView) findViewById(R.id.tv_vacation);
-        tvTrigger = (TextView) findViewById(R.id.tv_trigger);
+        scheduleExplain = (TextView) findViewById(R.id.tv_scheduler_explain);
+        notifyExplain = (TextView) findViewById(R.id.tv_notify_explain);
+        vacationExplain = (TextView) findViewById(R.id.tv_vacation_explain);
+//        tvEnergyOption = (TextView) findViewById(R.id.tv_energy_option);
+//        tvAlarms = (TextView) findViewById(R.id.tv_alarm);
+//        tvScheduler = (TextView) findViewById(R.id.tv_scheduler);
+//        tvVacation = (TextView) findViewById(R.id.tv_vacation);
+//        tvTrigger = (TextView) findViewById(R.id.tv_trigger);
         mOnOff = (CheckBox) findViewById(R.id.cb_on_off);
         mOnOff.setOnClickListener(this);
 
@@ -64,19 +72,13 @@ public class PlugActivity extends BaseDeviceActivity {
         initSetted();
         deviceName.setText("Plug");
 
-        nodeId = getIntent().getStringExtra("nodeId");//需要穿nodeId
+        nodeId = getIntent().getStringExtra("nodeId");
+        type = getIntent().getStringExtra("type");
+        name = getIntent().getStringExtra("displayName");
+        room = getIntent().getStringExtra("room");
 
         if(Const.isRemote){
-            initIotMqttMessage();
-            if(HomeActivity.shadowTopic!=null && !HomeActivity.shadowTopic.equals("")){
-//                MqttService mqttService = MqttService.getInstance();
-//                mqttService.publishMqttMessage(HomeActivity.shadowTopic, "mobile_zwave:getBasic:" + nodeId );
-
-                MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(Const.subscriptionTopic+"Zwave"+nodeId);
-                builder.setJsonString( CloudIotData.getSwitchStatus(nodeId) );
-                AskeyIoTService.getInstance(ZwaveClientApplication.getInstance()).publishDesiredMessage(HomeActivity.shadowTopic, builder);
-
-            }
+            remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.getSwitchStatus(nodeId));
         }else{
             MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
             //获取灯泡状态
@@ -86,34 +88,50 @@ public class PlugActivity extends BaseDeviceActivity {
         }
     }
 
-    private void initIotMqttMessage() {
 
-        IotMqttManagement.getInstance().setIotMqttMessageCallback(new IotMqttMessageCallback() {
+    private void remoteIotComm(final String topic, final String comm) {
+        initIotMqttMessage();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Context mContext = ZwaveClientApplication.getInstance();
+                        if(ioTDeviceInfoResponse==null){
+                            ioTDeviceInfoResponse = AskeyIoTDeviceService.getInstance(mContext).lookupIoTDevice(Const.DEVICE_MODEL, topic );
+                            shadowTopic = ioTDeviceInfoResponse.getShadowTopic();
+                        }
+
+                        AskeyIoTService.getInstance(mContext).subscribeMqtt(shadowTopic);
+                        MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(topic);
+                        builder.setJsonString(comm);
+
+                        Log.i(TAG,"===publishDesiredMessage====setJsonString===" +comm);
+                        Log.i(TAG,"===publishDesiredMessage====topic===" + topic);
+                        Log.i(TAG,"===publishDesiredMessage====shadowTopic===" +shadowTopic);
+                        AskeyIoTService.getInstance(mContext).publishDesiredMessage(shadowTopic, builder);
+                    }catch (Exception e){
+                        Logg.e(TAG,"remoteIotComm = >Exception " +e.getMessage());
+                    }
+                }
+            }).start();
+    }
+
+    private void initIotMqttMessage() {
+               //以下这句为注册监听
+        AskeyIoTService.getInstance(this).setShadowReceiverListener(new ShadowReceiveListener() {
             @Override
-            public void receiveMqttMessage(String s, String s1, String s2) {
-                //处理结果
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s=" + s);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s1=" + s1);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s2=" + s2);
+            public void receiveShadowDocument(String s, String s1, String s2) {
+                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s=" + s);
+                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s1=" + s1);
+                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s2=" + s2);
+                IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
                 if(s2.contains("desired")){
                     return;
                 }
 
 
             }
-
         });
-
-/*        //以下这句为注册监听
-        AskeyIoTService.getInstance(this).setShadowReceiverListener(new ShadowReceiveListener() {
-            @Override
-            public void receiveShadowDocument(String s, String s1, String s2) {
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s=" + s);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s1=" + s1);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s2=" + s2);
-                IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
-            }
-        });*/
     }
 
     MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
@@ -205,11 +223,16 @@ public class PlugActivity extends BaseDeviceActivity {
             tvModes.setVisibility(View.INVISIBLE);
             tvDetail.setVisibility(View.INVISIBLE);
 
-            tvEnergyOption.setVisibility(View.INVISIBLE);
-            tvAlarms.setVisibility(View.INVISIBLE);
-            tvScheduler.setVisibility(View.INVISIBLE);
-            tvVacation.setVisibility(View.INVISIBLE);
-            tvTrigger.setVisibility(View.INVISIBLE);
+            scheduleExplain.setVisibility(View.INVISIBLE);
+            notifyExplain.setVisibility(View.INVISIBLE);
+            vacationExplain.setVisibility(View.INVISIBLE);
+
+
+//            tvEnergyOption.setVisibility(View.INVISIBLE);
+//            tvAlarms.setVisibility(View.INVISIBLE);
+//            tvScheduler.setVisibility(View.INVISIBLE);
+//            tvVacation.setVisibility(View.INVISIBLE);
+//            tvTrigger.setVisibility(View.INVISIBLE);
         } else {
 
             llPlug.setBackgroundColor(ContextCompat.getColor(this, R.color.gray));
@@ -218,11 +241,15 @@ public class PlugActivity extends BaseDeviceActivity {
             tvModes.setVisibility(View.VISIBLE);
             tvDetail.setVisibility(View.VISIBLE);
 
-            tvEnergyOption.setVisibility(View.VISIBLE);
-            tvAlarms.setVisibility(View.VISIBLE);
-            tvScheduler.setVisibility(View.VISIBLE);
-            tvVacation.setVisibility(View.VISIBLE);
-            tvTrigger.setVisibility(View.VISIBLE);
+            scheduleExplain.setVisibility(View.VISIBLE);
+            notifyExplain.setVisibility(View.VISIBLE);
+            vacationExplain.setVisibility(View.VISIBLE);
+
+//            tvEnergyOption.setVisibility(View.VISIBLE);
+//            tvAlarms.setVisibility(View.VISIBLE);
+//            tvScheduler.setVisibility(View.VISIBLE);
+//            tvVacation.setVisibility(View.VISIBLE);
+//            tvTrigger.setVisibility(View.VISIBLE);
         }
 
     }
@@ -235,18 +262,14 @@ public class PlugActivity extends BaseDeviceActivity {
                 if (mOnOff.isChecked()) {
                     //需验证ff 和 00  set无返回
                     if (Const.isRemote) {
-                        MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(Const.subscriptionTopic+"Zwave"+nodeId);
-                        builder.setJsonString( CloudIotData.setSwitch(nodeId,"on") );
-                        AskeyIoTService.getInstance(ZwaveClientApplication.getInstance()).publishDesiredMessage(HomeActivity.shadowTopic, builder);
+                        remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.setSwitch(nodeId,"on"));
                     } else {
                         MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.setSwitch(nodeId,"on"));
 //                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic + nodeId, "mobile_zwave:setBasic:" + nodeId + ":FF");
                     }
                 } else {
                     if (Const.isRemote) {
-                        MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(Const.subscriptionTopic+"Zwave"+nodeId);
-                        builder.setJsonString( CloudIotData.setSwitch(nodeId,"off") );
-                        AskeyIoTService.getInstance(ZwaveClientApplication.getInstance()).publishDesiredMessage(HomeActivity.shadowTopic, builder);
+                        remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.setSwitch(nodeId,"off"));
                     } else {
 //                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+nodeId,"mobile_zwave:setBasic:" + nodeId + ":00" );
                         MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.setSwitch(nodeId, "off"));

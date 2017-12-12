@@ -35,6 +35,11 @@ public class SimpleDeviceAdapter extends RecyclerView.Adapter<SimpleDeviceAdapte
     @Override
     public void onBindViewHolder(SimpleDeviceAdapter.MyViewHolder holder, int position) {
         DeviceInfo deviceInfo = dataList.get(position);
+        String deviceType = deviceInfo.getDeviceType();
+        if(deviceType.equals("")){
+
+        }
+
         holder.device_icon.setImageResource(R.drawable.ic_launcher);
         holder.device_name.setText(deviceInfo.getDisplayName());
         holder.itemView.setTag(deviceInfo);

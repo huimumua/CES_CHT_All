@@ -4,10 +4,7 @@
     android:id="@+id/activity_vacation_mode"
     android:layout_width="@dimen/device_width"
     android:layout_height="@dimen/device_heigh"
-    android:paddingBottom="@dimen/activity_horizontal_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_horizontal_margin"
+    android:padding="@dimen/activity_horizontal_margin"
     android:orientation="vertical"
     android:background="@color/white"
 
@@ -35,7 +32,8 @@
     <com.yanzhenjie.recyclerview.swipe.SwipeMenuRecyclerView
         android:id="@+id/rv_available_commands"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         />
     <TextView
         android:layout_width="wrap_content"
@@ -47,8 +45,8 @@
     <ImageView
         android:id="@+id/iv_add_action"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@mipmap/ic_launcher"
+        android:layout_height="46dp"
+        android:src="@drawable/vector_drawable_ic_90"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="5dp"
         />

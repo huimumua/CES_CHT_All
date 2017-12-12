@@ -30,6 +30,7 @@ public class RouterConnectOneActivity extends AppCompatActivity implements View.
             case R.id.iv_right:
                 Intent intent = new Intent(this,RouterConnectSecondActivity.class);
                 startActivity(intent);
+                finish();
                 break;
         }
     }

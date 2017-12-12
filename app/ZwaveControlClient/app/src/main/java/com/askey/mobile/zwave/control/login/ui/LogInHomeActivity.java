@@ -63,7 +63,7 @@ public class LogInHomeActivity extends AppCompatActivity implements View.OnClick
         third = (ImageView) findViewById(R.id.iv_third);
 
         right.setOnClickListener(this);
-        right.setImageResource(R.mipmap.switch_off_icon);
+        right.setImageResource(R.drawable.vector_drawable_ic_66);
     }
     /**
      * 加载底部圆点
@@ -74,7 +74,7 @@ public class LogInHomeActivity extends AppCompatActivity implements View.OnClick
         for (int i = 0; i < fragmentList.size(); i++) {
             ivPointArray[i] = (ImageView) findViewById(pointIds[i]);
         }
-        ivPointArray[0].setImageResource(R.mipmap.point);
+        ivPointArray[0].setImageResource(R.drawable.vector_drawable_ic_slider_ponit_red);
     }
 
     @Override
@@ -120,9 +120,9 @@ public class LogInHomeActivity extends AppCompatActivity implements View.OnClick
     private void changePoint () {
         for (int i = 0; i < fragmentList.size(); i++) {
             if (curPage == i) {
-                ivPointArray[i].setImageResource(R.mipmap.point);
+                ivPointArray[i].setImageResource(R.drawable.vector_drawable_ic_slider_ponit_red);
             } else {
-                ivPointArray[i].setImageResource(R.mipmap.whitepoint);
+                ivPointArray[i].setImageResource(R.drawable.vector_drawable_ic_slider_point_frame_red);
             }
 
 

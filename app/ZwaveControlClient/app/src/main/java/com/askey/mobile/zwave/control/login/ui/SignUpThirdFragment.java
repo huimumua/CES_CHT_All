@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -28,8 +29,6 @@ import com.askeycloud.webservice.sdk.service.web.AskeyApiAuthService;
 
 import java.util.Map;
 
-import lecho.lib.hellocharts.model.Line;
-
 /**
  * Created by skysoft on 2017/10/10.
  */
@@ -47,6 +46,8 @@ public class SignUpThirdFragment extends Fragment implements View.OnClickListene
     private View view;
     private int[] location = new int[2];
     private LinearLayout llVerification;
+    private PopupWindow popupWindowOne;
+    private PopupWindow popupWindowTwo;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -65,16 +66,15 @@ public class SignUpThirdFragment extends Fragment implements View.OnClickListene
             @Override
             public void handlePage() {
                 Log.i(LOG_TAG, "=====handlePage=======");
-                if (!verification.getText().toString().equals("")) {
-                    triggerUserConfirm();
-                } else {
-                    //提示验证码已经发到邮箱
-                    showVerificationPopu();
-                }
 
                 if((signUpActivity.isNextPage)) {
                     signUpActivity.goNextPage(account);
+                    return;
                 }
+                if (!verification.getText().toString().equals("")) {
+                    triggerUserConfirm();
+                }
+
 
             }
         });
@@ -107,19 +107,19 @@ public class SignUpThirdFragment extends Fragment implements View.OnClickListene
 
     private void showVerificationPopu() {
         View popupView = LayoutInflater.from(mContext).inflate(R.layout.popup_verification_view, null);
-        PopupWindow popupWindow = new PopupWindow(mContext);
-        popupWindow.setBackgroundDrawable(null);
-        popupWindow.setContentView(popupView);
-        popupWindow.setFocusable(true);
+        popupWindowOne = new PopupWindow(mContext);
+        popupWindowOne.setBackgroundDrawable(null);
+        popupWindowOne.setContentView(popupView);
+        popupWindowOne.setFocusable(true);
         TextView tvContent = (TextView) popupView.findViewById(R.id.tv_content);
         tvContent.setText(getResources().getString(R.string.verification_sent));
         LinearLayout linearLayout = (LinearLayout) popupView.findViewById(R.id.ll_popu);
-        linearLayout.setBackgroundResource(R.drawable.verification_background);
+        linearLayout.setBackground(ContextCompat.getDrawable(mContext,R.drawable.verification_background));
 
         int popupWidth = popupView.getMeasuredWidth();
         int popupHeight =  popupView.getMeasuredHeight();
         signUpActivity.right.getLocationOnScreen(location);
-        popupWindow.showAtLocation(signUpActivity.right, Gravity.NO_GRAVITY, ((location[0]+signUpActivity.right.getWidth()/2)-popupWidth/2)/2,
+        popupWindowOne.showAtLocation(signUpActivity.right, Gravity.NO_GRAVITY, ((location[0]+signUpActivity.right.getWidth()/2)-popupWidth/2)/2,
                 location[1]-popupHeight - signUpActivity.right.getHeight() * 2);
     }
 
@@ -156,6 +156,15 @@ public class SignUpThirdFragment extends Fragment implements View.OnClickListene
         Log.i(LOG_TAG, "=====goSignUp=====getCode==" + signUpResponse.getCode());
         Log.i(LOG_TAG, "=====goSignUp===getUserid====" + signUpResponse.getUserid());
         Log.i(LOG_TAG, "=====goSignUp===getMessage====" + signUpResponse.getMessage());
+        if (signUpResponse.getCode() == ApiStatus.API_SUCCESS) {
+            signUpActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    showVerificationPopu();
+                }
+            });
+
+        }
     }
 
     private void triggerUserConfirm() {
@@ -179,7 +188,7 @@ public class SignUpThirdFragment extends Fragment implements View.OnClickListene
                             signUpActivity.right.setImageResource(R.drawable.vector_drawable_ic_next_solid);
                             //还要改变右边图标
                         } else {
-                            verificationIcon.setImageResource(R.drawable.vector_drawable_ic_close);//换成差的图标
+                            verificationIcon.setImageResource(R.drawable.ic_close);//换成差的图标
                             showInvaildPopu();
                             signUpActivity.isNextPage = false;
                             signUpActivity.right.setImageResource(R.drawable.vector_drawable_ic_66);
@@ -193,16 +202,21 @@ public class SignUpThirdFragment extends Fragment implements View.OnClickListene
     }
 
     private void showInvaildPopu() {
-        View popupView = LayoutInflater.from(mContext).inflate(R.layout.popup_verification_invaild, null);
-        PopupWindow popupWindow = new PopupWindow(mContext);
-        popupWindow.setBackgroundDrawable(null);
-        popupWindow.setContentView(popupView);
-        popupWindow.setFocusable(true);
+        View popupView = LayoutInflater.from(mContext).inflate(R.layout.popup_verification_view, null);
+        popupWindowTwo = new PopupWindow(mContext);
+        popupWindowTwo.setBackgroundDrawable(null);
+        popupWindowTwo.setContentView(popupView);
+        popupWindowTwo.setFocusable(true);
+        TextView content = (TextView) popupView.findViewById(R.id.tv_content);
+        content.setText(getResources().getString(R.string.verification_invaild));
+//        LinearLayout linearLayout = (LinearLayout) popupView.findViewById(R.id.ll_popu);
+//        linearLayout.setBackground(ContextCompat.getDrawable(mContext,R.drawable.vector_drawable_ic_125));
 
+        int[] location = new int[2];
         int popupWidth = popupView.getMeasuredWidth();
         int popupHeight =  popupView.getMeasuredHeight();
         llVerification.getLocationOnScreen(location);
-        popupWindow.showAtLocation(llVerification, Gravity.NO_GRAVITY, ((location[0]+llVerification.getWidth()/2)-popupWidth/2)/2,
+        popupWindowTwo.showAtLocation(llVerification, Gravity.NO_GRAVITY, ((location[0]+llVerification.getWidth()/2)-popupWidth/2)/2,
                 location[1]-popupHeight - llVerification.getHeight() * 2);
     }
 
@@ -222,6 +236,17 @@ public class SignUpThirdFragment extends Fragment implements View.OnClickListene
                     }
                 }).start();
                 break;
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (popupWindowOne != null) {
+            popupWindowOne.dismiss();
+        }
+        if (popupWindowTwo != null) {
+            popupWindowTwo.dismiss();
         }
     }
 }

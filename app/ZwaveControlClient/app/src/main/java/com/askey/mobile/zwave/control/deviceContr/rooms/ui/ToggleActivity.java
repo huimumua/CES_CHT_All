@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
@@ -23,7 +24,7 @@ public class ToggleActivity extends AppCompatActivity implements View.OnClickLis
     private ColorPickViewOne pickOne;
     private ColorPickViewTwo pickTwo;
     private ColorPickViewThird pickThird;
-    private ImageView offDeviceone,offDeviceTwo;
+    private CheckBox offDeviceone,offDeviceTwo;
     private RelativeLayout colorOne,colorTwo,colorThird;
     private Button btnRightColor,btnLeftColor;
     private int currentColor = 1;
@@ -38,7 +39,11 @@ public class ToggleActivity extends AppCompatActivity implements View.OnClickLis
         initView();
 
     }
-
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+    }
 
     private void initView() {
         fromIntent = getIntent();
@@ -52,8 +57,8 @@ public class ToggleActivity extends AppCompatActivity implements View.OnClickLis
         btnLeftColor.setOnClickListener(this);
 
         //中心button
-        offDeviceone = (ImageView) findViewById(R.id.iv_off_one);
-        offDeviceTwo = (ImageView) findViewById(R.id.iv_off_two);
+        offDeviceone = (CheckBox) findViewById(R.id.iv_off_one);
+        offDeviceTwo = (CheckBox) findViewById(R.id.iv_off_two);
         offDeviceone.setOnClickListener(this);
         offDeviceTwo.setOnClickListener(this);
 
@@ -112,12 +117,13 @@ public class ToggleActivity extends AppCompatActivity implements View.OnClickLis
                     intent = new Intent(ToggleActivity.this, TimerActivity.class);
 
                     intent.putExtra("from", ToggleActivity.class.getSimpleName());
-                    intent.putExtra("arr", fromIntent.getStringExtra("arr"));
+//                    intent.putExtra("arr", fromIntent.getStringExtra("arr"));
                     intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
-                    intent.putExtra("interfaceId", fromIntent.getStringExtra("interfaceId"));
-                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
+//                    intent.putExtra("interfaceId", fromIntent.getStringExtra("interfaceId"));
+//                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
                     intent.putExtra("type", fromIntent.getStringExtra("type"));
                     intent.putExtra("action",fromIntent.getStringExtra("action"));
+                    intent.putExtra("name",fromIntent.getStringExtra("action"));
                     startActivity(intent);
 
                 } else if (fromActivity != null && (ActionSummaryActivity.class.getSimpleName()).equals(fromActivity)) {
@@ -125,13 +131,16 @@ public class ToggleActivity extends AppCompatActivity implements View.OnClickLis
 
                     intent.putExtra("from", ToggleActivity.class.getSimpleName());
                     intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
-                    intent.putExtra("interfaceId", fromIntent.getStringExtra("interfaceId"));
-                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
-                    intent.putExtra("arr",fromIntent.getStringExtra("arr"));//需要从nodeid获取
+//                    intent.putExtra("interfaceId", fromIntent.getStringExtra("interfaceId"));
+//                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
+//                    intent.putExtra("arr",fromIntent.getStringExtra("arr"));//需要从nodeid获取
                     intent.putExtra("type", fromIntent.getStringExtra("type"));
                     intent.putExtra("action", fromIntent.getStringExtra("action"));
                     intent.putExtra("timer", fromIntent.getStringExtra("timer"));
+                    intent.putExtra("name", fromIntent.getStringExtra("name"));
                     startActivity(intent);
+
+
                 }
                 break;
             case R.id.btn_left_color:

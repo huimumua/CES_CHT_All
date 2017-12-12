@@ -11,7 +11,7 @@ import com.askey.mobile.zwave.control.R;
 
 public class NotifyActivity extends AppCompatActivity implements View.OnClickListener{
     private Button notifySetting;
-    private ToggleButton btnHighConsumption,btnAtypicalConsumption,btnDeviceSwitched,btnSwitchSwitched;
+    private ToggleButton btnHighConsumption,btnAtypicalConsumption,btnDeviceSwitched/*btnSwitchSwitched*/;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,13 +26,13 @@ public class NotifyActivity extends AppCompatActivity implements View.OnClickLis
         btnHighConsumption = (ToggleButton) findViewById(R.id.togBtn_high_consumption);
         btnAtypicalConsumption = (ToggleButton) findViewById(R.id.togBtn_atypical_consumption);
         btnDeviceSwitched = (ToggleButton) findViewById(R.id.togBtn_device_switched);
-        btnSwitchSwitched = (ToggleButton) findViewById(R.id.togBtn_switch_switched);
+//        btnSwitchSwitched = (ToggleButton) findViewById(R.id.togBtn_switch_switched);
 
         notifySetting.setOnClickListener(this);
         btnHighConsumption.setOnClickListener(this);
         btnAtypicalConsumption.setOnClickListener(this);
         btnDeviceSwitched.setOnClickListener(this);
-        btnSwitchSwitched.setOnClickListener(this);
+//        btnSwitchSwitched.setOnClickListener(this);
     }
 
     @Override
@@ -57,11 +57,11 @@ public class NotifyActivity extends AppCompatActivity implements View.OnClickLis
 
                 }
                 break;
-            case R.id.togBtn_switch_switched:
-                if (btnSwitchSwitched.isChecked()) {
-
-                }
-                break;
+//            case R.id.togBtn_switch_switched:
+//                if (btnSwitchSwitched.isChecked()) {
+//
+//                }
+//                break;
         }
     }
 }

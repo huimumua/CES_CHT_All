@@ -32,224 +32,212 @@
         android:textSize="20sp"
         android:layout_gravity="center_horizontal"
         />
+
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        >
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        >
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="10dp"
-        >
-        <TextView
-            android:id="@+id/tv_active_mode"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/active_mode"
-            android:layout_toLeftOf="@+id/ll_active_mode"
-            android:visibility="invisible"
-            android:textColor="@color/white"
-            />
-        <LinearLayout
-            android:id="@+id/ll_active_mode"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_centerHorizontal="true"
-            >
-
-            <ImageView
-                android:id="@+id/iv_schedule_setted"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@mipmap/point"
-                android:layout_marginRight="5dp"
-                android:visibility="invisible"
-                />
-            <ImageView
-                android:id="@+id/iv_timmer_setted"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@mipmap/point"
-                android:layout_marginRight="5dp"
-                android:visibility="invisible"
-                />
-            <ImageView
-                android:id="@+id/iv_trigger_setted"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@mipmap/point"
-                android:visibility="invisible"
-                />
-        </LinearLayout>
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="20dp"
-        >
-        <TextView
-            android:id="@+id/tv_trigger_device"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_toLeftOf="@+id/ll_trigger_device"
-            android:layout_marginRight="5dp"
-            android:text="@string/trigger_device"
-            android:visibility="invisible"
-            android:textColor="@color/white"
-            />
+        android:layout_height="wrap_content">
 
         <LinearLayout
-            android:id="@+id/ll_trigger_device"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_centerHorizontal="true"
-            >
-            <ImageView
-                android:id="@+id/iv_scene_icon"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="10dp">
+
+                <TextView
+                    android:id="@+id/tv_active_mode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toLeftOf="@+id/ll_active_mode"
+                    android:text="@string/active_mode"
+                    android:textColor="@color/white"
+                    android:visibility="invisible" />
+
+                <LinearLayout
+                    android:id="@+id/ll_active_mode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/iv_schedule_setted"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="5dp"
+                        android:src="@mipmap/point"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/iv_timmer_setted"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="5dp"
+                        android:src="@mipmap/point"
+                        android:visibility="invisible" />
+
+                </LinearLayout>
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="20dp">
+
+                <TextView
+                    android:id="@+id/tv_trigger_device"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginRight="5dp"
+                    android:layout_toLeftOf="@+id/ll_trigger_device"
+                    android:text="@string/trigger_device"
+                    android:textColor="@color/white"
+                    android:visibility="invisible" />
+
+                <LinearLayout
+                    android:id="@+id/ll_trigger_device"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/iv_scene_icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="5dp"
+                        android:src="@drawable/vector_drawable_ic_bigger_65" />
+
+                    <ImageView
+                        android:id="@+id/iv_info"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_info" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <Button
+                android:id="@+id/btn_scene_action"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/vector_drawable_ic_bigger_65"
-                android:layout_marginRight="5dp"
-                />
-            <ImageView
-                android:id="@+id/iv_info"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/stroke_rectangle"
+                android:padding="@dimen/activity_horizontal_margin"
+                android:text="@string/scene_action"
+                android:textAllCaps="false" />
+
+            <TextView
+                android:id="@+id/tv_modes"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_info"
-                />
-        </LinearLayout>
-    </RelativeLayout>
+                android:layout_marginBottom="5dp"
+                android:layout_marginTop="5dp"
+                android:text="@string/modes"
+                android:textColor="@color/white"
+                android:visibility="invisible" />
 
-    <Button
-        android:id="@+id/btn_scene_action"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@drawable/stroke_rectangle"
-        android:text="@string/scene_action"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="20dp"
-        android:textAllCaps="false"
-        android:padding="@dimen/activity_horizontal_margin"
-        />
-    <TextView
-        android:id="@+id/tv_modes"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/modes"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="5dp"
-        android:visibility="invisible"
-        android:textColor="@color/white"
-        />
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="30dp"
-        android:layout_marginBottom="20dp"
-        android:layout_marginRight="10dp"
-        android:layout_marginLeft="10dp"
-        >
-
-        <TextView
-            android:id="@+id/tv_scheduler"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/scheduler"
-            android:layout_marginBottom="5dp"
-            android:visibility="invisible"
-            android:textColor="@color/white"
-            android:layout_toLeftOf="@+id/ll_energy_option"
-            />
-        <TextView
-            android:id="@+id/tv_timmer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/alarms"
-            android:layout_marginBottom="5dp"
-            android:layout_below="@+id/ll_energy_option"
-            android:layout_centerHorizontal="true"
-            android:visibility="invisible"
-            android:textColor="@color/white"
-            />
-        <TextView
-            android:id="@+id/tv_trigger"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/trigger"
-            android:layout_marginBottom="5dp"
-            android:layout_alignParentRight="true"
-            android:visibility="invisible"
-            android:textColor="@color/white"
-            android:layout_toRightOf="@+id/ll_energy_option"
-            />
-        <LinearLayout
-            android:id="@+id/ll_energy_option"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_below="@+id/tv_scheduler"
-            android:layout_centerHorizontal="true"
-            >
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_weight="1"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:layout_marginRight="@dimen/activity_horizontal_margin"
-                >
-                <ImageView
-                    android:id="@+id/iv_schedule"
+                android:layout_marginBottom="20dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="30dp">
+
+                <TextView
+                    android:id="@+id/tv_scheduler"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@mipmap/point"
-                    />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:layout_marginRight="@dimen/activity_horizontal_margin"
-                >
-                <ImageView
-                    android:id="@+id/iv_timmer"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@mipmap/point"
-                    />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:layout_marginRight="@dimen/activity_horizontal_margin"
-                >
+                    android:layout_marginBottom="5dp"
+                    android:layout_toLeftOf="@+id/ll_energy_option"
+                    android:text="@string/scheduler"
+                    android:textColor="@color/white"
+                    android:visibility="invisible" />
 
-                <ImageView
-                    android:id="@+id/iv_trigger"
+                <TextView
+                    android:id="@+id/tv_timmer"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@mipmap/point"
-                    />
-            </LinearLayout>
-        </LinearLayout>
-    </RelativeLayout>
+                    android:layout_below="@+id/ll_energy_option"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginBottom="5dp"
+                    android:text="@string/alarms"
+                    android:textColor="@color/white"
+                    android:visibility="invisible" />
+
+                <TextView
+                    android:id="@+id/tv_trigger"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_marginBottom="5dp"
+                    android:layout_toRightOf="@+id/ll_energy_option"
+                    android:text="@string/trigger"
+                    android:textColor="@color/white"
+                    android:visibility="invisible" />
+
+                <LinearLayout
+                    android:id="@+id/ll_energy_option"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/tv_scheduler"
+                    android:layout_centerHorizontal="true"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="@dimen/activity_horizontal_margin"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/iv_schedule"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/vector_drawable_ic_50_gray" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="@dimen/activity_horizontal_margin"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/iv_timmer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/vector_drawable_ic_88_gray" />
+                    </LinearLayout>
+                    <!--<LinearLayout-->
+                    <!--android:layout_width="0dp"-->
+                    <!--android:layout_weight="1"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:orientation="vertical"-->
+                    <!--android:gravity="center"-->
+                    <!--android:layout_marginRight="@dimen/activity_horizontal_margin"-->
+                    <!--&gt;-->
+
+                    <!--<ImageView-->
+                    <!--android:id="@+id/iv_trigger"-->
+                    <!--android:layout_width="wrap_content"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:src="@mipmap/point"-->
+                    <!--/>-->
+                    <!--</LinearLayout>-->
+                </LinearLayout>
+            </RelativeLayout>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

@@ -10,12 +10,14 @@
     android:paddingTop="@dimen/activity_horizontal_margin"
     android:orientation="vertical"
     android:background="@android:color/white">
+
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:src="@mipmap/ic_launcher"
-        />
+        android:src="@drawable/vector_drawable_ic_58_black"
+        android:id="@+id/imageView3" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -79,7 +81,8 @@
        android:id="@+id/iv_icon"
        android:layout_width="wrap_content"
        android:layout_height="wrap_content"
-       android:src="@mipmap/ic_launcher"
+       android:src="@drawable/vector_drawable_ic_89"
+       android:layout_centerVertical="true"
        />
         <LinearLayout
             android:layout_width="wrap_content"
@@ -102,12 +105,13 @@
                 />
 
             </LinearLayout>
-        <ImageView
-            android:id="@+id/iv_delete"
+      <ImageView
+       android:id="@+id/iv_delete"
        android:layout_width="wrap_content"
        android:layout_height="wrap_content"
-       android:src="@mipmap/ic_launcher"
+       android:src="@drawable/ic_close"
        android:layout_alignParentRight="true"
+       android:layout_centerVertical="true"
        />
 
     </RelativeLayout>
@@ -129,7 +133,7 @@
         android:id="@+id/iv_add_schedule"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@mipmap/ic_launcher"
+        android:src="@drawable/vector_drawable_ic_90"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="10dp"
         />

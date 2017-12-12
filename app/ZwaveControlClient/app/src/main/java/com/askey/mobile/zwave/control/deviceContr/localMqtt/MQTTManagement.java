@@ -66,11 +66,21 @@ public class MQTTManagement  {
     private ArrayList<MqttMessageArrived> meaasgemap = new ArrayList<MqttMessageArrived>();
 
     public void rigister(MqttMessageArrived callback){
-        meaasgemap.add(callback);
+        clearMessageArrived();
+        if (meaasgemap != null) {
+            meaasgemap.add(callback);
+        }
     }
 
     public void unrigister(MqttMessageArrived callback){
-        meaasgemap.remove(callback);
+        if (meaasgemap != null) {
+            meaasgemap.remove(callback);
+        }
+    }
+    public void clearMessageArrived(){
+        if (meaasgemap != null) {
+            meaasgemap.clear();
+        }
     }
 
     public void mqttClient(String clientId, String serverUri,final initMqttCallback initMqttCallback ) {
@@ -166,7 +176,9 @@ public class MQTTManagement  {
                     // message Arrived!
                     Logg.i(TAG,"Message: " + topic + " : " + new String(message.getPayload()));
                     try {
-                        meaasgemap.get(0).mqttMessageArrived(topic,message);
+                        if(meaasgemap.size()>0){
+                            meaasgemap.get(0).mqttMessageArrived(topic,message);
+                        }
                     }catch (Exception e){
                         Logg.e(TAG,"=mqttMessageArrived==Exception="+e.getMessage());
                     }
@@ -184,11 +196,12 @@ public class MQTTManagement  {
         try {
             MqttMessage message = new MqttMessage();
             message.setPayload(command.getBytes());
-
-            mqttAndroidClient.publish(topic, message);
-            Logg.i(TAG,"Message Published");
-            if(!mqttAndroidClient.isConnected()){
-                Logg.i(TAG,mqttAndroidClient.getBufferedMessageCount() + " messages in buffer.");
+            if(mqttAndroidClient!=null){
+                mqttAndroidClient.publish(topic, message);
+                Logg.i(TAG,"Message Published");
+                if(!mqttAndroidClient.isConnected()){
+                    Logg.i(TAG,mqttAndroidClient.getBufferedMessageCount() + " messages in buffer.");
+                }
             }
         } catch (MqttException e) {
             e.printStackTrace();
@@ -196,7 +209,10 @@ public class MQTTManagement  {
         }
     }
 
-
-
+    public void closeMqtt(){
+        if(mqttAndroidClient!=null){
+            mqttAndroidClient.close();
+        }
+    }
 
 }

@@ -1,12 +1,14 @@
 package com.askey.mobile.zwave.control.base;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
@@ -23,6 +25,7 @@ import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.application.ZwaveClientApplication;
+import com.askey.mobile.zwave.control.util.CustomProgressDialog;
 
 /**
  * 项目名称：ZwaveControlClient
@@ -160,6 +163,73 @@ public class BaseActivity extends AppCompatActivity {
     }
     protected void getBattery() {
     }
+
+    /** The handler. */
+    public static Handler _handler = new Handler();
+
+    /** Progress dialog **/
+    private static Dialog mDialog = null;
+
+    /**
+     * Show waiting dialog.
+     */
+    public static void showWaitingDialog(final String message) {
+        _handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (mDialog != null) {
+                    stopWaitDialog();
+                }
+                try {
+                    //文字即为显示的内容
+                    mDialog = CustomProgressDialog.createLoadingDialog(mContext, message);
+                    mDialog.setCancelable(true);//允许返回
+                    mDialog.show();//显示
+                } catch (Exception ex) {
+                    ex.getStackTrace();
+                }
+            }
+        });
+    }
+
+    public static void showWaitingDialog() {
+        _handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (mDialog != null) {
+                    stopWaitDialog();
+                }
+                try {
+                    mDialog = CustomProgressDialog.createLoadingDialog(mContext);
+                    mDialog.setCancelable(true);//允许返回
+                    mDialog.show();//显示
+                } catch (Exception ex) {
+                    ex.getStackTrace();
+                }
+            }
+        });
+    }
+
+    /**
+     * Stop waiting dialog.
+     */
+    public static void stopWaitDialog() {
+        _handler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // activate Quickset services
+                    if (mDialog != null) {
+                        mDialog.dismiss();
+                        mDialog = null;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
 
     /**
      * 进度条

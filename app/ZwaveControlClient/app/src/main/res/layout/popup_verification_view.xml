@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/ll_popu"
     android:orientation="vertical"
+    android:background="@drawable/vector_drawable_ic_125"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content">
 <TextView

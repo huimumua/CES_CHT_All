@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ZwaveControlClient</string>
+    <string name="app_name">QBee Home</string>
     <string name="title_alert">Pairing time out</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
@@ -109,22 +109,23 @@
     <string name="message_topic">Topic: </string>
 
     <!--notification activity-->
-    <string name="notifi_title">\"QBox Home\" Would Like to Send  You Notifications</string>
+    <string name="notifi_title">\"QBee Home\" Would Like to Send  You Notifications</string>
     <string name="notifi_content">\t\tNotifications may include alerts,sounds and icon badges.These  can be configured  in Settings.</string>
 
     <!--log in and sign up-->
-    <string name="firefly">firefly</string>
+    <string name="firefly">QBee</string>
     <string name="welcome">Welcome</string>
     <string name="log_in">Log in</string>
+    <string name="log_in_wait_toast">Please wait a moment while landing</string>
     <string name="sign_up">Sign up</string>
-    <string name="invaild_eamil">Invalid email or password</string>
+    <string name="invalid_eamil_password">Invalid email or password</string>
     <string name="sign_up_one_title">Your log in credential</string>
     <string name="sign_up_explain">\  Please enter your email address and define a password with at least 6 digits.</string>
     <string name="email_hint">Email address</string>
     <string name="password_hint">Password</string>
     <string name="password_strength">Password strength:</string>
     <string name="password_explain">\  Captial letters,numbers and special characters make your password stronger</string>
-    <string name="nick_name_explain">Enter the name that is shown to other firefly users and when sharing files.</string>
+    <string name="nick_name_explain">Enter the name that is shown to other QBee users and when sharing files.</string>
     <string name="sign_up_second_title">Your filefly nickname</string>
     <string name="nickname_hint">nickname</string>
     <string name="sign_up_third_title">Account verification</string>
@@ -145,47 +146,51 @@
     <string name="verification_sent">A new code has sent \n to the specified email.</string>
     <string name="verification_invaild">Invaild verification code</string>
     <string name="dont_allow">Don\'t allow</string>
+    <string name="password_start">start typing</string>
+    <string name="password_strong">strong</string>
+    <string name="password_weak">weak</string>
+    <string name="invalid_email">Invalid email</string>
 
     <!--guide-->
     <string name="setup_title">Your setup</string>
-    <string name="setup_explain">How do you intent to use your QBox Home</string>
+    <string name="setup_explain">How do you intent to use your QBee Home</string>
     <string name="cable_connected">Cable-connected to existing router</string>
     <string name="wifi_connected">WiFi-connected to existing router</string>
-    <string name="lte_connected">firefly is my new router(4G/LTE)</string>
-    <string name="qbox_explain">Here is what you need to start setting up your QBox Home.</string>
-    <string name="qbox">QBox</string>
+    <string name="lte_connected">QBee is my new router(4G/LTE)</string>
+    <string name="qbox_explain">Here is what you need to start setting up your QBee Home.</string>
+    <string name="qbox">QBee</string>
     <string name="power_cable">Power Cable</string>
     <string name="ethernet_cable">Ethernet Cable</string>
     <string name="sim_card">SIM card</string>
     <string name="insert_sim_card">Insert SIM card</string>
     <string name="wifi_setup_one_title">What you\'ll need</string>
-    <string name="wifi_setup_second_title">Connect your QBox</string>
+    <string name="wifi_setup_second_title">Connect your QBee</string>
     <string name="wifi_setup_third_title">WiFi setup</string>
     <string name="proceed_follows">Proceed as follows</string>
-    <string name="connect_power">Connect QBox with mains power</string>
-    <string name="connect_router">Connect router with QBox</string>
-    <string name="switch_on">Switch the QBox on</string>
-    <string name="connect_means_explain">How do you intent to connect your QBox?</string>
+    <string name="connect_power">Connect QBee with mains power</string>
+    <string name="connect_router">Connect router with QBee</string>
+    <string name="switch_on">Switch the QBee on</string>
+    <string name="connect_means_explain">How do you intent to connect your QBee?</string>
     <string name="wps_connected">Automatically using WPS</string>
     <string name="wifi_list">Manually by selecting my Wifi from a list</string>
-    <string name="wps_explain">On both your QBox and your router</string>
+    <string name="wps_explain">On both your QBee and your router</string>
     <string name="wps_title_one">Push the WPS buttons</string>
     <string name="find_qbox_explain">This can take up to 3 minutes</string>
-    <string name="finding_qbox">Finding your QBox</string>
-    <string name="found_title">QBox found</string>
-    <string name="found_not_title">QBox not found</string>
+    <string name="finding_qbox">Finding your QBee</string>
+    <string name="found_title">QBee found</string>
+    <string name="found_not_title">QBee not found</string>
     <string name="found_explain">This can take up to 3 minutes</string>
     <string name="not_found_explain">Please make sure that&#8230;</string>
     <string name="found_one">You\'ve pushed the WPS button on both devices</string>
     <string name="found_second">Your Phones is connected to the same WiFi</string>
-    <string name="found_third">Your QBox is connected with mains power with it\'s LED blinking green</string>
-    <string name="qbox_found_explain">Give your QBox a name</string>
+    <string name="found_third">Your QBee is connected with mains power with it\'s LED blinking green</string>
+    <string name="qbox_found_explain">Give your QBee a name</string>
     <string name="qbox_name_explain">use a default name or change it.</string>
     <string name="select_wifi_explain">Please your select your router\'s WiFi. Make sure this phone is connected to the same WiFi.</string>
     <string name="select_wifi">Select your Wifi</string>
-    <string name="connect_qbox_wifi">Connect to QBox WiFi</string>
-    <string name="connect_qbox_wifi_explain">Please note your QBox WiFi credentials,\n from the underside of your QBox.</string>
-    <string name="connect_qbox_wifi_explain_two">Now connect to the QBox WiFi from your iPone\'s WiFi Settings.</string>
+    <string name="connect_qbox_wifi">Connect to QBee WiFi</string>
+    <string name="connect_qbox_wifi_explain">Please note your QBee WiFi credentials,\n from the underside of your QBee.</string>
+    <string name="connect_qbox_wifi_explain_two">Now connect to the QBee WiFi from your iPone\'s WiFi Settings.</string>
 
     <!--device guide-->
     <string name="welcome_guide_one">Control from Anywhere</string>
@@ -197,8 +202,8 @@
     <string name="device_guide_third">Tap Outside:\n Close Cards</string>
     <string name="device_guide_fourth">Use Scenes to \n Control Groups</string>
     <string name="device_guide_fifth">Talk to Control \n Devices &#038; Scenes</string>
-    <string name="qbox_home">QBox Home</string>
-    <string name="qbox_home_welcome">\ QBox \n Home</string>
+    <string name="qbox_home">QBee Home</string>
+    <string name="qbox_home_welcome">\ QBee \n Home</string>
     <string name="all_set">Congratulations, \n you\'re all set!</string>
 
     <!--plug-->
@@ -207,7 +212,7 @@
     <string name="trigger_device">Trigger \n device</string>
     <string name="modes">Modes</string>
     <string name="energy_option">Energy options</string>
-    <string name="alarms">Alarms</string>
+    <string name="notification_explain">Notification</string>
     <string name="scheduler">Scheduler</string>
     <string name="vacation">Vacation Mode</string>
     <string name="trigger">Triggers</string>
@@ -235,7 +240,7 @@
 
     <!--remove device-->
     <string name="delete_device_title">You\'re about to delete </string>
-    <string name="delete_explain">\ \ The device will be permanently \n removed from your QBox Home. </string>
+    <string name="delete_explain">\ \ The device will be permanently \n removed from your QBee Home. </string>
     <string name="proceed">Proceed</string>
 
     <!-- TODO: Remove or change this placeholder text -->
@@ -318,6 +323,18 @@
     <string name="all_off">All Off</string>
     <string name="evening_mood">Evening Mood</string>
     <string name="touch">Touch</string>
+
+    <string name="touch_left_down">Touch(Left/Down)</string>
+    <string name="touch_right_down">Touch(Right/Down)</string>
+    <string name="touch_left_up">Touch(Left/Up)</string>
+    <string name="touch_right_up">Touch(Right/Up)</string>
+
+    <string name="slide_left_up">Sliding(Left/Up)</string>
+    <string name="slide_right_up">Sliding(Right/Up)</string>
+    <string name="slide_left_down">Sliding(Left/Down)</string>
+    <string name="slide_right_down">Sliding(Right/Down)</string>
+
+
     <string name="swipe">Swipe</string>
     <string name="touch_hold">Touch &#038; Hold</string>
     <string name="switch_on_action">Switch ON</string>
@@ -335,9 +352,11 @@
     <!--bulb activity-->
     <string name="bulb_explain">\ \ Tap to change bulb color to favorites.\n
     Add favorites from Whites and Color views</string>
-    <string name="tap_center_explain">Tap to center to switch ON/OFF</string>
+    <string name="tap_center_explain">Tap to center to \n switch ON/OFF</string>
     <string name="bright_explain">Tap to center to switch ON/OFF</string>
     <string name="add_remove_favorites">Add/remove favorites</string>
+    <string name="slide_light">Slide to set brightness</string>
+    <string name="color">Color</string>
 
     <!--new scence-->
     <string name="new_scence_title">New Scence</string>
@@ -362,5 +381,25 @@
     <string name="scenes">Scenes</string>
     <string name="add_your_first_scene">Add your first Scene</string>
     <string name="scene_notify">With scenes, you control multiple devices at the same time.</string>
+
+    <string name="please_wait_a_moment">Please wait a moment...</string>
+    <string name="step_1">Step 1</string>
+    <string name="step_switch_notify">Keep the wall switch in the \' ON \' status.</string>
+    <string name="step_switch_notify_1">Toggle LED Bulb\'s wall switch off,on,off,on,off,on in fast succession.</string>
+    <string name="device_del_success_notify">if Smart Switch has been successfully removed from your network, it\'s RGB LED will remain colorful gradient status. If not, the RGB LED will still solid</string>
+
+    <string name="add_device_result">With other users in this order operation,</string>
+    <string name="select_brand_type">Select Devices Type</string>
+    <string name="alarms">Alarms</string>
+
+    <!--zwave device-->
+    <string name="select_room">Select Room</string>
+    <string name="manage_room">Manage Rooms</string>
+    <string name="fail_add_notify">Are you going to pairing the Smart Switch again ?</string>
+    <string name="fail_del_notify">Are you going to remove the Smart Switch again ?</string>
+    <string name="wall_mote_add_action_toast">Please long press the trigger button</string>
+    <string name="scene_name">The scene name cannot be empty</string>
+    <string name="scene_name_length">Scene name max 16 chars</string>
+
 
 </resources>

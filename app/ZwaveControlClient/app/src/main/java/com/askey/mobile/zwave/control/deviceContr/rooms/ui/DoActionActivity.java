@@ -38,6 +38,12 @@ public class DoActionActivity extends AppCompatActivity {
         initView();
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+    }
+
     private void initView() {
         fromIntent = getIntent();
         mTitle = (TextView) findViewById(R.id.tv_title);
@@ -66,12 +72,12 @@ public class DoActionActivity extends AppCompatActivity {
                         intent = new Intent(DoActionActivity.this, TimerActivity.class);
                     }
 
+
                     intent.putExtra("from", DoActionActivity.class.getSimpleName());
-                    intent.putExtra("arr", fromIntent.getStringExtra("arr"));//需要从nodeid获取
+//                    intent.putExtra("arr", fromIntent.getStringExtra("arr"));//需要从nodeid获取
                     intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
-                    intent.putExtra("endpointId", fromIntent.getStringExtra("endpointId"));
-                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
                     intent.putExtra("type", fromIntent.getStringExtra("type"));
+                    intent.putExtra("name", fromIntent.getStringExtra("name"));
                     intent.putExtra("action",String.valueOf(datas.get(position).get("name")));
                     startActivity(intent);
 
@@ -80,13 +86,16 @@ public class DoActionActivity extends AppCompatActivity {
 
                     intent.putExtra("from", DoActionActivity.class.getSimpleName());
                     intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
-                    intent.putExtra("endpointId", fromIntent.getStringExtra("endpointId"));
-                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
-                    intent.putExtra("arr","arr");//需要从nodeid获取
+//                    intent.putExtra("endpointId", fromIntent.getStringExtra("endpointId"));
+//                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
+//                    intent.putExtra("arr","arr");//需要从nodeid获取
                     intent.putExtra("type", fromIntent.getStringExtra("type"));
                     intent.putExtra("action", String.valueOf(datas.get(position).get("name")));
                     intent.putExtra("timer", fromIntent.getStringExtra("timer"));
+                    intent.putExtra("name", fromIntent.getStringExtra("name"));
+
                     startActivity(intent);
+
                 }
             }
         });

@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     android:padding="20dp"
     >
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -30,13 +31,15 @@
             android:text="@string/qbox_found_explain"
             android:gravity="center_horizontal"
             />
+
         <ImageView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="200dp"
             android:layout_gravity="center_horizontal"
             android:src="@mipmap/found"
             android:layout_marginTop="60dp"
-            />
+            android:id="@+id/imageView4" />
+
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -52,10 +55,11 @@
                 android:background="@null"
                 />
             <ImageView
+                android:id="@+id/iv_right"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
-                android:src="@mipmap/ic_launcher"
+                android:src="@drawable/vector_drawable_ic_next_line"
                 />
         </RelativeLayout>
         <View
@@ -72,14 +76,14 @@
             android:gravity="center"
             />
     </LinearLayout>
-    <ImageView
-        android:id="@+id/iv_right"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:src="@drawable/vector_drawable_ic_next_solid"
+    <!--<ImageView-->
+        <!--android:id="@+id/iv_right"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="center_horizontal"-->
+        <!--android:src="@drawable/vector_drawable_ic_next_solid"-->
 
-        />
+        <!--/>-->
 
     <RelativeLayout
         android:id="@+id/ll_points"

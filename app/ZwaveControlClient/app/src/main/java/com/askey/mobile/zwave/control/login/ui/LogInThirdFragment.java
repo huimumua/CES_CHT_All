@@ -1,5 +1,6 @@
 package com.askey.mobile.zwave.control.login.ui;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -13,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.util.Const;
@@ -40,6 +42,7 @@ public class LogInThirdFragment extends Fragment implements View.OnClickListener
     private ImageView passwordIcon;
     private LogInHomeActivity logInHomeActivity;
     private Map<String,String> account;
+    private TextView passwordStrong;
 
     @Nullable
     @Override
@@ -77,12 +80,40 @@ public class LogInThirdFragment extends Fragment implements View.OnClickListener
         String tag = secondFragmentTag + "";
         LogInSecondFragment logInsecondFragment = (LogInSecondFragment) fm.findFragmentByTag(tag);
         account = logInsecondFragment.account;
+
+        passwordStrong = (TextView) view.findViewById(R.id.tv_password_strong);
         newPassword = (EditText) view.findViewById(R.id.et_email_adress);
         btnLogIn = (Button) view.findViewById(R.id.btn_log_in);
         passwordIcon = (ImageView) view.findViewById(R.id.iv_enter_email);
         btnLogIn.setOnClickListener(this);
         logInHomeActivity.right.setVisibility(View.GONE);
 
+        newPassword.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if (editable.length() >= 6) {
+                    passwordStrong.setText(getResources().getString(R.string.password_strong));
+                    passwordStrong.setTextColor(Color.RED);
+                } else if (editable.length() < 6 && editable.length() > 0) {
+                    passwordStrong.setText(getResources().getString(R.string.password_strong));
+                    passwordStrong.setTextColor(Color.RED);
+                } else {
+                    passwordStrong.setText(getResources().getString(R.string.password_start));
+                    passwordStrong.setTextColor(Color.GRAY);
+                }
+
+            }
+        });
     }
 
     @Override

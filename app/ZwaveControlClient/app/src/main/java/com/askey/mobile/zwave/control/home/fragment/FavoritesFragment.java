@@ -17,16 +17,33 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.askey.mobile.zwave.control.R;
-import com.askey.mobile.zwave.control.deviceContr.dao.DeviceDao;
+import com.askey.mobile.zwave.control.application.ZwaveClientApplication;
+import com.askey.mobile.zwave.control.base.BaseFragment;
+import com.askey.mobile.zwave.control.data.CloudIotData;
+import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttManagement;
-import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttMessageCallback;
+import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
+import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
+import com.askey.mobile.zwave.control.deviceContr.rooms.ui.BulbActivity;
+import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ExtenderDeviceActivity;
+import com.askey.mobile.zwave.control.deviceContr.rooms.ui.PlugActivity;
+import com.askey.mobile.zwave.control.deviceContr.rooms.ui.WallMoteLivingActivity;
 import com.askey.mobile.zwave.control.home.activity.FavoriteEditActivity;
 import com.askey.mobile.zwave.control.home.activity.HomeActivity;
 import com.askey.mobile.zwave.control.home.adapter.FavoriteAdapter;
 import com.askey.mobile.zwave.control.home.adapter.RecentlyAdapter;
+import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.ImageUtils;
 import com.askey.mobile.zwave.control.util.Logg;
+import com.askeycloud.webservice.sdk.iot.callback.ShadowReceiveListener;
+import com.askeycloud.webservice.sdk.iot.message.builder.MqttDesiredJStrBuilder;
+import com.askeycloud.webservice.sdk.service.iot.AskeyIoTService;
+
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -36,7 +53,7 @@ import java.util.List;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class FavoritesFragment extends Fragment implements View.OnClickListener, FavoriteAdapter.OnItemClickListener, RecentlyAdapter.OnItemClickListener
+public class FavoritesFragment extends BaseFragment implements View.OnClickListener, FavoriteAdapter.OnItemClickListener, RecentlyAdapter.OnItemClickListener
         , FavoriteEditActivity.EditFavoriteListener {
     public static String TAG = "FavoritesFragment";
     private ImageView menu, edit, voice;
@@ -70,31 +87,28 @@ public class FavoritesFragment extends Fragment implements View.OnClickListener,
         initView(view);
         initData();
 
-       /* if(Const.isRemote){
+        showWaitingDialog();
+        if(Const.isRemote){
             initIotMqttMessage();
+            Logg.i(TAG,"===Const.isRemote====="+Const.isRemote);
             if(HomeActivity.shadowTopic!=null && !HomeActivity.shadowTopic.equals("")){
-//                MqttService mqttService = MqttService.getInstance();
-//                mqttService.publishMqttMessage(HomeActivity.shadowTopic,  LocalMqttData.getDeviceListCommand("ALL") );
-
                 MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(Const.subscriptionTopic);
                 builder.setJsonString(  CloudIotData.getDeviceListCommand("ALL") );
+                Logg.i(TAG,"===setJsonString====="+CloudIotData.getFavoriteList());
+//                builder.setJsonString(  CloudIotData.getDeviceListCommand("My Home") );
                 AskeyIoTService.getInstance(ZwaveClientApplication.getInstance()).publishDesiredMessage(HomeActivity.shadowTopic, builder);
 
             }
         }else{
-            MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
             //获取灯泡状态
+            Logg.i(TAG,"===publishMessage_local=====");
             MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand("ALL"));
-
-            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getRecentDeviceList());
-        }*/
-
-
+        }
         return view;
     }
 
 
-/*    MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
+    MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
         @Override
         public void mqttMessageArrived(String topic, MqttMessage message) {
             String result = new String(message.getPayload());
@@ -107,26 +121,10 @@ public class FavoritesFragment extends Fragment implements View.OnClickListener,
             mqttMessageResult(result);
 
         }
-    };*/
+    };
 
     private void initIotMqttMessage() {
-
-        IotMqttManagement.getInstance().setIotMqttMessageCallback(new IotMqttMessageCallback() {
-            @Override
-            public void receiveMqttMessage(String s, String s1, String s2) {
-                //处理结果
-                Logg.i(TAG, "==IotMqttMessageCallback======s=" + s);
-                Logg.i(TAG, "==IotMqttMessageCallback======s1=" + s1);
-                Logg.i(TAG, "==IotMqttMessageCallback======s2=" + s2);
-                if(s2.contains("desired")){
-                    return;
-                }
-                mqttMessageResult(s2);
-            }
-
-        });
-
-/*        //以下这句为注册监听
+        //以下这句为注册监听
         AskeyIoTService.getInstance(getContext()).setShadowReceiverListener(new ShadowReceiveListener() {
             @Override
             public void receiveShadowDocument(String s, String s1, String s2) {
@@ -137,11 +135,118 @@ public class FavoritesFragment extends Fragment implements View.OnClickListener,
 
                 mqttMessageResult(s2);
             }
-        });*/
+        });
     }
 
-    private void mqttMessageResult(String s2) {
+    private void mqttMessageResult(String mqttResult) {
+        final JSONObject jsonObject;
+//        {"reported":{"Interface":"getDeviceList","deviceList":[
+//                {"brand":"","nodeId":"1","deviceType":"","name":"1","Room":""},
+//            {"brand":"","nodeId":"2","deviceType":"Zwave","name":"ColorBulb","category":"BULB","Room":"Living Room","isFavorite":"1","timestamp":1511515706101},
+//            {"brand":"","nodeId":"4","deviceType":"Zwave","name":"plug","category":"PLUG","Room":"My Home","isFavorite":"0","timestamp":1511517666527},
+//            {"brand":"","nodeId":"5","deviceType":"","name":"5","Room":""}]}}
 
+        try {
+            jsonObject = new JSONObject(mqttResult);
+            String reported = jsonObject.optString("reported");
+            JSONObject reportedObject = new JSONObject(reported);
+            String Interface = reportedObject.optString("Interface");
+            if(Interface.equals("getDeviceList")){
+                String DeviceList = reportedObject.optString("deviceList");
+                JSONArray columnInfo = new JSONArray(DeviceList);
+                int size = columnInfo.length();
+                if(size > 0){
+                    deviceInfoList.clear();
+                    favoriteDeviceList.clear();
+                    for(int i=0;i<size;i++){
+                        JSONObject info=columnInfo.getJSONObject(i);
+                        String nodeId = info.getString("nodeId");
+                        String brand = info.getString("brand");
+                        String devType = info.getString("deviceType");
+                        String category = info.getString("category");
+                        String Room = info.getString("Room");
+                        String isFavorite = info.getString("isFavorite");
+                        String name = info.getString("name");
+                        Logg.i(TAG,"==getDeviceResult=JSONArray===devName=="+name);
+                        DeviceInfo deviceInfo = new DeviceInfo();
+                        deviceInfo.setDeviceId(nodeId);
+                        deviceInfo.setDisplayName(name);
+                        deviceInfo.setDeviceType(category);
+                        deviceInfo.setRooms(Room);
+                        deviceInfo.setIsFavorite(isFavorite);
+                        deviceInfoList.add(deviceInfo);
+                        if ("1".equals(isFavorite)) {
+                            favoriteDeviceList.add(deviceInfo);
+                        }
+
+//                        String nodeTopic = Const.subscriptionTopic+"Zwave" + nodeId;
+//                        // 订阅新设备的topic为 sn + nodeId
+//                        MQTTManagement.getSingInstance().subscribeToTopic(nodeTopic, null);
+                    }
+                }
+
+                ((Activity) getContext()).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        stopWaitDialog();
+                        favoriteAdapter.notifyDataSetChanged();
+                    }
+                });
+
+                if(Const.isRemote){
+                    initIotMqttMessage();
+                    if(HomeActivity.shadowTopic!=null && !HomeActivity.shadowTopic.equals("")){
+                        MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(Const.subscriptionTopic);
+                        builder.setJsonString( CloudIotData.getRecentDeviceList() );
+                        AskeyIoTService.getInstance(ZwaveClientApplication.getInstance()).publishDesiredMessage(HomeActivity.shadowTopic, builder);
+                    }
+                }else{
+                    //获取最近使用设备
+                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getRecentDeviceList());
+                }
+
+            }else if(Interface.equals("getRecentDeviceList")){
+
+                String DeviceList = reportedObject.optString("deviceList");
+                JSONArray columnInfo = new JSONArray(DeviceList);
+                int size = columnInfo.length();
+                if(size > 0){
+                    recentlyDeviceList.clear();
+                    for(int i=0;i<size;i++){
+                        JSONObject info=columnInfo.getJSONObject(i);
+                        String nodeId = info.getString("nodeId");
+                        String brand = info.getString("brand");
+                        String devType = info.getString("deviceType");
+                        String category = info.getString("category");
+                        String Room = info.getString("Room");
+                        String isFavorite = info.getString("isFavorite");
+                        String name = info.getString("name");
+                        Logg.i(TAG,"==getDeviceResult=JSONArray===devName=="+name);
+                        DeviceInfo deviceInfo = new DeviceInfo();
+                        deviceInfo.setDeviceId(nodeId);
+                        deviceInfo.setDisplayName(name);
+                        deviceInfo.setDeviceType(category);
+                        deviceInfo.setRooms(Room);
+                        deviceInfo.setIsFavorite(isFavorite);
+                        recentlyDeviceList.add(deviceInfo);
+
+//                        String nodeTopic = Const.subscriptionTopic+"Zwave" + nodeId;
+//                        // 订阅新设备的topic为 sn + nodeId
+//                        MQTTManagement.getSingInstance().subscribeToTopic(nodeTopic, null);
+                    }
+                }
+
+                ((Activity) getContext()).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        stopWaitDialog();
+                        recentlyAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -156,12 +261,19 @@ public class FavoritesFragment extends Fragment implements View.OnClickListener,
 
         favorites_recycler = (RecyclerView) view.findViewById(R.id.favorites);
         recently_recycler = (RecyclerView) view.findViewById(R.id.recently);
-        GridLayoutManager layoutManager_f = new GridLayoutManager(getActivity(), 3);
-        GridLayoutManager layoutManager_r = new GridLayoutManager(getActivity(), 3);
-//        LinearLayoutManager layoutManager_f = new LinearLayoutManager(getActivity());
-//        LinearLayoutManager layoutManager_r = new LinearLayoutManager(getActivity());
-//        layoutManager_f.setOrientation(LinearLayoutManager.HORIZONTAL);
-//        layoutManager_r.setOrientation(LinearLayoutManager.HORIZONTAL);
+        //取消recyclerview的滑动，使Scrollview惯性滑动正常
+        GridLayoutManager layoutManager_f = new GridLayoutManager(getActivity(), 3){
+            @Override
+            public boolean canScrollVertically() {
+                return false;
+            }
+        };
+        GridLayoutManager layoutManager_r = new GridLayoutManager(getActivity(), 3){
+            @Override
+            public boolean canScrollVertically() {
+                return false;
+            }
+        };
         favorites_recycler.setLayoutManager(layoutManager_f);
         recently_recycler.setLayoutManager(layoutManager_r);
     }
@@ -169,19 +281,18 @@ public class FavoritesFragment extends Fragment implements View.OnClickListener,
     private void initData() {
         deviceInfoList = new ArrayList<>();
 //        deviceInfoList = DeviceDao.getAllDeviceInfo();
-
         favoriteDeviceList = new ArrayList<>();
-        for (DeviceInfo deviceInfo : deviceInfoList) {
-            if ("1".equals(deviceInfo.getIsFavorite())) {
-                favoriteDeviceList.add(deviceInfo);
-            }
-        }
+//        for (DeviceInfo deviceInfo : deviceInfoList) {
+//            if ("1".equals(deviceInfo.getIsFavorite())) {
+//                favoriteDeviceList.add(deviceInfo);
+//            }
+//        }
         favoriteAdapter = new FavoriteAdapter(favoriteDeviceList);
         favoriteAdapter.setOnItemClickListener(this);
         favorites_recycler.setAdapter(favoriteAdapter);
 
         recentlyDeviceList = new ArrayList<>();
-        recentlyDeviceList = sortDeviceByUseTime(deviceInfoList);
+//        recentlyDeviceList = sortDeviceByUseTime(deviceInfoList);
         recentlyAdapter = new RecentlyAdapter(recentlyDeviceList);
         recentlyAdapter.setOnItemClickListener(this);
         recently_recycler.setAdapter(recentlyAdapter);
@@ -210,13 +321,13 @@ public class FavoritesFragment extends Fragment implements View.OnClickListener,
     public void onPause() {
         super.onPause();
         Logg.i(TAG,"===onPause=====");
+        unrigister();
     }
 
     @Override
     public void onStop() {
         super.onStop();
         Logg.i(TAG,"===onStop=====");
-        unrigister();
     }
 
     @Override
@@ -238,9 +349,9 @@ public class FavoritesFragment extends Fragment implements View.OnClickListener,
     }
 
     private void unrigister() {
-/*       if(mMqttMessageArrived!=null){
+        if(mMqttMessageArrived!=null){
             MQTTManagement.getSingInstance().unrigister(mMqttMessageArrived);
-        }*/
+        }
     }
 
     @Override
@@ -259,6 +370,7 @@ public class FavoritesFragment extends Fragment implements View.OnClickListener,
                 byte[] bytes = ImageUtils.Bitmap2Bytes(bitmap);
 
                 Bundle bundle = new Bundle();
+                Log.d("tag4",deviceInfoList.size()+"");
                 bundle.putSerializable("data", (Serializable) deviceInfoList);
                 bundle.putByteArray("bg",bytes);
                 Intent intent = new Intent(getActivity(), FavoriteEditActivity.class);
@@ -277,13 +389,32 @@ public class FavoritesFragment extends Fragment implements View.OnClickListener,
      * @return
      */
     private List<DeviceInfo> sortDeviceByUseTime(List<DeviceInfo> list) {
+        Log.d("tag6",list.size()+"");
         Collections.sort(list);
         return list;
     }
 
     @Override
     public void onItemClick(View view, DeviceInfo deviceInfo) {
-        Log.d("click", deviceInfo.toString());
+        Intent intent = null;
+        if ("BULB".equals(deviceInfo.getDeviceType())) {
+            intent = new Intent(getActivity(), BulbActivity.class);
+        } else if ("PLUG".equals(deviceInfo.getDeviceType())) {
+            intent = new Intent(getActivity(), PlugActivity.class);
+        } else if ("WALLMOTE".equals(deviceInfo.getDeviceType())) {
+            intent = new Intent(getActivity(), WallMoteLivingActivity.class);
+        }  else if ("EXTENDER".equals(deviceInfo.getDeviceType())) {
+            intent = new Intent(getActivity(), ExtenderDeviceActivity.class);
+        } else {
+            intent = new Intent(getActivity(), BulbActivity.class);//原有的经验证过的可以正常使用
+            intent.putExtra("uniqueid",deviceInfo.getUniqueId());
+        }
+        intent.putExtra("nodeId",deviceInfo.getDeviceId());
+        intent.putExtra("type", deviceInfo.getDeviceType());
+        intent.putExtra("room", deviceInfo.getRooms());
+        intent.putExtra("displayName", deviceInfo.getDisplayName());
+        startActivity(intent);
+
     }
 
     @Override
@@ -297,21 +428,47 @@ public class FavoritesFragment extends Fragment implements View.OnClickListener,
     }
 
     @Override
+    public void move2EditActivity() {
+        Bitmap bitmap = ImageUtils.fastBlur(ImageUtils.shortImage(getActivity()),0.125f,15);
+        byte[] bytes = ImageUtils.Bitmap2Bytes(bitmap);
+
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("data", (Serializable) deviceInfoList);
+        bundle.putByteArray("bg",bytes);
+        Intent intent = new Intent(getActivity(), FavoriteEditActivity.class);
+        intent.putExtras(bundle);
+        startActivity(intent);
+    }
+
+    @Override
     public void editFavoriteClick(List<DeviceInfo> list) {
         deviceInfoList.clear();
         deviceInfoList.addAll(list);
+        Log.d("tag5",deviceInfoList.size()+"");
         favoriteDeviceList.clear();
         for (DeviceInfo deviceInfo : list) {
             if ("1".equals(deviceInfo.getIsFavorite())) {
-               favoriteDeviceList.add(deviceInfo);
+                favoriteDeviceList.add(deviceInfo);
             }
         }
         favoriteAdapter.notifyDataSetChanged();
     }
+
     public void register(){
+        if(!Const.isRemote){
+            MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
 
+            if (Const.getIsDataChange()) {
+                Const.setIsDataChange(false);
+                Logg.i(TAG,"===publishMessage_register=====");
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand("ALL"));
+            }
+        }
     }
+
     public void unRegister(){
-
+        unrigister();
     }
+
+
 }

@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
+import com.askey.mobile.zwave.control.util.Logg;
 
 import java.util.List;
 
@@ -17,12 +18,14 @@ import java.util.List;
  * Created by skysoft on 2017/10/30.
  */
 
-public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.MyViewHolder> implements View.OnClickListener {
-
+public class FavoriteAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements View.OnClickListener {
+    private static final String TAG = FavoriteAdapter.class.getSimpleName();
     private List<DeviceInfo> dataList;
     private OnItemClickListener onItemClickListener = null;
     public final static int NORMAL_MODE = 0;
     public final static int EDIT_MODE = 1;
+    private final static int ITEM = 2;
+    private final static int PLUS = 3;
     private int flag = 0;
 
     public FavoriteAdapter(List<DeviceInfo> dataList) {
@@ -30,44 +33,79 @@ public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.MyView
     }
 
     @Override
-    public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = (LayoutInflater.from(parent.getContext())).inflate(R.layout.device_info_item, null);
-        return new MyViewHolder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        if (viewType == ITEM) {
+            View view = (LayoutInflater.from(parent.getContext())).inflate(R.layout.device_info_item, null);
+            return new MyViewHolder(view);
+        }
+        if (viewType == PLUS) {
+            View view = (LayoutInflater.from(parent.getContext())).inflate(R.layout.device_add_item, null);
+            return new AddItem(view);
+        }
+        return null;
     }
 
     @Override
-    public void onBindViewHolder(MyViewHolder holder, int position) {
-        DeviceInfo info = dataList.get(position);
-        holder.device_name.setText(info.getDisplayName());
-        if (flag == NORMAL_MODE) {
-            holder.delete_device.setVisibility(View.INVISIBLE);
-            holder.choose_linear.setVisibility(View.INVISIBLE);
-            holder.choose_linear.setOnClickListener(null);
-            holder.linear.setTag(info);
-            holder.linear.setOnClickListener(this);
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof MyViewHolder) {
+            DeviceInfo info = dataList.get(position);
+            String deviceType = info.getDeviceType();
+            Logg.i(TAG,"=====deviceType==="+deviceType);
+            if ("BULB".equals(deviceType)) {
+                ((MyViewHolder)holder).device_img.setBackgroundResource(R.mipmap.bulb_icon);
+                ((MyViewHolder) holder). device_toggle_state.setVisibility(View.VISIBLE);
+            } else if ("PLUG".equals(deviceType)) {
+                ((MyViewHolder)holder).device_img.setBackgroundResource(R.mipmap.switch_icon);
+                ((MyViewHolder) holder). device_toggle_state.setVisibility(View.VISIBLE);
+            } else if ("WALLMOTE".equals(deviceType)) {
+                ((MyViewHolder)holder).device_img.setBackgroundResource(R.mipmap.wallmote_icon);
+                ((MyViewHolder) holder). device_toggle_state.setVisibility(View.GONE);
+            } else if ("EXTENDER".equals(deviceType)) {
+                ((MyViewHolder)holder).device_img.setBackgroundResource(R.drawable.ic_zwgeneral);
+                ((MyViewHolder) holder). device_toggle_state.setVisibility(View.GONE);
+            }
+            ((MyViewHolder)holder).device_name.setText(info.getDisplayName());
+            if (flag == NORMAL_MODE) {
+                ((MyViewHolder)holder).delete_device.setVisibility(View.INVISIBLE);
+                ((MyViewHolder)holder).choose_linear.setVisibility(View.INVISIBLE);
+                ((MyViewHolder)holder).choose_linear.setOnClickListener(null);
+                ((MyViewHolder)holder).linear.setTag(info);
+                ((MyViewHolder)holder).linear.setOnClickListener(this);
+            }
+            if (flag == EDIT_MODE) {
+                if ("0".equals(info.getIsFavorite())) {
+                    ((MyViewHolder)holder).delete_device.setVisibility(View.INVISIBLE);
+                    ((MyViewHolder)holder).delete_device.setOnClickListener(null);
+                    ((MyViewHolder)holder).choose_linear.setVisibility(View.VISIBLE);
+                    ((MyViewHolder)holder).choose_linear.setTag(position);
+                    ((MyViewHolder)holder).choose_linear.setOnClickListener(this);
+                }
+                if ("1".equals(info.getIsFavorite())) {
+                    ((MyViewHolder)holder).delete_device.setVisibility(View.VISIBLE);
+                    ((MyViewHolder)holder).delete_device.setTag(position);
+                    ((MyViewHolder)holder).delete_device.setOnClickListener(this);
+                    ((MyViewHolder)holder).choose_linear.setVisibility(View.GONE);
+                    ((MyViewHolder)holder).choose_linear.setOnClickListener(null);
+                }
+                ((MyViewHolder)holder).linear.setOnClickListener(null);
+            }
         }
-        if (flag == EDIT_MODE) {
-            if ("0".equals(info.getIsFavorite())) {
-                holder.delete_device.setVisibility(View.INVISIBLE);
-                holder.delete_device.setOnClickListener(null);
-                holder.choose_linear.setVisibility(View.VISIBLE);
-                holder.choose_linear.setTag(position);
-                holder.choose_linear.setOnClickListener(this);
-            }
-            if ("1".equals(info.getIsFavorite())) {
-                holder.delete_device.setVisibility(View.VISIBLE);
-                holder.delete_device.setTag(position);
-                holder.delete_device.setOnClickListener(this);
-                holder.choose_linear.setVisibility(View.GONE);
-                holder.choose_linear.setOnClickListener(null);
-            }
-            holder.linear.setOnClickListener(null);
+        if (flag == NORMAL_MODE && holder instanceof AddItem) {
+            ((AddItem) holder).itemView.setOnClickListener(this);
         }
     }
 
     @Override
     public int getItemCount() {
-        return dataList == null ? 0 : dataList.size();
+        return dataList == null ? 0 : flag == NORMAL_MODE ? dataList.size()+1 : dataList.size();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        if (position == dataList.size() && flag == NORMAL_MODE) {
+            return PLUS;
+        }
+        return ITEM;
     }
 
     @Override
@@ -83,6 +121,8 @@ public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.MyView
                 case R.id.choose_linear:
                     onItemClickListener.addFavoriteClick((int) v.getTag());
                     break;
+                default:
+                    onItemClickListener.move2EditActivity();
             }
         }
     }
@@ -93,6 +133,8 @@ public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.MyView
         void addFavoriteClick(int position);
 
         void removeFavoriteClick(int position);
+
+        void move2EditActivity();
     }
 
     public void setOnItemClickListener(OnItemClickListener listener) {
@@ -116,6 +158,15 @@ public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.MyView
             location = (ImageView) itemView.findViewById(R.id.location);
             device_img = (ImageView) itemView.findViewById(R.id.device_img);
             delete_device = (ImageView) itemView.findViewById(R.id.delete_device);
+        }
+    }
+
+    public static class AddItem extends RecyclerView.ViewHolder {
+        private ImageView add_device;
+
+        public AddItem(View itemView) {
+            super(itemView);
+            add_device = (ImageView) itemView.findViewById(R.id.add_device);
         }
     }
 

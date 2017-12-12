@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AlertDialog;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
@@ -22,6 +23,7 @@ import com.askey.mobile.zwave.control.deviceContr.net.TCPReceive;
 import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
+import com.askey.mobile.zwave.control.util.ToastShow;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONException;
@@ -48,9 +50,14 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
             switch (msg.what) {
                 case Const.TCP_TIMEOUT:
                     hideProgressDialog();
+                    Logg.i(LOG_TAG," TCP_TIMEOUT == add device time out");
                     timerCancel();
+                    if (TcpClient.getInstance().isConnected()) {
+                        Logg.i(LOG_TAG,"TcpClient -> send -> mobile_zwave:stopAddDevice:Zwave");
+                        TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
+                    }
                     if (!InstallDeviceActivity.this.isFinishing()) {
-                        showFailedAddZaveDialog("Pairing time out");
+                        showFailedAddZaveDialog(getResources().getString(R.string.fail_add_notify));
                     }
                     break;
             }
@@ -154,7 +161,6 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
 
         @Override
         public void receiveMessage(SocketTransceiver transceiver, String tcpMassage) {
-            Logg.i(LOG_TAG,"=TCPReceive=>=receiveMessage="+tcpMassage);
             //在这里处理结果
             addDeviceResult(tcpMassage);
         }
@@ -167,19 +173,39 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
     };
 
     //mqtt调用返回结果
-    private void addDeviceResult(String result) {
+    private void addDeviceResult(final String result) {
         try {
             Logg.i(LOG_TAG,"=====result=="+result);
-            if(result.contains("addDevice")){
+            if(result.contains("mobile_zwave:addDevice:Zwave")){
                 return;
-            }else{
+            }else if(result.contains("firefly_zwave:addDevice:other")){
+                timerCancel();
+                final String addResult = mContext.getResources().getString(R.string.add_device_result);
+                ToastShow.showToastOnUiThread(mContext,addResult);
+                if (TcpClient.getInstance().isConnected()) {
+                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
+                }
+                ((Activity) mContext).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        addStstus.setText(addResult);
+                    }
+                });
+//                finish();
+            }else if(result.contains("addDevice:Zwave:")){
+
+            }
+            else{
                 final JSONObject jsonObject = new JSONObject(result);
 //            final String nodeId = jsonObject.optString("NodeID");
                 ((Activity) mContext).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         String messageType = jsonObject.optString("MessageType");
-                        String status = jsonObject.optString("Status");
+                        String status = "";
+                        if (result.contains("Status")) {
+                            status = jsonObject.optString("Status");
+                        }
                         if ("Node Add Status".equals(messageType)) {
                             if ("Success".equals(status)) {
                                 Toast.makeText(mContext,"add Success",Toast.LENGTH_SHORT).show();
@@ -193,11 +219,11 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                             } else if("Learn Ready".equals(status)){
                                 addStstus.setText("Please press the trigger button of the device");
                                 //10S后 超时后 调用StopAddDevice();
-
-
                                 timerCancel();
-                            }else{
-                                Logg.i(LOG_TAG,"=====result=="+status);
+                            } else if("Timeout".equals(status)){
+                                TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
+                                showFailedAddZaveDialog(getResources().getString(R.string.fail_add_notify));
+                            } else{
                                 addStstus.setText(status);
                             }
                         }
@@ -206,6 +232,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
             }
         } catch (JSONException e) {
             e.printStackTrace();
+            Logg.i(LOG_TAG,"errorJson------>"+result);
         }
 
     }
@@ -229,10 +256,9 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
             public void onClick(View view) {
                 //点击重试，返回添加设备界面，再次执行添加设备
                 progressBar.setIndeterminate(true);
-
                 //预留的接口mqtt
                 if (TcpClient.getInstance().isConnected()) {
-                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:addDevice");
+                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:addDevice:Zwave");
                 }
 
                 alertDialog.dismiss();
@@ -263,7 +289,6 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
         alertDialog.getWindow().setBackgroundDrawableResource(R.color.transparent);
         TextView title = (TextView) view.findViewById(R.id.title);
         TextView message = (TextView) view.findViewById(R.id.message);
-        title.setText("Pairing time out");
         message.setText(titleStr);
         TextView positiveButton = (TextView) view.findViewById(R.id.positiveButton);
         TextView negativeButton = (TextView) view.findViewById(R.id.negativeButton);
@@ -275,9 +300,9 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                 //预留的接口mqtt
                 if (TcpClient.getInstance().isConnected()) {
                     Logg.i(LOG_TAG, "TcpClient - > isConnected ");
-                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:addDevice");
-//                    timer = new Timer(true);
-//                    timer.schedule(task,1000*60); //延时1000ms后执行，1000ms执行一次
+                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:addDevice:Zwave");
+                    timer = new Timer(true);
+                    timer.schedule(new InstallDeviceActivity.RemoteTimerTask(),1000*60); //延时1000ms后执行，1000ms执行一次
                     alertDialog.dismiss();
                 }
             }
@@ -287,6 +312,8 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
             @Override
             public void onClick(View view) {
                 alertDialog.dismiss();
+                startActivity(new Intent(InstallDeviceActivity.this, SelectBrandActivity.class));
+                finish();
             }
         });
         alertDialog.show();
@@ -344,6 +371,27 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
         }
         if(mMqttMessageArrived!=null){
             MQTTManagement.getSingInstance().unrigister(mMqttMessageArrived);
+        }
+    }
+
+    /**
+     * 监听Back键按下事件,方法2:
+     * 注意:
+     * 返回值表示:是否能完全处理该事件
+     * 在此处返回false,所以会继续传播该事件.
+     * 在具体项目中此处的返回值视情况而定.
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {
+            if (TcpClient.getInstance().isConnected()) {
+                Logg.i(LOG_TAG,"TcpClient -> send -> mobile_zwave:stopAddDevice:Zwave");
+                TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
+            }
+            finish();
+            return false;
+        }else {
+            return super.onKeyDown(keyCode, event);
         }
     }
 

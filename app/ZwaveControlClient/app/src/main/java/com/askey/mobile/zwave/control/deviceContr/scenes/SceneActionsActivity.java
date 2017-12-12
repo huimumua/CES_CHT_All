@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -11,6 +12,7 @@ import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.deviceContr.adapter.SwipeMenuAdapter;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ActionChooseActivity;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ActionSummaryActivity;
+import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ChooseDeviceActivity;
 import com.yanzhenjie.recyclerview.swipe.SwipeItemClickListener;
 import com.yanzhenjie.recyclerview.swipe.SwipeMenu;
 import com.yanzhenjie.recyclerview.swipe.SwipeMenuBridge;
@@ -32,6 +34,7 @@ public class SceneActionsActivity extends AppCompatActivity implements View.OnCl
     private SwipeMenuAdapter swipeMenuAdapter;
     private List<Map<String,String>> datas;
     private LinearLayoutManager mLayoutManager;
+    private String sceneIcon,sceneName,isFavorite,roomName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,7 +43,29 @@ public class SceneActionsActivity extends AppCompatActivity implements View.OnCl
 
         initData();
         initView();
+        Intent intent = getIntent();
+        sceneIcon = intent.getStringExtra("sceneIcon");
+        sceneName = intent.getStringExtra("sceneName");
+        isFavorite = intent.getStringExtra("isFavorite");
 
+    }
+
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+
+        if ("ActionSummaryActivity".equals(getIntent().getStringExtra("from"))) {
+            Map<String, String> one = new HashMap<>();
+            one.put("type", getIntent().getStringExtra("type"));
+            one.put("name", getIntent().getStringExtra("name"));
+            one.put("action", getIntent().getStringExtra("action"));
+            one.put("lightvalue", "50");
+            one.put("timer", getIntent().getStringExtra("timer"));
+            datas.add(one);
+            swipeMenuAdapter.notifyDataSetChanged();
+        }
 
     }
 
@@ -54,7 +79,14 @@ public class SceneActionsActivity extends AppCompatActivity implements View.OnCl
         mRecycleView.setSwipeItemClickListener(new SwipeItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                Intent intent = new Intent(SceneActionsActivity.this,ActionSummaryActivity.class);
+
+                Intent intent = new Intent(SceneActionsActivity.this,ChooseDeviceActivity.class);
+                intent.putExtra("from", SceneActionsActivity.class.getSimpleName());
+//                intent.putExtra("name", datas.get(position).get("name"));
+//                intent.putExtra("type", datas.get(position).get("type"));
+//                intent.putExtra("nodeId", datas.get(position).get("nodeId"));
+//                intent.putExtra("action", datas.get(position).get("action"));
+//                intent.putExtra("timer", datas.get(position).get("timer"));
                 startActivity(intent);
             }
         });
@@ -65,7 +97,7 @@ public class SceneActionsActivity extends AppCompatActivity implements View.OnCl
             public void onCreateMenu(SwipeMenu leftMenu, SwipeMenu rightMenu, int viewType) {
                 SwipeMenuItem deleteItem = new SwipeMenuItem(SceneActionsActivity.this)
                         .setBackground(R.color.white)
-                        .setImage(R.mipmap.ic_launcher)
+                        .setImage(R.drawable.ic_close)
                         .setWidth(100) // 宽度。
                         .setHeight(MATCH_PARENT); // 高度。
                  // 各种文字和图标属性设置。
@@ -102,7 +134,8 @@ public class SceneActionsActivity extends AppCompatActivity implements View.OnCl
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.iv_add_action:
-                Intent intent = new Intent(this,ActionChooseActivity.class);
+                Intent intent = new Intent(this,ChooseDeviceActivity.class);
+                intent.putExtra("from", SceneActionsActivity.class.getSimpleName());
                 startActivity(intent);
               break;
     }        }
@@ -111,29 +144,6 @@ public class SceneActionsActivity extends AppCompatActivity implements View.OnCl
 
         //test data
         datas = new ArrayList<>();
-        Map<String, String> one = new HashMap<>();
-        one.put("type", "bulb");
-        one.put("device_name", "Dinner table 1");
-        one.put("action", "Toggle");
-        one.put("lightvalue", "50");
-        one.put("timmer", "15");
-        datas.add(one);
-
-        one = new HashMap<>();
-        one.put("type", "bulb");
-        one.put("device_name", "Dinner table 1");
-        one.put("action", "Toggle");
-        one.put("lightvalue", "50");
-        one.put("timmer", "15");
-        datas.add(one);
-
-        one = new HashMap<>();
-        one.put("type", "bulb");
-        one.put("device_name", "Dinner table 1");
-        one.put("action", "Toggle");
-        one.put("lightvalue", "50");
-        one.put("timmer", "15");
-        datas.add(one);
         return datas;
     }
 }

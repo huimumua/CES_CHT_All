@@ -1,11 +1,14 @@
 package com.askey.mobile.zwave.control.login.ui;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -16,7 +19,9 @@ import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.base.BaseActivity;
 import com.askey.mobile.zwave.control.guideSetting.ui.DeviceGuideActivity;
 import com.askey.mobile.zwave.control.guideSetting.ui.SetupHomeActivity;
+import com.askey.mobile.zwave.control.util.CustomProgressDialog;
 import com.askey.mobile.zwave.control.util.Logg;
+import com.askey.mobile.zwave.control.util.PreferencesUtils;
 import com.askeycloud.sdk.auth.response.OAuthProvider;
 import com.askeycloud.webservice.sdk.api.builder.auth.UserSignInBuilder;
 import com.askeycloud.webservice.sdk.model.auth.v3.OAuthResultModel;
@@ -32,13 +37,14 @@ public class LogInActivity extends BaseActivity implements View.OnClickListener{
     private TextView forgotPassword;
     private ImageView mLeft;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_log_in);
 
         initView();
+
     }
 
     private void initView() {
@@ -51,6 +57,15 @@ public class LogInActivity extends BaseActivity implements View.OnClickListener{
         ivLogIn.setOnClickListener(this);
         forgotPassword.setOnClickListener(this);
         mLeft.setOnClickListener(this);
+
+        emailText = (String) PreferencesUtils.get(mContext,"userName","");
+        passwordText = (String) PreferencesUtils.get(mContext,"password","");
+        if(!emailText.equals("")){
+            email.setText(emailText);
+        }
+        if(!passwordText.equals("")){
+            password.setText(passwordText);
+        }
 
         String emailTemp = getIntent().getStringExtra("email");
         String passwordTemp = getIntent().getStringExtra("password");
@@ -70,8 +85,11 @@ public class LogInActivity extends BaseActivity implements View.OnClickListener{
             case R.id.iv_log_in:
                 emailText = email.getText().toString();
                 passwordText = password.getText().toString();
+
                 if (!"".equals(emailText) && !"".equals(passwordText)) {
                     //登录 并判断是否成功
+                    String str = mContext.getResources().getString(R.string.log_in_wait_toast);
+                    showWaitingDialog();
                     goLogIn();
 
                 } else {
@@ -100,22 +118,26 @@ public class LogInActivity extends BaseActivity implements View.OnClickListener{
 
                     @Override
                     public void onOAuthResultSuccess(OAuthResultModel oAuthResultModel) {
-
+                        stopWaitDialog();
                         Logg.i(LOG_TAG,"======onOAuthResultSuccess===getAccessToken==" + oAuthResultModel.getAccessToken());
                         Logg.i(LOG_TAG,"======onOAuthResultSuccess===getRefreshToken==" + oAuthResultModel.getRefreshToken());
                         Logg.i(LOG_TAG,"======onOAuthResultSuccess===getTokenType==" + oAuthResultModel.getTokenType());
                         Logg.i(LOG_TAG,"======onOAuthResultSuccess===getUserid==" + oAuthResultModel.getUserSignInResponse().getUserid());
                         Logg.i(LOG_TAG,"======onOAuthResultSuccess===getEmail==" + oAuthResultModel.getUserSignInResponse().getEmail());
-                      Intent  intent = new Intent(LogInActivity.this, DeviceGuideActivity.class);
-                        startActivity(intent);
-//                        Intent  intent = new Intent(LogInActivity.this, SetupHomeActivity.class);
+                        PreferencesUtils.put(mContext,"userName",emailText);
+                        PreferencesUtils.put(mContext,"password",passwordText);
+//                        Intent  intent = new Intent(LogInActivity.this, DeviceGuideActivity.class);
 //                        startActivity(intent);
+                        Intent  intent = new Intent(LogInActivity.this, SetupHomeActivity.class);
+                        startActivity(intent);
+                        finish();
                     }
 
                     @Override
                     public void onOAuthResultError(Type type, String s) {
                         Logg.i(LOG_TAG,"======onOAuthResultError===type===" + type);
                         Logg.i(LOG_TAG,"======onOAuthResultError===s===" + s);
+                        hideProgressDialog();
                         showVerificationPopu();
                     }
                 };
@@ -141,9 +163,9 @@ public class LogInActivity extends BaseActivity implements View.OnClickListener{
         popupWindow.setFocusable(true);
 
         TextView content = (TextView) popupView.findViewById(R.id.tv_content);
-        content.setText(getResources().getString(R.string.invaild_eamil));
-        LinearLayout linearLayout = (LinearLayout) popupView.findViewById(R.id.ll_popu);
-        linearLayout.setBackgroundResource(R.drawable.vector_drawable_ic_125);
+        content.setText(getResources().getString(R.string.invalid_eamil_password));
+//        LinearLayout linearLayout = (LinearLayout) popupView.findViewById(R.id.ll_popu);
+//        linearLayout.setBackground(ContextCompat.getDrawable(mContext,R.drawable.vector_drawable_ic_125));
 
         int[] location = new int[2];
         int popupWidth = popupView.getMeasuredWidth();

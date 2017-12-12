@@ -30,6 +30,7 @@ public class RouterConnectThirdActivity extends AppCompatActivity implements Vie
             case R.id.iv_right:
                 Intent intent = new Intent(this,RouterConnectFourActivity.class);
                 startActivity(intent);
+                finish();
                 break;
         }
     }

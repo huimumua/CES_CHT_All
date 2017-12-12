@@ -5,54 +5,52 @@
     android:layout_height="match_parent"
     android:padding="20dp"
     >
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical"
         android:layout_marginBottom="5dp"
-        >
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="40dp"
-        android:layout_marginLeft="40dp"
-        android:layout_marginBottom="@dimen/activity_horizontal_margin"
-        >
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/iv_left"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:src="@drawable/vector_drawable_ic_77"
-            />
+            android:layout_marginBottom="@dimen/activity_horizontal_margin"
+            android:layout_marginLeft="40dp"
+            android:layout_marginTop="40dp"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/iv_left"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/vector_drawable_ic_77" />
+
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="20dp"
+                android:text="@string/wifi_setup_one_title"
+                android:textColor="@color/red"
+                android:textSize="@dimen/sign_up_title_text" />
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/tv_title"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginLeft="20dp"
-            android:text="@string/wifi_setup_one_title"
-            android:textSize="@dimen/sign_up_title_text"
-            android:textColor="@color/red"
-            />
-    </LinearLayout>
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/qbox_explain"
-        android:gravity="center"
-        />
+            android:gravity="center"
+            android:text="@string/qbox_explain" />
+
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@mipmap/wifi_one"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="40dp"
-            />
-   <!-- <ImageView
+            android:src="@mipmap/wifi_one" />
+        <!-- <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@mipmap/ic_launcher"
@@ -80,7 +78,8 @@
         android:gravity="center"
         android:layout_marginTop="10dp"
         />-->
-        </LinearLayout>
+    </LinearLayout>
+
     <ImageView
         android:id="@+id/iv_right"
         android:layout_width="wrap_content"

@@ -12,14 +12,23 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
+import com.askey.mobile.zwave.control.home.activity.addDevice.ChooseRoomActivity;
 
 public class DeviceSettingActivity extends AppCompatActivity implements View.OnClickListener{
-    private EditText mDeviceName,mRoomName;
+    private EditText mDeviceName;
+    private TextView mRoomName;
     private CheckBox mFavorite;
-    private Button mDetail,mDelete;
+    private Button mDelete;
     private String nodeId;
+    private String type;
+    private String deviceName;
+    private String room;
+    private ImageView ivIcon;
+    private RelativeLayout mSelectRoom;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,16 +36,32 @@ public class DeviceSettingActivity extends AppCompatActivity implements View.OnC
         setContentView(R.layout.activity_device_setting);
 
         mDeviceName = (EditText) findViewById(R.id.et_device_name);
-        mRoomName = (EditText) findViewById(R.id.et_room_name);
+        mRoomName = (TextView) findViewById(R.id.tv_room);
         mFavorite = (CheckBox) findViewById(R.id.cb_favorite);
-        mDetail = (Button) findViewById(R.id.btn_detail);
         mDelete = (Button) findViewById(R.id.btn_delete_device);
+        ivIcon = (ImageView) findViewById(R.id.iv_icon);
+        mSelectRoom = (RelativeLayout) findViewById(R.id.rl_select_room);
 
         mFavorite.setOnClickListener(this);
-        mDetail.setOnClickListener(this);
+        mSelectRoom.setOnClickListener(this);
         mDelete.setOnClickListener(this);
 
         nodeId = getIntent().getStringExtra("nodeId");
+        type = getIntent().getStringExtra("type");
+        deviceName = getIntent().getStringExtra("name");
+        room = getIntent().getStringExtra("room");
+
+        if ("PLUG".equals(type)) {
+            ivIcon.setImageResource(R.drawable.vector_drawable_ic_80_bigger);
+        } else if ("BULB".equals(type)) {
+            ivIcon.setImageResource(R.drawable.vector_drawable_ic_79_bigger);
+        } else if("WALLMOTE".equals(type)) {
+            ivIcon.setImageResource(R.drawable.vector_drawable_ic_96_bigger);
+        }
+
+        mDeviceName.setText(deviceName);
+        mRoomName.setText(room);
+
     }
 
     @Override
@@ -45,15 +70,15 @@ public class DeviceSettingActivity extends AppCompatActivity implements View.OnC
             case R.id.cb_favorite:
                 if (mFavorite.isChecked()) {
                 } else {
-
                 }
                 break;
-            case R.id.btn_detail:
-                Intent intent = new Intent(this,DetailActivity.class);
-                startActivity(intent);
-                break;
+
             case R.id.btn_delete_device:
-                showDialog(this,"test","test");
+                showDialog(this,deviceName,nodeId);
+                break;
+            case R.id.rl_select_room:
+                Intent intent = new Intent(this,ChooseRoomActivity.class);
+                startActivity(intent);
                 break;
         }
     }

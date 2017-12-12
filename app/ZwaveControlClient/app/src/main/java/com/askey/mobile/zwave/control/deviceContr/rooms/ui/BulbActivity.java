@@ -13,7 +13,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
-import android.widget.Switch;
 import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
@@ -25,17 +24,16 @@ import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttMessageCallback;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
-import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
 import com.askey.mobile.zwave.control.home.activity.HomeActivity;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
-import com.askeycloud.webservice.sdk.iot.MqttService;
+import com.askeycloud.sdk.device.response.IoTDeviceInfoResponse;
 import com.askeycloud.webservice.sdk.iot.callback.ShadowReceiveListener;
 import com.askeycloud.webservice.sdk.iot.message.builder.MqttDesiredJStrBuilder;
+import com.askeycloud.webservice.sdk.service.device.AskeyIoTDeviceService;
 import com.askeycloud.webservice.sdk.service.iot.AskeyIoTService;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -57,17 +55,19 @@ public class BulbActivity extends BaseDeviceActivity {
     private int colors[] = {Color.GREEN,Color.YELLOW,Color.WHITE,Color.RED,Color.CYAN,Color.MAGENTA};
     private int currentColor = 1;
     private LinearLayout llBlub;
-    private TextView bulbExplain,tapCenterExplain, brightExplain;
+    private TextView bulbExplain,tapCenterExplain, brightExplain,scheduleExplain,notifyExplain,vacationExplain;
     private SeekBar mSeekBar;
     private Context mContext;
     private int mColor;
     private boolean isStatus = false;
     private int red,green,blue;
+    private  IoTDeviceInfoResponse ioTDeviceInfoResponse;
+    private String shadowTopic = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_bulb2);
+        setContentView(R.layout.activity_bulb);
 
         initView();
         initSetted();
@@ -78,16 +78,16 @@ public class BulbActivity extends BaseDeviceActivity {
         mContext = this;
 
         nodeId = getIntent().getStringExtra("nodeId");
+        type = getIntent().getStringExtra("type");
+        name = getIntent().getStringExtra("displayName");
+        room = getIntent().getStringExtra("room");
 
         if(Const.isRemote){
-            initIotMqttMessage();
-            if(HomeActivity.shadowTopic!=null && !HomeActivity.shadowTopic.equals("")){
-//                MqttService mqttService = MqttService.getInstance();
-//                mqttService.publishMqttMessage(HomeActivity.shadowTopic, CloudIotData.getSwitchStatus(nodeId));
-                MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(Const.subscriptionTopic+"Zwave"+nodeId);
-                builder.setJsonString(CloudIotData.getSwitchStatus(nodeId));
-                AskeyIoTService.getInstance(ZwaveClientApplication.getInstance()).publishDesiredMessage(HomeActivity.shadowTopic, builder);
-            }
+            remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.getSwitchStatus(nodeId));
+
+            remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.getBrigtness(nodeId));
+
+            remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.getLampColor(nodeId));
         }else{
             MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
             //获取灯泡状态
@@ -100,37 +100,48 @@ public class BulbActivity extends BaseDeviceActivity {
 
     }
 
-    private void initIotMqttMessage() {
-
-        IotMqttManagement.getInstance().setIotMqttMessageCallback(new IotMqttMessageCallback() {
+    private void remoteIotComm(final String topic, final String comm) {
+        initIotMqttMessage();
+        new Thread(new Runnable() {
             @Override
-            public void receiveMqttMessage(String s, String s1, String s2) {
-                //处理结果
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s=" + s);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s1=" + s1);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s2=" + s2);
+            public void run() {
+                try {
+                    Context mContext = ZwaveClientApplication.getInstance();
+                    if(ioTDeviceInfoResponse == null){
+                        ioTDeviceInfoResponse = AskeyIoTDeviceService.getInstance(mContext).lookupIoTDevice(Const.DEVICE_MODEL, topic );
+
+                        shadowTopic = ioTDeviceInfoResponse.getShadowTopic();
+                        AskeyIoTService.getInstance(mContext).subscribeMqtt(shadowTopic);
+                    }
+                    MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(topic);
+                    builder.setJsonString(comm);
+                    Log.i(TAG,"===publishDesiredMessage====setJsonString===" +comm);
+                    Log.i(TAG,"===publishDesiredMessage====topic===" + topic);
+                    Log.i(TAG,"===publishDesiredMessage====shadowTopic===" +shadowTopic);
+                    AskeyIoTService.getInstance(mContext).publishDesiredMessage(shadowTopic, builder);
+                }catch (Exception e){
+                    Logg.e(TAG,"remoteIotComm = >Exception " +e.getMessage());
+                }
+            }
+        }).start();
+    }
+
+    private void initIotMqttMessage() {
+        //以下这句为注册监听
+        AskeyIoTService.getInstance(this).setShadowReceiverListener(new ShadowReceiveListener() {
+            @Override
+            public void receiveShadowDocument(String s, String s1, String s2) {
+                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s=" + s);
+                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s1=" + s1);
+                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s2=" + s2);
+                IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
                 if(s2.contains("desired")){
                     return;
                 }
                 mqttMessageResult(s2);//要验s2格式
 
             }
-
         });
-
-/*        //以下这句为注册监听
-        AskeyIoTService.getInstance(this).setShadowReceiverListener(new ShadowReceiveListener() {
-            @Override
-            public void receiveShadowDocument(String s, String s1, String s2) {
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s=" + s);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s1=" + s1);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s2=" + s2);
-                IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
-
-                mqttMessageResult(s2);//要验s2格式
-
-            }
-        });*/
     }
 
     MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
@@ -196,11 +207,14 @@ public class BulbActivity extends BaseDeviceActivity {
         bulbExplain = (TextView) findViewById(R.id.tv_bulb_explain);
         tapCenterExplain = (TextView) findViewById(R.id.tv_center_explain);
         brightExplain = (TextView) findViewById(R.id.tv_bright_explain);
+        scheduleExplain = (TextView) findViewById(R.id.tv_scheduler_explain);
+        notifyExplain = (TextView) findViewById(R.id.tv_notify_explain);
+        vacationExplain = (TextView) findViewById(R.id.tv_vacation_explain);
 
 
-        btnRightColor = (Button) findViewById(R.id.btn_right_color);
+//        btnRightColor = (Button) findViewById(R.id.btn_right_color);
         btnLeftColor = (Button) findViewById(R.id.btn_left_color);
-        btnRightColor.setOnClickListener(this);
+//        btnRightColor.setOnClickListener(this);
         btnLeftColor.setOnClickListener(this);
 
         //中心button
@@ -223,11 +237,8 @@ public class BulbActivity extends BaseDeviceActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 if (Const.isRemote) {
-                    MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(Const.subscriptionTopic+"Zwave"+nodeId);
-                    builder.setJsonString(CloudIotData.setBrigtness(nodeId,String.valueOf(mSeekBar.getProgress())));
-                    AskeyIoTService.getInstance(ZwaveClientApplication.getInstance()).publishDesiredMessage(HomeActivity.shadowTopic, builder);
+                    remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.setBrigtness(nodeId,String.valueOf(mSeekBar.getProgress())));
                 } else {
-
                     MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,
                             LocalMqttData.setBrigtness(nodeId,String.valueOf(mSeekBar.getProgress())));
 //                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic + nodeId, "mobile_zwave:setBasic:" + nodeId + ":FF");
@@ -249,7 +260,7 @@ public class BulbActivity extends BaseDeviceActivity {
             public void onColorChange(int color) {
                 Log.i("BulbActivity",color + "" );
                 mColor = color;
-                changeBulbColor(color);
+                changeBulbColor("pickOne",color);
 
             }
 
@@ -261,7 +272,7 @@ public class BulbActivity extends BaseDeviceActivity {
             public void onColorChange(int color) {
                 Log.i("BulbActivity",color + "onColorChange" );
                 mColor = color;
-                changeBulbColor(color);
+                changeBulbColor("pickTwo",color);
             }
 
         });
@@ -283,7 +294,7 @@ public class BulbActivity extends BaseDeviceActivity {
                 } else {
                     Log.i("BulbActivity",colors[position] + "onItemClickListener" );
                     mColor = colors[position];
-                    changeBulbColor(colors[position]);
+                    changeBulbColor("pickThird",colors[position]);
                 }
 
             }
@@ -331,18 +342,14 @@ public class BulbActivity extends BaseDeviceActivity {
     private void changeSwitchStatus(boolean isStatus) {
         if (isStatus) {
             if (Const.isRemote) {
-                MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(Const.subscriptionTopic+"Zwave"+nodeId);
-                builder.setJsonString( CloudIotData.setSwitch(nodeId,"on") );
-                AskeyIoTService.getInstance(ZwaveClientApplication.getInstance()).publishDesiredMessage(HomeActivity.shadowTopic, builder);
+                remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.setSwitch(nodeId,"on"));
             } else {
                 MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic +"Zwave"+ nodeId, LocalMqttData.setSwitch(nodeId,"on"));
 //                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic + nodeId, "mobile_zwave:setBasic:" + nodeId + ":FF");
             }
         } else {
             if (Const.isRemote) {
-                MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(Const.subscriptionTopic+"Zwave"+nodeId);
-                builder.setJsonString( CloudIotData.setSwitch(nodeId,"off") );
-                AskeyIoTService.getInstance(ZwaveClientApplication.getInstance()).publishDesiredMessage(HomeActivity.shadowTopic, builder);
+                remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.setSwitch(nodeId,"off"));
             } else {
 //                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+nodeId,"mobile_zwave:setBasic:" + nodeId + ":00" );
                 MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic +"Zwave"+ nodeId, LocalMqttData.setSwitch(nodeId, "off"));
@@ -413,12 +420,18 @@ public class BulbActivity extends BaseDeviceActivity {
             bulbExplain.setVisibility(View.INVISIBLE);
             tapCenterExplain.setVisibility(View.INVISIBLE);
             brightExplain.setVisibility(View.INVISIBLE);
+            scheduleExplain.setVisibility(View.INVISIBLE);
+            notifyExplain.setVisibility(View.INVISIBLE);
+            vacationExplain.setVisibility(View.INVISIBLE);
         } else {
 
             llBlub.setBackgroundColor(ContextCompat.getColor(this, R.color.gray));
             bulbExplain.setVisibility(View.VISIBLE);
             tapCenterExplain.setVisibility(View.VISIBLE);
             brightExplain.setVisibility(View.VISIBLE);
+            scheduleExplain.setVisibility(View.VISIBLE);
+            notifyExplain.setVisibility(View.VISIBLE);
+            vacationExplain.setVisibility(View.VISIBLE);
         }
 
     }
@@ -435,7 +448,7 @@ public class BulbActivity extends BaseDeviceActivity {
         }
     }
 
-    private void changeBulbColor(int color){
+    private void changeBulbColor(String tag,int color){
         //temp pos
         //设置某种颜色的亮度值 int ZwController_setSwitchColor(int deviceId, int color_id, int color_value);
 
@@ -450,15 +463,25 @@ public class BulbActivity extends BaseDeviceActivity {
         Logg.i(TAG,"=changeBulbColor=red=="+red);
         Logg.i(TAG,"=changeBulbColor=green=="+green);
         Logg.i(TAG,"=changeBulbColor=blue=="+blue);
-        if (Const.isRemote) {
-            MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(Const.subscriptionTopic+"Zwave"+nodeId);
-            builder.setJsonString(CloudIotData.setLampcolor(nodeId,"RGB","0",String.valueOf(mSeekBar.getProgress()),red+"",green+"",blue+""));
-            AskeyIoTService.getInstance(ZwaveClientApplication.getInstance()).publishDesiredMessage(HomeActivity.shadowTopic, builder);
-        } else {
-            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,
-                    LocalMqttData.setLampcolor(nodeId,"RGB","0",String.valueOf(mSeekBar.getProgress()),red+"",green+"",blue+""));
+        if("pickTwo".equals(tag)){
+            //warmWhite/coldWhite/RGB
+            if (Const.isRemote) {
+                remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.setLampcolor(nodeId,"warmWhite","0",String.valueOf(mSeekBar.getProgress()),red+"",green+"",blue+""));
+            } else {
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,
+                        LocalMqttData.setLampcolor(nodeId,"warmWhite","0",String.valueOf(mSeekBar.getProgress()),red+"",green+"",blue+""));
 //                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic + nodeId, "mobile_zwave:setBasic:" + nodeId + ":FF");
+            }
+        }else{
+            if (Const.isRemote) {
+                remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.setLampcolor(nodeId,"RGB","0",String.valueOf(mSeekBar.getProgress()),red+"",green+"",blue+""));
+            } else {
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,
+                        LocalMqttData.setLampcolor(nodeId,"RGB","0",String.valueOf(mSeekBar.getProgress()),red+"",green+"",blue+""));
+//                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic + nodeId, "mobile_zwave:setBasic:" + nodeId + ":FF");
+            }
         }
+
         //message=mobile_zwave:setSwitchColor:2:-139345:35
         Log.i(TAG, "mobile_zwave:setLampcolor :" + nodeId + ":" + color + ":" + mSeekBar.getProgress());
     }

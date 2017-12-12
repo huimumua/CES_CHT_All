@@ -8,18 +8,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ConsumptionActivity;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.DeviceSettingActivity;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.NotifyActivity;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ScheduleActivity;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.SetupKeyActivity;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.TriggerActivity;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.VacationModeActivity;
 
 public class BaseScenceActivity extends AppCompatActivity implements View.OnClickListener{
     public TextView deviceName;
-    public ImageView schedule,timmer,trigger,setting,info;
-    public ImageView scheduleSetted,timmerSetted,triggerSetted;
+    public ImageView schedule,timmer,setting,info;
+    public ImageView scheduleSetted,timmerSetted;
     private Intent intent;
     public boolean isDetailStatus = true;
 
@@ -33,18 +26,15 @@ public class BaseScenceActivity extends AppCompatActivity implements View.OnClic
 
         schedule = (ImageView) findViewById(R.id.iv_schedule);
         timmer = (ImageView) findViewById(R.id.iv_timmer);
-        trigger = (ImageView) findViewById(R.id.iv_trigger);
 
         scheduleSetted = (ImageView) findViewById(R.id.iv_schedule_setted);
         timmerSetted = (ImageView) findViewById(R.id.iv_timmer_setted);
-        triggerSetted = (ImageView) findViewById(R.id.iv_trigger_setted);
 
         setting = (ImageView) findViewById(R.id.iv_setting);
         info = (ImageView) findViewById(R.id.iv_info);
 
         schedule.setOnClickListener(this);
         timmer.setOnClickListener(this);
-        trigger.setOnClickListener(this);
 
         setting.setOnClickListener(this);
         info.setOnClickListener(this);
@@ -59,9 +49,6 @@ public class BaseScenceActivity extends AppCompatActivity implements View.OnClic
                 break;
             case R.id.iv_timmer:
                 timmer();
-                break;
-            case R.id.iv_trigger:
-                trigger();
                 break;
             case R.id.iv_setting:
                 setting();
@@ -81,13 +68,7 @@ public class BaseScenceActivity extends AppCompatActivity implements View.OnClic
     }
 
     public void setting() {
-        intent = new Intent(this,DeviceSettingActivity.class);
-        startActivity(intent);
-    }
-
-
-    public void trigger() {
-        intent = new Intent(this,TriggerActivity.class);
+        intent = new Intent(this,NewScenceActivity.class);
         startActivity(intent);
     }
 

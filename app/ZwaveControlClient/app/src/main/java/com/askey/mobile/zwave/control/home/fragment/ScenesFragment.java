@@ -68,8 +68,12 @@ public class ScenesFragment extends Fragment implements View.OnClickListener, Sc
 
     private void initData() {
         dataList = new ArrayList<>();
-        for (int i = 0; i < 11; i++) {
-            dataList.add(new ScenesInfo(i+"","scene"+i));
+        for (int i = 0; i < 5; i++) {
+            ScenesInfo scenesInfo = new ScenesInfo();
+            scenesInfo.setNodeId(String.valueOf(i+1));
+            scenesInfo.setScenesName("SceneTest");
+
+            dataList.add(scenesInfo);
         }
 
         adapter = new ScenesAdapter(dataList);
@@ -131,12 +135,18 @@ public class ScenesFragment extends Fragment implements View.OnClickListener, Sc
 
     @Override
     public void onItemClick(View view, ScenesInfo scenesInfo) {
-        Toast.makeText(getActivity(), "item", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getActivity(), "item click", Toast.LENGTH_SHORT).show();
+
+    }
+
+    @Override
+    public void onItemLongClick(View view, ScenesInfo scenesInfo) {
+        Intent intent = new Intent(getActivity(), NewScenceActivity.class);
+        startActivity(intent);
     }
 
     @Override
     public void addItemClick() {
-        Toast.makeText(getActivity(), "add", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(getActivity(), NewScenceActivity.class);
         startActivity(intent);
     }

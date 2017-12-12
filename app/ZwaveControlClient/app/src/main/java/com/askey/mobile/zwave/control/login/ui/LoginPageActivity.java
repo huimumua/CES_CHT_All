@@ -29,10 +29,12 @@ public class LoginPageActivity extends AppCompatActivity implements View.OnClick
             case R.id.tv_log_in:
                 intent = new Intent(this,LogInActivity.class);
                 startActivity(intent);
+                finish();
                 break;
             case R.id.tv_sign_up:
                 intent = new Intent(this,SignUpActivity.class);
                 startActivity(intent);
+                finish();
                 break;
         }
     }

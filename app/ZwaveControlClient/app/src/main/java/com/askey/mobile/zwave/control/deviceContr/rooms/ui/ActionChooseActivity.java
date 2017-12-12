@@ -11,7 +11,6 @@ import android.widget.TextView;
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.deviceContr.adapter.ChooseActionAdapter;
 import com.askey.mobile.zwave.control.deviceContr.adapter.RecyclerAdapter;
-import com.askey.mobile.zwave.control.deviceContr.adapter.SwipeMenuAdapter;
 import com.yanzhenjie.recyclerview.swipe.SwipeMenuRecyclerView;
 
 import java.util.ArrayList;

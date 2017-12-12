@@ -13,15 +13,11 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
-import com.askey.mobile.zwave.control.deviceContr.adapter.ChooseActionAdapter;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttManagement;
-import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttMessageCallback;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
-import com.askey.mobile.zwave.control.home.activity.HomeActivity;
-import com.askey.mobile.zwave.control.util.Const;
+import com.askey.mobile.zwave.control.deviceContr.scenes.SceneActionsActivity;
 import com.askey.mobile.zwave.control.util.Logg;
-import com.askeycloud.webservice.sdk.iot.MqttService;
 import com.askeycloud.webservice.sdk.iot.callback.ShadowReceiveListener;
 import com.askeycloud.webservice.sdk.service.iot.AskeyIoTService;
 
@@ -29,22 +25,20 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Timer;
 
 public class ActionSummaryActivity extends AppCompatActivity implements View.OnClickListener{
     private static final String TAG = ActionSummaryActivity.class.getSimpleName();
     private RelativeLayout one,second,third,four;
     private Button btnDone;
     private String nodeId;
-    private String endpointId;
-    private String groupId;
-    private String arr;
+    private String name;
     private String type;
     private String action;
     private String timer;
     private ImageView iconOne,iconSecond,iconThird,iconFour;
     private TextView tvAction;
     private TextView tvTimer;
+    private TextView tvName;
     private Intent fromIntent;
     private String fromActivity;
     private Context mContext;
@@ -59,36 +53,29 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
 
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        processExtraData();
+
+    }
 
     private void initIotMqttMessage() {
-
-        IotMqttManagement.getInstance().setIotMqttMessageCallback(new IotMqttMessageCallback() {
+       //以下这句为注册监听
+        AskeyIoTService.getInstance(this).setShadowReceiverListener(new ShadowReceiveListener() {
             @Override
-            public void receiveMqttMessage(String s, String s1, String s2) {
-                //处理结果
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s=" + s);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s1=" + s1);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s2=" + s2);
-                ///\\\\\\
+            public void receiveShadowDocument(String s, String s1, String s2) {
+                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s=" + s);
+                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s1=" + s1);
+                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s2=" + s2);
+                IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
                 if(s2.contains("desired")){
                     return;
                 }
                 mqttMessageResult(s2);//要验s2格式
-
             }
-
         });
-
-/*        //以下这句为注册监听
-        AskeyIoTService.getInstance(this).setShadowReceiverListener(new ShadowReceiveListener() {
-            @Override
-            public void receiveShadowDocument(String s, String s1, String s2) {
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s=" + s);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s1=" + s1);
-                Logg.i(TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s2=" + s2);
-                IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
-            }
-        });*/
     }
 
     MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
@@ -132,49 +119,50 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
 
         tvAction = (TextView) findViewById(R.id.tv_action);
         tvTimer = (TextView) findViewById(R.id.tv_timer);
+        tvName = (TextView) findViewById(R.id.tv_name);
         one = (RelativeLayout) findViewById(R.id.rl_one);
-        second = (RelativeLayout) findViewById(R.id.rl_second);
+//        second = (RelativeLayout) findViewById(R.id.rl_second);
         third = (RelativeLayout) findViewById(R.id.rl_third);
         four = (RelativeLayout) findViewById(R.id.rl_four);
         btnDone = (Button) findViewById(R.id.btn_done);
 
         iconOne = (ImageView) findViewById(R.id.iv_icon_one);
-        iconSecond = (ImageView) findViewById(R.id.iv_icon_second);
+//        iconSecond = (ImageView) findViewById(R.id.iv_icon_second);
         iconThird = (ImageView) findViewById(R.id.iv_icon_third);
         iconFour = (ImageView) findViewById(R.id.iv_icon_four);
 
         one.setOnClickListener(this);
-        second.setOnClickListener(this);
+//        second.setOnClickListener(this);
         third.setOnClickListener(this);
         four.setOnClickListener(this);
         btnDone.setOnClickListener(this);
-
-        int[] icon = new int[]{ R.drawable.vector_drawable_ic_99,R.drawable.ic_launcher,R.drawable.vector_drawable_ic_100,R.drawable.vector_drawable_ic_106,
-                R.drawable.vector_drawable_ic_105,R.drawable.vector_drawable_ic_107,R.drawable.vector_drawable_ic_108};
-        if ("3".equals(endpointId) && "2".equals(groupId)) {
-            iconOne.setImageResource(icon[0]);
-        } else if ("4".equals(endpointId) && "2".equals(groupId)) {
-            iconOne.setImageResource(icon[1]);
-        } else if ("1".equals(endpointId) && "3".equals(groupId)) {
-            iconOne.setImageResource(icon[2]);
-        } else if ("2".equals(endpointId) && "3".equals(groupId)) {
-            iconOne.setImageResource(icon[3]);
-        } else if ("3".equals(endpointId) && "3".equals(groupId)) {
-            iconOne.setImageResource(icon[4]);
-        } else if ("1".equals(endpointId) && "2".equals(groupId)) {
-            iconOne.setImageResource(icon[5]);
-        } else if ("2".equals(endpointId) && "2".equals(groupId)) {
-            iconOne.setImageResource(icon[6]);
-        }
-
-        if ("bulb".equals(type)) {
-            iconSecond.setImageResource(R.drawable.vector_drawable_ic_device_79);
-        }
-            tvAction.setText(action);
-            tvTimer.setText("Timer - " + timer);
-
-
     }
+
+
+
+    private void processExtraData() {
+
+        int[] icon = new int[]{R.drawable.vector_drawable_ic_117,
+                R.drawable.vector_drawable_ic_80,
+                R.drawable.vector_drawable_ic_81,
+                R.drawable.vector_drawable_ic_device_79,
+                R.drawable.vector_drawable_ic_65};
+
+        if ("BULB".equals(type)) {
+            iconOne.setImageResource(icon[3]);
+        } else if ("PLUG".equals(type)) {
+            iconOne.setImageResource(icon[1]);
+        } else {
+            iconOne.setImageResource(icon[1]);
+        }
+
+        tvAction.setText(action);
+        tvName.setText(name);
+        tvTimer.setText("Timer - " + timer);
+
+         getAction();
+    }
+
 
     private void getAction() {
         fromIntent = getIntent();
@@ -191,11 +179,11 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
 
             }
         }*/
+
+
         nodeId =fromIntent.getStringExtra("nodeId");
-        endpointId = fromIntent.getStringExtra("endpointId");
-        groupId = fromIntent.getStringExtra("groupId");
-        arr = fromIntent.getStringExtra("arr");
         type = fromIntent.getStringExtra("type");
+        name = fromIntent.getStringExtra("name");
         action = fromIntent.getStringExtra("action");
         timer = fromIntent.getStringExtra("timer");
     }
@@ -205,11 +193,11 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
         Intent intent = null;
         switch (view.getId()) {
             case R.id.rl_one:
-                intent = new Intent(this, ActionChooseActivity.class);
+                intent = new Intent(this, ChooseDeviceActivity.class);
                 break;
-            case R.id.rl_second:
-                intent = new Intent(this, ToggleActivity.class);
-                break;
+//            case R.id.rl_second:
+//                intent = new Intent(this, ToggleActivity.class);
+//                break;
             case R.id.rl_third:
                 intent = new Intent(this, DoActionActivity.class);
                 break;
@@ -219,37 +207,52 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
             case R.id.btn_done:
 
 //                int ZwController_addEndpointsToGroup(int deviceId, int groupId, int[] arr);
-                if(Const.isRemote){
-                    initIotMqttMessage();
-                    if(HomeActivity.shadowTopic!=null && !HomeActivity.shadowTopic.equals("")){
-                        MqttService mqttService = MqttService.getInstance();
-                        mqttService.publishMqttMessage(HomeActivity.shadowTopic,
-                                "mobile_zwave:addEndpointsToGroup:" + nodeId + ":" + groupId + ":" + arr + ":" + endpointId + ":" + timer);
-                    }
-                }else{
-                    MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
-                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,
-                            "mobile_zwave:addEndpointsToGroup:" + nodeId + ":" + groupId + ":" + arr + ":" + endpointId + ":" + timer);
-                }
+//                if(Const.isRemote){
+//                    initIotMqttMessage();
+//                    if(HomeActivity.shadowTopic!=null && !HomeActivity.shadowTopic.equals("")){
+////                        MqttService mqttService = MqttService.getInstance();
+////                        mqttService.publishMqttMessage(HomeActivity.shadowTopic,
+////                                "mobile_zwave:addEndpointsToGroup:" + nodeId + ":" + groupId + ":" + arr + ":" + endpointId + ":" + timer);
+//
+//                        //  arr  需要从nodeInfo中获取
+//                        ArrayList nodeInterFaceList = new ArrayList();
+//                        nodeInterFaceList.add("arr");
+//
+//                        MqttDesiredJStrBuilder builder = new MqttDesiredJStrBuilder(Const.subscriptionTopic+"Zwave"+nodeId);
+//                        builder.setJsonString( CloudIotData.addEndpointsToGroup(nodeId,endpointId,groupId,nodeInterFaceList) );
+//                        AskeyIoTService.getInstance(ZwaveClientApplication.getInstance()).publishDesiredMessage(HomeActivity.shadowTopic, builder);
+//                    }
+//                }else{
+//                    MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
+//
+//                    ArrayList nodeInterFaceList = new ArrayList();
+//                    nodeInterFaceList.add("arr");
+//
+//                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic +"Zwave"+ nodeId, LocalMqttData.addEndpointsToGroup(nodeId,endpointId,groupId,nodeInterFaceList));
+////                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,
+////                            "mobile_zwave:addEndpointsToGroup:" + nodeId + ":" + groupId + ":" + arr + ":" + endpointId + ":" + timer);
+//                }
 //                mobile_zwave:addEndpointsToGroup:null:3:arr:null:null
-                Log.i("aaaaaaaaaaaaaa","mobile_zwave:addEndpointsToGroup:" + nodeId + ":" + groupId + ":" + arr + ":" + endpointId + ":" + timer);
+
+                intent = new Intent(this,SceneActionsActivity.class);
                 break;
 
         }
 
-        if (intent != null) {
-            intent.putExtra("from",ActionSummaryActivity.class.getSimpleName());
-            intent.putExtra("nodeId",nodeId);
-            intent.putExtra("endpointId",endpointId);
-            intent.putExtra("groupId",groupId);
-            intent.putExtra("arr",arr);
-            intent.putExtra("type",type);
-            intent.putExtra("action",action);
-            intent.putExtra("timer",timer);
-            startActivity(intent);
-        }
+        intent.putExtra("from",ActionSummaryActivity.class.getSimpleName());
+        intent.putExtra("nodeId",nodeId);
+        intent.putExtra("name",name);
+        intent.putExtra("type",type);
+        intent.putExtra("action",action);
+        intent.putExtra("timer",timer);
+        startActivity(intent);
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+  
     @Override
     protected void onDestroy() {
         super.onDestroy();

@@ -14,6 +14,8 @@ import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.base.BaseActivity;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
+import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
+import com.askey.mobile.zwave.control.guideSetting.ui.DeviceGuideHomeActivity;
 import com.askey.mobile.zwave.control.home.activity.HomeActivity;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
@@ -119,7 +121,6 @@ public class WelcomeActivity extends BaseActivity {
             public void initMQTT(boolean result) {
                 if (result) {
                     Intent intent = new Intent();
-//                    intent.setClass(mContext, HomePageActivity.class);
                     intent.setClass(mContext, HomeActivity.class);
                     mContext.startActivity(intent);
                     finish();
@@ -133,6 +134,9 @@ public class WelcomeActivity extends BaseActivity {
     }
 
     private void showFailedConnectMQTTDialog() {
+        if (WelcomeActivity.this.isFinishing()) {
+            return;
+        }
         if(alertDialog == null){
             AlertDialog.Builder addDialog = new AlertDialog.Builder(mContext);
             LayoutInflater layoutInflater = LayoutInflater.from(mContext);

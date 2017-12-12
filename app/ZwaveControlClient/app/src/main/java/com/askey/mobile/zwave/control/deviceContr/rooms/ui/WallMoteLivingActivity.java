@@ -17,6 +17,7 @@ public class WallMoteLivingActivity extends BaseDeviceActivity {
     private LinearLayout llMoteLiving;
     private ImageView setting,info;
     private Button btnShowKey,btnSetKey;
+    private String nodeInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +41,12 @@ public class WallMoteLivingActivity extends BaseDeviceActivity {
         btnSetKey = (Button) findViewById(R.id.btn_set_key);
         btnShowKey.setOnClickListener(this);
         btnSetKey.setOnClickListener(this);
+
+        nodeId = getIntent().getStringExtra("nodeId");
+        type = getIntent().getStringExtra("type");
+        name = getIntent().getStringExtra("displayName");
+        room = getIntent().getStringExtra("room");
+        nodeInfo = getIntent().getStringExtra("nodeInfo");
     }
 
     @Override
@@ -74,12 +81,14 @@ public class WallMoteLivingActivity extends BaseDeviceActivity {
     public void onClick(View view) {
         super.onClick(view);
         if (view.getId() == R.id.btn_show_key) {
-            Intent intent = new Intent(this,AvailableActivity.class);
+            Intent intent = new Intent(this,WallMoteCommandsActivity.class);
             startActivity(intent);
         } else if (view.getId() == R.id.btn_set_key) {
             Intent intent = new Intent(this,SetupKeyActivity.class);
-            intent.putExtra("nodeId",getIntent().getStringExtra("nodeId"));
+            intent.putExtra("nodeId",nodeId);
+            intent.putExtra("nodeInfo",nodeInfo);
             startActivity(intent);
         }
     }
+
 }

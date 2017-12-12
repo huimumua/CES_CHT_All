@@ -59,9 +59,14 @@ public class UdpConnect implements OnGatwayFindListener {
         Logg.i(TAG, "onGatwayFind: server_ip=" + server_ip);
         Logg.i(TAG, "onGatwayFind: data=" + data);
         String str[] = data.split(":");
-        setServerUri(server_ip);
-        setTopic(str[2]);
-        setTutk_tuuid(str[1]);
+        if(str.length==3){
+            setServerUri(server_ip);
+            setTopic(str[2]);
+            setTutk_tuuid(str[1]);
+        }else{
+            Logg.e(TAG, "onGatwayFind: data=" + data +"==server_ip=="+server_ip);
+        }
+
 //        HttpFactory.setServerIp(server_ip);
         if (onGatwayFindRunnable != null) {
             new Thread(onGatwayFindRunnable).start();

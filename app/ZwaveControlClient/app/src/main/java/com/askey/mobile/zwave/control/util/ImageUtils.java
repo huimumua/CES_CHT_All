@@ -3,6 +3,7 @@ package com.askey.mobile.zwave.control.util;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.util.Log;
 import android.view.View;
 
@@ -13,6 +14,8 @@ import java.io.ByteArrayOutputStream;
  */
 
 public class ImageUtils {
+
+    private static BitmapDrawable bitmapDrawable;
 
     /**
      *
@@ -33,11 +36,18 @@ public class ImageUtils {
         return baos.toByteArray();
     }
     public static Bitmap Bytes2Bimap(byte[] b) {
-        if (b.length != 0) {
+        if (0 != b.length) {
             return BitmapFactory.decodeByteArray(b, 0, b.length);
         } else {
             return null;
         }
+    }
+
+    public static void setBackgroundImg(BitmapDrawable drawable){
+        bitmapDrawable = drawable;
+    }
+    public static BitmapDrawable getBackgroundImg(){
+        return bitmapDrawable;
     }
 
     /**

@@ -3,14 +3,18 @@ package com.askey.mobile.zwave.control.guideSetting.ui;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
 import com.amazonaws.mobileconnectors.iot.AWSIotMqttClientStatusCallback;
+import com.amazonaws.mobileconnectors.iot.AWSIotMqttQos;
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.base.BaseActivity;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
@@ -22,6 +26,7 @@ import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.home.activity.HomeActivity;
 import com.askey.mobile.zwave.control.login.ui.LogInActivity;
 import com.askey.mobile.zwave.control.util.Const;
+import com.askey.mobile.zwave.control.util.ImageUtils;
 import com.askey.mobile.zwave.control.util.Logg;
 import com.askey.mobile.zwave.control.util.PreferencesUtils;
 import com.askeycloud.sdk.device.response.AWSIoTCertResponse;
@@ -35,12 +40,15 @@ import com.askeycloud.webservice.sdk.service.device.AskeyIoTDeviceService;
 import com.askeycloud.webservice.sdk.service.iot.AskeyIoTService;
 import com.askeycloud.webservice.sdk.service.web.AskeyWebService;
 import com.askeycloud.webservice.sdk.task.DeviceOAuthApiCallback;
+import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.io.File;
 import java.util.List;
 import java.util.Timer;
+import java.util.concurrent.ExecutionException;
 
 
 public class DeviceGuideHomeActivity extends BaseActivity {
@@ -48,20 +56,27 @@ public class DeviceGuideHomeActivity extends BaseActivity {
     private Timer timer;
 
     private AlertDialog alertDialog;
-    private String  mqttResult;
-    private String userId,cert,pk;
+    private String mqttResult;
+    private String userId, cert, pk;
+    private String back_img_src;
+    private static final String BACK_IMG_SRC = "backgroundImg";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_guide_home);
-        if(Const.isRemote){
-            deviceAuth();
-        }else{
-            TcpClient.getInstance().rigister(tcpReceive);
-            tcpConnect(Const.SERVER_IP,Const.TCP_PORT);
-            initLocalMqtt();
-        }
+
+        showWaitingDialog();
+
+//        if(Const.isRemote){
+//            deviceAuth();
+//        }else{
+//            TcpClient.getInstance().rigister(tcpReceive);
+//            tcpConnect(Const.SERVER_IP,Const.TCP_PORT);
+//            initLocalMqtt();
+//        }
+        deviceAuth();
+
 
     }
 
@@ -69,8 +84,8 @@ public class DeviceGuideHomeActivity extends BaseActivity {
         @Override
         public void mqttMessageArrived(String topic, MqttMessage message) {
             mqttResult = new String(message.getPayload());
-            Logg.i(TAG,"=mqttMessageArrived=>=topic="+topic);
-            Logg.i(TAG,"=mqttMessageArrived=>=message="+mqttResult);
+            Logg.i(TAG, "=mqttMessageArrived=>=topic=" + topic);
+            Logg.i(TAG, "=mqttMessageArrived=>=message=" + mqttResult);
             //解析数据  将数据装入data后展示出来
 
             getDeviceResult(mqttResult);
@@ -82,21 +97,21 @@ public class DeviceGuideHomeActivity extends BaseActivity {
     TCPReceive tcpReceive = new TCPReceive() {
         @Override
         public void onConnect(SocketTransceiver transceiver) {
-            Logg.i(TAG,"=%%%%%%%%%%%%%%%%%%%%%=onConnect=");
+            Logg.i(TAG, "=%%%%%%%%%%%%%%%%%%%%%=onConnect=");
 
         }
 
         @Override
         public void onConnectFailed() {
-            Logg.i(TAG,"=%%%%%%%%%%%%%%%%%%%%%=onConnectFailed=");
+            Logg.i(TAG, "=%%%%%%%%%%%%%%%%%%%%%=onConnectFailed=");
         }
 
         @Override
         public void receiveMessage(SocketTransceiver transceiver, String tcpMassage) {
-            Logg.i(TAG,"=TCPReceive=>=receiveMessage="+tcpMassage);
+            Logg.i(TAG, "=TCPReceive=>=receiveMessage=" + tcpMassage);
             //在这里处理结果
-            if(tcpMassage.contains("setDefault:0")){
-                Logg.i(TAG,"====setDefault:0====");
+            if (tcpMassage.contains("setDefault:0")) {
+                Logg.i(TAG, "====setDefault:0====");
 /*                ((Activity) mContext).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -110,7 +125,7 @@ public class DeviceGuideHomeActivity extends BaseActivity {
 
         @Override
         public void onDisconnect(SocketTransceiver transceiver) {
-            Logg.i(TAG,"=%%%%%%%%%%%%%%%%%%%%%=onDisconnect=");
+            Logg.i(TAG, "=%%%%%%%%%%%%%%%%%%%%%=onDisconnect=");
         }
 
 
@@ -119,15 +134,15 @@ public class DeviceGuideHomeActivity extends BaseActivity {
     //mqtt调用返回结果
     private void getDeviceResult(String result) {
         DeviceList deviceList = new Gson().fromJson(result, DeviceList.class);
-        List<DeviceList.NodeInfoList> temp =  deviceList.getNodeList();
+        List<DeviceList.NodeInfoList> temp = deviceList.getNodeList();
         for (DeviceList.NodeInfoList nodeInfoTemp : temp) {
             String nodeId = nodeInfoTemp.getNodeId();
-            String nodeTopic = Const.subscriptionTopic +"Zwave"+ nodeId;
+            String nodeTopic = Const.subscriptionTopic + "Zwave" + nodeId;
             // 订阅新设备的topic为 sn + nodeId
-            MQTTManagement.getSingInstance().subscribeToTopic(nodeTopic,null);
+            MQTTManagement.getSingInstance().subscribeToTopic(nodeTopic, null);
         }
 
-        Logg.i(TAG,"====getDeviceResult===result=="+result);
+        Logg.i(TAG, "====getDeviceResult===result==" + result);
 
     }
 
@@ -138,6 +153,7 @@ public class DeviceGuideHomeActivity extends BaseActivity {
             TcpClient.getInstance().connect(tcpServer, tcpPort);
         } catch (NumberFormatException e) {
             e.printStackTrace();
+            Logg.i(TAG,"==tcpConnect=Exception="+e.getMessage());
         }
     }
 
@@ -147,10 +163,14 @@ public class DeviceGuideHomeActivity extends BaseActivity {
             @Override
             public void initMQTT(boolean result) {
                 if (result) {
-                    Intent intent = new Intent();
-                    intent.setClass(mContext, HomeActivity.class);
-                    mContext.startActivity(intent);
-                    finish();
+                    stopWaitDialog();
+                    Log.d("device", Thread.currentThread().getName());
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            guide2HomeActivity();
+                        }
+                    }).start();
                 } else {
                     //目前先不管出错情况
                     runOnUiThread(new Runnable() {
@@ -165,7 +185,10 @@ public class DeviceGuideHomeActivity extends BaseActivity {
     }
 
     private void showFailedConnectMQTTDialog() {
-        if(alertDialog == null){
+        if (DeviceGuideHomeActivity.this.isFinishing()) {
+            return;
+        }
+        if (alertDialog == null) {
             AlertDialog.Builder addDialog = new AlertDialog.Builder(mContext);
             LayoutInflater layoutInflater = LayoutInflater.from(mContext);
             View view = layoutInflater.inflate(R.layout.dialog_retry_layout, null);
@@ -192,7 +215,7 @@ public class DeviceGuideHomeActivity extends BaseActivity {
             go_wan.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Logg.i(TAG,"=showFailedConnectMQTTDialog=goWan=");
+                    Logg.i(TAG, "=showFailedConnectMQTTDialog=goWan=");
                     hideProgressDialog();
                     showProgressDialog(mContext, "Initializing，Create an MQTT link...");
                     Const.isRemote = true;
@@ -212,22 +235,22 @@ public class DeviceGuideHomeActivity extends BaseActivity {
     }
 
     private void alertDialogCancel() {
-        if(alertDialog!=null){
+        if (alertDialog != null) {
             alertDialog.dismiss();
-            alertDialog=null;
+            alertDialog = null;
         }
     }
 
     //登录之后调用
     private void deviceAuth() {
-       boolean result = ServicePreference.isAuthV3UserDataExist(mContext);
-        Logg.i(TAG,"===deviceAuth===isAuthV3UserDataExist=="+result);
+        boolean result = ServicePreference.isAuthV3UserDataExist(mContext);
+        Logg.i(TAG, "===deviceAuth===isAuthV3UserDataExist==" + result);
         String tutk_uuid = (String) PreferencesUtils.get(mContext, Const.TUTK_TUUID_TAG, "");
 
         DeviceProvidersQueryOptions options = new DeviceProvidersQueryOptions();
-        Logg.i(TAG,"==deviceAuth====Const.AUTH_APP_ID===" + Const.AUTH_APP_ID);
-        Logg.i(TAG,"==deviceAuth====DEVICE_MODEL===" + Const.DEVICE_MODEL);
-        Logg.i(TAG,"==deviceAuth====tutk_uuid===" + tutk_uuid);
+        Logg.i(TAG, "==deviceAuth====Const.AUTH_APP_ID===" + Const.AUTH_APP_ID);
+        Logg.i(TAG, "==deviceAuth====DEVICE_MODEL===" + Const.DEVICE_MODEL);
+        Logg.i(TAG, "==deviceAuth====tutk_uuid===" + tutk_uuid);
         options.setDeviceAuthAppId(Const.AUTH_APP_ID);
         options.setDeviceModel(Const.DEVICE_MODEL);
         options.setDeviceAuthUniqueId(tutk_uuid/*"be31eb33253d1cc7"*/);//只要是唯一的字串參數就好
@@ -235,41 +258,39 @@ public class DeviceGuideHomeActivity extends BaseActivity {
         DeviceOAuthApiCallback deviceOAuthApiCallback = new DeviceOAuthApiCallback() {
             @Override
             public void bindingDeviceSuccess(int i) {
-                Logg.i(TAG,"===deviceOAuthApiCallback===success===" + i);
+                Logg.i(TAG, "===deviceOAuthApiCallback===success===" + i);
 
                 lookupIoTDevice(mContext);
             }
 
             @Override
             public void bindingDeviceError(int i, String s, String s1) {
-                Logg.i(TAG,"======success===" + " i=" + i + " s=" + s + " s1= " + s1);
+                Logg.i(TAG, "======success===" + " i=" + i + " s=" + s + " s1= " + s1);
             }
         };
         AskeyWebService.getInstance(this).activeDeviceV3(options, Const.AUTH_APP_ID, deviceOAuthApiCallback);
     }
 
-
-
     /**
      * 检查设备是否存在
-     * */
-    public  void lookupIoTDevice(final Context mcontext) {
+     */
+    public void lookupIoTDevice(final Context mcontext) {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                String deviceId = (String) PreferencesUtils.get(mContext, Const.TOPIC_TAG, "");
-//                String tutk_uuid = (String) PreferencesUtils.get(mContext, Const.TUTK_TUUID_TAG, "");
-//                Logg.i(TAG, "=====lookupIoTDevice===deviceId====="+deviceId);
-                IoTDeviceInfoResponse ioTDeviceInfoResponse = AskeyIoTDeviceService.getInstance(mcontext).lookupIoTDevice(Const.DEVICE_MODEL, deviceId );
-                if(ioTDeviceInfoResponse!=null && !"".equals(ioTDeviceInfoResponse)){
+//              String deviceId = (String) PreferencesUtils.get(mContext, Const.TOPIC_TAG, "");
+                String tutk_uuid = (String) PreferencesUtils.get(mContext, Const.TUTK_TUUID_TAG, "");
+                Logg.i(TAG, "=====lookupIoTDevice===tutk_uuid=====" + tutk_uuid);
+                IoTDeviceInfoResponse ioTDeviceInfoResponse = AskeyIoTDeviceService.getInstance(mcontext).lookupIoTDevice(Const.DEVICE_MODEL, tutk_uuid);
+                if (ioTDeviceInfoResponse != null && !"".equals(ioTDeviceInfoResponse)) {
                     int code = ioTDeviceInfoResponse.getCode();
-                    Logg.i(TAG, "===lookupIoTDevice===DEVICE_MODEL====" + Const.DEVICE_MODEL );
-                    Logg.i(TAG, "===lookupIoTDevice===deviceId====" + Const.subscriptionTopic );
-                    Logg.i(TAG, "===lookupIoTDevice===getCode====" + ioTDeviceInfoResponse.getCode() );
-                    Logg.i(TAG, "===lookupIoTDevice===getMessage====" + ioTDeviceInfoResponse.getMessage() );
-                    Logg.i(TAG, "===lookupIoTDevice===getAddtionMessage====" + ioTDeviceInfoResponse.getAddtionMessage() );
+                    Logg.i(TAG, "===lookupIoTDevice===DEVICE_MODEL====" + Const.DEVICE_MODEL);
+                    Logg.i(TAG, "===lookupIoTDevice===deviceId====" + Const.subscriptionTopic);
+                    Logg.i(TAG, "===lookupIoTDevice===getCode====" + ioTDeviceInfoResponse.getCode());
+                    Logg.i(TAG, "===lookupIoTDevice===getMessage====" + ioTDeviceInfoResponse.getMessage());
+                    Logg.i(TAG, "===lookupIoTDevice===getAddtionMessage====" + ioTDeviceInfoResponse.getAddtionMessage());
 
-                    if(400005 == code || 403 == code){
+                    if (400005 == code || 403 == code) {
                         //设备不存在  进行创建
                         try {
                             Thread.sleep(3000);
@@ -277,14 +298,14 @@ public class DeviceGuideHomeActivity extends BaseActivity {
                             e.printStackTrace();
                         }
                         lookupIoTDevice(mcontext);
-                    }else if(400006 == code ){
+                    } else if (400006 == code) {
                         ((Activity) mContext).runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 showLookupIoTDialog();
                             }
                         });
-                    }else if(200 == code){
+                    } else if (200 == code) {
                         //存在成功
                         getCertificateKey(ioTDeviceInfoResponse);
                     }
@@ -297,15 +318,15 @@ public class DeviceGuideHomeActivity extends BaseActivity {
     }
 
 
-
-    public  void getCertificateKey(final IoTDeviceInfoResponse ioTDeviceInfoResponse) {
+    public void getCertificateKey(final IoTDeviceInfoResponse ioTDeviceInfoResponse) {
         AWSIoTCertResponse response = AskeyIoTDeviceService.getInstance(appContext).getIotCert();
         Logg.i(TAG, "==getCertificateKey====response=" + response);
+        AskeyIoTService.getInstance(appContext).changeMQTTQos(AWSIotMqttQos.QOS1);
         final MqttServiceConnectedCallback mqttServiceConnectedCallback = new MqttServiceConnectedCallback() {
             @Override
             public void onMqttServiceConnectedSuccess() {
                 Logg.i(TAG, "===MqttServiceConnectedCallback===onMqttServiceConnectedSuccess===");
-                if(!"".equals(userId) && !"".equals(cert) && !"".equals(pk)){
+                if (!"".equals(userId) && !"".equals(cert) && !"".equals(pk)) {
                     AskeyIoTService.getInstance(appContext).connectToAWSIot(userId, cert, pk,
                             new MqttConnectionCallback() {
                                 @Override
@@ -313,15 +334,13 @@ public class DeviceGuideHomeActivity extends BaseActivity {
                                     Logg.i(TAG, "====MqttConnectionCallback==onConnected===");
                                     if (ioTDeviceInfoResponse != null) {
                                         HomeActivity.shadowTopic = ioTDeviceInfoResponse.getShadowTopic();
-//                                        MqttService mqttService = MqttService.getInstance();
-//                                        mqttService.subscribeMqttTopic(ioTDeviceInfoResponse.getShadowTopic());
-//                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(Const.subscriptionTopic);
-                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(HomeActivity.shadowTopic);
-//                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(ioTDeviceInfoResponse.getShadowTopic());
-//                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqttDelta(ioTDeviceInfoResponse.getShadowTopic());
+                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(ioTDeviceInfoResponse.getShadowTopic());
                                         if (Const.isRemote) {
-                                            Intent intent = new Intent(mContext, HomeActivity.class);
-                                            startActivity(intent);
+                                            guide2HomeActivity();
+                                        } else{
+                                            TcpClient.getInstance().rigister(tcpReceive);
+                                            tcpConnect(Const.SERVER_IP, Const.TCP_PORT);
+                                            initLocalMqtt();
                                         }
                                     }
                                 }
@@ -343,7 +362,7 @@ public class DeviceGuideHomeActivity extends BaseActivity {
         };
 
 
-        if(response != null){
+        if (response != null) {
             response = AskeyIoTDeviceService.getInstance(appContext).getIotCert();
             cert = response.getCertificatePem();
             pk = response.getPrivateKey();
@@ -393,6 +412,7 @@ public class DeviceGuideHomeActivity extends BaseActivity {
                 Intent intent = new Intent(mContext, LogInActivity.class);
                 startActivity(intent);
                 alertDialog.dismiss();
+                finish();
             }
         });
 
@@ -415,25 +435,67 @@ public class DeviceGuideHomeActivity extends BaseActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        Logg.i(TAG,"===onStop=====");
+        Logg.i(TAG, "===onStop=====");
         unrigister();
+        if (alertDialog != null) {
+            alertDialog.cancel();
+        }
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Logg.i(TAG,"===onDestroy=====");
+        Logg.i(TAG, "===onDestroy=====");
+    }
+
+    /*
+        这个方法为耗时操作
+     */
+    private void guide2HomeActivity() {
+        back_img_src = (String) PreferencesUtils.get(DeviceGuideHomeActivity.this, BACK_IMG_SRC, "");
+        if (!back_img_src.equals("")) {
+            final File file = new File(back_img_src);
+            if (file.exists()) {
+                Bitmap myBitmap = null;
+                try {
+                    myBitmap = Glide.with(DeviceGuideHomeActivity.this)
+                            .load(file)
+                            .asBitmap() //必须
+                            .centerCrop()
+                            .into(1080, 1920)
+                            .get();
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+                final Bitmap finalMyBitmap = myBitmap;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        BitmapDrawable drawable = new BitmapDrawable(getResources(), finalMyBitmap);
+                        ImageUtils.setBackgroundImg(drawable);
+                    }
+                });
+            }
+        }
+        stopWaitDialog();
+        Intent intent = new Intent(mContext, HomeActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     private void unrigister() {
-        if(tcpReceive!=null){
+        if (tcpReceive != null) {
             TcpClient.getInstance().unrigister(tcpReceive);
         }
-        if(mqttMessageArrived!=null){
+        if (mqttMessageArrived != null) {
             MQTTManagement.getSingInstance().unrigister(mqttMessageArrived);
         }
     }
-
 
 
 }

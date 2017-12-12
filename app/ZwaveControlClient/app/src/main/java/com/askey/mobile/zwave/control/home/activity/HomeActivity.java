@@ -3,7 +3,9 @@ package com.askey.mobile.zwave.control.home.activity;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -12,6 +14,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -23,15 +26,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.amazonaws.mobileconnectors.iot.AWSIotMqttClientStatusCallback;
+import com.amazonaws.mobileconnectors.iot.AWSIotMqttQos;
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.base.BaseActivity;
-import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
-import com.askey.mobile.zwave.control.home.activity.addDevice.AddDeviceActivity;
+import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
+import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
+import com.askey.mobile.zwave.control.home.activity.addDevice.SelectBrandActivity;
 import com.askey.mobile.zwave.control.home.adapter.HomeAdapter;
 import com.askey.mobile.zwave.control.home.fragment.FavoritesFragment;
 import com.askey.mobile.zwave.control.home.fragment.RoomsFragment;
 import com.askey.mobile.zwave.control.home.fragment.ScenesFragment;
+import com.askey.mobile.zwave.control.login.ui.LogInActivity;
 import com.askey.mobile.zwave.control.util.Const;
+import com.askey.mobile.zwave.control.util.ImageUtils;
 import com.askey.mobile.zwave.control.util.Logg;
 import com.askey.mobile.zwave.control.util.PreferencesUtils;
 import com.askeycloud.sdk.device.response.AWSIoTCertResponse;
@@ -41,13 +48,15 @@ import com.askeycloud.webservice.sdk.iot.callback.MqttConnectionCallback;
 import com.askeycloud.webservice.sdk.iot.callback.MqttServiceConnectedCallback;
 import com.askeycloud.webservice.sdk.service.device.AskeyIoTDeviceService;
 import com.askeycloud.webservice.sdk.service.iot.AskeyIoTService;
+import com.askeycloud.webservice.sdk.service.web.AskeyApiAuthService;
+import com.bumptech.glide.Glide;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.File;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutionException;
 
-public class HomeActivity extends BaseActivity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener, TabLayout.OnTabSelectedListener {
+public class HomeActivity extends BaseActivity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener, TabLayout.OnTabSelectedListener, PreviewPhotoActivity.ChangeBackgroundCallback{
     public static String LOG_TAG = "HomeActivity";
     private FrameLayout container;
     private NavigationView sliding_menu;
@@ -55,7 +64,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     private TabLayout bottom_tab;
     private Fragment[] fragments;
     private HomeAdapter myAdapter;
-    private ImageView edit, voice;
+    private ImageView edit, voice, head_cion;
     private String[] titles = new String[]{"Favorites", "Rooms", "Scenes"};
     private int[] icon = new int[]{
             R.drawable.tab_favorite_bg, R.drawable.tab_rooms_bg, R.drawable.tab_scenes_bg
@@ -63,6 +72,8 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     private int currentIndex;
     public static String shadowTopic;
     private String userId,cert,pk;
+    private String back_img_src;
+    private static final String BACK_IMG_SRC = "backgroundImg";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,18 +86,27 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
             decorView.setSystemUiVisibility(option);
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
-
-
         initView();
         initFragment();
-//        lookupIoTDevice(mContext);
+        if(Const.isRemote){
+            showWaitingDialog();
+            lookupIoTDevice(mContext);
+        }
+
     }
 
 
     private void initView() {
         container = (FrameLayout) findViewById(R.id.container);
         sliding_menu = (NavigationView) findViewById(R.id.sliding_menu);
+        View headerLayout = sliding_menu.inflateHeaderView(R.layout.navigation_head);
+        head_cion = (ImageView) headerLayout.findViewById(R.id.head_icon);
+
         drawer_layout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        BitmapDrawable drawable = ImageUtils.getBackgroundImg();
+        if (null != drawable) {
+            drawer_layout.setBackground(drawable);
+        }
         bottom_tab = (TabLayout) findViewById(R.id.bottom_tab);
 
         edit = (ImageView) findViewById(R.id.edit);
@@ -102,9 +122,10 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
         fragments = new Fragment[]{
                 favoritesFragment, roomsFragment, scenesFragment
         };
-
+        head_cion.setOnClickListener(this);
         bottom_tab.addOnTabSelectedListener(this);
         sliding_menu.setNavigationItemSelectedListener(this);
+        PreviewPhotoActivity.setChangeBackgroundCallback(this);
     }
 
     private void initFragment() {
@@ -137,16 +158,11 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
         switch (item.getItemId()) {
             case R.id.item_add:
 //                changeIndexFragment(item, 0);
-                startActivity(new Intent(this, AddDeviceActivity.class));
+                startActivity(new Intent(this, SelectBrandActivity.class));
+                Const.currentRoomName = "My Home";
                 return true;
             case R.id.item_account:
                 changeIndexFragment(item, 1);
-                return true;
-            case R.id.item_help:
-                changeIndexFragment(item, 2);
-                return true;
-            case R.id.item_send:
-                changeIndexFragment(item, 3);
                 return true;
             case R.id.item_about:
                 changeIndexFragment(item, 4);
@@ -155,7 +171,10 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
                 changeIndexFragment(item, 5);
                 return true;
             case R.id.item_out:
-                changeIndexFragment(item, 6);
+//                changeIndexFragment(item, 6);
+                AskeyApiAuthService.getInstance(mContext).revoke();
+                Intent intent = new Intent(mContext, LogInActivity.class);
+                startActivity(intent);
                 return true;
         }
         return false;
@@ -201,6 +220,11 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
 
     @Override
     public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.head_icon:
+                drawer_layout.closeDrawer(Gravity.START);
+                break;
+        }
     }
 
     @Override
@@ -273,6 +297,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     public  void getCertificateKey(final IoTDeviceInfoResponse ioTDeviceInfoResponse) {
         AWSIoTCertResponse response = AskeyIoTDeviceService.getInstance(appContext).getIotCert();
         Logg.i(LOG_TAG, "==getCertificateKey====response=" + response);
+        AskeyIoTService.getInstance(appContext).changeMQTTQos(AWSIotMqttQos.QOS1);
         final MqttServiceConnectedCallback mqttServiceConnectedCallback = new MqttServiceConnectedCallback() {
             @Override
             public void onMqttServiceConnectedSuccess() {
@@ -284,13 +309,9 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
                                 public void onConnected() {
                                     Logg.i(LOG_TAG, "====MqttConnectionCallback==onConnected===");
                                     if (ioTDeviceInfoResponse != null) {
+                                        stopWaitDialog();
                                         HomeActivity.shadowTopic = ioTDeviceInfoResponse.getShadowTopic();
-//                                        MqttService mqttService = MqttService.getInstance();
-//                                        mqttService.subscribeMqttTopic(ioTDeviceInfoResponse.getShadowTopic());
-//                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(Const.subscriptionTopic);
-                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(HomeActivity.shadowTopic);
-//                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(ioTDeviceInfoResponse.getShadowTopic());
-//                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqttDelta(ioTDeviceInfoResponse.getShadowTopic());
+                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(ioTDeviceInfoResponse.getShadowTopic());
                                     }
                                 }
 
@@ -385,10 +406,59 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
                 }
             }, 2000); // 如果2秒钟内没有按下返回键，则启动定时器取消掉刚才执行的任务
         } else {
+            TcpClient.getInstance().disconnect();
+            MQTTManagement.getSingInstance().closeMqtt();
             ((Activity) context).finish();
             System.exit(0);
         }
     }
 
+    /*
+        加载背景图
+     */
+    public void loadBackground(){
+        back_img_src = (String) PreferencesUtils.get(this, BACK_IMG_SRC, "");
+        if (!back_img_src.equals("")) {
+            final File file = new File(back_img_src);
+            if (file.exists()) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Bitmap myBitmap = null;
+                        try {
+                            myBitmap = Glide.with(HomeActivity.this)
+                                    .load(file)
+                                    .asBitmap() //必须
+                                    .centerCrop()
+                                    .into(1080, 1920)
+                                    .get();
+                            Log.d(LOG_TAG,"=====1");
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                            Log.d(LOG_TAG,"=====2");
+                        } catch (ExecutionException e) {
+                            e.printStackTrace();
+                            Log.d(LOG_TAG,"=====3");
+                        }
+                        final Bitmap finalMyBitmap = myBitmap;
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.d(LOG_TAG,"=====4");
+                                BitmapDrawable drawable = new BitmapDrawable(getResources(),finalMyBitmap);
+                                drawer_layout.setBackground(drawable);
+                            }
+                        });
+                    }
+                }).start();
+            }
+        }
+    }
 
+    @Override
+    public void changeBackground(Bitmap bitmap, String fileSrc) {
+        BitmapDrawable drawable = new BitmapDrawable(getResources(),bitmap);
+        drawer_layout.setBackground(drawable);
+        PreferencesUtils.put(this,BACK_IMG_SRC,fileSrc);
+    }
 }

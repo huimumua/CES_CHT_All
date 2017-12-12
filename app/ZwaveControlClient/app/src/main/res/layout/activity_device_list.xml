@@ -21,21 +21,22 @@
         android:id="@+id/brand_icon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_launcher"
+        android:src="@mipmap/aeotec_logo_big"
         android:layout_gravity="center"
-        android:padding="15dp"
         />
 
     <TextView
         android:id="@+id/brand_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="brand_name"
+        android:layout_marginTop="10dip"
+        android:text="Aeotec"
         android:gravity="center"
         />
 
     <GridView
         android:id="@+id/device_list"
+        android:layout_marginTop="30dip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:numColumns="3"

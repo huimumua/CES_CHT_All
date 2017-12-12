@@ -20,20 +20,20 @@
             android:title="Account" />
     </group>
 
-    <group
-        android:id="@+id/group_help"
-        android:checkableBehavior="single">
-        <item
-            android:id="@+id/item_help"
-            android:checked="false"
-            android:icon="@drawable/ic_help"
-            android:title="Help" />
-        <item
-            android:id="@+id/item_send"
-            android:checked="false"
-            android:icon="@drawable/ic_send"
-            android:title="Send Feedback" />
-    </group>
+    <!--<group-->
+        <!--android:id="@+id/group_help"-->
+        <!--android:checkableBehavior="single">-->
+        <!--<item-->
+            <!--android:id="@+id/item_help"-->
+            <!--android:checked="false"-->
+            <!--android:icon="@drawable/ic_help"-->
+            <!--android:title="Help" />-->
+        <!--<item-->
+            <!--android:id="@+id/item_send"-->
+            <!--android:checked="false"-->
+            <!--android:icon="@drawable/ic_send"-->
+            <!--android:title="Send Feedback" />-->
+    <!--</group>-->
 
     <group
         android:id="@+id/group_about"

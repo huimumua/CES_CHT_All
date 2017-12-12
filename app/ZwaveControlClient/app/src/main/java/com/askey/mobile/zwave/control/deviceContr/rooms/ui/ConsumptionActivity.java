@@ -99,7 +99,7 @@ public class ConsumptionActivity extends AppCompatActivity implements View.OnCli
 
     private void initIotMqttMessage() {
 
-        IotMqttManagement.getInstance().setIotMqttMessageCallback(new IotMqttMessageCallback() {
+/*        IotMqttManagement.getInstance().setIotMqttMessageCallback(new IotMqttMessageCallback() {
             @Override
             public void receiveMqttMessage(String s, String s1, String s2) {
                 //处理结果
@@ -114,18 +114,22 @@ public class ConsumptionActivity extends AppCompatActivity implements View.OnCli
 
             }
 
-        });
+        });*/
 
-/*        //以下这句为注册监听
+       //以下这句为注册监听
         AskeyIoTService.getInstance(this).setShadowReceiverListener(new ShadowReceiveListener() {
             @Override
             public void receiveShadowDocument(String s, String s1, String s2) {
-                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s=" + s);
-                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s1=" + s1);
-                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setIotMqttMessageCallback==s2=" + s2);
+                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s=" + s);
+                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s1=" + s1);
+                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s2=" + s2);
                 IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
+                if(s2.contains("desired")){
+                    return;
+                }
+                mqttMessageResult(s2);//要验s2格式
             }
-        });*/
+        });
     }
 
     MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
@@ -138,6 +142,7 @@ public class ConsumptionActivity extends AppCompatActivity implements View.OnCli
             if(result.contains("desired")){
                 return;
             }
+
         }
     };
 

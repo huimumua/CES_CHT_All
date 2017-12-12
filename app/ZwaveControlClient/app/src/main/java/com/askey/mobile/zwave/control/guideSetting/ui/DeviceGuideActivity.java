@@ -4,20 +4,15 @@ import android.content.Intent;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 
 import com.askey.mobile.zwave.control.R;
-import com.askey.mobile.zwave.control.deviceContr.ui.NotificationActivity;
 import com.askey.mobile.zwave.control.welcome.adapter.GuidePageAdapter;
-import com.askey.mobile.zwave.control.welcome.ui.GuideActivity;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.Inflater;
 
 public class DeviceGuideActivity extends AppCompatActivity implements View.OnClickListener{
     private ViewPager viewPager;
@@ -74,8 +69,6 @@ public class DeviceGuideActivity extends AppCompatActivity implements View.OnCli
                         }
 
                     }
-
-
                 }
 
                 @Override
