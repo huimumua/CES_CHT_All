@@ -10,6 +10,7 @@ import android.widget.RelativeLayout;
 import android.widget.TimePicker;
 
 import com.askey.mobile.zwave.control.R;
+import com.askey.mobile.zwave.control.deviceContr.scenes.SceneActionInfo;
 
 public class TimerActivity extends AppCompatActivity implements View.OnClickListener{
     private TimePicker timePicker;
@@ -18,6 +19,7 @@ public class TimerActivity extends AppCompatActivity implements View.OnClickList
     private String fromActivity;
     private int hour = 0;
     private int min = 0;
+    private SceneActionInfo sceneActionInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,10 +33,12 @@ public class TimerActivity extends AppCompatActivity implements View.OnClickList
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        sceneActionInfo = getIntent().getParcelableExtra("sceneActionInfo");
     }
 
     private void initView() {
         fromIntent = getIntent();
+        sceneActionInfo = getIntent().getParcelableExtra("sceneActionInfo");
 
         mTimer = (RelativeLayout) findViewById(R.id.rl_timer);
         timePicker = (TimePicker) findViewById(R.id.time_picker);
@@ -69,11 +73,14 @@ public class TimerActivity extends AppCompatActivity implements View.OnClickList
 
 
                 intent.putExtra("from", TimerActivity.class.getSimpleName());
-                intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
-                intent.putExtra("type", fromIntent.getStringExtra("type"));
-                intent.putExtra("name",fromIntent.getStringExtra("name"));
-                intent.putExtra("action", fromIntent.getStringExtra("action"));
-                intent.putExtra("timer", hour + ":" + min);//timmer 要改
+//                intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
+//                intent.putExtra("type", fromIntent.getStringExtra("type"));
+//                intent.putExtra("name",fromIntent.getStringExtra("name"));
+//                intent.putExtra("action", fromIntent.getStringExtra("action"));
+//                intent.putExtra("timer", hour + ":" + min);//timmer 要改
+
+                sceneActionInfo.setTimer(hour + ":" + min);
+                intent.putExtra("sceneActionInfo", sceneActionInfo);
                 startActivity(intent);
 
                 break;

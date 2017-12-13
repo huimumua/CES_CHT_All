@@ -162,7 +162,6 @@ public class PlugActivity extends BaseDeviceActivity {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
     }
 
     private void setSwitchUiStatus(final String switchStatus) {

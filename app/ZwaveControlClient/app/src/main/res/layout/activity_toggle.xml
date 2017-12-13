@@ -156,6 +156,7 @@
             android:thumb="@drawable/vector_drawable_ic_54"
             android:maxHeight="2dp"
             android:layout_gravity="center_vertical"
+            android:max="99"
             android:id="@+id/seekBar" />
 
         <ImageView

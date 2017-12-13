@@ -13,6 +13,7 @@ import android.widget.RelativeLayout;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.deviceContr.adapter.ColorThirdAdapter;
+import com.askey.mobile.zwave.control.deviceContr.scenes.SceneActionInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ public class ToggleActivity extends AppCompatActivity implements View.OnClickLis
     private int currentColor = 1;
     private Intent fromIntent;
     private String fromActivity;
+    private SceneActionInfo sceneActionInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,10 +45,12 @@ public class ToggleActivity extends AppCompatActivity implements View.OnClickLis
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        sceneActionInfo = getIntent().getParcelableExtra("sceneActionInfo");
     }
 
     private void initView() {
         fromIntent = getIntent();
+        sceneActionInfo = getIntent().getParcelableExtra("sceneActionInfo");
 
         right = (ImageView) findViewById(R.id.iv_right);
         right.setOnClickListener(this);
@@ -117,31 +121,33 @@ public class ToggleActivity extends AppCompatActivity implements View.OnClickLis
                     intent = new Intent(ToggleActivity.this, TimerActivity.class);
 
                     intent.putExtra("from", ToggleActivity.class.getSimpleName());
-//                    intent.putExtra("arr", fromIntent.getStringExtra("arr"));
-                    intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
-//                    intent.putExtra("interfaceId", fromIntent.getStringExtra("interfaceId"));
-//                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
-                    intent.putExtra("type", fromIntent.getStringExtra("type"));
-                    intent.putExtra("action",fromIntent.getStringExtra("action"));
-                    intent.putExtra("name",fromIntent.getStringExtra("action"));
-                    startActivity(intent);
+////                    intent.putExtra("arr", fromIntent.getStringExtra("arr"));
+//                    intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
+////                    intent.putExtra("interfaceId", fromIntent.getStringExtra("interfaceId"));
+////                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
+//                    intent.putExtra("type", fromIntent.getStringExtra("type"));
+//                    intent.putExtra("action",fromIntent.getStringExtra("action"));
+//                    intent.putExtra("name",fromIntent.getStringExtra("action"));
+//                    startActivity(intent);
 
                 } else if (fromActivity != null && (ActionSummaryActivity.class.getSimpleName()).equals(fromActivity)) {
                     intent = new Intent(ToggleActivity.this, ActionSummaryActivity.class);
 
                     intent.putExtra("from", ToggleActivity.class.getSimpleName());
-                    intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
-//                    intent.putExtra("interfaceId", fromIntent.getStringExtra("interfaceId"));
-//                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
-//                    intent.putExtra("arr",fromIntent.getStringExtra("arr"));//需要从nodeid获取
-                    intent.putExtra("type", fromIntent.getStringExtra("type"));
-                    intent.putExtra("action", fromIntent.getStringExtra("action"));
-                    intent.putExtra("timer", fromIntent.getStringExtra("timer"));
-                    intent.putExtra("name", fromIntent.getStringExtra("name"));
-                    startActivity(intent);
-
+//                    intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
+////                    intent.putExtra("interfaceId", fromIntent.getStringExtra("interfaceId"));
+////                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
+////                    intent.putExtra("arr",fromIntent.getStringExtra("arr"));//需要从nodeid获取
+//                    intent.putExtra("type", fromIntent.getStringExtra("type"));
+//                    intent.putExtra("action", fromIntent.getStringExtra("action"));
+//                    intent.putExtra("timer", fromIntent.getStringExtra("timer"));
+//                    intent.putExtra("name", fromIntent.getStringExtra("name"));
 
                 }
+
+                intent.putExtra("sceneActionInfo", sceneActionInfo);
+                startActivity(intent);
+
                 break;
             case R.id.btn_left_color:
                 changeColor();

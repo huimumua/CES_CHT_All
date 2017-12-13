@@ -48,12 +48,13 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MyHomeRoomFragment extends Fragment implements DeviceAdapter.OnItemClickListener {
+public class MyHomeRoomFragment extends Fragment implements DeviceAdapter.OnItemClickListener, View.OnClickListener{
 
     public static String LOG_TAG = "MyHomeRoomFragment";
     private RecyclerView recyclerView;
     private DeviceAdapter adapter;
-    private LinearLayout notify_layout, edit_layout;
+    private LinearLayout notify_layout, edit_layout, no_device_layout;
+    private ImageView add_first_device;
     private String mqttResult, nodeIndo;
     private final static String ROOM_ID = "roomId";
     private final static String ROOM_NAME = "roomName";
@@ -120,8 +121,12 @@ public class MyHomeRoomFragment extends Fragment implements DeviceAdapter.OnItem
 
         notify_layout = (LinearLayout) view.findViewById(R.id.notify_layout);
         edit_layout = (LinearLayout) view.findViewById(R.id.edit_layout);
+        no_device_layout = (LinearLayout) view.findViewById(R.id.no_device_layout);
+        add_first_device = (ImageView) view.findViewById(R.id.add_first_device);
+        add_first_device.setOnClickListener(this);
         recyclerView = (RecyclerView) view.findViewById(R.id.recyclerview);
         recyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
+        isHaveDevice(false);
     }
 
 
@@ -153,6 +158,12 @@ public class MyHomeRoomFragment extends Fragment implements DeviceAdapter.OnItem
 //                        adapter.notifyDataSetChanged();
 //                    }
 //                });
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        isHaveDevice(true);//修改UI
+                    }
+                });
                 getDeviceList(mqttResult);
             }
         }
@@ -198,7 +209,6 @@ public class MyHomeRoomFragment extends Fragment implements DeviceAdapter.OnItem
                         MQTTManagement.getSingInstance().subscribeToTopic(nodeTopic, null);
                     }
                 }
-
                 ((Activity) getContext()).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -252,10 +262,9 @@ public class MyHomeRoomFragment extends Fragment implements DeviceAdapter.OnItem
 
                         //这里需要订阅设备列表
                         String nodeTopic = Const.subscriptionTopic + "Zwave" + nodeId;
-
-
-
                     }
+                } else {
+                    isHaveDevice(false);
                 }
 
                 ((Activity) getContext()).runOnUiThread(new Runnable() {
@@ -274,6 +283,9 @@ public class MyHomeRoomFragment extends Fragment implements DeviceAdapter.OnItem
     public void setCurrentMode(int flag) {
         switch (flag) {
             case DeviceAdapter.NORMAL_MODE:
+                if (deviceInfoList.size() == 0) {
+                    isHaveDevice(false);
+                }
                 notify_layout.setVisibility(View.VISIBLE);
                 edit_layout.setVisibility(View.GONE);
                 break;
@@ -389,6 +401,9 @@ public class MyHomeRoomFragment extends Fragment implements DeviceAdapter.OnItem
 
     public void notifyFragmentData(DeviceInfo deviceInfo) {
         Logg.i(LOG_TAG, "==notifyFragmentData=deviceInfo.getDisplayName()=====" + deviceInfo.getDisplayName());
+        if (deviceInfoList.size() == 0) {
+            isHaveDevice(true);
+        }
         if (deviceInfo != null) {
             deviceInfoList.add(deviceInfo);
             Logg.i(LOG_TAG, "==notifyFragmentData=deviceInfo.getDisplayName()=====" + deviceInfoList.get(0).getDisplayName());
@@ -397,7 +412,9 @@ public class MyHomeRoomFragment extends Fragment implements DeviceAdapter.OnItem
         adapter.notifyDataSetChanged();
     }
     public void deleteDevice() {
-        deviceInfoList.remove(clickPosition);
+        if (deviceInfoList.size() > 0) {
+            deviceInfoList.remove(clickPosition);
+        }
         adapter.notifyDataSetChanged();
     }
 
@@ -505,5 +522,27 @@ public class MyHomeRoomFragment extends Fragment implements DeviceAdapter.OnItem
     public void onDetach() {
         super.onDetach();
         Logg.i(LOG_TAG, "===onDetach=====");
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.add_first_device:
+                startActivity(new Intent(getActivity(), SelectBrandActivity.class));
+                Const.currentRoomName = roomName;
+                break;
+        }
+    }
+    public void isHaveDevice(boolean tag){
+        if (tag) {
+            recyclerView.setVisibility(View.VISIBLE);
+            no_device_layout.setVisibility(View.GONE);
+        } else {
+            recyclerView.setVisibility(View.GONE);
+            no_device_layout.setVisibility(View.VISIBLE);
+        }
+    }
+    public List<DeviceInfo> getDeviceList(){
+        return deviceInfoList;
     }
 }

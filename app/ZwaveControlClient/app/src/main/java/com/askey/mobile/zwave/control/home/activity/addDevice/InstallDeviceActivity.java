@@ -219,7 +219,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                             } else if("Learn Ready".equals(status)){
                                 addStstus.setText("Please press the trigger button of the device");
                                 //10S后 超时后 调用StopAddDevice();
-                                timerCancel();
+//                                timerCancel();
                             } else if("Timeout".equals(status)){
                                 TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
                                 showFailedAddZaveDialog(getResources().getString(R.string.fail_add_notify));
@@ -316,7 +316,9 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                 finish();
             }
         });
-        alertDialog.show();
+        if (!alertDialog.isShowing()) {
+            alertDialog.show();
+        }
     }
 
 

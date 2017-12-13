@@ -53,13 +53,12 @@ import java.util.concurrent.ExecutionException;
 
 public class DeviceGuideHomeActivity extends BaseActivity {
     private static String TAG = "DeviceGuideHomeActivity";
-    private Timer timer;
-
+    private String cert ,pk ,userId ;
     private AlertDialog alertDialog;
     private String mqttResult;
-    private String userId, cert, pk;
     private String back_img_src;
     private static final String BACK_IMG_SRC = "backgroundImg";
+    private IoTDeviceInfoResponse mIoTDeviceInfoResponse;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,15 +67,7 @@ public class DeviceGuideHomeActivity extends BaseActivity {
 
         showWaitingDialog();
 
-//        if(Const.isRemote){
-//            deviceAuth();
-//        }else{
-//            TcpClient.getInstance().rigister(tcpReceive);
-//            tcpConnect(Const.SERVER_IP,Const.TCP_PORT);
-//            initLocalMqtt();
-//        }
         deviceAuth();
-
 
     }
 
@@ -150,7 +141,9 @@ public class DeviceGuideHomeActivity extends BaseActivity {
     //tcp连接
     private void tcpConnect(String tcpServer, int tcpPort) {
         try {
-            TcpClient.getInstance().connect(tcpServer, tcpPort);
+            if(!TcpClient.getInstance().isConnected()){
+                TcpClient.getInstance().connect(tcpServer, tcpPort);
+            }
         } catch (NumberFormatException e) {
             e.printStackTrace();
             Logg.i(TAG,"==tcpConnect=Exception="+e.getMessage());
@@ -281,14 +274,14 @@ public class DeviceGuideHomeActivity extends BaseActivity {
 //              String deviceId = (String) PreferencesUtils.get(mContext, Const.TOPIC_TAG, "");
                 String tutk_uuid = (String) PreferencesUtils.get(mContext, Const.TUTK_TUUID_TAG, "");
                 Logg.i(TAG, "=====lookupIoTDevice===tutk_uuid=====" + tutk_uuid);
-                IoTDeviceInfoResponse ioTDeviceInfoResponse = AskeyIoTDeviceService.getInstance(mcontext).lookupIoTDevice(Const.DEVICE_MODEL, tutk_uuid);
-                if (ioTDeviceInfoResponse != null && !"".equals(ioTDeviceInfoResponse)) {
-                    int code = ioTDeviceInfoResponse.getCode();
+                mIoTDeviceInfoResponse = AskeyIoTDeviceService.getInstance(mcontext).lookupIoTDevice(Const.DEVICE_MODEL, tutk_uuid);
+                if (mIoTDeviceInfoResponse != null && !"".equals(mIoTDeviceInfoResponse)) {
+                    int code = mIoTDeviceInfoResponse.getCode();
                     Logg.i(TAG, "===lookupIoTDevice===DEVICE_MODEL====" + Const.DEVICE_MODEL);
                     Logg.i(TAG, "===lookupIoTDevice===deviceId====" + Const.subscriptionTopic);
-                    Logg.i(TAG, "===lookupIoTDevice===getCode====" + ioTDeviceInfoResponse.getCode());
-                    Logg.i(TAG, "===lookupIoTDevice===getMessage====" + ioTDeviceInfoResponse.getMessage());
-                    Logg.i(TAG, "===lookupIoTDevice===getAddtionMessage====" + ioTDeviceInfoResponse.getAddtionMessage());
+                    Logg.i(TAG, "===lookupIoTDevice===getCode====" + mIoTDeviceInfoResponse.getCode());
+                    Logg.i(TAG, "===lookupIoTDevice===getMessage====" + mIoTDeviceInfoResponse.getMessage());
+                    Logg.i(TAG, "===lookupIoTDevice===getAddtionMessage====" + mIoTDeviceInfoResponse.getAddtionMessage());
 
                     if (400005 == code || 403 == code) {
                         //设备不存在  进行创建
@@ -307,7 +300,7 @@ public class DeviceGuideHomeActivity extends BaseActivity {
                         });
                     } else if (200 == code) {
                         //存在成功
-                        getCertificateKey(ioTDeviceInfoResponse);
+                        getCertificateKey();
                     }
 
                 }
@@ -318,50 +311,10 @@ public class DeviceGuideHomeActivity extends BaseActivity {
     }
 
 
-    public void getCertificateKey(final IoTDeviceInfoResponse ioTDeviceInfoResponse) {
+    public void getCertificateKey() {
         AWSIoTCertResponse response = AskeyIoTDeviceService.getInstance(appContext).getIotCert();
         Logg.i(TAG, "==getCertificateKey====response=" + response);
         AskeyIoTService.getInstance(appContext).changeMQTTQos(AWSIotMqttQos.QOS1);
-        final MqttServiceConnectedCallback mqttServiceConnectedCallback = new MqttServiceConnectedCallback() {
-            @Override
-            public void onMqttServiceConnectedSuccess() {
-                Logg.i(TAG, "===MqttServiceConnectedCallback===onMqttServiceConnectedSuccess===");
-                if (!"".equals(userId) && !"".equals(cert) && !"".equals(pk)) {
-                    AskeyIoTService.getInstance(appContext).connectToAWSIot(userId, cert, pk,
-                            new MqttConnectionCallback() {
-                                @Override
-                                public void onConnected() {
-                                    Logg.i(TAG, "====MqttConnectionCallback==onConnected===");
-                                    if (ioTDeviceInfoResponse != null) {
-                                        HomeActivity.shadowTopic = ioTDeviceInfoResponse.getShadowTopic();
-                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(ioTDeviceInfoResponse.getShadowTopic());
-                                        if (Const.isRemote) {
-                                            guide2HomeActivity();
-                                        } else{
-                                            TcpClient.getInstance().rigister(tcpReceive);
-                                            tcpConnect(Const.SERVER_IP, Const.TCP_PORT);
-                                            initLocalMqtt();
-                                        }
-                                    }
-                                }
-
-                                @Override
-                                public void unConnected(AWSIotMqttClientStatusCallback.AWSIotMqttClientStatus awsIotMqttClientStatus) {
-                                    Logg.i(TAG, "===MqttConnectionCallback===unConnected ===");
-
-                                }
-                            });
-                }
-
-            }
-
-            @Override
-            public void onMqttServiceConnectedError() {
-                Logg.i(TAG, "======onMqttServiceConnectedError===");
-            }
-        };
-
-
         if (response != null) {
             response = AskeyIoTDeviceService.getInstance(appContext).getIotCert();
             cert = response.getCertificatePem();
@@ -370,25 +323,68 @@ public class DeviceGuideHomeActivity extends BaseActivity {
             Logg.i(TAG, "==getCertificateKey===getCertificatePem==" + cert);
             Logg.i(TAG, "==getCertificateKey====getPrivateKey==" + pk);
             Logg.i(TAG, "==getCertificateKey====getUserid==" + userId);
+            if (userId !=null && pk !=null &&  cert !=null && !"".equals(userId) && !"".equals(cert) && !"".equals(pk)) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mIoTDeviceInfoResponse != null) {
+                            Logg.i(TAG, "=mIoTDeviceInfoResponse.getRestEndpoint()==" + mIoTDeviceInfoResponse.getRestEndpoint());
+                            if (mIoTDeviceInfoResponse.getRestEndpoint() != null) {
+                                AskeyIoTService.getInstance(appContext).configAWSIot(
+                                        AskeyIoTUtils.translatMqttUseEndpoint(mIoTDeviceInfoResponse.getRestEndpoint()),
+                                        mqttServiceConnectedCallback
+                                );
+                            }
+                        }
+                    }
+                }).start();
+
+            }else{
+                Logg.i(TAG, "===getCertificateKey===getIotCert =userId=null && pk =null &&  cert=null==");
+            }
+
         }
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if (ioTDeviceInfoResponse != null) {
-                    Logg.i(TAG, "=ioTDeviceInfoResponse.getRestEndpoint()==" + ioTDeviceInfoResponse.getRestEndpoint());
-                    if (ioTDeviceInfoResponse.getRestEndpoint() != null) {
-                        AskeyIoTService.getInstance(appContext).configAWSIot(
-                                AskeyIoTUtils.translatMqttUseEndpoint(ioTDeviceInfoResponse.getRestEndpoint()),
-                                mqttServiceConnectedCallback
-                        );
-                    }
-                }
-            }
-        }).start();
-
-
     }
+
+
+    MqttServiceConnectedCallback mqttServiceConnectedCallback = new MqttServiceConnectedCallback() {
+        @Override
+        public void onMqttServiceConnectedSuccess() {
+            Logg.i(TAG, "===MqttServiceConnectedCallback===onMqttServiceConnectedSuccess===");
+
+            AskeyIoTService.getInstance(appContext).connectToAWSIot(userId, cert, pk,
+                    new MqttConnectionCallback() {
+                        @Override
+                        public void onConnected() {
+                            Logg.i(TAG, "====MqttConnectionCallback==onConnected===");
+                            if (mIoTDeviceInfoResponse != null) {
+                                HomeActivity.shadowTopic = mIoTDeviceInfoResponse.getShadowTopic();
+                                AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(mIoTDeviceInfoResponse.getShadowTopic());
+                                if (Const.isRemote) {
+                                    guide2HomeActivity();
+                                } else{
+                                    TcpClient.getInstance().rigister(tcpReceive);
+                                        tcpConnect(Const.SERVER_IP, Const.TCP_PORT);
+                                    initLocalMqtt();
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void unConnected(AWSIotMqttClientStatusCallback.AWSIotMqttClientStatus awsIotMqttClientStatus) {
+                            Logg.i(TAG, "===MqttConnectionCallback===unConnected ===");
+
+                        }
+                    });
+        }
+
+        @Override
+        public void onMqttServiceConnectedError() {
+            Logg.i(TAG, "======onMqttServiceConnectedError===");
+        }
+    };
+
 
     private void showLookupIoTDialog() {
         final AlertDialog.Builder addDialog = new AlertDialog.Builder(this);
@@ -420,11 +416,9 @@ public class DeviceGuideHomeActivity extends BaseActivity {
             @Override
             public void onClick(View view) {
                 //点击取消，返回主页
-
                 alertDialog.dismiss();
                 finish();
                 System.exit(0);
-
             }
         });
 

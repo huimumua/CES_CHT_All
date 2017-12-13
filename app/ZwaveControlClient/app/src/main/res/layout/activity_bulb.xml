@@ -254,6 +254,7 @@
                     android:progressDrawable="@drawable/vector_drawable_ic_56"
                     android:thumb="@drawable/vector_drawable_ic_54"
                     android:maxHeight="2dp"
+                    android:max="99"
                     android:layout_gravity="center_vertical"
                     android:id="@+id/seekBar" />
 

@@ -11,6 +11,7 @@ import android.widget.TextView;
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.deviceContr.model.DeviceList;
 import com.askey.mobile.zwave.control.deviceContr.model.IotDeviceBean;
+import com.askey.mobile.zwave.control.deviceContr.scenes.SceneActionInfo;
 import com.askey.mobile.zwave.control.util.Const;
 
 import java.util.ArrayList;
@@ -23,12 +24,12 @@ import java.util.Map;
 
 public class SwipeMenuAdapter extends RecyclerView.Adapter<SwipeMenuAdapter.ViewHolder> implements View.OnClickListener{
     private Context mContext;
-    private List<Map<String,String>> data;
+    private List<SceneActionInfo> data;
     private RecyclerAdapter.OnItemClickListener mOnItemClickListener = null;
     int[] icons = new int[]{ R.drawable.vector_drawable_wmplu,R.drawable.vector_drawable_wmpru,R.drawable.vector_drawable_wmpld,R.drawable.vector_drawable_wmprd,
             R.drawable.vector_drawable_wmslu,R.drawable.vector_drawable_wmsru,R.drawable.vector_drawable_wmsld,R.drawable.vector_drawable_wmsrd};
 
-    public SwipeMenuAdapter(Context context, List<Map<String,String>> data) {
+    public SwipeMenuAdapter(Context context, List<SceneActionInfo> data) {
         mContext = context;
         this.data = data;
     }
@@ -84,18 +85,18 @@ public class SwipeMenuAdapter extends RecyclerView.Adapter<SwipeMenuAdapter.View
 //                break;
 //        }
 
-        if ("BULB".equals(data.get(position).get("type"))) {
+        if ("BULB".equals(data.get(position).getType())) {
             holder.ivIcon.setImageResource(R.drawable.vector_drawable_ic_device_79);
-        } else if ("PLUG".equals(data.get(position).get("type"))) {
+        } else if ("PLUG".equals(data.get(position).getType())) {
             holder.ivIcon.setImageResource(R.drawable.vector_drawable_ic_81);
         } else {
             holder.ivIcon.setImageResource(R.drawable.vector_drawable_ic_65);
         }
 
         //将position保存在itemView的Tag中，以便点击时进行获取
-        holder.tvName.setText(data.get(position).get("name"));
-        holder.tvAction.setText(data.get(position).get("action"));
-        holder.tvTimmer.setText("Timer:" + data.get(position).get("timer"));
+        holder.tvName.setText(data.get(position).getName());
+        holder.tvAction.setText(data.get(position).getAction());
+        holder.tvTimmer.setText("Timer:" + data.get(position).getTimer());
         holder.itemView.setTag(position);
     }
 

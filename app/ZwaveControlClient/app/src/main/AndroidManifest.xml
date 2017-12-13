@@ -22,7 +22,7 @@
         android:name=".application.ZwaveClientApplication"
         android:allowBackup="true"
         android:configChanges="orientation|screenSize"
-        android:icon="@mipmap/qbee_icon"
+        android:icon="@mipmap/ic_qbee"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"

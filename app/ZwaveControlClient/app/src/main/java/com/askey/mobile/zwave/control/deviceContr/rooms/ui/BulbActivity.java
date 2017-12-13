@@ -83,15 +83,15 @@ public class BulbActivity extends BaseDeviceActivity {
         room = getIntent().getStringExtra("room");
 
         if(Const.isRemote){
-            remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.getSwitchStatus(nodeId));
+//            remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.getSwitchStatus(nodeId));
 
             remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.getBrigtness(nodeId));
 
-            remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.getLampColor(nodeId));
+//            remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.getLampColor(nodeId));
         }else{
             MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
             //获取灯泡状态
-            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,LocalMqttData.getSwitchStatus(nodeId));
+//            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,LocalMqttData.getSwitchStatus(nodeId));
 
             MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,LocalMqttData.getBrigtness(nodeId));
 
@@ -162,20 +162,26 @@ public class BulbActivity extends BaseDeviceActivity {
     //mqtt调用返回结果
     private void mqttMessageResult(String result) {
         try {
+//            {"reported":{"MessageType":"Switch Color Report","Node id":27,"component id":"Blue","value":0,"Interface":"getLampColor","devType":"Zwave"}}
             JSONObject jsonObject = new JSONObject(result);
             String reported = jsonObject.optString("reported");
             JSONObject reportedObject = new JSONObject(reported);
             String Interface = reportedObject.optString("Interface");
             if(Interface.equals("getSwitchStatus")){
                 String switchStatus = reportedObject.optString("switchStatus");
-                setSwitchUiStatus(switchStatus);
-            }else if(Interface.equals("getBrigtness")){
-                String brigtness = reportedObject.optString("brigtness");
+//                setSwitchUiStatus(switchStatus);
+            }else if(Interface.equals("getBrightness")){
+                String brigtness = reportedObject.optString("brightness");
                 String switchStatus = reportedObject.optString("switchStatus");
 
-                setSwitchUiStatus(switchStatus);
+                setSwitchUiStatus(switchStatus,brigtness);
             }else if(Interface.equals("getLampColor")){
-
+                String componentId = reportedObject.optString("component id");
+                String value = reportedObject.optString("value");
+                String MessageType = reportedObject.optString("MessageType");
+                Logg.i(TAG,"====getLampColor==componentId==="+componentId);
+                Logg.i(TAG,"====getLampColor==value==="+value);
+                Logg.i(TAG,"====getLampColor==MessageType==="+MessageType);
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -183,7 +189,7 @@ public class BulbActivity extends BaseDeviceActivity {
 
     }
 
-    private void setSwitchUiStatus(final String switchStatus) {
+    private void setSwitchUiStatus(final String switchStatus, final String brigtness) {
         ((Activity)mContext).runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -196,6 +202,7 @@ public class BulbActivity extends BaseDeviceActivity {
                     offDeviceTwo.setChecked(false);
                     onoffIcon.setChecked(false);
                 }
+                mSeekBar.setProgress(Integer.valueOf(brigtness));
             }
         });
     }
@@ -239,6 +246,7 @@ public class BulbActivity extends BaseDeviceActivity {
                 if (Const.isRemote) {
                     remoteIotComm(Const.subscriptionTopic+"Zwave"+nodeId,CloudIotData.setBrigtness(nodeId,String.valueOf(mSeekBar.getProgress())));
                 } else {
+                    Logg.i(TAG,"==mSeekBar=="+String.valueOf(mSeekBar.getProgress()));
                     MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,
                             LocalMqttData.setBrigtness(nodeId,String.valueOf(mSeekBar.getProgress())));
 //                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic + nodeId, "mobile_zwave:setBasic:" + nodeId + ":FF");

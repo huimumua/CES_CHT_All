@@ -16,6 +16,7 @@ import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
+import com.askey.mobile.zwave.control.deviceContr.scenes.SceneActionInfo;
 import com.askey.mobile.zwave.control.deviceContr.scenes.SceneActionsActivity;
 import com.askey.mobile.zwave.control.util.Logg;
 import com.askeycloud.webservice.sdk.iot.callback.ShadowReceiveListener;
@@ -27,7 +28,7 @@ import org.json.JSONObject;
 
 
 public class ActionSummaryActivity extends AppCompatActivity implements View.OnClickListener{
-    private static final String TAG = ActionSummaryActivity.class.getSimpleName();
+    private static final String LOG_TAG = ActionSummaryActivity.class.getSimpleName();
     private RelativeLayout one,second,third,four;
     private Button btnDone;
     private String nodeId;
@@ -42,14 +43,17 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
     private Intent fromIntent;
     private String fromActivity;
     private Context mContext;
+    private SceneActionInfo sceneActionInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_action_summary);
 
-        getAction();
+        fromIntent = getIntent();
+        fromActivity = fromIntent.getStringExtra("from");
         initView();
+        processExtraData();
 
     }
 
@@ -58,6 +62,7 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
         super.onNewIntent(intent);
         setIntent(intent);
         processExtraData();
+        sceneActionInfo = getIntent().getParcelableExtra("sceneActionInfo");
 
     }
 
@@ -66,9 +71,9 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
         AskeyIoTService.getInstance(this).setShadowReceiverListener(new ShadowReceiveListener() {
             @Override
             public void receiveShadowDocument(String s, String s1, String s2) {
-                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s=" + s);
-                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s1=" + s1);
-                Logg.i(TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s2=" + s2);
+                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s=" + s);
+                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s1=" + s1);
+                Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s2=" + s2);
                 IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
                 if(s2.contains("desired")){
                     return;
@@ -82,8 +87,8 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
         @Override
         public void mqttMessageArrived(String topic, MqttMessage message) {
             final String result = new String(message.getPayload());
-            Logg.i(TAG,"=mqttMessageArrived=>=topic="+topic);
-            Logg.i(TAG,"=mqttMessageArrived=>=message="+result);
+            Logg.i(LOG_TAG,"=mqttMessageArrived=>=topic="+topic);
+            Logg.i(LOG_TAG,"=mqttMessageArrived=>=message="+result);
 
             if(result.contains("desired")){
                 return;
@@ -115,6 +120,7 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
     }
 
     private void initView() {
+        sceneActionInfo = getIntent().getParcelableExtra("sceneActionInfo");
         mContext = this;
 
         tvAction = (TextView) findViewById(R.id.tv_action);
@@ -148,45 +154,20 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
                 R.drawable.vector_drawable_ic_device_79,
                 R.drawable.vector_drawable_ic_65};
 
-        if ("BULB".equals(type)) {
+        if ("BULB".equals(sceneActionInfo.getType())) {
             iconOne.setImageResource(icon[3]);
-        } else if ("PLUG".equals(type)) {
+        } else if ("PLUG".equals(sceneActionInfo.getType())) {
             iconOne.setImageResource(icon[1]);
         } else {
             iconOne.setImageResource(icon[1]);
         }
 
-        tvAction.setText(action);
-        tvName.setText(name);
-        tvTimer.setText("Timer - " + timer);
+        tvAction.setText(sceneActionInfo.getAction());
+        tvName.setText(sceneActionInfo.getName());
+        tvTimer.setText("Timer - " + sceneActionInfo.getTimer());
 
-         getAction();
     }
 
-
-    private void getAction() {
-        fromIntent = getIntent();
-        fromActivity = fromIntent.getStringExtra("from");
-/*        if (fromActivity != null) {
-            if (fromActivity.equals(ActionChooseActivity.class.getSimpleName())) {
-            } else if (fromActivity.equals(ToggleActivity.class.getSimpleName())) {
-
-            } else if (fromActivity.equals(DoActionActivity.class.getSimpleName())) {
-
-            } else if (fromActivity.equals(TimerActivity.class.getSimpleName())) {
-
-            } else {
-
-            }
-        }*/
-
-
-        nodeId =fromIntent.getStringExtra("nodeId");
-        type = fromIntent.getStringExtra("type");
-        name = fromIntent.getStringExtra("name");
-        action = fromIntent.getStringExtra("action");
-        timer = fromIntent.getStringExtra("timer");
-    }
 
     @Override
     public void onClick(View view) {
@@ -240,11 +221,16 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
         }
 
         intent.putExtra("from",ActionSummaryActivity.class.getSimpleName());
-        intent.putExtra("nodeId",nodeId);
-        intent.putExtra("name",name);
-        intent.putExtra("type",type);
-        intent.putExtra("action",action);
-        intent.putExtra("timer",timer);
+
+        intent.putExtra("sceneActionInfo", sceneActionInfo);
+
+        Log.i(LOG_TAG, "=====getType===" + sceneActionInfo.getType());
+        Log.i(LOG_TAG, "=====getAction===" + sceneActionInfo.getAction());
+        Log.i(LOG_TAG, "=====getLightValue===" + sceneActionInfo.getLightValue());
+        Log.i(LOG_TAG, "=====getName===" + sceneActionInfo.getName());
+        Log.i(LOG_TAG, "=====getNodeId===" + sceneActionInfo.getNodeId());
+        Log.i(LOG_TAG, "=====getTimer===" + sceneActionInfo.getTimer());
+        Log.i(LOG_TAG, "=====getActionId===" + sceneActionInfo.getActionId() + "");
         startActivity(intent);
     }
 

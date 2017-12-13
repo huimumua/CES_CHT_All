@@ -400,6 +400,7 @@
     <string name="wall_mote_add_action_toast">Please long press the trigger button</string>
     <string name="scene_name">The scene name cannot be empty</string>
     <string name="scene_name_length">Scene name max 16 chars</string>
+    <string name="add_first_device">Add your first device</string>
 
 
 </resources>

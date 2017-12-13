@@ -18,7 +18,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
@@ -51,18 +50,19 @@ import java.util.List;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemClickListener {
+public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemClickListener, View.OnClickListener {
     public static String LOG_TAG = "ItemRoomFragment";
     private RecyclerView recyclerView;
     private DeviceAdapter adapter;
-    private LinearLayout notify_layout, edit_layout;
+    private LinearLayout notify_layout, edit_layout, no_device_layout;
+    private ImageView add_first_device;
     private TextView room_name;
     private final static String ROOM_ID = "roomId";
     private final static String ROOM_NAME = "roomName";
     private String roomName;
     private Integer roomId;
     private Bundle bundle;
-    private String  mqttResult;
+    private String mqttResult;
     private MyDialog myDialog;
     private List<DeviceInfo> deviceInfoList;
     private boolean isFirstLoadData = true;
@@ -72,11 +72,11 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
         // Required empty public constructor
     }
 
-    public static ItemRoomFragment newInstance(int id, String name){
+    public static ItemRoomFragment newInstance(int id, String name) {
         ItemRoomFragment itemFragment = new ItemRoomFragment();
         Bundle bundle = new Bundle();
-        bundle.putInt(ROOM_ID,id);
-        bundle.putString(ROOM_NAME,name);
+        bundle.putInt(ROOM_ID, id);
+        bundle.putString(ROOM_NAME, name);
         itemFragment.setArguments(bundle);
         return itemFragment;
     }
@@ -84,25 +84,25 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
-        Logg.i(LOG_TAG,"===setUserVisibleHint=====");
+        Logg.i(LOG_TAG, "===setUserVisibleHint=====");
         if (isVisibleToUser) {
-            Log.d(LOG_TAG,"正常加载,fragment可见"+roomName);
-            MQTTManagement.getSingInstance().rigister( mqttMessageArrived);
+            Log.d(LOG_TAG, "正常加载,fragment可见" + roomName);
+            MQTTManagement.getSingInstance().rigister(mqttMessageArrived);
             /*
                 在第一次点击底部tab跳转到房间页面的时候会初始化所有fragment，此时My Home页面是可见的，其他子页面是不可见的。这里处理的是本页面第一次
                 可见时发送消息，若后续通过滑动再次回到本页面则不会发送消息，这样做是为了避免快速滑动时本页面的消息被其他页面接收到。
              */
             if (isFirstLoadData) {
                 isFirstLoadData = false;
-                if(Const.isRemote){
+                if (Const.isRemote) {
 
-                }else{
+                } else {
 
                     MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand(roomName));
                 }
             }
         } else {
-            Log.d(LOG_TAG,"正常加载,fragment不可见");
+            Log.d(LOG_TAG, "正常加载,fragment不可见");
             unrigister();
         }
     }
@@ -110,20 +110,20 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        Logg.i(LOG_TAG,"===onAttach=====");
+        Logg.i(LOG_TAG, "===onAttach=====");
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Logg.i(LOG_TAG,"===onCreate=====");
+        Logg.i(LOG_TAG, "===onCreate=====");
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        Logg.i(LOG_TAG,"===onCreateView=====");
+        Logg.i(LOG_TAG, "===onCreateView=====");
         View view = inflater.inflate(R.layout.fragment_item, container, false);
         initView(view);
         initData();
@@ -133,19 +133,19 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        Logg.i(LOG_TAG,"===onActivityCreated=====");
+        Logg.i(LOG_TAG, "===onActivityCreated=====");
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        Logg.i(LOG_TAG,"===onStart=====");
+        Logg.i(LOG_TAG, "===onStart=====");
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        Logg.i(LOG_TAG,"===onResume=====");
+        Logg.i(LOG_TAG, "===onResume=====");
 //        Toast.makeText(getActivity(), roomName+", size: "+deviceInfoList.size(), Toast.LENGTH_SHORT).show();
 /*       new Thread(new Runnable() {
             @Override
@@ -165,15 +165,16 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
             }
         }).start();*/
     }
+
     @Override
     public void onPause() {
         super.onPause();
-        Logg.i(LOG_TAG,"===onPause====="+roomName);
+        Logg.i(LOG_TAG, "===onPause=====" + roomName);
         unrigister();
     }
 
     private void unrigister() {
-        if(mqttMessageArrived!=null){
+        if (mqttMessageArrived != null) {
             MQTTManagement.getSingInstance().unrigister(mqttMessageArrived);
         }
     }
@@ -181,37 +182,44 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
     @Override
     public void onStop() {
         super.onStop();
-        Logg.i(LOG_TAG,"===onStop=====");
+        Logg.i(LOG_TAG, "===onStop=====");
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        Logg.i(LOG_TAG,"===onDestroyView=====");
+        Logg.i(LOG_TAG, "===onDestroyView=====");
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Logg.i(LOG_TAG,"onDestroy"+roomId);
+        Logg.i(LOG_TAG, "onDestroy" + roomId);
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        Logg.i(LOG_TAG,"onDetach"+roomId);
+        Logg.i(LOG_TAG, "onDetach" + roomId);
     }
 
     MqttMessageArrived mqttMessageArrived = new MqttMessageArrived() {
         @Override
         public void mqttMessageArrived(String topic, MqttMessage message) {
             mqttResult = new String(message.getPayload());
-            Logg.i(LOG_TAG,"=mqttMessageArrived=>=topic="+topic);
-            if(mqttResult.contains("desired")){
+            Logg.i(LOG_TAG, "=mqttMessageArrived=>=topic=" + topic);
+            Logg.i(LOG_TAG, "=mqttMessageArrived=>=message=" + mqttResult);
+            if (mqttResult.contains("desired")) {
                 return;
             }
             if (mqttResult.contains(roomName)) {
-                Logg.i(LOG_TAG,"=mqttMessageArrived=>=message="+mqttResult);
+                Logg.i(LOG_TAG, "=mqttMessageArrived=>=message=" + mqttResult);
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        isHaveDevice(true);
+                    }
+                });
                 getSceneResult(mqttResult);
             }
         }
@@ -226,8 +234,8 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
                 Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s=" + s);
                 Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s1=" + s1);
                 Logg.i(LOG_TAG, "==IotMqttMessageCallback====setShadowReceiverListener==s2=" + s2);
-                IotMqttManagement.getInstance().receiveMqttMessage(s,s1,s2);
-                if(s2.contains("desired")){
+                IotMqttManagement.getInstance().receiveMqttMessage(s, s1, s2);
+                if (s2.contains("desired")) {
                     return;
                 }
                 getSceneResult(s2);
@@ -245,10 +253,11 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
             String DeviceList = reportedObject.optString("deviceList");
             JSONArray columnInfo = new JSONArray(DeviceList);
             int size = columnInfo.length();
-            if( size > 0 ){
+            Logg.i(LOG_TAG, "columnInfo.length" + size);
+            if (size > 0) {
                 deviceInfoList.clear();
-                for(int i=0;i<size;i++){
-                    JSONObject info=columnInfo.getJSONObject(i);
+                for (int i = 0; i < size; i++) {
+                    JSONObject info = columnInfo.getJSONObject(i);
                     String nodeId = info.getString("nodeId");
                     String brand = info.getString("brand");
                     String devType = info.getString("deviceType");
@@ -256,7 +265,7 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
                     String Room = info.getString("Room");
                     String isFavorite = info.getString("isFavorite");
                     String name = info.getString("name");
-                    Logg.i(LOG_TAG,"==getDeviceResult=JSONArray===devName=="+name);
+                    Logg.i(LOG_TAG, "==getDeviceResult=JSONArray===devName==" + name);
 //                    String nodeInfo = info.getString("nodeInfo");
                     DeviceInfo deviceInfo = new DeviceInfo();
                     deviceInfo.setDeviceId(nodeId);
@@ -267,17 +276,17 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
 //                    deviceInfo.setNodeInfo(nodeInfo);
                     deviceInfoList.add(deviceInfo);
 
-                    String nodeTopic = Const.subscriptionTopic+"Zwave" + nodeId;
+                    String nodeTopic = Const.subscriptionTopic + "Zwave" + nodeId;
                     // 订阅新设备的topic为 sn + nodeId
                     MQTTManagement.getSingInstance().subscribeToTopic(nodeTopic, null);
                 }
+                ((Activity) getContext()).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        adapter.notifyDataSetChanged();
+                    }
+                });
             }
-            ((Activity) getContext()).runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    adapter.notifyDataSetChanged();
-                }
-            });
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -288,14 +297,19 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
         Bundle bundle = getArguments();
         roomName = bundle.getString(ROOM_NAME);
         roomId = bundle.getInt(ROOM_ID);
-        Log.d("info",roomId+", "+roomId);
+        Log.d("info", roomId + ", " + roomId);
 
         room_name = (TextView) view.findViewById(R.id.room_name);
         room_name.setText(roomName);
         notify_layout = (LinearLayout) view.findViewById(R.id.notify_layout);
         edit_layout = (LinearLayout) view.findViewById(R.id.edit_layout);
+        no_device_layout = (LinearLayout) view.findViewById(R.id.no_device_layout);
+        add_first_device = (ImageView) view.findViewById(R.id.add_first_device);
+        add_first_device.setOnClickListener(this);
         recyclerView = (RecyclerView) view.findViewById(R.id.recyclerview);
         recyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
+
+        isHaveDevice(false);
     }
 
 
@@ -311,6 +325,9 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
     public void setCurrentMode(int flag) {
         switch (flag) {
             case DeviceAdapter.NORMAL_MODE:
+                if (deviceInfoList.size() == 0) {
+                    isHaveDevice(false);
+                }
                 notify_layout.setVisibility(View.VISIBLE);
                 edit_layout.setVisibility(View.GONE);
                 break;
@@ -327,18 +344,22 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
         return adapter.getMode();
     }
 
-    public String getRoomName(){
+    public String getRoomName() {
         return roomName;
     }
 
-    public void notifyFragmentData(DeviceInfo deviceInfo){
+    public void notifyFragmentData(DeviceInfo deviceInfo) {
+        if (deviceInfoList.size() == 0) {
+            isHaveDevice(true);
+        }
         deviceInfoList.add(deviceInfo);
-
         adapter.notifyDataSetChanged();
     }
 
     public void removeDevice() {
-        deviceInfoList.remove(clickPosition);
+        if (deviceInfoList.size() > 0) {
+            deviceInfoList.remove(clickPosition);
+        }
         adapter.notifyDataSetChanged();
     }
 
@@ -351,13 +372,13 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
             intent = new Intent(getActivity(), PlugActivity.class);
         } else if ("WALLMOTE".equals(deviceInfo.getDeviceType())) {
             intent = new Intent(getActivity(), WallMoteLivingActivity.class);
-        }  else if ("EXTENDER".equals(deviceInfo.getDeviceType())) {
+        } else if ("EXTENDER".equals(deviceInfo.getDeviceType())) {
             intent = new Intent(getActivity(), ExtenderDeviceActivity.class);
         } else {
             intent = new Intent(getActivity(), BulbActivity.class);//原有的经验证过的可以正常使用
-            intent.putExtra("uniqueid",deviceInfo.getUniqueId());
+            intent.putExtra("uniqueid", deviceInfo.getUniqueId());
         }
-        intent.putExtra("nodeId",deviceInfo.getDeviceId());
+        intent.putExtra("nodeId", deviceInfo.getDeviceId());
         intent.putExtra("type", deviceInfo.getDeviceType());
         intent.putExtra("room", deviceInfo.getRooms());
         intent.putExtra("displayName", deviceInfo.getDisplayName());
@@ -373,13 +394,13 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
             intent = new Intent(getActivity(), PlugActivity.class);
         } else if ("WALLMOTE".equals(deviceInfo.getDeviceType())) {
             intent = new Intent(getActivity(), WallMoteLivingActivity.class);
-        }  else if ("EXTENDER".equals(deviceInfo.getDeviceType())) {
+        } else if ("EXTENDER".equals(deviceInfo.getDeviceType())) {
             intent = new Intent(getActivity(), ExtenderDeviceActivity.class);
         } else {
             intent = new Intent(getActivity(), BulbActivity.class);//原有的经验证过的可以正常使用
-            intent.putExtra("uniqueid",deviceInfo.getUniqueId());
+            intent.putExtra("uniqueid", deviceInfo.getUniqueId());
         }
-        intent.putExtra("nodeId",deviceInfo.getDeviceId());
+        intent.putExtra("nodeId", deviceInfo.getDeviceId());
         intent.putExtra("type", deviceInfo.getDeviceType());
         intent.putExtra("room", deviceInfo.getRooms());
         intent.putExtra("displayName", deviceInfo.getDisplayName());
@@ -428,5 +449,29 @@ public class ItemRoomFragment extends Fragment implements DeviceAdapter.OnItemCl
             }
         });
 
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.add_first_device:
+                startActivity(new Intent(getActivity(), SelectBrandActivity.class));
+                Const.currentRoomName = roomName;
+                break;
+        }
+    }
+
+    public void isHaveDevice(boolean tag) {
+        if (tag) {
+            recyclerView.setVisibility(View.VISIBLE);
+            no_device_layout.setVisibility(View.GONE);
+        } else {
+            recyclerView.setVisibility(View.GONE);
+            no_device_layout.setVisibility(View.VISIBLE);
+        }
+    }
+
+    public List<DeviceInfo> getDeviceList() {
+        return deviceInfoList;
     }
 }

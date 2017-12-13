@@ -88,7 +88,6 @@ public abstract class TcpClient implements Runnable {
 	 */
 	public void connect(String hostIP, int port) {
 		this.hostIP = hostIP;
-		Logg.i(TAG,"&&&&&&&&&&&&&+====connect=======");
 		this.port = port;
 		new Thread(this).start();
 	}

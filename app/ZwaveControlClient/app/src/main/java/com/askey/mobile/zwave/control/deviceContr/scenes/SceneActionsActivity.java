@@ -10,6 +10,7 @@ import android.widget.ImageView;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.deviceContr.adapter.SwipeMenuAdapter;
+import com.askey.mobile.zwave.control.deviceContr.model.ScheduleInfo;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ActionChooseActivity;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ActionSummaryActivity;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.ChooseDeviceActivity;
@@ -29,19 +30,23 @@ import java.util.Map;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 public class SceneActionsActivity extends AppCompatActivity implements View.OnClickListener{
+    private String LOG_TAG = SceneActionsActivity.class.getSimpleName();
     private SwipeMenuRecyclerView mRecycleView;
     private ImageView ivAddAction;
     private SwipeMenuAdapter swipeMenuAdapter;
-    private List<Map<String,String>> datas;
+    private List<SceneActionInfo> datas;
     private LinearLayoutManager mLayoutManager;
+    private int mActionId = -1;
+    private SceneActionInfo sceneActionInfo;
     private String sceneIcon,sceneName,isFavorite,roomName;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scene_action);
 
-        initData();
+        datas = new ArrayList<>();
         initView();
         Intent intent = getIntent();
         sceneIcon = intent.getStringExtra("sceneIcon");
@@ -55,18 +60,27 @@ public class SceneActionsActivity extends AppCompatActivity implements View.OnCl
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        sceneActionInfo = getIntent().getParcelableExtra("sceneActionInfo");
+        Log.i(LOG_TAG, "=====getType===" + sceneActionInfo.getType());
+        Log.i(LOG_TAG, "=====getAction===" + sceneActionInfo.getAction());
+        Log.i(LOG_TAG, "=====getLightValue===" + sceneActionInfo.getLightValue());
+        Log.i(LOG_TAG, "=====getName===" + sceneActionInfo.getName());
+        Log.i(LOG_TAG, "=====getNodeId===" + sceneActionInfo.getNodeId());
+        Log.i(LOG_TAG, "=====getTimer===" + sceneActionInfo.getTimer());
+        Log.i(LOG_TAG, "=====getActionId===" + sceneActionInfo.getActionId() + "");
 
-        if ("ActionSummaryActivity".equals(getIntent().getStringExtra("from"))) {
-            Map<String, String> one = new HashMap<>();
-            one.put("type", getIntent().getStringExtra("type"));
-            one.put("name", getIntent().getStringExtra("name"));
-            one.put("action", getIntent().getStringExtra("action"));
-            one.put("lightvalue", "50");
-            one.put("timer", getIntent().getStringExtra("timer"));
-            datas.add(one);
-            swipeMenuAdapter.notifyDataSetChanged();
+        if (mActionId == sceneActionInfo.getActionId()) {
+            datas.get(mActionId).setAction(sceneActionInfo.getAction());
+            datas.get(mActionId).setTimer(sceneActionInfo.getTimer());
+            datas.get(mActionId).setLightValue(sceneActionInfo.getLightValue());
+            datas.get(mActionId).setName(sceneActionInfo.getName());
+            datas.get(mActionId).setNodeId(sceneActionInfo.getNodeId());
+            datas.get(mActionId).setActionId(sceneActionInfo.getActionId());
+            datas.get(mActionId).setType(sceneActionInfo.getType());
+        } else {
+            datas.add(sceneActionInfo);
         }
-
+        swipeMenuAdapter.notifyDataSetChanged();
     }
 
     private void initView() {
@@ -80,13 +94,11 @@ public class SceneActionsActivity extends AppCompatActivity implements View.OnCl
             @Override
             public void onItemClick(View view, int position) {
 
-                Intent intent = new Intent(SceneActionsActivity.this,ChooseDeviceActivity.class);
+                Intent intent = new Intent(SceneActionsActivity.this,ActionSummaryActivity.class);
                 intent.putExtra("from", SceneActionsActivity.class.getSimpleName());
-//                intent.putExtra("name", datas.get(position).get("name"));
-//                intent.putExtra("type", datas.get(position).get("type"));
-//                intent.putExtra("nodeId", datas.get(position).get("nodeId"));
-//                intent.putExtra("action", datas.get(position).get("action"));
-//                intent.putExtra("timer", datas.get(position).get("timer"));
+                mActionId = position;
+//                datas.get(position).setActionId(position);
+                intent.putExtra("sceneActionInfo", datas.get(position));
                 startActivity(intent);
             }
         });
@@ -135,15 +147,14 @@ public class SceneActionsActivity extends AppCompatActivity implements View.OnCl
         switch (view.getId()) {
             case R.id.iv_add_action:
                 Intent intent = new Intent(this,ChooseDeviceActivity.class);
+                Log.i(LOG_TAG, "onClick");
                 intent.putExtra("from", SceneActionsActivity.class.getSimpleName());
+                SceneActionInfo sceneActionInfo = new SceneActionInfo();
+//                datas.add(sceneActionInfo);
+                sceneActionInfo.setActionId(datas.size());
+                intent.putExtra("sceneActionInfo", sceneActionInfo);
                 startActivity(intent);
               break;
     }        }
 
-    private List initData() {
-
-        //test data
-        datas = new ArrayList<>();
-        return datas;
-    }
 }

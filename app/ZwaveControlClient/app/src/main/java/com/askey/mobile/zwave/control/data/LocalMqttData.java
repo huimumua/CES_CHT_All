@@ -371,7 +371,7 @@ public class LocalMqttData {
          String result = "";
         JSONObject function = new JSONObject();
         try {
-            function.put("function", "getBrigtness");
+            function.put("function", "getBrightness");
             function.put("deviceId", deviceId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
@@ -393,7 +393,7 @@ public class LocalMqttData {
         String result = "";
         JSONObject function = new JSONObject();
         try {
-            function.put("function", "setBrigtness");
+            function.put("function", "setBrightness");
             function.put("deviceId", deviceId);
             function.put("value", value);
             result = getPublicJson(function).toString();

@@ -74,6 +74,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     private String userId,cert,pk;
     private String back_img_src;
     private static final String BACK_IMG_SRC = "backgroundImg";
+    private  IoTDeviceInfoResponse ioTDeviceInfoResponse;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -261,7 +262,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
             public void run() {
                 String deviceId = (String) PreferencesUtils.get(mContext, Const.TOPIC_TAG, "");
                 Logg.i(LOG_TAG, "=====lookupIoTDevice===deviceId====="+deviceId);
-                IoTDeviceInfoResponse ioTDeviceInfoResponse = AskeyIoTDeviceService.getInstance(mcontext).lookupIoTDevice(Const.DEVICE_MODEL, deviceId );
+                ioTDeviceInfoResponse = AskeyIoTDeviceService.getInstance(mcontext).lookupIoTDevice(Const.DEVICE_MODEL, deviceId );
                 if(ioTDeviceInfoResponse!=null && !"".equals(ioTDeviceInfoResponse)){
                     int code = ioTDeviceInfoResponse.getCode();
                     Logg.i(LOG_TAG, "===lookupIoTDevice===DEVICE_MODEL====" + Const.DEVICE_MODEL );
@@ -298,39 +299,6 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
         AWSIoTCertResponse response = AskeyIoTDeviceService.getInstance(appContext).getIotCert();
         Logg.i(LOG_TAG, "==getCertificateKey====response=" + response);
         AskeyIoTService.getInstance(appContext).changeMQTTQos(AWSIotMqttQos.QOS1);
-        final MqttServiceConnectedCallback mqttServiceConnectedCallback = new MqttServiceConnectedCallback() {
-            @Override
-            public void onMqttServiceConnectedSuccess() {
-                Logg.i(LOG_TAG, "===MqttServiceConnectedCallback===onMqttServiceConnectedSuccess===");
-                if(!"".equals(userId) && !"".equals(cert) && !"".equals(pk)){
-                    AskeyIoTService.getInstance(appContext).connectToAWSIot(userId, cert, pk,
-                            new MqttConnectionCallback() {
-                                @Override
-                                public void onConnected() {
-                                    Logg.i(LOG_TAG, "====MqttConnectionCallback==onConnected===");
-                                    if (ioTDeviceInfoResponse != null) {
-                                        stopWaitDialog();
-                                        HomeActivity.shadowTopic = ioTDeviceInfoResponse.getShadowTopic();
-                                        AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(ioTDeviceInfoResponse.getShadowTopic());
-                                    }
-                                }
-
-                                @Override
-                                public void unConnected(AWSIotMqttClientStatusCallback.AWSIotMqttClientStatus awsIotMqttClientStatus) {
-                                    Logg.i(LOG_TAG, "===MqttConnectionCallback===unConnected ===");
-
-                                }
-                            });
-                }
-
-            }
-
-            @Override
-            public void onMqttServiceConnectedError() {
-                Logg.i(LOG_TAG, "======onMqttServiceConnectedError===");
-            }
-        };
-
 
         if(response != null){
             response = AskeyIoTDeviceService.getInstance(appContext).getIotCert();
@@ -340,25 +308,58 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
             Logg.i(LOG_TAG, "==getCertificateKey===getCertificatePem==" + cert);
             Logg.i(LOG_TAG, "==getCertificateKey====getPrivateKey==" + pk);
             Logg.i(LOG_TAG, "==getCertificateKey====getUserid==" + userId);
+            if (userId !=null && pk !=null &&  cert !=null && !"".equals(userId) && !"".equals(cert) && !"".equals(pk)) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (ioTDeviceInfoResponse != null) {
+                            Logg.i(LOG_TAG, "=ioTDeviceInfoResponse.getRestEndpoint()==" + ioTDeviceInfoResponse.getRestEndpoint());
+                            if (ioTDeviceInfoResponse.getRestEndpoint() != null) {
+                                AskeyIoTService.getInstance(appContext).configAWSIot(
+                                        AskeyIoTUtils.translatMqttUseEndpoint(ioTDeviceInfoResponse.getRestEndpoint()),
+                                        mqttServiceConnectedCallback
+                                );
+                            }
+                        }
+                    }
+                }).start();
+            }else{
+                Logg.i(LOG_TAG, "===getCertificateKey===getIotCert =userId=null && pk =null &&  cert=null==");
+            }
+
+        }
+    }
+
+    final MqttServiceConnectedCallback mqttServiceConnectedCallback = new MqttServiceConnectedCallback() {
+        @Override
+        public void onMqttServiceConnectedSuccess() {
+            Logg.i(LOG_TAG, "===MqttServiceConnectedCallback===onMqttServiceConnectedSuccess===");
+            AskeyIoTService.getInstance(appContext).connectToAWSIot(userId, cert, pk,
+                    new MqttConnectionCallback() {
+                        @Override
+                        public void onConnected() {
+                            Logg.i(LOG_TAG, "====MqttConnectionCallback==onConnected===");
+                            if (ioTDeviceInfoResponse != null) {
+                                stopWaitDialog();
+                                HomeActivity.shadowTopic = ioTDeviceInfoResponse.getShadowTopic();
+                                AskeyIoTService.getInstance(getApplicationContext()).subscribeMqtt(ioTDeviceInfoResponse.getShadowTopic());
+                            }
+                        }
+
+                        @Override
+                        public void unConnected(AWSIotMqttClientStatusCallback.AWSIotMqttClientStatus awsIotMqttClientStatus) {
+                            Logg.i(LOG_TAG, "===MqttConnectionCallback===unConnected ===");
+
+                        }
+                    });
         }
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if (ioTDeviceInfoResponse != null) {
-                    Logg.i(LOG_TAG, "=ioTDeviceInfoResponse.getRestEndpoint()==" + ioTDeviceInfoResponse.getRestEndpoint());
-                    if (ioTDeviceInfoResponse.getRestEndpoint() != null) {
-                        AskeyIoTService.getInstance(appContext).configAWSIot(
-                                AskeyIoTUtils.translatMqttUseEndpoint(ioTDeviceInfoResponse.getRestEndpoint()),
-                                mqttServiceConnectedCallback
-                        );
-                    }
-                }
-            }
-        }).start();
+        @Override
+        public void onMqttServiceConnectedError() {
+            Logg.i(LOG_TAG, "======onMqttServiceConnectedError===");
+        }
+    };
 
-
-    }
 
     @Override
     protected void onStop() {

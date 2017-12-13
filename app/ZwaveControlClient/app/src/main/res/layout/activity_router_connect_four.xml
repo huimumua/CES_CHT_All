@@ -48,7 +48,7 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@mipmap/ic_launcher"
+            android:src="@mipmap/qbee_connect_wifi_icon"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="40dp"
             />

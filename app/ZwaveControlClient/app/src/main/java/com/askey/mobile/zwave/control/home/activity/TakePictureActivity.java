@@ -45,6 +45,7 @@ public class TakePictureActivity extends AppCompatActivity implements View.OnCli
     private static Handler mHandler;
     private String rootDir;
     private static final int PICK_IMAGE = 1;
+    private boolean AlbumPermission = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,12 +59,17 @@ public class TakePictureActivity extends AppCompatActivity implements View.OnCli
             有存储权限，检查文件夹是否存在
          */
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            AlbumPermission = true;
             if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
                 rootDir = Environment.getExternalStorageDirectory().toString() + "/Zwave";
                 File dir = new File(rootDir);
                 if (!dir.exists()) {
                     dir.mkdir();
                 }
+            }
+        } else {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
             }
         }
 
@@ -103,6 +109,7 @@ public class TakePictureActivity extends AppCompatActivity implements View.OnCli
                 }
             }
             if (requestCode == 2) {
+                AlbumPermission = true;
                 if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
                     rootDir = Environment.getExternalStorageDirectory().toString() + "/Zwave";
                     File dir = new File(rootDir);
@@ -139,9 +146,13 @@ public class TakePictureActivity extends AppCompatActivity implements View.OnCli
                 finish();
                 break;
             case R.id.choose_photo:
-                Intent intent = new Intent(Intent.ACTION_PICK);
-                intent.setData(MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                startActivityForResult(intent,PICK_IMAGE);
+                if (AlbumPermission) {
+                    Intent intent = new Intent(Intent.ACTION_PICK);
+                    intent.setData(MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                    startActivityForResult(intent,PICK_IMAGE);
+                } else {
+                    Toast.makeText(this, "Please open permission", Toast.LENGTH_SHORT).show();
+                }
                 break;
             case R.id.take_pic:
                 Toast.makeText(TakePictureActivity.this, "takePic", Toast.LENGTH_SHORT).show();

@@ -25,7 +25,6 @@ import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
 import com.askey.mobile.zwave.control.deviceContr.model.RoomInfo;
-import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.home.activity.HomeActivity;
 import com.askey.mobile.zwave.control.home.activity.TakePictureActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDeviceActivity;
@@ -239,6 +238,10 @@ public class RoomsFragment extends Fragment implements View.OnClickListener, Ins
                     MyHomeRoomFragment myHomeRoomFragment = (MyHomeRoomFragment) o;
                     switch (myHomeRoomFragment.getCurrentMode()) {
                         case DeviceAdapter.NORMAL_MODE:
+                            if (myHomeRoomFragment.getDeviceList().size() == 0) {
+                                Toast.makeText(getActivity(), "Please add device first", Toast.LENGTH_SHORT).show();
+//                                return;
+                            }
                             myHomeRoomFragment.setCurrentMode(DeviceAdapter.EDIT_MODE);
                             titleMode2Edit();
                             break;
@@ -253,6 +256,10 @@ public class RoomsFragment extends Fragment implements View.OnClickListener, Ins
                     switch (itemFragment.getCurrentMode()) {
 
                         case DeviceAdapter.NORMAL_MODE:
+                            if (itemFragment.getDeviceList().size() == 0) {
+                                Toast.makeText(getActivity(), "Please add device first", Toast.LENGTH_SHORT).show();
+//                                return;
+                            }
                             itemFragment.setCurrentMode(DeviceAdapter.EDIT_MODE);
                             titleMode2Edit();
                             break;

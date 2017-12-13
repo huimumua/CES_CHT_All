@@ -287,7 +287,7 @@ public class CloudIotData {
     public static String getBrigtness(String deviceId ) {
         JSONObject function = new JSONObject();
         try {
-            function.put("function", "getBrigtness");
+            function.put("function", "getBrightness");
             function.put("deviceId", deviceId);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -307,7 +307,7 @@ public class CloudIotData {
     public static String setBrigtness(String deviceId ,String value) {
         JSONObject function = new JSONObject();
         try {
-            function.put("function", "setBrigtness");
+            function.put("function", "setBrightness");
             function.put("deviceId", deviceId);
             function.put("value", value);
         } catch (JSONException e) {

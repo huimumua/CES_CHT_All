@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -19,6 +20,7 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
     private String path;
     private ImageView photo, back, yes;
     private Bitmap bitmap;
+    DisplayMetrics metrics;
     private static ChangeBackgroundCallback callBack;
 
     @Override
@@ -45,6 +47,7 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
     }
 
     private void initData() {
+        metrics = getResources().getDisplayMetrics();
         path = getIntent().getStringExtra("path");
         Log.d(TAG, path);
         Glide.with(this).load(new File(path)).error(R.drawable.nophoto).into(photo);
@@ -63,7 +66,7 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
                                     .load(new File(path))
                                     .asBitmap() //必须
                                     .centerCrop()
-                                    .into(1080, 1920)
+                                    .into(metrics.widthPixels, metrics.heightPixels)
                                     .get();
                         } catch (InterruptedException e) {
                             e.printStackTrace();

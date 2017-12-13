@@ -11,6 +11,7 @@ import android.widget.TextView;
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.deviceContr.adapter.ChooseActionAdapter;
 import com.askey.mobile.zwave.control.deviceContr.adapter.RecyclerAdapter;
+import com.askey.mobile.zwave.control.deviceContr.scenes.SceneActionInfo;
 import com.yanzhenjie.recyclerview.swipe.SwipeMenuRecyclerView;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ public class DoActionActivity extends AppCompatActivity {
     private Intent fromIntent;
     private String fromActivity;
     private TextView mTitle;
+    private SceneActionInfo sceneActionInfo;
 
     @Override
 
@@ -42,10 +44,12 @@ public class DoActionActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        sceneActionInfo = getIntent().getParcelableExtra("sceneActionInfo");
     }
 
     private void initView() {
         fromIntent = getIntent();
+        sceneActionInfo = getIntent().getParcelableExtra("sceneActionInfo");
         mTitle = (TextView) findViewById(R.id.tv_title);
         mTitle.setText(getResources().getString(R.string.do_title));
 
@@ -74,29 +78,26 @@ public class DoActionActivity extends AppCompatActivity {
 
 
                     intent.putExtra("from", DoActionActivity.class.getSimpleName());
-//                    intent.putExtra("arr", fromIntent.getStringExtra("arr"));//需要从nodeid获取
-                    intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
-                    intent.putExtra("type", fromIntent.getStringExtra("type"));
-                    intent.putExtra("name", fromIntent.getStringExtra("name"));
-                    intent.putExtra("action",String.valueOf(datas.get(position).get("name")));
-                    startActivity(intent);
+
 
                 } else if (fromActivity != null && (ActionSummaryActivity.class.getSimpleName()).equals(fromActivity)) {
                     intent = new Intent(DoActionActivity.this, ActionSummaryActivity.class);
 
                     intent.putExtra("from", DoActionActivity.class.getSimpleName());
-                    intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
-//                    intent.putExtra("endpointId", fromIntent.getStringExtra("endpointId"));
-//                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
-//                    intent.putExtra("arr","arr");//需要从nodeid获取
-                    intent.putExtra("type", fromIntent.getStringExtra("type"));
-                    intent.putExtra("action", String.valueOf(datas.get(position).get("name")));
-                    intent.putExtra("timer", fromIntent.getStringExtra("timer"));
-                    intent.putExtra("name", fromIntent.getStringExtra("name"));
-
-                    startActivity(intent);
 
                 }
+
+                sceneActionInfo.setAction(String.valueOf(datas.get(position).get("name")));
+                intent.putExtra("sceneActionInfo", sceneActionInfo);
+                startActivity(intent);
+
+                Log.i(LOG_TAG, "=====getType===" + sceneActionInfo.getType());
+                Log.i(LOG_TAG, "=====getAction===" + sceneActionInfo.getAction());
+                Log.i(LOG_TAG, "=====getLightValue===" + sceneActionInfo.getLightValue());
+                Log.i(LOG_TAG, "=====getName===" + sceneActionInfo.getName());
+                Log.i(LOG_TAG, "=====getNodeId===" + sceneActionInfo.getNodeId());
+                Log.i(LOG_TAG, "=====getTimer===" + sceneActionInfo.getTimer());
+                Log.i(LOG_TAG, "=====getActionId===" + sceneActionInfo.getActionId() + "");
             }
         });
     }

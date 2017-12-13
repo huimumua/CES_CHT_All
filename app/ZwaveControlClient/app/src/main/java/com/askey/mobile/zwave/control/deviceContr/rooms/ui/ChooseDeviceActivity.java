@@ -17,6 +17,7 @@ import com.askey.mobile.zwave.control.deviceContr.adapter.RecyclerAdapter;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.IotMqttManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
+import com.askey.mobile.zwave.control.deviceContr.scenes.SceneActionInfo;
 import com.askey.mobile.zwave.control.deviceContr.scenes.SceneActionsActivity;
 import com.askey.mobile.zwave.control.home.activity.HomeActivity;
 import com.askey.mobile.zwave.control.util.Const;
@@ -38,7 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ChooseDeviceActivity extends AppCompatActivity {
-    private final String LOG_TAG = ActionChooseActivity.class.getSimpleName();
+    private final String LOG_TAG = ChooseDeviceActivity.class.getSimpleName();
     private SwipeMenuRecyclerView mRecycleView;
     private LinearLayoutManager mLayoutManager;
     private ChooseActionAdapter mAdapter;
@@ -46,6 +47,7 @@ public class ChooseDeviceActivity extends AppCompatActivity {
     private Intent fromIntent;
     private String fromActivity;
     private TextView mTitle;
+    private SceneActionInfo sceneActionInfo;
 
 
     @Override
@@ -81,10 +83,12 @@ public class ChooseDeviceActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        sceneActionInfo = getIntent().getParcelableExtra("sceneActionInfo");
     }
 
     private void initView() {
         fromIntent = getIntent();
+        sceneActionInfo = getIntent().getParcelableExtra("sceneActionInfo");
         mTitle = (TextView) findViewById(R.id.tv_title);
         mTitle.setText(getResources().getString(R.string.choose_device_title));
 
@@ -103,37 +107,29 @@ public class ChooseDeviceActivity extends AppCompatActivity {
 
                 Intent intent = null;
                 fromActivity = fromIntent.getStringExtra("from");
-
                 if (fromActivity != null && (SceneActionsActivity.class.getSimpleName()).equals(fromActivity)) {
                     intent = new Intent(ChooseDeviceActivity.this, DoActionActivity.class);
 
-                    intent.putExtra("from", ChooseDeviceActivity.class.getSimpleName());
-//                    intent.putExtra("arr","arr");//需要从nodeid获取
-//                    intent.putExtra("nodeId", fromIntent.getStringExtra("nodeId"));
-//                    intent.putExtra("endpointId", fromIntent.getStringExtra("endpointId"));
-//                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
-//                    intent.putExtra("type",String.valueOf(datas.get(position).get("type")));
-
-                    intent.putExtra("nodeId", (String)datas.get(position).get("nodeId"));
-                    intent.putExtra("type", (String)datas.get(position).get("type"));
-                    intent.putExtra("name", (String)datas.get(position).get("name"));
-                    startActivity(intent);
 
                 } else if (fromActivity != null && (ActionSummaryActivity.class.getSimpleName()).equals(fromActivity)) {
                     intent = new Intent(ChooseDeviceActivity.this, ActionSummaryActivity.class);
 
-                    intent.putExtra("from", ChooseDeviceActivity.class.getSimpleName());
-                    intent.putExtra("nodeId", (String)datas.get(position).get("nodeId"));
-//                    intent.putExtra("endpointId", fromIntent.getStringExtra("endpointId"));
-//                    intent.putExtra("groupId", fromIntent.getStringExtra("groupId"));
-//                    intent.putExtra("arr","arr");//需要从nodeid获取
-                    intent.putExtra("type", String.valueOf(datas.get(position).get("type")));
-                    intent.putExtra("action", fromIntent.getStringExtra("action"));
-                    intent.putExtra("timer", fromIntent.getStringExtra("timer"));
-                    intent.putExtra("name", (String)datas.get(position).get("name"));
-                    startActivity(intent);
-
                 }
+//                intent = new Intent(ChooseDeviceActivity.this, DoActionActivity.class);
+                sceneActionInfo.setNodeId((String)datas.get(position).get("nodeId"));
+                sceneActionInfo.setType((String)datas.get(position).get("type"));
+                sceneActionInfo.setName((String)datas.get(position).get("name"));
+                intent.putExtra("sceneActionInfo", sceneActionInfo);
+                intent.putExtra("from", ChooseDeviceActivity.class.getSimpleName());
+                startActivity(intent);
+
+                Log.i(LOG_TAG, "=====getType===" + sceneActionInfo.getType());
+                Log.i(LOG_TAG, "=====getAction===" + sceneActionInfo.getAction());
+                Log.i(LOG_TAG, "=====getLightValue===" + sceneActionInfo.getLightValue());
+                Log.i(LOG_TAG, "=====getName===" + sceneActionInfo.getName());
+                Log.i(LOG_TAG, "=====getNodeId===" + sceneActionInfo.getNodeId());
+                Log.i(LOG_TAG, "=====getTimer===" + sceneActionInfo.getTimer());
+                Log.i(LOG_TAG, "=====getActionId===" + sceneActionInfo.getActionId() + "");
             }
         });
     }
