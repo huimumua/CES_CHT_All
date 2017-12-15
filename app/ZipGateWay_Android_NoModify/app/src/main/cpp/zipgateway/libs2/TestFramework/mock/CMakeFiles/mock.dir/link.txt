@@ -1,0 +1,2 @@
+/usr/bin/ar cr ../../../lib/libmock.a  CMakeFiles/mock.dir/mock_control.c.o
+/usr/bin/ranlib ../../../lib/libmock.a

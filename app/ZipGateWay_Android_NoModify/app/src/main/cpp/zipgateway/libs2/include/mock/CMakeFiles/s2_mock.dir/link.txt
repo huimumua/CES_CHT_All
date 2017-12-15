@@ -1,0 +1,2 @@
+/usr/bin/ar cr ../../../lib/libs2_mock.a  CMakeFiles/s2_mock.dir/s2_extern_mock.c.o CMakeFiles/s2_mock.dir/s2_mock.c.o
+/usr/bin/ranlib ../../../lib/libs2_mock.a

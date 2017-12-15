@@ -1,0 +1,2 @@
+/usr/bin/ar cr ../../../lib/libcrypto_mocks.a  CMakeFiles/crypto_mocks.dir/curve25519_mock.c.o CMakeFiles/crypto_mocks.dir/kderiv_mock.c.o
+/usr/bin/ranlib ../../../lib/libcrypto_mocks.a
