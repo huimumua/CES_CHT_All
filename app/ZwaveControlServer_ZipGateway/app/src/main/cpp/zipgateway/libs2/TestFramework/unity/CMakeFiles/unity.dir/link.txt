@@ -1,0 +1,2 @@
+/usr/bin/ar cr ../../../lib/libunity.a  CMakeFiles/unity.dir/unity.c.o CMakeFiles/unity.dir/generic/unity_print.c.o
+/usr/bin/ranlib ../../../lib/libunity.a

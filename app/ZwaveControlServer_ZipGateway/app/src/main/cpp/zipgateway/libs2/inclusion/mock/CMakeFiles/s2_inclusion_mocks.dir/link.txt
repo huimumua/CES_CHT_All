@@ -1,0 +1,2 @@
+/usr/bin/ar cr ../../../lib/libs2_inclusion_mocks.a  CMakeFiles/s2_inclusion_mocks.dir/s2_event_handler_mock.c.o CMakeFiles/s2_inclusion_mocks.dir/s2_inclusion_extern_mock.c.o CMakeFiles/s2_inclusion_mocks.dir/s2_keystore_mock.c.o
+/usr/bin/ranlib ../../../lib/libs2_inclusion_mocks.a
