@@ -180,4 +180,63 @@ int  zwcontrol_update_node(hl_appl_ctx_t *hl_appl, uint8_t nodeId);
 int  zwcontrol_start_learn_mode(hl_appl_ctx_t* hl_appl);
 //Add by jay.k <<end
 
+/*
+ **  Command Class Battery
+ */
+int  zwcontrol_battery_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
+
+/*
+ **  Command Class Baisc ver 1~2
+ */
+int  zwcontrol_basic_get(hl_appl_ctx_t *hl_appl, int nodeId);
+int  zwcontrol_basic_set(hl_appl_ctx_t *hl_appl, int nodeId, int value);
+
+
+/*
+ **  Command Class Configuration
+ */
+int  zwcontrol_configuration_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t paramMode, uint8_t paramNumber,
+                                 uint16_t rangeStart, uint16_t rangeEnd);
+int  zwcontrol_configuration_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t paramNumber,
+                                 uint8_t paramSize, uint8_t useDefault, int32_t paramValue);
+
+/*
+ **  For command queue control
+ */
+int  zwcontrol_command_queue_state_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_command_queue_turn_on_off(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t state);
+int  zwcontrol_command_queue_view(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_command_queue_cancel(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+
+/*
+ **  Command Class Meter
+ */
+int  zwcontrol_meter_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t meter_unit);
+int  zwcontrol_meter_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_meter_reset(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+
+/*
+ **  Command Class Power Level
+ */
+int  zwcontrol_powerLevel_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+
+/*
+ **  Command Class Sensor Multi-Level
+ */
+int  zwcontrol_sensor_multilevel_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId/*, uint8_t sensor_type, uint8_t unit*/);
+
+
+/*
+ **  Command Class Notification version 4
+ **  
+ */
+int  zwcontrol_notification_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t notificationType, uint8_t status);
+int  zwcontrol_notification_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t alarmType, uint8_t notificationType, uint8_t state);
+int  zwcontrol_notification_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_notification_supported_event_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t notificationType);
+
+
 #endif

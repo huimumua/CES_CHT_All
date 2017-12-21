@@ -181,7 +181,6 @@ uip_arp_timer(void)
   }
 
 }
-
 /*-----------------------------------------------------------------------------------*/
 static void
 uip_arp_update(uip_ipaddr_t *ipaddr, struct uip_eth_addr *ethaddr)

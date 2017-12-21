@@ -51,6 +51,7 @@
 #include <stdlib.h>
 #include "serial_api_process.h"
 #include "DTLS_server.h"
+//#include "ZW_udp_server.h"
 
 PROCINIT(&etimer_process);
 
@@ -104,6 +105,7 @@ void* thread_func(void *param)
             process_poll(&serial_api_process);
         }
 #endif
+        //n = n > udp_server_conn ? n : udp_server_conn;
 
         if( select(n+1, &fds, NULL, NULL, &tv) > 0)
         {
@@ -118,6 +120,11 @@ void* thread_func(void *param)
             {
                 process_post(&dtls_server_process, DTLS_SERVER_INPUT_EVENT, 0);
             }
+
+            //if(FD_ISSET(udp_server_conn, &fds))
+            //{
+            //    process_post(&udp_server_process, UDP_SERVER_INPUT_EVENT, 0);
+            //}
         }
         else
         {

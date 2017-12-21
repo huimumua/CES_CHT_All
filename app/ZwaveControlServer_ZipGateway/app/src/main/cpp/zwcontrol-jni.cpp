@@ -236,12 +236,12 @@ static int controller_stopRemoveDevice(JNIEnv *env, jclass object)
 
 static int controller_getDeviceBattery(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_battery_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_getSensorMultiLevel(JNIEnv *env, jclass object, jint nodeId/*, jint sensor_type, jint unit*/)
 {
-    return 0;
+    return zwcontrol_sensor_multilevel_get(&appl_ctx, (uint32_t)nodeId/*, (uint8_t)sensor_type, (uint8_t)unit*/);
 }
 
 static int control_update_node(JNIEnv *env, jclass object, jint nodeId)
@@ -265,12 +265,12 @@ static int control_saveNodeInfo(JNIEnv *env, jclass object, jstring infoFile)
 
 static int control_getBasic(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_basic_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int control_setBasic(JNIEnv *env, jclass object, jint nodeId, jint value)
 {
-    return 0;
+    return zwcontrol_basic_set(&appl_ctx, nodeId, value);
 }
 
 static int controller_getSwitchMultiLevel(JNIEnv *env, jclass object, jint nodeId)
@@ -291,13 +291,15 @@ static int controller_getSupportedSwitchType(JNIEnv *env, jclass object, jint no
 static int controller_getConfiguration(JNIEnv *env, jclass object, jint nodeId, jint paramMode, jint paramNumber,
                                        jint rangeStart, jint rangeEnd)
 {
-    return 0;
+    return zwcontrol_configuration_get(&appl_ctx, (uint32_t)nodeId,(uint8_t)paramMode, (uint8_t)paramNumber,
+                                       (uint16_t)rangeStart, (uint16_t)rangeEnd);
 }
 
 static int controller_setConfiguration(JNIEnv *env, jclass object, jint nodeId, jint paramNumber, jint paramSize,
                                        jint useDefault, jint paramValue)
 {
-    return 0;
+    return zwcontrol_configuration_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)paramNumber, (uint8_t)paramSize,
+                                       (uint8_t)useDefault, (int32_t)paramValue);
 }
 
 static int controller_setConfigurationBulk(JNIEnv *env, jclass object, jint nodeId, jint offset1, jint offset2, jint paramNumber, jint paramSize,
@@ -322,7 +324,7 @@ static int controller_startStopSwitchLevelChange(JNIEnv *env, jclass object, jin
 
 static int controller_getPowerLevel(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_powerLevel_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_setSwitchAllOn(JNIEnv *env, jclass object, jint nodeId)
@@ -382,17 +384,17 @@ static int controller_getSensorBinarySupportedSensor(JNIEnv *env, jclass object,
 
 static int controller_getMeter(JNIEnv *env, jclass object, jint nodeId, jint meter_unit)
 {
-    return 0;
+    return zwcontrol_meter_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)meter_unit);
 }
 
 static int controller_resetMeter(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_meter_reset(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_getMeterSupported(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_meter_supported_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_getWakeUpSettings(JNIEnv *env, jclass object, jint nodeId)
@@ -597,22 +599,22 @@ static int controller_getSpecificGroup(JNIEnv *env, jclass object, jint nodeId, 
 
 static int controller_setNotification(JNIEnv *env, jclass object, jint nodeId, jint type, jint status)
 {
-    return 0;
+    return zwcontrol_notification_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)type, (uint8_t)status);
 }
 
 static int controller_getNotification(JNIEnv *env, jclass object, jint nodeId, jint alarmType, jint notifType, jint status)
 {
-    return 0;
+    return zwcontrol_notification_get(&appl_ctx,(uint32_t)nodeId, (uint8_t)alarmType, (uint8_t)notifType, (uint8_t)status);
 }
 
 static int controller_getSupportedNotification(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_notification_supported_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_getSupportedEventNotification(JNIEnv *env, jclass object, jint nodeId, jint notifType)
 {
-    return 0;
+    return zwcontrol_notification_supported_event_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)notifType);
 }
 
 static int controller_getSupportedCentralScene(JNIEnv *env, jclass object, jint nodeId, jint endpointId)
@@ -653,22 +655,22 @@ static int controller_requestFirmwareUpdate(JNIEnv *env, jclass object, jint nod
 
 static int controller_getCommandQueueState(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_command_queue_state_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_controlCommandQueue(JNIEnv *env, jclass object, jint nodeId, jint state)
 {
-    return 0;
+    return zwcontrol_command_queue_turn_on_off(&appl_ctx, (uint32_t)nodeId, (uint8_t)state);
 }
 
 static int controller_viewCommandQueue(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_command_queue_view(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_cancelAllCommandQueue(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_command_queue_cancel(&appl_ctx, (uint32_t)nodeId);
 }
 
 static const JNINativeMethod gMethods[] = {

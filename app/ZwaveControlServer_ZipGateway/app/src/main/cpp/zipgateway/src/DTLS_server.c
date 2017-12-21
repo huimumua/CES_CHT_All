@@ -490,7 +490,7 @@ PROCESS_THREAD(dtls_server_process, ev, data)
         int on = 1;
         if(setsockopt(dtls_server_conn, SOL_SOCKET, SO_REUSEADDR, (const char*)&on, sizeof(on)) == -1)
         {
-            printf("setsockopt error is %d\n", errno);
+            LOG_PRINTF("dtls setsockopt error is %d\n", errno);
             return 0;
         }
 
@@ -678,12 +678,12 @@ PROCESS_THREAD(dtls_server_process, ev, data)
         }
         else
         {
-            printf("dtls server errno is %d\n", errno);
+            LOG_PRINTF("dtls server errno is %d\n", errno);
         }
     }
     else
     {
-        printf("dtls server errno is %d\n", errno);
+        LOG_PRINTF("dtls server errno is %d\n", errno);
     }
 
     SSL_CTX_free(ctx);

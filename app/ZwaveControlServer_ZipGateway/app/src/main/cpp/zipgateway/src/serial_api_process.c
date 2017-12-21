@@ -159,7 +159,7 @@ PROCESS_THREAD(serial_api_process, ev, data)
           ZW_SetLearnMode(ZW_SET_LEARN_MODE_DISABLE, 0);
           process_poll(&serial_api_process);
         }
-        break;
+          break;
       }
       PROCESS_WAIT_EVENT()
       ;

@@ -119,6 +119,7 @@ int ZWFirmwareUpdate(unsigned char isAPM)
   pgmr.con = printf;
   pgmr.err = printf;
 try_again:
+  /* First try USB then Serial */
   if (linux_serial_interface.parse_dev_string(&pgmr, cfg.serial_port))
   {
     /*...*/

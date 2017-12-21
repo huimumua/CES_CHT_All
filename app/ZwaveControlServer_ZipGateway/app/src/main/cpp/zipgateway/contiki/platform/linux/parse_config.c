@@ -209,7 +209,7 @@ void ConfigInit(const char* resPath)
     cfg.mb_port = uip_htons(atoi(config_get_val("ZipMBPort", "41230")));
     uiplib_ipaddrconv(config_get_val("ZipMBDestinationIp6", "0::0"), &(cfg.mb_destination));
 
-    cfg.mb_conf_mode = atoi(config_get_val("ZipMBMode", "1"));
+    cfg.mb_conf_mode = DISABLE_MAILBOX; //djnakata //atoi(config_get_val("ZipMBMode", "1"));
 
     s = config_get_val("ZipPSK", "123456789012345678901234567890AA");
     cfg.psk_len=0;

@@ -349,7 +349,7 @@ ApplicationCommandHandlerZIP(ts_param_t *p, ZW_APPLICATION_TX_BUFFER *pCmd,
 {
   if (cmdLength == 0)
     return;
-  
+
   /*
    * Check if this was a reply to a request we have made
    */
@@ -361,7 +361,7 @@ ApplicationCommandHandlerZIP(ts_param_t *p, ZW_APPLICATION_TX_BUFFER *pCmd,
 
   DBG_PRINTF("ApplicationCommandHandler %d->%d class 0x%02x cmd 0x%02x size %d\n",
       (int )p->snode,(int)p->dnode, (int )pCmd->ZW_Common.cmdClass,(int )pCmd->ZW_Common.cmd, (int )cmdLength);
- 
+
   switch (pCmd->ZW_Common.cmdClass)
   {
     case COMMAND_CLASS_CONTROLLER_REPLICATION:
@@ -669,7 +669,7 @@ ZIP_eeprom_init() CC_REENTRANT_ARG
     create_ula_prefix(&ula,1);
     nvm_config_set(lan_prefix,&ula);
 
-    cfg.mb_conf_mode = DISABLE_MAILBOX;//ENABLE_MAILBOX_SERVICE; //djnakata
+    cfg.mb_conf_mode = DISABLE_MAILBOX; //djnakata //ENABLE_MAILBOX_SERVICE;
     cfg.mb_port=ZWAVE_PORT;
     ApplicationDefaultSet();
 

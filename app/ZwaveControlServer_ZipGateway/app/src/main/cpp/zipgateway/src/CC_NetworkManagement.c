@@ -1107,7 +1107,6 @@ NetworkManagement_NetworkUpdateStatusUpdate(u8_t flag)
   }
 
   DBG_PRINTF("update flag %i %i\n",flag,networkUpdateStatusFlags);
-
   if (networkUpdateStatusFlags
       == (NETWORK_UPDATE_FLAG_DHCPv4 | NETWORK_UPDATE_FLAG_PROBE | NETWORK_UPDATE_FLAG_VIRTUAL))
   {
@@ -1258,7 +1257,6 @@ RemoveNodeStatusUpdate(LEARN_INFO* inf)
 {
   ZW_NODE_REMOVE_STATUS_FRAME* r = (ZW_NODE_REMOVE_STATUS_FRAME*) &nms.buf;
   DBG_PRINTF("RemoveNodeStatusUpdate status=%d node %d\n", inf->bStatus, inf->bSource);
-
   switch (inf->bStatus)
   {
   case ADD_NODE_STATUS_LEARN_READY:
@@ -2141,6 +2139,7 @@ NetworkManagementCommandHandler(zwave_connection_t *c, BYTE* pData, uint16_t bDa
   ZW_APPLICATION_TX_BUFFER* pCmd = (ZW_APPLICATION_TX_BUFFER*) pData;
 
   DBG_PRINTF("NetworkManagementCommandHandler %x %x\n",pData[0], pData[1]);
+
 
    mb_abort_sending();
 

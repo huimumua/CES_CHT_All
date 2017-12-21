@@ -6,7 +6,7 @@
 
 @version    1.0 7-6-11  Initial release
 
-@copyright © 2014 SIGMA DESIGNS, INC. THIS IS AN UNPUBLISHED WORK PROTECTED BY SIGMA DESIGNS, INC.
+@copyright © 2014 SIGMA DESIGNS. THIS IS AN UNPUBLISHED WORK PROTECTED BY SIGMA DESIGNS, INC.
 AS A TRADE SECRET, AND IS NOT TO BE USED OR DISCLOSED EXCEPT AS PROVIDED Z-WAVE CONTROLLER DEVELOPMENT KIT
 LIMITED LICENSE AGREEMENT. ALL RIGHTS RESERVED.
 
@@ -166,6 +166,9 @@ static const cmd_get_resp_t cmd_get_resp_tbl[] =
     {COMMAND_CLASS_LANGUAGE, LANGUAGE_GET, LANGUAGE_REPORT},
     {COMMAND_CLASS_DOOR_LOCK_LOGGING, DOOR_LOCK_LOGGING_RECORDS_SUPPORTED_GET, DOOR_LOCK_LOGGING_RECORDS_SUPPORTED_REPORT},
     {COMMAND_CLASS_DOOR_LOCK_LOGGING, RECORD_GET, RECORD_REPORT},
+    {COMMAND_CLASS_NOTIFICATION_V4,NOTIFICATION_GET_V4, NOTIFICATION_REPORT_V4},
+    {COMMAND_CLASS_NOTIFICATION_V4,NOTIFICATION_SUPPORTED_GET_V4, NOTIFICATION_SUPPORTED_REPORT_V4},
+    {COMMAND_CLASS_NOTIFICATION_V4,EVENT_SUPPORTED_GET_V4, EVENT_SUPPORTED_REPORT_V4},
 
 };
 
@@ -335,6 +338,7 @@ zwnode_p zwnode_find(zwnode_p first_node, uint8_t nodeid)
     return  NULL;
 }
 
+
 /**<
 reset a node intf data struct, if not do this, zwnet_load will not detailed.
 @param[in]  first_node  first node in the network
@@ -342,6 +346,7 @@ reset a node intf data struct, if not do this, zwnet_load will not detailed.
 int zwnode_intf_reset(zwnode_p first_node)
 {
     zwnode_p    temp_node;
+    zwep_p     temp_ep;
 
     temp_node = first_node;
     while (temp_node)
@@ -349,7 +354,15 @@ int zwnode_intf_reset(zwnode_p first_node)
         // reset node intf, except controller
         if (temp_node->nodeid != 1)
         {
-            temp_node->ep.intf = NULL;
+            //ALOGI("zwnode_intf_reset, reset nodeid:%d",temp_node->nodeid);
+            temp_ep = &(temp_node->ep);
+            while(temp_ep)
+            {
+                //ALOGI("zwnode_intf_reset, ep id:%d", temp_ep->epid);
+                if(temp_ep->epid >= 0)
+                    temp_ep->intf = NULL;
+                temp_ep = (temp_ep)->obj.next;
+            }
         }
         temp_node = (zwnode_p)temp_node->obj.next;
     }
@@ -1631,7 +1644,7 @@ int zwep_get_if(zwepd_p epd, zwifd_p ifd)
     ep = zwep_get_ep(epd);
     if (ep && ep->intf)
     {   //Found endpoint
-        if (!(ep->intf->propty & (IF_PROPTY_HIDDEN | IF_PROPTY_HIDDEN_POLL)))
+        if (!(ep->intf->propty & (/*IF_PROPTY_HIDDEN |*/ IF_PROPTY_HIDDEN_POLL)))
         {   //Not hidden
             zwif_get_desc_dat(ep->intf, ifd);
             result = ZW_ERR_NONE;
@@ -2531,7 +2544,9 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
             }
             break;
 #endif
-        /************************tiny************************/
+        /****************************************************************************/
+        // skysoft modified start
+
         case COMMAND_CLASS_ZIP_NAMING:
             {
                 static const uint8_t intf_settings[] =
@@ -2586,7 +2601,8 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
             }
             break;
 
-        /************************tiny************************/
+        // skysoft modified end
+        /****************************************************************************/
         default:
             return zwif_alloc(cls, ver, propty, NULL, 0);
 
@@ -2780,7 +2796,7 @@ int zwif_get_next(zwifd_p ifd, zwifd_p nxt_ifd)
     if (intf && intf->obj.next)
     {   //Found interface
         intf = (zwif_p)intf->obj.next;
-        if (!(intf->propty & (IF_PROPTY_HIDDEN | IF_PROPTY_HIDDEN_POLL)))
+        if (!(intf->propty & (/*IF_PROPTY_HIDDEN |*/ IF_PROPTY_HIDDEN_POLL)))
         {
             zwif_get_desc_dat(intf, nxt_ifd);
             plt_mtx_ulck(ifd->net->mtx);
@@ -5219,6 +5235,7 @@ int zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint16_t cmd_len, int nw_lck_st
             return 0;
         }
     }
+    ALOGI("zwif_rep_hdlr, start report cmdclass: %02X, cmd: %02X",cls, cmd_buf[1]);
 
     switch (cls)
     {
@@ -6740,7 +6757,7 @@ int zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint16_t cmd_len, int nw_lck_st
                 {
                     case WAKE_UP_NOTIFICATION:
                         {
-                            debug_zwapi_msg(&intf->ep->node->net->plt_ctx, "Wake up notification received");
+                            ALOGI("Wake up notification received");
 
                             //Dequeue the commands
                             if (zwif_cmd_dequeue(intf) == 0)
@@ -10433,6 +10450,218 @@ int zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint16_t cmd_len, int nw_lck_st
             }
             break;
 
+        /****************************************************************************/
+        // skysoft modified start
+
+        /*case COMMAND_CLASS_NOTIFICATION_V4:
+            {
+                if (cmd_buf[1] == NOTIFICATION_REPORT_V4)
+                {
+                    if (cmd_len >= 4)
+                    {
+                        zwnotification_p            notification_info;
+                        zwrep_notification_fn       rpt_cb;
+                        rpt_cb = (zwrep_notification_fn)report_cb;
+
+                        notification_info = (zwnotification_p)calloc(1, sizeof(zwnotification_t) + cmd_len);
+
+                        if (!notification_info)
+                        {
+                            return 1;
+                        }
+
+                        notification_info->type = cmd_buf[2];
+                        notification_info->level = cmd_buf[3];
+
+                        uint8_t param_len = 0;
+
+                        notification_info->reserved = cmd_buf[4];;
+                        notification_info->ex_status = cmd_buf[5];
+                        notification_info->ex_type = cmd_buf[6];
+                        notification_info->ex_event = cmd_buf[7];
+
+                        param_len = cmd_buf[8] & 0x1F;
+                        //Check whether event comes with parameter
+                        if ((cmd_len >= 9) && (param_len > 0))
+                        {
+                            if (cmd_len < (9 + param_len))
+                            {
+                                free(notification_info);
+                                return 1;
+                            }
+                             //Check for system failure event parameters
+                            if ((param_len > 0) && (cmd_buf[6] == ZW_NOTIFICATION_SYSTEM)
+                                && ((cmd_buf[7] == ZW_NOTIFICATION_EVT_HW_OEM_CODE) || (cmd_buf[7] == ZW_NOTIFICATION_EVT_SW_OEM_CODE)))
+                            {
+                                memcpy(notification_info->ex_evt_prm, cmd_buf + 9, param_len);
+                                notification_info->ex_evt_len = param_len;
+                                notification_info->ex_evt_type = ZW_NOTIFICATION_PARAM_OEM_ERR_CODE;
+                            }
+                            else if (param_len >= 3)
+                            {
+                                if (cmd_buf[9] == COMMAND_CLASS_USER_CODE &&
+                                    cmd_buf[10] == USER_CODE_REPORT)
+                                {
+                                    //cmd_buf[9] = COMMAND_CLASS_USER_CODE
+                                    //cmd_buf[10] = USER_CODE_REPORT
+                                    //cmd_buf[11] = User Identifier
+                                    //cmd_buf[12] = User ID Status
+                                    notification_info->ex_evt_type = ZW_NOTIFICATION_PARAM_USRID;
+                                    notification_info->ex_evt_len = 1;
+                                    notification_info->ex_evt_prm[0] = cmd_buf[11];
+                                }
+                                else if (cmd_buf[9] == COMMAND_CLASS_NODE_NAMING &&
+                                         cmd_buf[10] == NODE_NAMING_NODE_LOCATION_REPORT)
+                                {
+                                    //cmd_buf[9] = COMMAND_CLASS_NODE_NAMING
+                                    //cmd_buf[10] = NODE_NAMING_NODE_LOCATION _REPORT
+                                    //cmd_buf[11] = Char. Presentation
+                                    //cmd_buf[12] = Node location char 1
+                                    uint8_t str_len = param_len - 3;
+                                     //Check whether to convert into utf8
+                                    if ((cmd_buf[11] & 0x07) == CHAR_PRES_UTF16)
+                                    {
+                                        uint8_t *utf16_buf;
+#ifdef WIN32
+                                        char    utf8_str[ZW_LOC_STR_MAX + 1];
+#else
+                                        uint8_t utf8_str[ZW_LOC_STR_MAX + 1];
+#endif
+                                        int     result;
+                                        utf16_buf = (uint8_t *)calloc(1, str_len + 2);//additional 2 bytes for null characters
+                                        if (!utf16_buf)
+                                        {
+                                            free(notification_info);
+                                            return 1;
+                                        }
+                                        memcpy(utf16_buf, cmd_buf + 12, str_len);
+                                        ALOGI("notification report 4");
+                                         //convert into utf8
+#ifdef WIN32
+                                        result = plt_utf16_to_8((const char *)utf16_buf, utf8_str, ZW_LOC_STR_MAX + 1, 1);
+#else
+                                        result = plt_utf16_to_8((const uint16_t *)utf16_buf, utf8_str, ZW_LOC_STR_MAX + 1, 1);
+#endif
+                                        free(utf16_buf);
+                                        if (result == 0)
+                                        {
+                                            size_t utf8_len;
+                                            utf8_len = strlen((const char *)utf8_str);
+                                            if (utf8_len > cmd_len)
+                                            {   //Not enough memory, have to realloc
+                                                zwnotification_p  tmp_buf;
+                                                tmp_buf = (zwnotification_p) realloc(notification_info, sizeof(zwnotification_t) + utf8_len);
+                                                if (tmp_buf)
+                                                {
+                                                    notification_info = tmp_buf;
+                                                }
+                                                else
+                                                {
+                                                    free(notification_info);
+                                                    return 1;
+                                                }
+                                            }
+                                             //Copy node location
+                                            memcpy(notification_info->ex_evt_prm, utf8_str, utf8_len);
+                                            notification_info->ex_evt_prm[utf8_len] = '\0';
+                                            notification_info->ex_evt_len = utf8_len + 1; //include NULL char
+                                         }
+                                    }
+                                    else
+                                    {
+                                        //Check for valid UTF-8 string
+                                        str_len = plt_utf8_chk(cmd_buf + 12, str_len);
+
+                                        //Copy node location to the node
+                                        memcpy(notification_info->ex_evt_prm, cmd_buf + 12, str_len);
+                                        notification_info->ex_evt_len = str_len + 1; //include NULL char
+
+                                    }
+                                    notification_info->ex_evt_type = ZW_NOTIFICATION_PARAM_LOC;
+
+                                }
+                            }
+                        }
+                        
+
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, notification_info, 0);
+                        free(notification_info);
+                    }
+                }
+                else if (cmd_buf[1] == NOTIFICATION_SUPPORTED_REPORT_V4)
+                {
+                    if (cmd_len >= 3)
+                    {
+                        zwrep_notification_sup_fn   rpt_cb;
+                        uint8_t             ztype[248];
+                        int                 i;
+                        int                 max_notification_type;
+                        uint8_t             ztype_len;
+
+                        rpt_cb = (zwrep_notification_sup_fn)report_cb;
+
+                        ztype_len = 0;
+                        max_notification_type = (cmd_buf[2] & 0x1F) * 8;
+
+                        for (i = 0; i < max_notification_type; i++)
+                        {
+                            if ((cmd_buf[(i>>3) + 3] >> (i & 0x07)) & 0x01)
+                            {
+                                ztype[ztype_len++] = i;
+                            }
+                        }
+
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        rpt_cb(&ifd, cmd_buf[2] >> 7, ztype_len, ztype);
+                    }
+                }
+                else if (cmd_buf[1] == EVENT_SUPPORTED_REPORT_V3)
+                {
+                    if (cmd_len >= 4)
+                    {
+                        zwrep_notification_evt_fn   rpt_cb;
+                        uint8_t             sup_evt[248];
+                        int                 i;
+                        int                 max_evt;
+                        uint8_t             evt_len;
+
+                        rpt_cb = (zwrep_notification_evt_fn)report_cb;
+
+                        evt_len = cmd_buf[3] & 0x1F;
+
+                        if (evt_len && (cmd_len >= (evt_len + 4)))
+                        {
+                            if (rpt_cb == zwnet_alrm_evt_rpt_cb)
+                            {   //Return raw bitmask
+                                memcpy(sup_evt, cmd_buf + 4, evt_len);
+                            }
+                            else
+                            {   //Return individual events
+                                max_evt = evt_len * 8;
+                                evt_len = 0;
+
+                                for (i=0; i < max_evt; i++)
+                                {
+                                    if ((cmd_buf[(i>>3) + 4] >> (i & 0x07)) & 0x01)
+                                    {
+                                        sup_evt[evt_len++] = i;
+                                    }
+                                }
+                            }
+                            zwif_get_desc(intf, &ifd);
+                            //Callback the registered function
+                            rpt_cb(&ifd, cmd_buf[2], evt_len, sup_evt);
+                        }
+                    }
+                }
+            }
+            break;*/
+
+        // skysoft end
+        /****************************************************************************/
     }
     return 1;
 }

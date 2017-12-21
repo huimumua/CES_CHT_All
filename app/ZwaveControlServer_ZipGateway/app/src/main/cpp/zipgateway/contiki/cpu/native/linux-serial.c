@@ -221,6 +221,8 @@ void SerialPutByte(unsigned char c) {
   SerialPutBuffer(&c,1);
 }
 
+
+
 int SerialGetBuffer(unsigned char* c, int len) {
 
   int n,i,k;

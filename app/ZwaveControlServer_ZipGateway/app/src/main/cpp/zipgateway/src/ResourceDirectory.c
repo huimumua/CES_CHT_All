@@ -1334,7 +1334,6 @@ rd_node_probe_update(rd_node_database_entry_t* n)
     return;
   }
   DBG_PRINTF("rd_node_probe_update state %s node =%d\n", rd_node_probe_state_name(n->state), n->nodeid);
-
   switch (n->state)
   {
     /*case STATUS_ADDING:

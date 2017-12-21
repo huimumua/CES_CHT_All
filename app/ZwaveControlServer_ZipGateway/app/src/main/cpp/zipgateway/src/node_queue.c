@@ -284,7 +284,7 @@ process_node_queues()
   u8_t node;
   BOOL already_decrypted;
   struct uip_packetqueue_handle *q = 0;
-  
+
   if (queue_state == QS_IDLE)
   {
     if (uip_packetqueue_len(&first_attempt_queue))
@@ -311,7 +311,6 @@ process_node_queues()
   if (q && queue_state != QS_IDLE)
   {
     uip_len = uip_packetqueue_buflen(q);
-
     if (uip_len)
     {
       memcpy((void*) &uip_buf[UIP_LLH_LEN], (void*) uip_packetqueue_buf(q), uip_len);

@@ -8987,6 +8987,13 @@ int zwnet_abort(zwnet_p net)
     }
     plt_mtx_ulck(net->mtx);
 
+    if (result == 0)
+    {
+        ALOGI("Abort current action/transmission successfully");
+    } else{
+        ALOGW("Abort current action/transmission with error:%d",result);
+    }
+
     //Return result
     return(result == 0)? ZW_ERR_NONE : ZW_ERR_OP_FAILED;
 

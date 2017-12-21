@@ -1745,6 +1745,7 @@ void
 CreateLogicalUDP(ts_param_t* p, unsigned char *pCmd, uint8_t cmdLength)
 {
   BYTE l;
+
   zwave_connection_t c;
    
   memset(&c,0,sizeof(c));

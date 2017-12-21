@@ -324,6 +324,15 @@ control and data in the mesh network.
 #define ZW_CID_CSC_CONFIG_SET	     108   /**< zwif_csc_cfg_set */
 #define ZW_CID_CSC_CONFIG_GET	     109   /**< zwif_csc_cfg_get */
 
+/****************************************************************************/
+// skysoft modified start
+#define ZW_CID_NOTIFICATION_RPT_GET	     110	   /**< zwif_notification_get */
+#define ZW_CID_NOTIFICATION_SET	         111	   /**< zwif_notification_set */
+#define ZW_CID_NOTIFICATION_SUP_GET      112	   /**< zwif_notification_sup_get */
+#define ZW_CID_NOTIFICATION_SUP_EVT_GET  113	   /**< zwif_notification_sup_evt_get */
+
+// skysoft modified end
+/****************************************************************************/
 
 #define ZW_CID_POLL              0xFFFF /**< The command is meant fo polling purposes only */
 /**
@@ -6610,6 +6619,272 @@ Clear all whitelist entries
 @return		ZW_ERR_XXX
 */
 
+/****************************************************************************/
+// skysoft modified start
+
+/*
+ **  Command Class Basic
+ */
+typedef void (*zwrep_basic_v2_fn)(zwifd_p ifd, zwbasic_p val, time_t ts);
+/**<
+basic report v2 callback
+@param[in]	ifd	     interface
+@param[in]	cur_val	 current value
+@param[in]	tar_val	 target value
+@param[in]	duration
+*/
+
+int zwif_basic_rpt_set_v2(zwifd_p ifd, zwrep_basic_v2_fn rpt_cb);
+/**<
+setup a basic version 2 report callback function
+@param[in]	ifd         Interface descriptor
+@param[in]	rpt_cb	    Report callback function
+return      ZW_ERR_XXX
+*/
+
+
+/*
+ **  Command Class Notification
+ */
+int zwif_notification_info_cache_get(zwifd_p ifd, if_alarm_data_t **sup_snsr, uint8_t *alarm_cnt);
+
+/**
+@}
+@defgroup If_Notification Notification Interface APIs
+Used to report notification or service conditions
+@{
+*/
+
+/** Z-wave notification type */
+#define ZW_NOTIFICATION_SMOKE       0x01    /**< Smoke notification*/
+#define ZW_NOTIFICATION_CO          0x02    /**< Carbon monoxide notification*/
+#define ZW_NOTIFICATION_CO2         0x03    /**< Carbon dioxide notification*/
+#define ZW_NOTIFICATION_HEAT        0x04    /**< Heat notification*/
+#define ZW_NOTIFICATION_WATER       0x05    /**< Water notification*/
+#define ZW_NOTIFICATION_LOCK        0x06    /**< Lock access control notification*/
+#define ZW_NOTIFICATION_BURGLAR     0x07    /**< Burglar notification or home security*/
+#define ZW_NOTIFICATION_POWER       0x08    /**< Power management notification*/
+#define ZW_NOTIFICATION_SYSTEM      0x09    /**< System notification*/
+#define ZW_NOTIFICATION_EMERGENCY   0x0A    /**< Emergency notification*/
+#define ZW_NOTIFICATION_CLOCK       0x0B    /**< Notification clock*/
+#define ZW_NOTIFICATION_FIRST       0xFF    /**< Used by the zwif_notification_get() to retrieve the
+                                         first notification detection from the supported list*/
+/** Z-wave notification event for all*/
+#define ZW_NOTIFICATION_EVT_UNKNOWN             0xFE    /**< Unknown event*/
+
+/** Z-wave notification event for smoke notification*/
+#define ZW_NOTIFICATION_EVT_SMOKE_L             0x01    /**< Smoke detected with location info*/
+#define ZW_NOTIFICATION_EVT_SMOKE               0x02    /**< Smoke detected with unknown location info*/
+#define ZW_NOTIFICATION_EVT_SMOKE_TEST          0x03    /**< Smoke notification test*/
+
+/** Z-wave notification event for carbon monoxide notification*/
+#define ZW_NOTIFICATION_EVT_CO_L                0x01    /**< Carbon monoxide detected with location info*/
+#define ZW_NOTIFICATION_EVT_CO                  0x02    /**< Carbon monoxide detected with unknown location info*/
+
+/** Z-wave notification event for carbon dioxide notification*/
+#define ZW_NOTIFICATION_EVT_CO2_L               0x01    /**< Carbon dioxide detected with location info*/
+#define ZW_NOTIFICATION_EVT_CO2                 0x02    /**< Carbon dioxide detected with unknown location info*/
+
+/** Z-wave notification event for heat notification*/
+#define ZW_NOTIFICATION_EVT_OVERHEAT_L          0x01    /**< Overheat detected with location info*/
+#define ZW_NOTIFICATION_EVT_OVERHEAT            0x02    /**< Overheat detected with unknown location info*/
+#define ZW_NOTIFICATION_EVT_TEMP_RISE_L         0x03    /**< Rapid temperature rise detected with location info*/
+#define ZW_NOTIFICATION_EVT_TEMP_RISE           0x04    /**< Rapid temperature rise detected with unknown location info*/
+#define ZW_NOTIFICATION_EVT_UNDRHEAT_L          0x05    /**< Underheat detected with location info*/
+#define ZW_NOTIFICATION_EVT_UNDRHEAT            0x06    /**< Underheat detected with unknown location info*/
+
+/** Z-wave notification event for water notification*/
+#define ZW_NOTIFICATION_EVT_LEAK_L              0x01    /**< Water leak detected with location info*/
+#define ZW_NOTIFICATION_EVT_LEAK                0x02    /**< Water leak detected with unknown location info*/
+#define ZW_NOTIFICATION_EVT_LVL_L               0x03    /**< Water level dropped detected with location info*/
+#define ZW_NOTIFICATION_EVT_LVL                 0x04    /**< Water level dropped detected with unknown location info*/
+
+/** Z-wave notification event for lock access control notification*/
+#define ZW_NOTIFICATION_EVT_MANUAL_LCK          0x01    /**< Manual lock operation*/
+#define ZW_NOTIFICATION_EVT_MANUAL_ULCK         0x02    /**< Manual unlock operation*/
+#define ZW_NOTIFICATION_EVT_RF_LCK              0x03    /**< RF lock operation*/
+#define ZW_NOTIFICATION_EVT_RF_ULCK             0x04    /**< RF unlock operation*/
+#define ZW_NOTIFICATION_EVT_KEYPAD_LCK          0x05    /**< Keypad lock operation with user identifier info*/
+#define ZW_NOTIFICATION_EVT_KEYPAD_ULCK         0x06    /**< Keypad unlock operation with user identifier info*/
+#define ZW_NOTIFICATION_EVT_MANUAL_NOT_FUL_LCK  0x07    /**< Manual not fully locked operation*/
+#define ZW_NOTIFICATION_EVT_RF_NOT_FUL_LCK      0x08    /**< RF not fully loced operation*/
+#define ZW_NOTIFICATION_EVT_AUTO_LCK            0x09    /**< Auto lock locked operation*/
+#define ZW_NOTIFICATION_EVT_AUTO_NOT_FUL_OPER   0x0A    /**< Auto lock not fully operation*/
+#define ZW_NOTIFICATION_EVT_LCK_JAMMED          0x0B    /**< Lock jammed*/
+#define ZW_NOTIFICATION_EVT_ALL_CODE_DEL        0x0C    /**< All user codes deleted*/
+#define ZW_NOTIFICATION_EVT_1_CODE_DEL          0x0D    /**< Single user code deleted*/
+#define ZW_NOTIFICATION_EVT_CODE_ADDED          0x0E    /**< New user code added*/
+#define ZW_NOTIFICATION_EVT_CODE_DUP            0x0F    /**< New user code not added due to duplicate code*/
+#define ZW_NOTIFICATION_EVT_KEYPAD_DISABLED     0x10    /**< Keypad temporary disabled*/
+#define ZW_NOTIFICATION_EVT_KEYPAD_BUSY         0x11    /**< Keypad busy*/
+#define ZW_NOTIFICATION_EVT_NEW_PROG_CODE       0x12    /**< New program code entered - unique code for lock configuration*/
+#define ZW_NOTIFICATION_EVT_USR_CODE_LIMIT      0x13    /**< Manually enter user access code exceeds code limit*/
+#define ZW_NOTIFICATION_EVT_RF_ULCK_INVLD_CODE  0x14    /**< Unlock by RF with invalid user code*/
+#define ZW_NOTIFICATION_EVT_RF_LCK_INVLD_CODE   0x15    /**< Locked by RF with invalid user code*/
+#define ZW_NOTIFICATION_EVT_WINDOW_DOOR_OPEN    0x16    /**< Window/door is open*/
+#define ZW_NOTIFICATION_EVT_WINDOW_DOOR_CLOSED  0x17    /**< Window/door is closed*/
+
+
+/** Z-wave notification event for burglar notification*/
+#define ZW_NOTIFICATION_EVT_INTRUSION_L         0x01    /**< Intrusion detected with location info*/
+#define ZW_NOTIFICATION_EVT_INTRUSION           0x02    /**< Intrusion detected with unknown location info*/
+#define ZW_NOTIFICATION_EVT_TMPR_COVER          0x03    /**< Tampering, product covering removed*/
+#define ZW_NOTIFICATION_EVT_TMPR_CODE           0x04    /**< Tampering, Invalid Code*/
+#define ZW_NOTIFICATION_EVT_GLASS_L             0x05    /**< Glass breakage detected with location info*/
+#define ZW_NOTIFICATION_EVT_GLASS               0x06    /**< Glass breakage detected with unknown location info*/
+#define ZW_NOTIFICATION_EVT_MOTION_DET_L        0x07    /**< Motion detected with location info*/
+
+/** Z-wave notification event for power management notification*/
+#define ZW_NOTIFICATION_EVT_POWER               0x01    /**< Power has been applied*/
+#define ZW_NOTIFICATION_EVT_AC_OFF              0x02    /**< AC mains disconnected*/
+#define ZW_NOTIFICATION_EVT_AC_ON               0x03    /**< AC mains re-connected*/
+#define ZW_NOTIFICATION_EVT_SURGE               0x04    /**< Surge Detection*/
+#define ZW_NOTIFICATION_EVT_VOLT_DROP           0x05    /**< Voltage Drop/Drift detected*/
+#define ZW_NOTIFICATION_EVT_OVER_CURRENT        0x06    /**< Over-current detected*/
+#define ZW_NOTIFICATION_EVT_OVER_VOLT           0x07    /**< Over-voltage detected*/
+#define ZW_NOTIFICATION_EVT_OVER_LOAD           0x08    /**< Over-load detected*/
+#define ZW_NOTIFICATION_EVT_LOAD_ERR            0x09    /**< Load error*/
+#define ZW_NOTIFICATION_EVT_REPLACE_BATT_SOON   0x0A    /**< Replace battery soon*/
+#define ZW_NOTIFICATION_EVT_REPLACE_BATT_NOW    0x0B    /**< Replace battery now*/
+
+/** Z-wave notification event for system notification*/
+#define ZW_NOTIFICATION_EVT_HW                  0x01    /**< System hardware failure*/
+#define ZW_NOTIFICATION_EVT_SW                  0x02    /**< System software failure*/
+#define ZW_NOTIFICATION_EVT_HW_OEM_CODE         0x03    /**< System hardware failure with OEM proprietary failure code*/
+#define ZW_NOTIFICATION_EVT_SW_OEM_CODE         0x04    /**< System software failure with OEM proprietary failure code*/
+
+/** Z-wave notification event for emergency notification*/
+#define ZW_NOTIFICATION_EVT_POLICE              0x01    /**< Contact police*/
+#define ZW_NOTIFICATION_EVT_FIRE                0x02    /**< Contact fire service*/
+#define ZW_NOTIFICATION_EVT_MEDICAL             0x03    /**< Contact medical service*/
+
+/** Z-wave notification event for notification clock*/
+#define ZW_NOTIFICATION_EVT_WKUP                0x01    /**< Wake up aler*/
+#define ZW_NOTIFICATION_EVT_TIMER_ENDED         0x02    /**< Timer ended*/
+
+/** Z-wave notification parameter type*/
+#define ZW_NOTIFICATION_PARAM_LOC               1    /**< node location UTF-8 string (NULL terminated)*/
+#define ZW_NOTIFICATION_PARAM_USRID             2    /**< user id*/
+#define ZW_NOTIFICATION_PARAM_OEM_ERR_CODE      3    /**< OEM proprietary system failure code */
+
+/** Z-wave notification status*/
+#define ZW_NOTIFICATION_STS_DEACTIVATED         0    /**< Unsolicited notification report is deactivated*/
+#define ZW_NOTIFICATION_STS_ACTIVATED           0xFF /**< Unsolicited notification report is activated or a pending
+                                                  notification is present*/
+#define ZW_NOTIFICATION_STS_NO_PEND_NOTICE      0xFE /**< No pending notification */
+
+typedef struct
+{
+    uint8_t     type;           /**< Vendor specific alarm type*/
+    uint8_t     level;          /**< Vendor specific alarm level*/
+    uint8_t     reserved;        
+    /*extended info fields*/
+    uint8_t     ex_status;      /**< Z-wave alarm status (ZW_ALRM_STS_XXX) */
+    uint8_t     ex_type;        /**< Z-wave alarm type (ZW_ALRM_XXX) */
+    uint8_t     ex_event;       /**< Z-wave alarm event (ZW_ALRM_EVT_XXX) */
+    uint8_t     ex_evt_len;     /**< Z-wave alarm event parameter length. Zero if the event has no parameter */
+    uint8_t     ex_evt_type;    /**< Z-wave alarm event parameter type (ZW_ALRM_PARAM_XXX) */
+    uint8_t     ex_evt_prm[1];  /**< Z-wave alarm event parameter place holder*/
+}
+zwnotification_t, *zwnotification_p;
+
+typedef void (*zwrep_notification_fn)(zwifd_p ifd, zwnotification_p  notification_info, time_t ts);
+/**<
+report callback for notification
+@param[in]	ifd	        interface
+@param[in]	notification_info  notification info
+*/
+
+int zwif_notification_rpt_set(zwifd_p ifd, zwrep_notification_fn rpt_cb);
+/**<
+setup an notification report callback function
+@param[in]	ifd         interface descriptor
+@param[in]	rpt_cb	    report callback function
+return      ZW_ERR_XXX
+*/
+
+int zwif_notification_get(zwifd_p ifd, uint8_t vtype, uint8_t ztype, uint8_t evt);
+/**<
+get the state of the notification device through report callback
+@param[in]	ifd	        interface
+@param[in]	vtype	    vendor specific notification type. Zero if this field is not used
+@param[in]	ztype	    Z-wave notification type (ZW_NOTIFICATION_XXX). Zero if this field is not used; 0xFF=to retrieve the first notification detection.
+@param[in]	evt	        Event corresponding to Z-wave notification type. Zero if this field is not used.
+@return		ZW_ERR_XXX
+*/
+
+int zwif_notification_set(zwifd_p ifd, uint8_t ztype, uint8_t sts);
+/**<
+set the activity of the specified Z-Wave Notification Type
+@param[in]	ifd	    interface
+@param[in]	ztype	Z-wave notification type (ZW_NOTIFICATION_XXX)
+@param[in]	sts     Z-wave notification status. 0= deactivated; 0xFF= activated
+@return	ZW_ERR_XXX
+*/
+
+typedef void (*zwrep_notification_sup_fn)(zwifd_p ifd, uint8_t have_vtype, uint8_t ztype_len, uint8_t *ztype, int valid);
+/**<
+report callback for supported notification types
+@param[in]	ifd	        interface
+@param[in]	have_vtype  flag to indicate whether vendor specific notification type supported. 1=supported; else 0=unsupported
+@param[in]	ztype_len   size of ztype buffer
+@param[in]	ztype       buffer to store supported Z-wave notification types (ZW_NOTIFICATION_XXX)
+*/
+
+int zwif_notification_sup_get(zwifd_p ifd, zwrep_notification_sup_fn cb);
+/**<
+get the supported notification types
+@param[in]	ifd	    interface
+@param[in]	cb	    report callback function
+@return ZW_ERR_XXX
+*/
+
+typedef void (*zwrep_notification_evt_fn)(zwifd_p ifd, uint8_t ztype, uint8_t evt_len, uint8_t *evt, int valid);
+/**<
+report callback for supported notification types
+@param[in]	ifd	        interface
+@param[in]	ztype       Z-wave notification type (ZW_NOTIFICATION_XXX)
+@param[in]	evt_len     size of evt buffer
+@param[in]	evt         buffer to store supported event of the notification type specified in ztype
+*/
+
+int zwif_notification_sup_evt_get(zwifd_p ifd, uint8_t ztype, zwrep_notification_evt_fn cb);
+/**<
+get the supported events of a specified notification type
+@param[in]	ifd	    interface
+@param[in]	ztype   Z-wave notification type (ZW_NOTIFICATION_XXX)
+@param[in]	cb	    report callback function
+@return ZW_ERR_XXX
+*/
+
+typedef void (*zwrep_notification_get_fn)(zwifd_p ifd, uint8_t mode);
+/**<
+report callback for notification get
+@param[in]	ifd	    interface
+@param[in]	mode current mode,The 'Mode' can return the following values
+			0x00	excluded from the all on/all off functionality
+			0x01	excluded from the all on functionality but not all off
+			0x02	excluded from the all off functionality but not all on
+			0xFF	included in the all on/all off functionality
+*/
+
+int zwif_notification_get_rpt_set(zwifd_p ifd, zwrep_notification_get_fn rpt_cb);
+/**<
+setup notification get report callback function
+@param[in]	ifd         interface
+@param[in]	rpt_cb	    report callback function
+return      ZW_ERR_XXX
+*/
+
+/*
+ **  Command Class Meter
+ */
+// dump meter cache info
+int zwif_meter_info_cache_get(zwifd_p ifd, zwmeter_cap_t **sup_snsr, uint8_t *snsr_cnt);
+
+
+// skysoft modified end
+/****************************************************************************/
 
 /**
 @}

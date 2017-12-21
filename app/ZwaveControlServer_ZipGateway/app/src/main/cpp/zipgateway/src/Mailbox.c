@@ -494,7 +494,7 @@ mb_command_handler(zwave_connection_t *c, uint8_t* pData, uint16_t bDatalen)
     {
       ZW_MAILBOX_CONFIGURATION_SET_FRAME *f = (ZW_MAILBOX_CONFIGURATION_SET_FRAME *) pData;
       uip_ipaddr_copy(&cfg.mb_destination, (uip_ip6addr_t* )&f->forwardingDestinationIpv6Address1);
-      cfg.mb_conf_mode = f->properties1 & 7;
+      cfg.mb_conf_mode = DISABLE_MAILBOX; //djnakata //f->properties1 & 7;
       char output[128] = { 0 };
       snprintf(output, 2, "%01d", cfg.mb_conf_mode);
       config_update("ZipMBMode", output);

@@ -2293,9 +2293,7 @@ BYTE SerialAPI_GetInitData( BYTE *ver, BYTE *capabilities, BYTE *len, BYTE *node
     *len = *p++;
 
     for ( i = 0; i < 29; i++ )
-    {
         nodesList[ i ] = *p++;
-    }
     *chip_type=*p++;
     *chip_version=*p++;
 
