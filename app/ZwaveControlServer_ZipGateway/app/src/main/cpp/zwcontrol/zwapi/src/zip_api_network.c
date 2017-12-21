@@ -2599,7 +2599,7 @@ static int appl_cmd_hdlr(uint16_t cmd_len, uint8_t *cmd_buf, appl_cmd_prm_t *prm
 
     //Display command received
 //#ifdef SHOW_PACKET_INFO
-    ALOGI("Frame from node:%u, cmd:", (unsigned)src_node);
+    ALOGI("Receive frame from node:%u, cmd:", (unsigned)src_node);
     debug_zwapi_bin_msg(&nw->plt_ctx, cmd_buf, cmd_len);
 //#endif
 
@@ -2714,7 +2714,8 @@ static int appl_cmd_hdlr(uint16_t cmd_len, uint8_t *cmd_buf, appl_cmd_prm_t *prm
                 {
                     if ((cls == COMMAND_CLASS_WAKE_UP) && (cmd_buf[1] == WAKE_UP_NOTIFICATION))
                     {
-                        goto l_CHECK_MULTI_CMD;
+                        // Anyway, we should report wake up notification here.
+                        //goto l_CHECK_MULTI_CMD;
                     }
                 }
 
