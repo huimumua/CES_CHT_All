@@ -6883,6 +6883,18 @@ return      ZW_ERR_XXX
 int zwif_meter_info_cache_get(zwifd_p ifd, zwmeter_cap_t **sup_snsr, uint8_t *snsr_cnt);
 
 
+/*
+ **  Command Class Central Scene version 2
+ */
+typedef struct
+{
+    uint8_t     seq_num;		           // sequence number
+    uint8_t     key_attr;                  // key attribute
+    uint8_t     scene_num;                 // scene number
+}
+zwcentral_scene_notify_t, *zwcentral_scene_notify_p;
+
+
 // skysoft modified end
 /****************************************************************************/
 

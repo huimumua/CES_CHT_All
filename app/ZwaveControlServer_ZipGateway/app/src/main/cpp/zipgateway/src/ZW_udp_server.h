@@ -302,8 +302,6 @@ security_scheme_t efi_to_shceme(uint8_t ext1, uint8_t ext2);
 void
 udp_server_check_ipv4_queue();
 
-extern int udp_server_conn;
-enum {UDP_SERVER_INPUT_EVENT};
 
 /**
  * This process handles all Z/ZIP UDP communication.

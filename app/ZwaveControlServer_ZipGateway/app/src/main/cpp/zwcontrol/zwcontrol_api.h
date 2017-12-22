@@ -239,4 +239,35 @@ int  zwcontrol_notification_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeI
 int  zwcontrol_notification_supported_event_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t notificationType);
 
 
+/*
+ **  Command Class Central Scene version 2
+ */
+int  zwcontrol_central_scene_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId);
+void zwcontrol_central_scene_notification_report_cb(zwifd_p ifd, zwcsc_notif_p data, time_t ts);
+
+
+/*
+ **  Command Class Switch Binary ver 1~2
+ */
+int  zwcontrol_switch_binary_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t bin_state);
+int  zwcontrol_switch_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+
+/*
+ **  Command Class Sensor Binary v2
+ */
+int  zwcontrol_sensor_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sensor_type);
+int  zwcontrol_sensor_binary_supported_sensor_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+
+/*
+ **  Command Class Switch Multi-Level
+ */
+int  zwcontrol_switch_multilevel_get(hl_appl_ctx_t* hl_appl, int nodeId);
+int  zwcontrol_switch_multilevel_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint16_t levelValue, uint8_t duration);
+int  zwcontrol_get_support_switch_type(hl_appl_ctx_t* hl_appl, int nodeId);
+int  zwcontrol_start_stop_switchlevel_change(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint16_t startLvlVal,
+                                             uint8_t duration, uint8_t pmyChangeDir, uint8_t secChangeDir, uint8_t secStep);
+
+
 #endif

@@ -864,6 +864,7 @@ ipv6_init()
   }
 #endif
 
+  //djnakata
   /*Init UDP listners */
   //process_exit(&udp_server_process);
   //process_start(&udp_server_process,0);

@@ -78,7 +78,6 @@
 #include "Serialapi.h"
 #include "ZIP_Router.h"
 
-#include <errno.h>
 #include <ZW_typedefs.h>
 #include <ZW_udp_server.h>
 #include <ZW_classcmd.h>
@@ -135,8 +134,7 @@
 
 #define MAX_UDP_PAYLOAD_LEN 512
 //#define PRINTF printf
-//static struct uip_udp_conn *server_conn;
-int udp_server_conn = -1; //djnakata
+static struct uip_udp_conn *server_conn;
 //static struct uip_udp_conn *server_send_conn;
 
 static struct ctimer zw_udp_timer;
@@ -339,17 +337,6 @@ udp_server_check_ipv4_queue()
   }
 }
 
-void udp_send(struct sockaddr_in *addr, const void* data, u16_t len)
-{
-    int udp_send_conn = socket(AF_INET,SOCK_DGRAM,0);
-
-    if(udp_send_conn == -1)
-    {
-        return;
-    }
-
-    sendto(udp_send_conn, data, len, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
-}
 
 void udp_send_wrap(struct uip_udp_conn* c, const void* buf, u16_t len) {
 
@@ -381,24 +368,8 @@ void udp_send_wrap(struct uip_udp_conn* c, const void* buf, u16_t len) {
 
         free(buf2);
     } else {
-#if 0
-      char ripstr[50] = {0};
-      sprintf(ripstr, "%u.%u.%u.%u", c->ripaddr.u8[12], c->ripaddr.u8[13], c->ripaddr.u8[14], c->ripaddr.u8[15]);
-      DBG_PRINTF("djnakata udp_send_wrap udp ripaddr is %s %d\n", ripstr, htons(c->rport));
-      struct sockaddr_in ripaddr;
-      ripaddr.sin_addr.s_addr = inet_addr(ripstr);
-      ripaddr.sin_port = c->rport;
-
-      uint8_t *buf2 = (uint8_t*)malloc(len + 1);
-      buf2[0] = nodeid;
-      memcpy(buf2+1, buf, len);
-
-      udp_send(&ripaddr, buf2, len + 1);
-
-      free(buf2);
-#endif
     }
-
+    
     if (uip_completedFunc)
     {
         uip_completedFunc(TRANSMIT_COMPLETE_OK,0);
@@ -929,61 +900,27 @@ opt_error:
   }
   return;
 }
-
-static struct uip_udp_conn udpconn;
-
 /*---------------------------------------------------------------------------*/
 static void
 tcpip_handler(void)
 {
-    struct sockaddr_in client_addr;
-    socklen_t addrlen = sizeof(client_addr);
-    char buf[UIP_BUFSIZE];
-    int recvlen = 0;
+  if (uip_newdata())
+  {
+    PRINTF("Incomming UDP\n");
 
-    LOG_PRINTF("Incomming UDP\n");
+    /* TODO: When, if ever, should we set rport back to something else? */
 
-    recvlen = (int)(recvfrom(udp_server_conn, buf, sizeof(buf), 0, (struct sockaddr *)&client_addr, &addrlen));
-    
-    if(recvlen > 0)
-    {
-        memset(&udpconn, 0x00, sizeof(struct uip_udp_conn));
+    // Call ApplicationIPCommandHandler() here
 
-        memcpy(&udpconn.ripaddr.u8[12], &client_addr.sin_addr, sizeof(client_addr.sin_addr));
-        udpconn.rport = client_addr.sin_port;
+    UDPCommandHandler(get_udp_conn(), uip_appdata, uip_datalen()  , gisTnlPacket);
 
-        ipOfNode(&udpconn.sipaddr, 1);
-        udpconn.lport = htons(ZWAVE_PORT);
+    /* Restore server connection to allow data from any node */
+    server_conn->rport = 0;
+    memset(&server_conn->ripaddr, 0, sizeof(uip_ipaddr_t));
+    memset(&server_conn->sipaddr, 0, sizeof(uip_ipaddr_t));
 
-        UIP_UDP_BUF->srcport  = udpconn.rport;
-        UIP_UDP_BUF->destport = udpconn.lport;
-        UIP_UDP_BUF->udplen = UIP_HTONS(UIP_UDPH_LEN + recvlen);
-        UIP_UDP_BUF->udpchksum = 0;
-
-        memcpy(&uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN], buf, (uint_t)recvlen);
-        uip_len = (u16_t)(UIP_IPUDPH_LEN + recvlen);
-
-        UIP_IP_BUF ->len[0] = (uint8_t)((uip_len - UIP_IPH_LEN) >> 8);
-        UIP_IP_BUF ->len[1] = (uint8_t)((uip_len - UIP_IPH_LEN) & 0xff);
-        UIP_IP_BUF ->ttl = 0xff;
-        UIP_IP_BUF ->proto = UIP_PROTO_UDP;
-        UIP_IP_BUF ->vtc = 0x60;
-        UIP_IP_BUF ->tcflow = 0x00;
-        UIP_IP_BUF ->flow = 0x00;
-
-        UIP_UDP_BUF ->udpchksum = ~(uip_udpchksum());
-        if (UIP_UDP_BUF ->udpchksum == 0)
-        {
-            UIP_UDP_BUF ->udpchksum = 0xffff;
-        }
-
-        memset(uip_buf, 0, UIP_LLH_LEN);
-
-        uip_ipaddr_copy(&UIP_IP_BUF->srcipaddr,  &udpconn.ripaddr);
-        uip_ipaddr_copy(&UIP_IP_BUF->destipaddr, &udpconn.sipaddr);
-
-        UDPCommandHandler(&udpconn, buf, (uint16_t)recvlen, gisTnlPacket);
-    }
+    //uip_udp_packet_send(server_send_conn, buf, strlen(buf));
+  }
 }
 #if 0
 /*---------------------------------------------------------------------------*/
@@ -1036,37 +973,14 @@ PROCESS_THREAD(udp_server_process, ev, data)
     This is intentional. The queue must not be flushed on restart
     */
     //uip_packetqueue_new(&ipv4_packet_q);
-    if(udp_server_conn > 0)
-    {
-        close(udp_server_conn);
-        udp_server_conn = -1;
-    }
 
-    udp_server_conn = socket(AF_INET,SOCK_DGRAM,0);
-
-    if(udp_server_conn == -1)
+    server_conn = udp_new(NULL, UIP_HTONS(0), &server_conn);
+    if (NULL == server_conn)
     {
+      //printf("could not initialize connection 1\n");
       ZW_LOG(U, 3);
-      return 0;
     }
-
-    int on = 1;
-    if(setsockopt(udp_server_conn, SOL_SOCKET, SO_REUSEADDR, (const char*)&on, sizeof(on)) == -1)
-    {
-       LOG_PRINTF("udp setsockopt error is %d\n", errno);
-       return 0;
-    }
-
-    struct sockaddr_in addr;
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(ZWAVE_PORT);
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    if(bind(udp_server_conn, (struct sockaddr *)&addr, sizeof(addr)) == -1)
-    {
-       LOG_PRINTF("udp server errno is %d\n", errno);
-       return 0;
-    }
+    udp_bind(server_conn, UIP_HTONS(ZWAVE_PORT));
 
     if (!uip_ds6_maddr_add((uip_ipaddr_t*) &uip_all_routers_addr))
     {
@@ -1077,14 +991,17 @@ PROCESS_THREAD(udp_server_process, ev, data)
     {
       PROCESS_YIELD()
       ;
-      if(ev == UDP_SERVER_INPUT_EVENT)
+      if (ev == tcpip_event)
       {
-        tcpip_handler();
+        if (data == &server_conn)
+        {
+          tcpip_handler();
+        }
+//      else if(data == &client_conn) {
+//        solicited_reply_handler();
+//      }
       }
     }
-
-  close(udp_server_conn);
-  udp_server_conn = -1;
 
   PROCESS_END();
 }

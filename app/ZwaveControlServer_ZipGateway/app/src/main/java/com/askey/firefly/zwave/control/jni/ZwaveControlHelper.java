@@ -134,7 +134,7 @@ public class ZwaveControlHelper {
     ** zwave controller jni interface
     ** support CC: COMMAND_CLASS_SWITCH_BINARY
     **/
-    public native static int ZwController_SetBinarySwitchState(int deviceId, int state, int duration);
+    public native static int ZwController_SetBinarySwitchState(int deviceId, int state);
     public native static int ZwController_GetBinarySwitchState(int deviceId);
 
     /**

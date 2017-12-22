@@ -1330,17 +1330,6 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
                 } else if(result == 0){
                     ALOGI("Init: load node info successfully");
                 }
-
-               //Rebuild the descriptor container linked-list
-                plt_mtx_lck(hl_appl->desc_cont_mtx);
-                hl_desc_cont_rm_all(&hl_appl->desc_cont_hd);
-                result = hl_desc_init(&hl_appl->desc_cont_hd, hl_appl->zwnet);
-                if (result != 0)
-                {
-                    ALOGE("hl_desc_init with error:%d", result);
-                }
-
-                plt_mtx_ulck(hl_appl->desc_cont_mtx);
             }
 
             if(notify_msg->op == ZWNET_OP_RESET && notify_msg->sts == ZW_ERR_NONE)
@@ -1412,6 +1401,17 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
 
                 cJSON_Delete(jsonRoot);
             }
+
+            //Rebuild the descriptor container linked-list
+            plt_mtx_lck(hl_appl->desc_cont_mtx);
+            hl_desc_cont_rm_all(&hl_appl->desc_cont_hd);
+            result = hl_desc_init(&hl_appl->desc_cont_hd, hl_appl->zwnet);
+            if (result != 0)
+            {
+                ALOGE("hl_desc_init with error:%d", result);
+            }
+
+            plt_mtx_ulck(hl_appl->desc_cont_mtx);
 
             // tiny
             /*ALOGI("Network initialized!  Setting up unsolicited address, please wait ...\n");
@@ -3411,6 +3411,10 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
                 {
                     result = zwif_battery_rpt_set(intf, hl_battery_report_cb);
                 }
+                else if (intf->cls == COMMAND_CLASS_SENSOR_BINARY)
+                {
+                    //result = zwif_bsensor_rpt_set(intf, hl_bin_snsr_rep_cb);
+                }
 
                 //Get the next interface
                 last_intf_cont = last_intf_cont->next;
@@ -4896,7 +4900,7 @@ static void hl_meter_rep_cb(zwifd_p ifd, zwmeter_dat_p value, time_t ts)
         return;
     }
 
-    cJSON_AddStringToObject(jsonRoot, "MessageType", "Meter report Information");
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Meter Report Information");
     cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
     cJSON_AddStringToObject(jsonRoot, "Meter type", meter_type[value->type]);
     cJSON_AddStringToObject(jsonRoot, "Rate type", meter_rate[value->rate_type]);
@@ -4987,7 +4991,7 @@ int32_t hl_meter_rep_set_get(hl_appl_ctx_t   *hl_appl)
 
     plt_mtx_ulck(hl_appl->desc_cont_mtx);
 
-    if (result != 0 && result != 1)
+    if (result < 0)
     {
         ALOGE("hl_meter_rep_set_get with error:%d", result);
     }
@@ -5014,11 +5018,6 @@ int  zwcontrol_meter_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t meter_
     hl_appl->meter_unit = meter_unit;
 
     int result = hl_meter_rep_set_get(hl_appl);
-    if(result == 0)
-    {
-        ALOGI("hl_meter_rep_setup done");
-    }
-
     if(result == 1)
     {
         ALOGI("zwcontrol_meter_get command queued");
@@ -5104,13 +5103,13 @@ int32_t hl_meter_sup(hl_appl_ctx_t   *hl_appl)
     }
 
     //int zwif_meter_sup_get(zwifd_p ifd,  zwrep_meter_sup_fn cb, int cache)
-    result = zwif_meter_sup_get(ifd, hl_meter_sup_cb, 0);
+    result = zwif_meter_sup_get(ifd, hl_meter_sup_cb, 1);
 
     plt_mtx_ulck(hl_appl->desc_cont_mtx);
 
-    if (result != 0 && result != 1)
+    if (result < 0)
     {
-        ALOGE("zwif_group_cmd_sup_get with error:%d", result);
+        ALOGE("hl_meter_sup get with error:%d", result);
     }
 
     return result;
@@ -5129,9 +5128,9 @@ int  zwcontrol_meter_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
     }
 
     int result = hl_meter_sup(hl_appl);
-    if(result != 0 && result != 1)
+    if(result == 1)
     {
-        ALOGE("zwcontrol_meter_supported_get with error: %d",result);
+        ALOGE("zwcontrol_meter_supported_get command queued");
     }
 
     return result;
@@ -5852,4 +5851,870 @@ int  zwcontrol_notification_supported_event_get(hl_appl_ctx_t* hl_appl, uint32_t
     }
 
     return result;
+}
+
+
+/*
+ **  Command Class Central Scene version 2
+ **
+ */
+
+static const char* key_attr[] =
+{
+    "Key Pressed 1 time", "Key Released", "Key Held Down",
+    "Key Pressed 2 times", "Key Pressed 3 times", "Key Pressed 4 times",
+    "Key Pressed 5 times", "Unknown"
+};
+
+static void hl_central_scene_sup_get_report_cb(zwifd_p ifd, uint8_t scene_cnt, uint8_t sameKA, uint8_t KA_array_len, uint8_t *KA_array, uint8_t slow_rfsh, int valid)
+{
+    ALOGI("Central scene supported report.");
+    ALOGI("Supported scenes: %d, Is same KA: %s, Slow refresh:%d",scene_cnt, (sameKA? "yes":"no"),slow_rfsh);
+    ALOGI("KA_array_len= %d", KA_array_len);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Central Scene Supported Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "Supported Scenes", scene_cnt);
+    cJSON_AddStringToObject(jsonRoot, "Is Same Key Attributes?", sameKA? "Yes": "No");
+
+    cJSON *sup_key_attr;
+    sup_key_attr = cJSON_CreateObject();
+
+    if(sup_key_attr == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddItemToObject(jsonRoot, "Supported Key Attr", sup_key_attr);
+    ALOGI("Valid keys: %d",KA_array[0]);
+    for (int i = 1; i < KA_array_len; i++)
+    {
+        ALOGI("Supported Key Attributes:%s", key_attr[KA_array[i]]);
+        cJSON_AddStringToObject(sup_key_attr, "key attr", key_attr[KA_array[i]]);
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+void zwcontrol_central_scene_notification_report_cb(zwifd_p ifd, zwcsc_notif_p data, time_t ts)
+{
+    ALOGI("Central scene notification report");
+    ALOGI("sequence number: %d, key attr:%s, scene number: %d", data->seqNo, key_attr[data->keyAttr], data->sceneNo);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Central Scene Notification");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddStringToObject(jsonRoot, "key attr", key_attr[data->keyAttr]);
+    cJSON_AddNumberToObject(jsonRoot, "Scene number", data->sceneNo);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_central_scene_sup_get - Setup central scene supported get
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_central_scene_sup_get(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_csc_sup_get(ifd, hl_central_scene_sup_get_report_cb, 0);
+
+    if (result == 0)
+    {
+        result = zwif_csc_rpt_set(ifd, zwcontrol_central_scene_notification_report_cb);
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0 && result != 1)
+    {
+        ALOGE("zwif_central_scene_sup_get with error:%d",result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_central_scene_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId)
+{
+    ALOGI("zwcontrol_central_scene_supported_get started");
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_CENTRAL_SCENE, endpoindId))
+    {
+        return -1;
+    }
+
+    int result = hl_central_scene_sup_get(hl_appl);
+
+    if (result == 1)
+    {
+        ALOGE("zwcontrol_central_scene_supported_get command queued");
+    }
+
+    return result;
+}
+
+
+/*
+ **  Command Class Switch Binary ver 1~2
+ */
+
+/**
+hl_bin_set - Turn binary switch on/off
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_bin_set(hl_appl_ctx_t   *hl_appl)
+{
+    int         result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->temp_desc);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_switch_set(ifd, hl_appl->bin_state, NULL,NULL);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0 && result != 1)
+    {
+        ALOGE("zwif_switch_set with error:%d", result);
+    }
+
+    return result;
+
+}
+
+int zwcontrol_switch_binary_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t bin_state)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_BINARY, 0))
+    {
+        return -1;
+    }
+
+    hl_appl->bin_state = bin_state;
+    int result = hl_bin_set(hl_appl);
+    if(result == 1)
+    {
+        ALOGW("zwcontrol_switch_binary_set command queued");
+    }
+    return result;
+}
+
+/**
+hl_bin_report_cb - binary switch report callback
+@param[in]  ifd The interface that received the report
+@param[in]  on          0=off, else on
+@return
+*/
+static void hl_bin_report_cb(zwifd_p ifd, zwswitch_p val, time_t ts)
+{
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Binary Switch Get Information");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "Cur Val", val->curr_val);
+    cJSON_AddNumberToObject(jsonRoot, "Tar Val", val->tgt_val);
+    cJSON_AddNumberToObject(jsonRoot, "Durration", val->dur);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_bin_rep_setup - Setup binary switch report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_bin_rep_setup(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_switch_rpt_set(ifd, hl_bin_report_cb);
+
+    if(result == 0)
+    {
+        result = zwif_switch_get(ifd, ZWIF_GET_BMSK_LIVE);
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0 && result != 1)
+    {
+        ALOGE("hl_bin_rep_setup with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_switch_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_BINARY, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_bin_rep_setup(hl_appl);
+
+    if(result == 1)
+    {
+        ALOGI("zwcontrol_switch_binary_get command queued");
+    }
+
+    return result;
+}
+
+
+/*
+ **  Command Class Sensor Binary v2
+ */
+ const static char *binary_sensor_type[]=
+ {
+    "unknown", "General purpose", "Smoke","CO",
+    "CO2", "Heat", "Water", "freeze", 
+    "Tamper", "Aux", "Door/Window", "Tilt",
+    "Motion", "Glass break"
+};
+
+/**
+hl_bin_snsr_rep_cb - binary sensor report callback
+@param[in]  ifd The interface that received the report
+@param[in]  state       The state of the sensor: 0=idle, else event detected
+@return
+*/
+static void hl_bin_snsr_rep_cb(zwifd_p ifd, uint8_t value, uint8_t type, time_t ts)
+{
+    ALOGI("Binary sensor value :%s, sensor type :%d ", (value == 0)? "idle" : "event detected",type);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Binary Sensor Information");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddStringToObject(jsonRoot, "Event Type", binary_sensor_type[type]);
+    if(value == 0)
+    {
+        cJSON_AddStringToObject(jsonRoot, "state", "idle");  
+    } 
+    else
+        cJSON_AddStringToObject(jsonRoot, "state", "event detected");
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_bin_snsr_rep_setup - Setup binary sensor report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_bin_snsr_rep_setup(hl_appl_ctx_t   *hl_appl, uint8_t sensor_type)
+{
+    int         result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_bsensor_rpt_set(ifd, hl_bin_snsr_rep_cb);
+
+    if(result == 0)
+    {
+        result = zwif_bsensor_get(ifd, (uint8_t)sensor_type, ZWIF_GET_BMSK_LIVE);
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0 && result != 1)
+    {
+        ALOGE("hl_bin_snsr_rep_setup with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_sensor_binary_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sensor_type)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SENSOR_BINARY_V2, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_bin_snsr_rep_setup(hl_appl, sensor_type);
+    if(result == 0)
+    {
+        ALOGI("zwcontrol_sensor_binary_get command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_bin_snsr_sup_rep_cb - binary sensor support report callback
+@param[in]  ifd The interface that received the report
+@param[in]  
+@return
+*/
+static void hl_bin_snsr_sup_rep_cb(zwifd_p ifd, uint8_t type_len, uint8_t *type, int valid)
+{
+    ALOGI("Binary sensor supported number: %d",type_len);        
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Binary Sensor Support Get Information");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    for(int i = 0; i < type_len; i++)
+    {
+        ALOGI("Supported binary sensor type is :%s",binary_sensor_type[type[i]]);
+        cJSON_AddStringToObject(jsonRoot, "Supported type", binary_sensor_type[type[i]]);
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_bin_snsr_sup_rep_setup - Setup binary sensor support report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_bin_snsr_sup_rep_setup(hl_appl_ctx_t   *hl_appl)
+{
+    int result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_bsensor_sup_get(ifd, hl_bin_snsr_sup_rep_cb, 0);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_bin_snsr_rep_setup with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_sensor_binary_supported_sensor_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SENSOR_BINARY_V2, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_bin_snsr_sup_rep_setup(hl_appl);
+    if(result == 1)
+    {
+        ALOGI("zwcontrol_sensor_binary_support_sensor_get command queued");
+    }
+
+    return result;
+}
+
+
+/*
+ **  Command Class Switch Multi-Level
+ */
+
+/**
+hl_sw_mul_lvl_report_cb - switch multi level report callback
+@param[in]  ifd The interface that received the report
+@param[in]  level       The reported level
+@return
+*/
+static void hl_sw_mul_lvl_report_cb(zwifd_p ifd, zwlevel_dat_p val, time_t ts)
+{
+    ALOGI("Switch Multi-level report, current value:%02X", val->curr_val);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Switch Multi-lvl Report Information");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+
+    cJSON_AddNumberToObject(jsonRoot, "Cur Val", val->curr_val);
+    cJSON_AddNumberToObject(jsonRoot, "Tgt Val", val->tgt_val);
+    cJSON_AddNumberToObject(jsonRoot, "Durration", val->dur);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_multi_lvl_rep_setup - Setup multi-level switch report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_multi_lvl_rep_setup(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_level_rpt_set(ifd, hl_sw_mul_lvl_report_cb);
+
+    if(result == 0)
+    {
+        result = zwif_level_get(ifd, ZWIF_GET_BMSK_LIVE);
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_multi_lvl_rep_setup with error:%d", result);
+    }
+
+    return result;
+}
+
+int zwcontrol_switch_multilevel_get(hl_appl_ctx_t* hl_appl, int nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    ALOGI("zwcontroller_switch_multilevel_get started");
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_multi_lvl_rep_setup(hl_appl);
+    if(result == 1)
+    {
+        ALOGD("zwcontrol_switch_multilevel_get command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_multi_lvl_sup_cb - multi level switch type callback
+@param[in]  ifd interface
+@param[in]  pri_type    primary switch type, SW_TYPE_XX
+@param[in]  sec_type    secondary switch type , SW_TYPE_XX.
+@return
+*/
+static void hl_multi_lvl_sup_cb(zwifd_p ifd,  uint8_t pri_type, uint8_t sec_type, int valid)
+{
+    ALOGI("Primary switch type:%u", pri_type);
+    ALOGI("Secondary switch type:%u", sec_type);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Multi Level Switch Type Information");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+
+    cJSON_AddNumberToObject(jsonRoot, "Primary Switch Type", pri_type);
+    cJSON_AddNumberToObject(jsonRoot, "Secondary Switch Type", sec_type);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_multi_lvl_sup - Get switch type
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_multi_lvl_sup(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_level_sup_get(ifd, hl_multi_lvl_sup_cb, 0);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("zwif_level_sup_get with error:%d", result);
+    }
+
+    return result;
+}
+
+int zwcontrol_get_support_switch_type(hl_appl_ctx_t* hl_appl, int nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    ALOGI("zwcontroller_get_support_switch started");
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_multi_lvl_sup(hl_appl);
+    if(result == 1)
+    {
+        ALOGD("zwcontrol_get_support_switch_type command queued");
+    }
+    return result;
+}
+
+/**
+hl_multi_lvl_set - Set multi-level switch level
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_multi_lvl_set(hl_appl_ctx_t   *hl_appl)
+{
+    int         result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_level_set(ifd, (uint8_t)hl_appl->mul_lvl_val, hl_appl->mul_lvl_dur, NULL, NULL);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_multi_lvl_set with error:%d", result);
+    }
+
+    return result;
+
+}
+
+int zwcontrol_switch_multilevel_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint16_t levelValue, uint8_t duration)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    ALOGI("zwcontrol_switch_level_set started");
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL, 0))
+    {
+        return -1;
+    }
+    hl_appl->mul_lvl_val = levelValue;
+    hl_appl->mul_lvl_dur = duration;
+
+    int result = hl_multi_lvl_set(hl_appl);
+    if(result == 1)
+    {
+        ALOGE("zwcontrol_switch_level_set command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_multi_lvl_chg - toggle between start and stop level change
+@param[in]  hl_appl     The high-level api context
+@return
+*/
+void    hl_multi_lvl_chg(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->temp_desc);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        ALOGE("hl_multi_lvl_chg: interface descriptor:%u not found", hl_appl->temp_desc);
+        return ;
+    }
+
+    if (hl_appl->mul_lvl_change_started == 0)
+    {
+        zwlevel_t lvl_ctl;
+
+        lvl_ctl.dur = hl_appl->mul_lvl_dur;
+        lvl_ctl.pri_dir = hl_appl->mul_lvl_dir;
+        lvl_ctl.pri_level = (uint8_t)hl_appl->mul_lvl_val;
+        lvl_ctl.pri_ignore_lvl = (uint8_t)((hl_appl->mul_lvl_val == 0xFF)? 1:0);
+        lvl_ctl.sec_dir = hl_appl->mul_lvl_sec_dir;
+        lvl_ctl.sec_step = hl_appl->mul_lvl_sec_step;
+
+        //Change state to start level change
+        result = zwif_level_start(ifd, &lvl_ctl);
+
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+        if (result != 0)
+        {
+            ALOGE("zwif_level_start with error:%d", result);
+            return;
+        }
+
+        ALOGI("Start level change ...");
+        hl_appl->mul_lvl_change_started = 1;
+    }
+    else
+    {
+        //Change state to start level change
+        result = zwif_level_stop(ifd);
+
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+        if (result != 0)
+        {
+            ALOGE("zwif_level_stop with error:%d", result);
+            return;
+        }
+
+        ALOGI("Stop level change ...");
+        hl_appl->mul_lvl_change_started = 0;
+    }
+}
+
+int zwcontrol_start_stop_switchlevel_change(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint16_t startLvlVal, 
+                                            uint8_t duration, uint8_t pmyChangeDir, uint8_t secChangeDir, uint8_t secStep)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_MULTILEVEL, 0))
+    {
+        return -1;
+    }
+
+    if(hl_appl->mul_lvl_change_started == 1){
+        ALOGI("level change already started, now stop level change");
+        hl_multi_lvl_chg(hl_appl);
+        return 0;
+    }
+    // zwcontrol_start_stop_switch_change(hl_appl, 1, 255, 30, 0, 0, 255);
+    // Primary switch start level, enter 0 to 99 or 255 to use device current level
+    hl_appl->mul_lvl_val = startLvlVal;
+    // Dimming duration in seconds which is the interval it takes to dim from level 0 to 99
+    hl_appl->mul_lvl_dur = duration;
+    // destination desc id
+    // hl_appl->temp_desc = 0;
+    // Primary switch change dir: (0) Up, (1) Down, (3) No change (for version 3 switch)
+    hl_appl->mul_lvl_dir = pmyChangeDir;
+    // Secondary switch change dir: (0) Up, (1) Down, (3) No change
+    hl_appl->mul_lvl_sec_dir = secChangeDir;
+    // Secondary switch step size, enter 0 to 99 or 255 to use default value
+    hl_appl->mul_lvl_sec_step = secStep;
+    if(secChangeDir == 3)
+    {
+        hl_appl->mul_lvl_sec_step = 0;
+    }
+
+    ALOGD("startLvlVal:%d, duration:%d, pmyChangeDir:%d, secChangeDir:%d, secStep:%d",
+           startLvlVal, duration, pmyChangeDir, secChangeDir, secStep);
+
+    hl_multi_lvl_chg(hl_appl);
+
+    return 0;
 }

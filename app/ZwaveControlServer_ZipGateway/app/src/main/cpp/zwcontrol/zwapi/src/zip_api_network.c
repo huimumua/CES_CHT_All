@@ -2734,8 +2734,25 @@ static int appl_cmd_hdlr(uint16_t cmd_len, uint8_t *cmd_buf, appl_cmd_prm_t *prm
                     goto l_CHECK_MULTI_CMD;
                 }
 
-                //Invoke the report handler
-                cmd_handled = zwif_rep_hdlr(intf, cmd_buf, cmd_len, 0);
+                // Central scene notification reported at here
+                if(cmd_buf[0] == COMMAND_CLASS_CENTRAL_SCENE && cmd_buf[1] == CENTRAL_SCENE_NOTIFICATION)
+                {
+                    if (cmd_len >= 5)
+                    {
+                        zwcentral_scene_notify_t notify_info;
+                        notify_info.seq_num = cmd_buf[2];
+                        notify_info.key_attr = cmd_buf[3] & 0x07;
+                        notify_info.scene_num = cmd_buf[4];
+                        zwifd_t ifd;
+                        zwif_get_desc(intf, &ifd);
+                        //Callback the registered function
+                        zwcontrol_central_scene_notification_report_cb(&ifd, &notify_info);
+                    }
+                }
+                else {
+                    //Invoke the report handler
+                    cmd_handled = zwif_rep_hdlr(intf, cmd_buf, cmd_len, 0);
+                }
             }
 
 #ifdef SUPPORT_SIMPLE_AV_CONTROL

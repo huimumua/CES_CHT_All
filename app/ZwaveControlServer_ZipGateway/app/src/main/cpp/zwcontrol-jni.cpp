@@ -275,17 +275,17 @@ static int control_setBasic(JNIEnv *env, jclass object, jint nodeId, jint value)
 
 static int controller_getSwitchMultiLevel(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_switch_multilevel_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_setSwitchMultiLevel(JNIEnv *env, jclass object, jint nodeId, jint levValue, jint duration)
 {
-    return 0;
+    return zwcontrol_switch_multilevel_set(&appl_ctx, (uint32_t)nodeId,(uint16_t)levValue, (uint8_t)duration);
 }
 
 static int controller_getSupportedSwitchType(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_get_support_switch_type(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_getConfiguration(JNIEnv *env, jclass object, jint nodeId, jint paramMode, jint paramNumber,
@@ -319,7 +319,8 @@ static int controller_setConfigurationBulk(JNIEnv *env, jclass object, jint node
 static int controller_startStopSwitchLevelChange(JNIEnv *env, jclass object, jint nodeId, jint startLvlVal, jint duration,
                                        jint pmyChangeDir, jint secChangeDir, jint secStep)
 {
-    return 0;
+    return zwcontrol_start_stop_switchlevel_change(&appl_ctx, (uint32_t)nodeId, (uint16_t)startLvlVal, 
+                                       (uint8_t)duration, (uint8_t)pmyChangeDir, (uint8_t)secChangeDir, (uint8_t)secStep);
 }
 
 static int controller_getPowerLevel(JNIEnv *env, jclass object, jint nodeId)
@@ -362,24 +363,24 @@ static int controller_startLearnMode(JNIEnv *env, jclass object)
     return 0;
 }
 
-static int controller_setBinarySwitchState(JNIEnv *env, jclass object, jint nodeId, jint state, jint duration)
+static int controller_setBinarySwitchState(JNIEnv *env, jclass object, jint nodeId, jint state)
 {
-    return 0;
+    return zwcontrol_switch_binary_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)state);
 }
 
 static int controller_getBinarySwitchState(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_switch_binary_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_getSensorBinary(JNIEnv *env, jclass object, jint nodeId, jint sensor_type)
 {
-    return 0;
+    return zwcontrol_sensor_binary_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)sensor_type);
 }
 
 static int controller_getSensorBinarySupportedSensor(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_sensor_binary_supported_sensor_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_getMeter(JNIEnv *env, jclass object, jint nodeId, jint meter_unit)
@@ -619,12 +620,12 @@ static int controller_getSupportedEventNotification(JNIEnv *env, jclass object, 
 
 static int controller_getSupportedCentralScene(JNIEnv *env, jclass object, jint nodeId, jint endpointId)
 {
-    return 0;
+    return zwcontrol_central_scene_supported_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)endpointId);
 }
 
 static int controller_getSceneActuatorConf(JNIEnv *env, jclass object, jint nodeId, jint sceneId)
 {
-    return 0;
+    return 0;//zwcontrol_scene_actuator_conf_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)sceneId);
 }
 
 static int controller_setSceneActuatorConf(JNIEnv *env, jclass object, jint nodeId, jint sceneId, jint dimDuration, jint override, jint level)
@@ -708,7 +709,7 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_SetSwitchAll", "(II)I", (void*)controller_setSwitchAll},
         {"ZwController_GetSwitchAll", "(I)I", (void*)controller_getSwitchAll},
         {"ZwController_StartLearnMode", "()I", (void*)controller_startLearnMode},
-        {"ZwController_SetBinarySwitchState", "(III)I", (void*)controller_setBinarySwitchState},
+        {"ZwController_SetBinarySwitchState", "(II)I", (void*)controller_setBinarySwitchState},
         {"ZwController_GetBinarySwitchState", "(I)I", (void*)controller_getBinarySwitchState},
         {"ZwController_GetSensorBinary", "(II)I", (void*)controller_getSensorBinary},
         {"ZwController_GetSensorBinarySupportedSensor", "(I)I", (void*)controller_getSensorBinarySupportedSensor},
