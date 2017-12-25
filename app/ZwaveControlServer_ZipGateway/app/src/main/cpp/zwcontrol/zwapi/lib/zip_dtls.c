@@ -1004,6 +1004,8 @@ static void dtls_rd_ready_hdlr(tpt_layer_ctx_t *tpt_ctx, fd_set *read_fds, int n
                             debug_bin_show(tpt_ctx->plt_ctx, buf, rcx_size);
         #endif
                             //djnakata
+                            ssl_sock->keep_alive_cnt = ZIPV2_SESS_KEEP_ALIVE_CNT;
+
                             uint8_t buf2[MAX_RCX_SIZE] = {0};
                             memcpy(buf2, buf, rcx_size);
                             rcx_size = rcx_size - 1;
