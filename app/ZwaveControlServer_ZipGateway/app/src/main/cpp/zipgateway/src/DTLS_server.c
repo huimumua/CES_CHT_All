@@ -290,7 +290,7 @@ dtls_send(struct sockaddr_in *addr, const void* data, u16_t len, u8_t create_new
     struct dtls_session* s;
 
     int r;
-    s = dtls_find_session(addr);
+    s = dtls_find_session(&current_conn_addr);
 
     /*Create a new client connection*/
     if (!s)

@@ -270,4 +270,11 @@ int  zwcontrol_start_stop_switchlevel_change(hl_appl_ctx_t* hl_appl, uint32_t no
                                              uint8_t duration, uint8_t pmyChangeDir, uint8_t secChangeDir, uint8_t secStep);
 
 
+/*
+ **  Command Class Wake Up
+ */
+int  zwcontrol_wake_up_interval_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_wake_up_interval_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint32_t wkup_interval);
+
+
 #endif

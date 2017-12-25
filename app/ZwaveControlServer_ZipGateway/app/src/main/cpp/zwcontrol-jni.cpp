@@ -400,12 +400,12 @@ static int controller_getMeterSupported(JNIEnv *env, jclass object, jint nodeId)
 
 static int controller_getWakeUpSettings(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_wake_up_interval_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_setWakeUpInterval(JNIEnv *env, jclass object, jint nodeId, jint interval)
 {
-    return 0;
+    return zwcontrol_wake_up_interval_set(&appl_ctx, (uint32_t)nodeId, (uint32_t)interval);
 }
 
 static int controller_getDoorLockOperation(JNIEnv *env, jclass object, jint nodeId)

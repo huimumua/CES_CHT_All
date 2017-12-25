@@ -666,7 +666,8 @@ static void nodests_wkup_hdlr(nodests_ctx_t *nodests_ctx, zwnoded_p node)
                     intf = zwif_find_cls(slp_node->ep.intf, COMMAND_CLASS_WAKE_UP);
                     if (intf)
                     {
-                        nodests_wkup_intv_get(nodests_ctx->net, intf);
+                        // tiny
+                        //nodests_wkup_intv_get(nodests_ctx->net, intf);
                     }
                 }
                 plt_mtx_ulck(nodests_ctx->net->mtx);

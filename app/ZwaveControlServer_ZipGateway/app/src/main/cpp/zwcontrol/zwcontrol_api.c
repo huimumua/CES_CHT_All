@@ -6718,3 +6718,197 @@ int zwcontrol_start_stop_switchlevel_change(hl_appl_ctx_t* hl_appl, uint32_t nod
 
     return 0;
 }
+
+
+/*
+ **  Command Class Wake Up
+ */
+
+/**
+hl_wkup_rep_cb - wake up notification callback
+@param[in]  ifd interface
+@param[in]  cap capabilities report, null for notification
+@return Only apply to notification: 0=no command pending to send; 1=commands pending to send.
+*/
+int hl_wkup_rep_cb(zwifd_p ifd, zwif_wakeup_p cap)
+{
+    ALOGI("Node wakeup report callback");
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return 0;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Wake Up Cap Report");
+
+    if (!cap)
+    {   //Notification
+        ALOGI("Wake up notification from node:%u", ifd->nodeid);
+        cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+        //Nothing to send, tell the node to sleep again
+        //return 0;
+
+        //Assume user has something to send
+        //return 1;
+    }
+    else
+    {   //Capabilities report
+        ALOGI("Wake up settings:");
+        cJSON *Wakeup_Info = cJSON_CreateObject();
+        if(Wakeup_Info == NULL)
+        {
+            return 0;
+        }
+
+        cJSON_AddItemToObject(jsonRoot, "Wake up settings", Wakeup_Info);
+        ALOGI("Alert receiving node: %u", cap->node.nodeid);
+        ALOGI("Current interval: %u s", cap->cur);
+        cJSON_AddNumberToObject(Wakeup_Info, "Alert receiving node", cap->node.nodeid);
+        cJSON_AddNumberToObject(Wakeup_Info, "Current interval", cap->cur);
+        if (cap->min == 0)
+        {
+            return 0;
+        }
+        ALOGI("Min: %u s, Max: %u s", cap->min, cap->max);
+        ALOGI("Default: %u s, Step: %u s", cap->def, cap->interval);
+        cJSON_AddNumberToObject(Wakeup_Info, "Min", cap->min);
+        cJSON_AddNumberToObject(Wakeup_Info, "Max", cap->max);
+        cJSON_AddNumberToObject(Wakeup_Info, "Default", cap->def);
+        cJSON_AddNumberToObject(Wakeup_Info, "Step", cap->interval);
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+
+    return 0;
+}
+
+/**
+hl_wkup_get - Get wake up setting
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_wkup_get(hl_appl_ctx_t   *hl_appl)
+{
+    int         result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_wakeup_get(ifd, hl_wkup_rep_cb);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_wkup_get with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_wake_up_interval_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_WAKE_UP, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_wkup_get(hl_appl);
+    if(result == 1)
+    {
+        ALOGI("zwcontrol_wake_up_interval_get command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_wkup_set - Set wake up interval and alert receiving node
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_wkup_set(hl_appl_ctx_t   *hl_appl)
+{
+    int         result;
+    zwifd_p     ifd;
+    zwnoded_p   noded;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->temp_desc);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    noded = hl_node_desc_get(hl_appl->desc_cont_hd, hl_appl->node_desc_id);
+    if (!noded && hl_appl->node_desc_id)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_NODE_NOT_FOUND;
+    }
+
+    result = zwif_wakeup_set(ifd, hl_appl->wkup_interval, noded);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_wkup_set with error: %d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_wake_up_interval_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint32_t wkup_interval)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_WAKE_UP, 0))
+    {
+        return -1;
+    }
+
+    hl_appl->node_desc_id = hl_get_node_interface_id(hl_appl, 1); // controller node's interface id
+    hl_appl->wkup_interval = wkup_interval;
+
+    if(!hl_appl->node_desc_id)
+        return ZW_ERR_NODE_NOT_FOUND;
+
+    int result = hl_wkup_set(hl_appl);
+    if(result == 1)
+    {
+        ALOGE("zwcontrol_wake_up_interval_set command queued");
+    }
+
+    return result;
+}
