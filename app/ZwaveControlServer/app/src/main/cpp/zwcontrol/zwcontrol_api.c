@@ -2106,6 +2106,26 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
 
         return p;
     }
+    else if(op == ZWNET_OP_INITIALIZE)
+    {
+        cJSON_AddStringToObject(jsonRoot, "MessageType", "Network Init Status");
+        if(sts == OP_DONE)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Success");
+        }
+
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p == NULL)
+        {
+            cJSON_Delete(jsonRoot);
+            return NULL;
+        }
+
+        cJSON_Delete(jsonRoot);
+
+        return p;
+    }
 
     return NULL;
 }
