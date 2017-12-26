@@ -506,23 +506,24 @@ static int controller_getLanguage(JNIEnv *env, jclass object, jint nodeId)
 
 static int controller_getSwitchColor(JNIEnv *env, jclass object, jint nodeId, jint compId)
 {
-    return 0;
+    return zwcontrol_switch_color_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)compId);
 }
 
 static int controller_getSupportedSwitchColor(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_switch_color_supported_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_setSwitchColor(JNIEnv *env, jclass object, jint nodeId, jint compId, jint value)
 {
-    return 0;
+    return zwcontrol_switch_color_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)compId, (uint8_t)value);
 }
 
 static int controller_startStopSwitchColorLevelChange(JNIEnv *env, jclass object, jint nodeId, jint dir, jint ignore,
                                                       jint compId, jint startLvlVal)
 {
-    return 0;
+    return zwcontrol_start_stop_color_levelchange(&appl_ctx, (uint32_t)nodeId, (uint8_t)dir, (uint8_t)ignore,
+                                                  (uint8_t)compId, (uint8_t)startLvlVal);
 }
 
 static int controller_setBarrierOperator(JNIEnv *env, jclass object, jint nodeId, jint value)
@@ -557,7 +558,7 @@ static int controller_getBasicTariffInfo(JNIEnv *env, jclass object, jint nodeId
 
 static int controller_getGroupInfo(JNIEnv *env, jclass object, jint nodeId, jint groupId, jint endpointId)
 {
-    return 0;
+    return zwcontrol_get_group_info(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint8_t)endpointId);
 }
 
 static int controller_addEndpointsToGroup(JNIEnv *env, jclass object, jint nodeId, jint groupId, jintArray intArray, jint endpointId)
@@ -569,7 +570,7 @@ static int controller_addEndpointsToGroup(JNIEnv *env, jclass object, jint nodeI
         return -1;
     }
 
-    int result = 0;
+    int result = zwcontrol_add_endpoints_to_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint32_t*)node_list, (uint8_t)endpointId);
     env->ReleaseIntArrayElements(intArray, node_list, 0);
     return result;
 }
@@ -583,19 +584,19 @@ static int controller_removeEndpointsFromGroup(JNIEnv *env, jclass object, jint 
         ALOGE("GetIntArrayElements Failed");
         return -1;
     }
-    int result = 0;
+    int result = zwcontrol_remove_endpoints_from_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)groupId, (uint32_t*)node_list, (uint8_t)endpointId);
     env->ReleaseIntArrayElements(intArray, node_list, 0);
     return result;
 }
 
 static int controller_getMaxSupportedGroups(JNIEnv *env, jclass object, jint nodeId, jint endpointId)
 {
-    return 0;
+    return zwcontrol_get_max_supported_groups(&appl_ctx, (uint32_t)nodeId, (uint8_t)endpointId);
 }
 
 static int controller_getSpecificGroup(JNIEnv *env, jclass object, jint nodeId, jint endpointId)
 {
-    return 0;
+    return zwcontrol_get_specific_group(&appl_ctx, (uint32_t)nodeId, (uint8_t)endpointId);
 }
 
 static int controller_setNotification(JNIEnv *env, jclass object, jint nodeId, jint type, jint status)

@@ -3499,7 +3499,7 @@ static void  zwnet_node_probe_cb(appl_layer_ctx_t *appl_ctx, int8_t tx_sts, void
 
     if (tx_sts == TRANSMIT_COMPLETE_OK)
     {
-        debug_zwapi_msg(appl_ctx->plt_ctx, "Node:%u is alive", node_id);
+        ALOGI("Node:%u is alive", node_id);
     }
     else
     {
@@ -5978,6 +5978,20 @@ static void zwnet_cb_thrd(void *data)
                         {
                             if (zwnode_get_desc(node, &node_desc) == ZW_ERR_NONE)
                             {
+                                if(cb_req->param.node.mode == ZWNET_NODE_ADDED || cb_req->param.node.mode == ZWNET_NODE_STATUS_ALIVE)
+                                {
+                                    node->alive = ZWNET_NODE_STATUS_ALIVE;
+                                }
+
+                                if(cb_req->param.node.mode == ZWNET_NODE_STATUS_DOWN)
+                                {
+                                    node->alive = ZWNET_NODE_STATUS_DOWN;
+                                }
+
+                                if(cb_req->param.node.mode == ZWNET_NODE_STATUS_SLEEP)
+                                {
+                                    node->alive = ZWNET_NODE_STATUS_SLEEP;
+                                }
                                 plt_mtx_ulck(nw->mtx);
                                 cb(cb_req->param.node.user, &node_desc, cb_req->param.node.mode);
                                 break;

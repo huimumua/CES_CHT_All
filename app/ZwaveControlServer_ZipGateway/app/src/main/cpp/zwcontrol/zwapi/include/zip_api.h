@@ -1651,6 +1651,7 @@ typedef struct  _zwnoded
 	uint8_t		s2_grnt_keys;   /**< Security 2 granted keys (bit-mask), see SEC_KEY_BITMSK_XXX
                                      NOTE: This is valid only s2_keys_valid = 1*/
 	char		s2_dsk[MAX_DSK_STR_LEN + 1];     /**< S2 DSK. If s2_dsk[0] == '\0', the DSK is unavailable for this node */
+	uint8_t		alive;		    /**< Flag to indicate node is alive. 3= alive; 4= down; 5= sleeping*/
 
 }
 zwnoded_t;

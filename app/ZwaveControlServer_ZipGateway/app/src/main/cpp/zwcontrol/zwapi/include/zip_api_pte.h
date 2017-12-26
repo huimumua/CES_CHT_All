@@ -482,6 +482,9 @@ typedef struct _zwnode
 	zwep_t		    ep;		    /**< head in list of endpoints */
     uint8_t		    propty;	    /**< Properties of the node (bit-mask): NODE_PROPTY_XXX */
 
+    /* Node status */
+    uint8_t     alive;          /**< Flag to indicate node is alive. 3= alive; 4= down; 5= sleeping*/
+
 	/* Manufacturer specific report */
     uint8_t     category;	    /**< Device category, DEV_XXX */
 	uint16_t	vid;			/**< Vendor ID */
@@ -575,6 +578,7 @@ zwnode_t;
                                 (nw)->ctl.propty = 0;           \
                                 (nw)->ctl.wkup_intv = -1;       \
                                 (nw)->ctl.s2_dsk[0] = '\0';     \
+                                (nw)->ctl.alive = 3;            \
                               } while(0)
 
 int zwnode_intf_reset(zwnode_p first_node);

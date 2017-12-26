@@ -277,4 +277,29 @@ int  zwcontrol_wake_up_interval_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_wake_up_interval_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint32_t wkup_interval);
 
 
+/*
+ **  Command Class Switch Color
+ */
+int  zwcontrol_switch_color_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t compId);
+int  zwcontrol_switch_color_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_switch_color_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t compId, uint8_t value);
+int  zwcontrol_start_stop_color_levelchange(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t dir, uint8_t ignore_start,
+                                            uint8_t color_id, uint8_t start_level);
+
+
+/*
+ **  Command Class Association & Multi-Channel Association
+ */
+int  zwcontrol_get_group_info(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint8_t endpoindId);
+
+// Association set 
+int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList, uint8_t endpoindId);
+// Association remove
+int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList, uint8_t endpoindId);
+// Association groupings get
+int  zwcontrol_get_max_supported_groups(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId);
+// Association specific(current active) group get
+int  zwcontrol_get_specific_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId);
+
+
 #endif

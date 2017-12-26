@@ -528,6 +528,7 @@ int zwnode_get_desc(zwnode_p node, zwnoded_p desc)
     desc->wkup_intv = node->wkup_intv;
     desc->s2_keys_valid = node->s2_keys_valid;
     desc->s2_grnt_keys = node->s2_grnt_keys;
+    desc->alive = node->alive;
 
     strcpy(desc->s2_dsk, node->s2_dsk);
 
@@ -5235,7 +5236,7 @@ int zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint16_t cmd_len, int nw_lck_st
             return 0;
         }
     }
-    ALOGI("zwif_rep_hdlr, start report cmdclass: %02X, cmd: %02X",cls, cmd_buf[1]);
+    ALOGI("zwif_rep_hdlr, receives report from node:%d, cmdclass: %02X, cmd: %02X",intf->ep->node->nodeid, cls, cmd_buf[1]);
 
     switch (cls)
     {

@@ -12,6 +12,7 @@ extern int  StartZipGateWay(const char *resPath);
 extern void StopZipGateWay();
 
 static ResCallBack resCallBack = NULL;
+static int initStatus = 0;
 
 #define MAX_DTLS_PSK  64  //Maximum DTLS pre-shared key hex string length
 
@@ -1596,7 +1597,13 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
         cJSON_AddStringToObject(jsonRoot, "MessageType", "Network Init Status");
         if(sts == OP_DONE)
         {
+            initStatus = 1;
             cJSON_AddStringToObject(jsonRoot, "Status", "Success");
+        }
+        else if(sts == OP_FAILED)
+        {
+            initStatus = -1;
+            cJSON_AddStringToObject(jsonRoot, "Status", "Failed");
         }
 
         char *p = cJSON_Print(jsonRoot);
@@ -1830,6 +1837,7 @@ hl_nw_node_cb - Callback function to notify node is added, deleted, or updated
 static void hl_nw_node_cb(void *user, zwnoded_p noded, int mode)
 {
     hl_appl_ctx_t   *hl_appl = (hl_appl_ctx_t *)user;
+    zwnode_p node;
 
     switch (mode)
     {
@@ -1838,6 +1846,7 @@ static void hl_nw_node_cb(void *user, zwnoded_p noded, int mode)
                 ALOGI("hl_nw_node_cb node:%u added", (unsigned)noded->nodeid);
                 //Store the last added node descriptor
                 hl_appl->node_add_desc = *noded;
+                noded->alive = ZWNET_NODE_STATUS_ALIVE;
 
                 //Add node descriptor container
                 plt_mtx_lck(hl_appl->desc_cont_mtx);
@@ -1861,12 +1870,44 @@ static void hl_nw_node_cb(void *user, zwnoded_p noded, int mode)
                 ALOGI("hl_nw_node_cb node:%u updated", (unsigned)noded->nodeid);
                 //Store the last replaced node descriptor
                 hl_appl->node_rp_desc = *noded;
+                noded->alive = ZWNET_NODE_STATUS_ALIVE;
 
                 //Update the node descriptor container
                 plt_mtx_lck(hl_appl->desc_cont_mtx);
                 //hl_desc_cont_updt(&hl_appl->desc_cont_hd, noded);
                 hl_desc_cont_add(&hl_appl->desc_cont_hd, noded);
                 plt_mtx_ulck(hl_appl->desc_cont_mtx);
+            }
+            break;
+
+        case ZWNET_NODE_STATUS_ALIVE:
+            {
+                node = zwnode_find(&noded->net->ctl, noded->nodeid);
+                if(node)
+                {
+                    ALOGI("hl_nw_node_cb node:%u alive", (unsigned)noded->nodeid);
+                    node->alive = ZWNET_NODE_STATUS_ALIVE;
+                }
+            }
+            break;
+        case ZWNET_NODE_STATUS_DOWN:
+            {
+                node = zwnode_find(&noded->net->ctl, noded->nodeid);
+                if(node)
+                {
+                    ALOGI("hl_nw_node_cb node:%u status down",(unsigned)noded->nodeid);
+                    noded->alive = ZWNET_NODE_STATUS_DOWN;
+                }
+            }
+            break;
+        case ZWNET_NODE_STATUS_SLEEP:
+            {
+                node = zwnode_find(&noded->net->ctl, noded->nodeid);
+                if(node)
+                {
+                    ALOGI("hl_nw_node_cb node:%u go to sleep.",(unsigned)noded->nodeid);
+                    noded->alive = ZWNET_NODE_STATUS_SLEEP;
+                }
             }
             break;
 
@@ -2115,57 +2156,50 @@ int zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* info
     if(nw_init(resPath, hl_appl) != 0)
         goto INIT_ERROR;
 
-    int num = 1;
+    initStatus = 0;
 
-    while(num <= 20)
+    while(initStatus == 0)
     {
-        if(hl_appl->init_status == 1)
-            break;
-
         usleep(500000);
-
-        ++num;
     }
 
-    if(num > 20)
+    if(initStatus == -1)
     {
-        ALOGE("controller wait network init_status timeout");
+        ALOGE("controller open  failed");
         return -1;
     }
 
+    zwnode_p    zw_node;
+    char str[50] = {0};
+    plt_mtx_lck(hl_appl->zwnet->mtx);
+
+    zw_node = &hl_appl->zwnet->ctl;
+
+    if(zw_node)
     {
-        zwnode_p    zw_node;
-        char str[50] = {0};
-        plt_mtx_lck(hl_appl->zwnet->mtx);
+        sprintf(str, "%08X", (unsigned)hl_appl->zwnet->homeid);
+        cJSON_AddStringToObject(jsonRoot, "Home Id", str);
+        cJSON_AddNumberToObject(jsonRoot, "Node Id", (unsigned)zw_node->nodeid);
 
-        zw_node = &hl_appl->zwnet->ctl;
+        sprintf(str, "%04X", zw_node->vid);
+        cJSON_AddStringToObject(jsonRoot, "Vendor Id", str);
 
-        if(zw_node)
-        {
-            sprintf(str, "%08X", (unsigned)hl_appl->zwnet->homeid);
-            cJSON_AddStringToObject(jsonRoot, "Home Id", str);
-            cJSON_AddNumberToObject(jsonRoot, "Node Id", (unsigned)zw_node->nodeid);
+        sprintf(str, "%04x", zw_node->vtype);
+        cJSON_AddStringToObject(jsonRoot, "Vendor Product Type", str);
 
-            sprintf(str, "%04X", zw_node->vid);
-            cJSON_AddStringToObject(jsonRoot, "Vendor Id", str);
+        cJSON_AddNumberToObject(jsonRoot, "Z-wave Library Type", zw_node->lib_type);
 
-            sprintf(str, "%04x", zw_node->vtype);
-            cJSON_AddStringToObject(jsonRoot, "Vendor Product Type", str);
+        sprintf(str, "%04x", zw_node->pid);
+        cJSON_AddStringToObject(jsonRoot, "Product Id", str);
 
-            cJSON_AddNumberToObject(jsonRoot, "Z-wave Library Type", zw_node->lib_type);
+        sprintf(str, "%u.%02u", (unsigned)(zw_node->proto_ver >> 8), (unsigned)(zw_node->proto_ver & 0xFF));
+        cJSON_AddStringToObject(jsonRoot, "Z-wave Protocol Version", str);
 
-            sprintf(str, "%04x", zw_node->pid);
-            cJSON_AddStringToObject(jsonRoot, "Product Id", str);
-
-            sprintf(str, "%u.%02u", (unsigned)(zw_node->proto_ver >> 8), (unsigned)(zw_node->proto_ver & 0xFF));
-            cJSON_AddStringToObject(jsonRoot, "Z-wave Protocol Version", str);
-
-            sprintf(str, "%u.%02u", (unsigned)(zw_node->app_ver >> 8), (unsigned)(zw_node->app_ver & 0xFF));
-            cJSON_AddStringToObject(jsonRoot, "Application Version", str);
-        }
-
-        plt_mtx_ulck(hl_appl->zwnet->mtx);
+        sprintf(str, "%u.%02u", (unsigned)(zw_node->app_ver >> 8), (unsigned)(zw_node->app_ver & 0xFF));
+        cJSON_AddStringToObject(jsonRoot, "Application Version", str);
     }
+
+    plt_mtx_ulck(hl_appl->zwnet->mtx);
 
     if(result != NULL)
     {
@@ -2610,6 +2644,33 @@ static char* hl_zwaveplus_icon_to_device_type(uint16_t  usr_icon)
         break;
         default:
             return "unknown device";
+    }
+}
+
+// Transfer node status to string
+static char* hl_node_status_str(uint8_t alive)
+{
+    ALOGI("hl_node_status_str, alive:%d",alive);
+    switch(alive)
+    {
+        case ZWNET_NODE_STATUS_ALIVE:
+        {
+            return "alive";
+        }
+        break;
+        case ZWNET_NODE_STATUS_DOWN:
+        {
+            return "down";
+        }
+        break;
+        case ZWNET_NODE_STATUS_SLEEP:
+        {
+            return "sleeping";
+        }
+        break;
+
+        default:
+            return "unknown";
     }
 }
 
@@ -3237,12 +3298,12 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
         ALOGI("__________________________________________________________________________");
         ALOGI("Node id:%u[%u], Home id:%08X", (unsigned)node->nodeid,
                      last_node_cont->id, (unsigned)net_desc->id);
-        //plt_msg_show(hl_plt_ctx_get(hl_appl), "Node status:%s", (node->alive)?  "alive" : "down/sleeping");
+        ALOGI("Node status:%s", hl_node_status_str(node->alive));
 
         sprintf(str, "%08X", net_desc->id);
         cJSON_AddStringToObject(NodeInfo, "Home id", str);
         cJSON_AddNumberToObject(NodeInfo, "Node id", node->nodeid);
-        //cJSON_AddStringToObject(NodeInfo, "Node status", (node->alive)?  "alive" : "down/sleeping");
+        cJSON_AddStringToObject(NodeInfo, "Node status", hl_node_status_str(node->alive));
 
         if (node->sleep_cap)
         {
@@ -3972,6 +4033,36 @@ zwifd_p    hl_intf_desc_get(desc_cont_t *head, uint32_t desc_id)
     }
 
     return(zwifd_p)desc_cont->desc;
+}
+
+/**
+hl_ep_desc_get - get endpoint descriptor from descriptor container
+@param[in]  head        The head of the descriptor container linked-list
+@param[in]  desc_id     Unique descriptor id
+@return     Endpoint descriptor if found; else return NULL
+@pre        Caller must lock the desc_cont_mtx before calling this function.
+*/
+zwepd_p    hl_ep_desc_get(desc_cont_t *head, uint32_t desc_id)
+{
+    desc_cont_t *desc_cont;
+
+    //Get the interface descriptor
+    desc_cont = hl_desc_cont_get(head, desc_id);
+    if (!desc_cont)
+    {
+        ALOGE("hl_ep_desc_get invalid desc id:%d", desc_id);
+        //plt_msg_ts_show("hl_ep_desc_get invalid desc id:%u", desc_id);
+        return NULL;
+    }
+
+    if (desc_cont->type != DESC_TYPE_EP)
+    {
+        ALOGE("hl_ep_desc_get desc id %d is not type endpoint", desc_id);
+        //plt_msg_ts_show("hl_ep_desc_get desc id:%u is not type endpoint", desc_id);
+        return NULL;
+    }
+
+    return(zwepd_p)desc_cont->desc;
 }
 
 /*
@@ -6908,6 +6999,835 @@ int  zwcontrol_wake_up_interval_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uin
     if(result == 1)
     {
         ALOGE("zwcontrol_wake_up_interval_set command queued");
+    }
+
+    return result;
+}
+
+
+/*
+ **  Command Class Switch Color
+ */
+const char *color_comp[] =
+{
+    "Warm Write",  // 0x00 - 0xFF: 0 - 100%
+    "Cold Write",
+    "Red",
+    "Green",
+    "Blue",
+    "Amber",
+    "Cyan",
+    "Purple",
+    "Indexed Color"  // Color Index 0-255
+};
+
+void hl_sw_color_report_cb(zwifd_p ifd, zwcolor_p data, time_t ts)
+{
+    ALOGI("Switch color component id:%u, value:%u", data->id, data->value);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Switch Color Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddStringToObject(jsonRoot, "component id", color_comp[data->id]);
+    cJSON_AddNumberToObject(jsonRoot, "value", data->value);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_sw_color_rep_set_and_get - Setup switch color get report, and get the value
+@param[in]  hl_appl     The high-level api context
+@param[in]  compid      The color component id
+@return  0 on success, negative error number on failure
+*/
+int hl_sw_color_rep_set_and_get(hl_appl_ctx_t   *hl_appl, uint8_t compid)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_color_sw_rpt_set(ifd, hl_sw_color_report_cb);
+
+    if(result == 0)
+    {
+        result = zwif_color_sw_get(ifd, (uint8_t)compid, ZWIF_GET_BMSK_CACHE);
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_sw_color_rep_set_and_get with error: %d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_switch_color_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t compId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_sw_color_rep_set_and_get(hl_appl, (uint8_t)compId);
+
+    if(result == 1)
+    {
+        ALOGI("zwcontrol_switch_color_get command queued");
+    }
+
+    return result;
+}
+
+void hl_sw_color_sup_report_cb(zwifd_p ifd, uint8_t color_number, uint8_t* color_type, int valid)
+{
+    ALOGI("Switch color supported report");
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Supported Color Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+
+    if (color_number > 0)
+    {
+        int i;
+        ALOGI("Supported Color types:");
+        cJSON *supported_color;
+        supported_color = cJSON_CreateObject();
+
+        if(supported_color == NULL)
+        {
+            return;
+        }
+
+        cJSON_AddItemToObject(jsonRoot, "Supported Color", supported_color);
+
+        for (i=0; i<color_number; i++)
+        {
+            if (color_type[i] > 20)
+            {
+                color_type[i] = 0;
+            }
+
+            ALOGI("%s", color_comp[color_type[i]]);
+            cJSON_AddStringToObject(supported_color, "color", color_comp[color_type[i]]);
+        }
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_sw_color_sup_rep_setup - Setup switch color supported get report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_sw_color_sup_rep_setup(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_color_sw_sup_get(ifd, hl_sw_color_sup_report_cb, 1);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("zwif_color_sw_sup_get with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_switch_color_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_sw_color_sup_rep_setup(hl_appl);
+    if(result == 1) 
+    {
+        ALOGE("zwcontrol_switch_color_supported_get command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_sw_color_set - switch color set value
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_sw_color_set(hl_appl_ctx_t   *hl_appl, uint8_t compid, uint8_t value)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_color_sw_set(ifd, 1, &compid, &value, 0);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("zwif_sw_color_set with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_switch_color_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t compId, uint8_t value)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_sw_color_set(hl_appl, compId, value);
+    if(result == 1)
+    {
+        ALOGI("zwcontrol_switch_color_set command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_sw_color_lvl_chg - toggle between start and stop switch color level change
+@param[in]  hl_appl        The high-level api context
+@param[in]  dir            The level change direction, 0 for increasing, 1 for decreasing
+@param[in]  ignore_start   Device should respect the Start Level if the Ignore Start Level bit is 0.
+@param[in]  color_id       Color component id
+@param[in]  start_level    level change start level value
+@return
+*/
+void    hl_sw_color_lvl_chg(hl_appl_ctx_t   *hl_appl, uint8_t dir, uint8_t ignore_start,
+                            uint8_t color_id, uint8_t start_level)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->temp_desc);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        ALOGE("hl_sw_color_lvl_chg: interface descriptor:%u not found", hl_appl->temp_desc);
+        return ;
+    }
+
+    if (hl_appl->sw_color_lvl_change_started == 0)
+    {
+        zwcol_ctl_t lvl_ctl;
+
+        lvl_ctl.dir = dir;
+        lvl_ctl.use_start_lvl = (uint8_t)ignore_start;
+        lvl_ctl.id = color_id;
+        lvl_ctl.start_level = (uint8_t)start_level;
+        lvl_ctl.dur = 3;
+
+        //Change state to start level change
+        result = zwif_color_sw_start(ifd, &lvl_ctl);
+
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+        if (result != 0)
+        {
+            ALOGE("zwif_sw_color_level_start with error:%d", result);
+            return;
+        }
+
+        ALOGI("Start switch color level change ...");
+        hl_appl->sw_color_lvl_change_started = 1;
+    }
+    else
+    {
+        //Change state to stop level change
+        result = zwif_color_sw_stop(ifd, color_id);
+
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+        if (result != 0)
+        {
+            ALOGE("zwif_sw_color_level_stop with error:%d", result);
+            return;
+        }
+
+        ALOGI("Stop switch color level change ...");
+        hl_appl->sw_color_lvl_change_started = 0;
+    }
+}
+
+int  zwcontrol_start_stop_color_levelchange(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t dir, uint8_t ignore_start,
+                                            uint8_t color_id, uint8_t start_level)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_COLOR, 0))
+    {
+        return -1;
+    }
+
+    ALOGD("Switch color, color id:%d, dir:%d, ignore_start:%d, star_lvl:%d",
+           color_id, dir, ignore_start, start_level);
+
+    if(hl_appl->sw_color_lvl_change_started == 1){
+        ALOGI("switch color level change already started, now stop level change");
+        hl_sw_color_lvl_chg(hl_appl, dir, ignore_start, color_id, start_level);
+        return 0;
+    }
+
+    hl_sw_color_lvl_chg(hl_appl, dir, ignore_start, color_id, start_level);
+
+    return 0;
+}
+
+
+/*
+ **  Command Class Association & Multi-Channel Association
+ */
+
+/**
+hl_grp_rep_cb - Group info report callback
+@param[in]  ifd Interface
+@param[in]  group       Grouping identifier
+@param[in]  max_cnt     Maximum number of end points the grouping identifier above supports
+@param[in]  cnt         The number of end points in the grouping in this report
+@param[in]  ep          An array of cnt end points in the grouping
+@return
+*/
+static void hl_grp_rep_cb(zwifd_p ifd, uint8_t group, uint8_t max_cnt, uint8_t cnt, grp_member_t *ep)
+{
+    int i;
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Group Info Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "Group id", group);
+    cJSON_AddNumberToObject(jsonRoot, "Max Supported endpoints", max_cnt);
+    cJSON *group_members;
+    group_members = cJSON_CreateObject();
+    if(group_members == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddItemToObject(jsonRoot, "Group members", group_members);
+
+    ALOGI("Group id:%u, max supported endpoints:%u, Group members:", group, max_cnt);
+
+    for (i=0; i<cnt; i++)
+    {
+        ALOGI("Node id:%u, endpoint id:%u", ep[i].node_id, ep[i].ep_id);
+        cJSON_AddNumberToObject(group_members, "Node id", ep[i].node_id);
+        cJSON_AddNumberToObject(group_members, "endpoint id", ep[i].ep_id);
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_grp_rep_get - Get group info report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_grp_rep_get(hl_appl_ctx_t   *hl_appl)
+{
+    int         result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->temp_desc);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_group_get(ifd, hl_appl->group_id, hl_grp_rep_cb);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_grp_rep_get with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_get_group_info(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint8_t endpoindId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
+    {
+        return -1;
+    }
+
+    hl_appl->group_id = group_id;
+    int result = hl_grp_rep_get(hl_appl);
+    if (result == 1)
+    {
+        ALOGE("zwcontrol_get_group_info command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_grp_add - Add endpoints into group
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_grp_add(hl_appl_ctx_t   *hl_appl)
+{
+    int         i;
+    int         result;
+    uint8_t     ep_cnt;
+    zwifd_p ifd;
+    zwepd_t ep_desc[5];
+    zwepd_p ep;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->temp_desc);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    ep_cnt = 0;
+    for (i=0; i<5; i++)
+    {
+        ep = hl_ep_desc_get(hl_appl->desc_cont_hd, hl_appl->ep_desc_id[i]);
+        if (ep)
+        {
+            ep_desc[ep_cnt++] = *ep;
+            ALOGI("Nodeid:%d(Endpoint %d) will add to group %d(nodeid:%d).",ep->nodeid, ep->epid, hl_appl->group_id, ifd->nodeid);
+        }
+    }
+
+    result = zwif_group_add(ifd, hl_appl->group_id, ep_desc, ep_cnt);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_grp_add with error:%d", result);
+    }
+
+    return result;
+}
+
+
+int  zwcontrol_add_endpoints_to_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList, uint8_t endpoindId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_MULTI_CHANNEL_ASSOCIATION_V2, endpoindId))
+    {
+        ALOGI("This device not supported Multi-Channel, try nomal Association.");
+        if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
+        {
+            return -1;
+        }
+    }
+
+    int i;
+
+    for (i=0; i<5; i++)
+    {
+        hl_appl->ep_desc_id[i] = 0;
+    }
+
+    for (i=0; i<5; i++)
+    {
+        ALOGI("zwcontrol_add_endpoints_to_group, epid:%d",nodeList[i]);
+        hl_appl->ep_desc_id[i] = nodeList[i];
+        if (hl_appl->ep_desc_id[i] == 0)
+        {
+            break;
+        }
+    }
+
+    hl_appl->group_id = group_id;
+
+    int result = hl_grp_add(hl_appl);
+    if (result == 1)
+    {
+        ALOGI("zwcontrol_add_endpoint_to_group command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_grp_del - Delete endpoints from group
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_grp_del(hl_appl_ctx_t   *hl_appl)
+{
+    int         i;
+    int         result;
+    uint8_t     ep_cnt;
+    zwifd_p ifd;
+    grp_member_t ep_desc[5];
+    zwepd_p ep;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->temp_desc);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    ep_cnt = 0;
+    for (i=0; i<5; i++)
+    {
+        ep = hl_ep_desc_get(hl_appl->desc_cont_hd, hl_appl->ep_desc_id[i]);
+        if (ep)
+        {
+            ep_desc[ep_cnt++].node_id = ep->nodeid;
+            ep_desc[ep_cnt-1].ep_id = ep->epid;
+            ALOGI("Nodeid:%d(Endpoint %d) will delete from group %d(nodeid:%d).",ep->nodeid, ep->epid, hl_appl->group_id, ifd->nodeid);
+        }
+    }
+
+    result = zwif_group_del(ifd, hl_appl->group_id, ep_desc, ep_cnt);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_grp_del with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t group_id, uint32_t* nodeList, uint8_t endpoindId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
+    {
+        return -1;
+    }
+
+    int i;
+
+    for (i=0; i<5; i++)
+    {
+        hl_appl->ep_desc_id[i] = 0;
+    }
+
+    for (i=0; i<5; i++)
+    {
+        hl_appl->ep_desc_id[i] = nodeList[i];
+        if (hl_appl->ep_desc_id[i] == 0)
+        {
+            break;
+        }
+    }
+
+    hl_appl->group_id = group_id;
+
+    int result = hl_grp_del(hl_appl);
+    if (result == 1)
+    {
+        ALOGI("zwcontrol_remove_endpoints_from_group command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_grp_sup_cb - max number of groupings callback
+@param[in]  ifd       interface
+@param[in]  max_grp   maximum number of groupings
+@return
+*/
+static void hl_grp_sup_cb(zwifd_p ifd,  uint8_t max_grp, int valid)
+{
+    ALOGI("Max number of groupings:%u", max_grp);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Supported Groupings Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "Max number of groupings", max_grp);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_grp_sup - Get max number of groupings
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_grp_sup(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_group_sup_get(ifd, hl_grp_sup_cb, 1);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("zwif_group_sup_get with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_get_max_supported_groups(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
+    {
+        return -1;
+    }
+
+    int result = hl_grp_sup(hl_appl);
+    if(result == 1)
+    {
+        ALOGE("zwcontrol_get_max_supported_groups command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_grp_active_cb - active group callback
+@param[in]  ifd     interface
+@param[in]  group   current active group
+@return
+*/
+static void hl_grp_active_cb(zwifd_p ifd,  uint8_t group)
+{
+    ALOGI("Current active group:%u", group);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Active Groups Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "Current active group", group);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_grp_specific - Get active group
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_grp_specific(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_group_actv_get(ifd, hl_grp_active_cb);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_grp_specific with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_get_specific_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_ASSOCIATION, endpoindId))
+    {
+        return -1;
+    }
+
+    int result = hl_grp_specific(hl_appl);
+    if (result == 1)
+    {
+        ALOGE("zwcontrol_get_specific_group command queued");
     }
 
     return result;
