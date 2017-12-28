@@ -10641,6 +10641,45 @@ int zwif_scene_actuator_conf_set(zwifd_p ifd, uint8_t sceneId, uint8_t dimDurati
     return zwif_exec(ifd, cmd, 6, zwif_exec_cb);
 }
 
+
+int zwif_multi_cmd_encap(zwifd_p ifd)
+{
+    int         result;
+    uint8_t     cmd[12];
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_MULTI_CMD)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_MUL_CMD, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Prepare the command
+    cmd[0] = ifd->cls;
+    cmd[1] = MULTI_CMD_ENCAP;
+    cmd[2] = 2;  // command number
+
+    cmd[3] = 2;  // command data length
+    cmd[4] = COMMAND_CLASS_BATTERY;
+    cmd[5] = BATTERY_GET;
+
+    cmd[6] = 2;  // command data length
+    cmd[7] = COMMAND_CLASS_POWERLEVEL;
+    cmd[8] = POWERLEVEL_GET;
+
+    cmd[9] = 2;  // command data length
+    cmd[10] = COMMAND_CLASS_ZWAVEPLUS_INFO;
+    cmd[11] = ZWAVEPLUS_INFO_GET;
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 9, zwif_exec_cb);
+}
+
 // skysoft modified end
 /****************************************************************************/
 

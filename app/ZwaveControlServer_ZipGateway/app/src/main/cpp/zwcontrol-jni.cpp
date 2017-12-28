@@ -446,47 +446,47 @@ static int controller_getUserCodeNumber(JNIEnv *env, jclass object, jint nodeId)
 
 static int controller_getProtection(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_protection_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_setProtection(JNIEnv *env, jclass object, jint nodeId, jint local_port, jint rf_port)
 {
-    return 0;
+    return zwcontrol_protection_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)local_port, (uint8_t)rf_port);
 }
 
 static int controller_getSupportedProtection(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_supported_protection_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_getProtectionExcControlNode(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_protection_exclusive_control_node_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_getIndicator(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_indicator_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_setIndicator(JNIEnv *env, jclass object, jint nodeId, jint value)
 {
-    return 0;
+    return zwcontrol_indicator_set(&appl_ctx, (uint32_t)nodeId, (uint16_t)value);
 }
 
 static int controller_setProtectionExcControlNode(JNIEnv *env, jclass object, jint nodeId, jint node_id)
 {
-    return 0;
+    return zwcontrol_protection_exclusive_control_node_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)node_id);
 }
 
 static int controller_getProtectionTimeout(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_protection_timeout_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_setProtectionTimeout(JNIEnv *env, jclass object, jint nodeId, jint unit, jint time)
 {
-    return 0;
+    return zwcontrol_protection_timeout_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)unit, (uint8_t)time);
 }
 
 static int controller_getDoorLockLoggingSupportedRecords(JNIEnv *env, jclass object, jint nodeId)
@@ -636,7 +636,7 @@ static int controller_setSceneActuatorConf(JNIEnv *env, jclass object, jint node
 
 static int controller_multiCmdEncap(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_multi_cmd_encap(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_getFirmwareUpdateInfo(JNIEnv *env, jclass object, jint nodeId)

@@ -336,6 +336,7 @@ control and data in the mesh network.
 #define ZW_CID_SWITCH_ALL_GET    117       /**< zwif_switch_all_get */
 #define ZW_CID_SCENE_ACT_CONF_GET        118       /**< zwif_scene_actuator_conf_get */
 #define ZW_CID_SCENE_ACT_CONF_SET        119       /**< zwif_scene_actuator_conf_set */
+#define ZW_CID_MUL_CMD                   120       /**< zwif_multi_cmd_encap */
 
 // skysoft modified end
 /****************************************************************************/
@@ -6966,6 +6967,12 @@ get the switch all mode in use by the node through report callback
 typedef void (*zwrep_scene_actuator_conf_get_fn)(zwifd_p ifd, uint8_t sceneId, uint8_t level, uint8_t dimDuration);
 int zwif_scene_actuator_conf_get(zwifd_p ifd, uint8_t sceneId, zwrep_scene_actuator_conf_get_fn rpt_cb);
 int zwif_scene_actuator_conf_set(zwifd_p ifd, uint8_t sceneId, uint8_t dimDuration, uint8_t override, uint8_t level);
+
+
+/*
+ **  Command Class Multi Cmd
+ */
+int zwif_multi_cmd_encap(zwifd_p ifd);
 
 
 // skysoft modified end

@@ -8690,3 +8690,870 @@ int  zwcontrol_firmwareupdate_request(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
 
     return result;
 }
+
+
+/*
+ **  Command Class Multi Cmd
+ */
+int hl_multi_cmd_encap(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_multi_cmd_encap(ifd);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_multi_cmd_encap with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_multi_cmd_encap(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+   if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_MULTI_CMD, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_multi_cmd_encap(hl_appl);
+
+    if(result == 1)
+    {
+        ALOGI("zwcontrol_multi_cmd_encap command queued");
+    }
+
+    return result;
+}
+
+
+/*
+ **  Command Class Indicator v1
+ */
+
+/**
+hl_ind_report_cb - Indicator report callback
+@param[in]  ifd     The interface that received the report
+@param[in]  value   The value
+@return
+*/
+static void hl_ind_report_cb(zwifd_p ifd, uint8_t value)
+{
+    ALOGI("Indicator value is %02Xh", value);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Indicator Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "value", value);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_ind_rep_setup - Setup indicator report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_ind_rep_setup(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_ind_rpt_set(ifd, hl_ind_report_cb);
+    if(result == 0)
+    {
+        result = zwif_ind_get(ifd);
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_ind_rep_setup with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_indicator_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_INDICATOR, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_ind_rep_setup(hl_appl);
+    if(result == 1)
+    {
+        ALOGI("zwcontrol_indicator_get command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_ind_set - indicator set value
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_ind_set(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_ind_set(ifd, (uint8_t)hl_appl->ind_val);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_ind_set with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_indicator_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint16_t value)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_INDICATOR, 0))
+    {
+        return -1;
+    }
+
+    // Value (hex)
+    // Note: 00 = off, disable; FF = on, enable; Other value: 1 to 63h
+    hl_appl->ind_val = value;
+
+    int result = hl_ind_set(hl_appl);
+    if(result == 1)
+    {
+        ALOGE("zwcontrol_indicator_set command queued");
+    }
+
+    return result;
+}
+
+
+/*
+ **  Command Class Protection v1-v3
+ */
+
+const char *lprot_str[] =
+{
+    "Unprotected",
+    "Protection by sequence",
+    "No operation possible",
+    "unknown"
+};
+
+const char *rfprot_str[] =
+{
+    "Unprotected",
+    "No RF control",
+    "No RF control and response",
+    "unknown"
+};
+
+/**
+hl_prot_rep_cb - Protection states report callback
+@param[in]  ifd         interface that received the report
+@param[in]  local_prot  local protection state, ZW_LPROT_XXX
+@param[in]  rf_prot     RF protection state, ZW_RFPROT_XXX.
+@return
+*/
+static void hl_prot_rep_cb(zwifd_p ifd, uint8_t local_prot, uint8_t rf_prot)
+{
+    uint8_t state;
+
+    state = (local_prot <= 2)? local_prot : 3;
+    ALOGI("Local protection state:%u(%s)", local_prot, lprot_str[state]);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Protection State Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "Local port", local_prot);
+    cJSON_AddStringToObject(jsonRoot, "state", lprot_str[state]);
+
+    state = (rf_prot <= 2)? rf_prot : 3;
+    ALOGI("RF protection state:%u(%s)", rf_prot, rfprot_str[state]);
+ 
+    cJSON_AddNumberToObject(jsonRoot, "RF Port", rf_prot);
+    cJSON_AddStringToObject(jsonRoot, "state", rfprot_str[state]);   
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_prot_rep_setup - Setup protection report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_prot_rep_setup(hl_appl_ctx_t  *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_prot_rpt_set(ifd, hl_prot_rep_cb);
+    if(result == 0)
+    {
+        result = zwif_prot_get(ifd);
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_prot_rep_setup with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_protection_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_prot_rep_setup(hl_appl);
+    if(result == 1)
+    {
+        ALOGI("zwcontrol_protection_get command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_prot_sup_rep_cb - Report callback for supported protection states
+@param[in]  ifd         interface
+@param[in]  sup_sta     supported Protection States
+*/
+static void hl_prot_sup_rep_cb(zwifd_p ifd, zwprot_sup_p sup_sta, int valid)
+{
+    uint8_t       i;
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    ALOGI("Supported Local Protection states:");
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Supported Protection State Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON * Sup_Pro_State_Array =  cJSON_CreateObject();
+
+    if(Sup_Pro_State_Array == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddItemToObject(jsonRoot, "Supported Local Protection States", Sup_Pro_State_Array);
+    for (i=0; i<sup_sta->lprot_len; i++)
+    {
+        ALOGI("%s", lprot_str[sup_sta->lprot[i]]);
+        cJSON_AddStringToObject(Sup_Pro_State_Array, "state", lprot_str[sup_sta->lprot[i]]);
+    }
+
+    cJSON * Sup_Pro_State_Array1 =  cJSON_CreateObject();
+
+    if(Sup_Pro_State_Array1 == NULL)
+    {
+        return;
+    }
+
+    ALOGI("Supported RF Protection states:");
+    cJSON_AddItemToObject(jsonRoot, "Supported RF Protection States", Sup_Pro_State_Array1);
+    for (i=0; i<sup_sta->rfprot_len; i++)
+    {
+        ALOGI("%s", rfprot_str[sup_sta->rfprot[i]]);
+        cJSON_AddStringToObject(Sup_Pro_State_Array1, "state", rfprot_str[sup_sta->rfprot[i]]);
+    }
+
+    ALOGI("Additional RF supported protection types:");
+
+    if (sup_sta->excl_ctl)
+    {
+        cJSON_AddStringToObject(jsonRoot, "Additional RF Sup_Pro types", "Exclusive Control");
+        ALOGI("Exclusive Control");
+    }
+
+    if (sup_sta->tmout)
+    {
+        cJSON_AddStringToObject(jsonRoot, "Timeout", "Yes");
+        ALOGI("Timeout");
+    } 
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_prot_sup_get - Get supported protection states
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_prot_sup_get(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_prot_sup_get(ifd, hl_prot_sup_rep_cb, 1);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_prot_sup_get with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_supported_protection_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_prot_sup_get(hl_appl);
+    if(result == 1)
+    {
+        ALOGE("zwcontrol_protection_supported_get command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_prot_set - Set the protection
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_prot_set(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_prot_set(ifd, hl_appl->local_prot, hl_appl->rf_prot);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_prot_set with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_protection_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t local_prot, uint8_t rf_prot)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
+    {
+        return -1;
+    }
+
+    // Local Protection State
+    // (0) Unprotected (1) Protection by sequence (2) No operation possible
+    hl_appl->local_prot = local_prot;
+
+    // RF Protection State (version 2)
+    // (0) Unprotected (1) No RF control (2) No RF control and response
+    hl_appl->rf_prot = rf_prot;
+
+    int result = hl_prot_set(hl_appl);
+    if(result == 1)
+    {
+        ALOGE("zwcontrol_protection_set command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_prot_ec_rep_cb - Protection exclusive control node report callback
+@param[in]  ifd         interface that received the report
+@param[in]  node_id     node ID that has exclusive control can override the RF protection state
+                        of the device and can control it regardless of the protection state.
+                        Node id of zero is used to reset the protection exclusive control state.
+@return
+*/
+static void hl_prot_ec_rep_cb(zwifd_p ifd, uint8_t node_id)
+{
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Protection Ec Control Node Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    if (node_id == 0)
+    {
+        ALOGI("Protection exclusive control is inactive");
+        cJSON_AddStringToObject(jsonRoot, "Control Node", "inactive");
+    }
+    else
+    {
+        ALOGI("Protection exclusive control node:%u", node_id);
+        cJSON_AddNumberToObject(jsonRoot, "Control Node", node_id);
+    }
+    
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_prot_ec_rep_setup - Setup protection ec control node report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_prot_ec_rep_setup(hl_appl_ctx_t  *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_prot_ec_rpt_set(ifd, hl_prot_ec_rep_cb);
+    if(result == 0)
+    {
+        result = zwif_prot_ec_get(ifd);
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_prot_ec_rep_setup with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_protection_exclusive_control_node_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_prot_ec_rep_setup(hl_appl);
+    if(result == 1)
+    {
+        ALOGI("zwcontrol_protection_exclusive_control_node_get command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_prot_ec_set - Set the protection exclusive control node
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_prot_ec_set(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_prot_ec_set(ifd, hl_appl->node_id);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_prot_ec_set with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_protection_exclusive_control_node_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t node_id)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
+    {
+        return -1;
+    }
+
+    hl_appl->node_id = node_id;
+                
+    int result = hl_prot_ec_set(hl_appl);
+    if(result == 1)
+    {
+        ALOGE("zwcontrol_protection_exclusive_control_node_set command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_prot_tmout_rep_cb - RF protection timeout report callback
+@param[in]  ifd         interface that received the report
+@param[in]  remain_tm   remaining time. 0x00 = No timer is set. All “normal operation” Commands must be accepted.
+                        0x01 to 0x3C = 1 second (0x01) to 60 seconds (0x3C);
+                        0x41 to 0xFE = 2 minutes (0x41) to 191 minutes (0xFE);
+                        0xFF = No Timeout - The Device will remain in RF Protection mode infinitely.
+@return
+*/
+static void hl_prot_tmout_rep_cb(zwifd_p ifd, uint8_t remain_tm)
+{
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Protection Timeout Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    if (remain_tm == 0)
+    {
+        ALOGI("No timer is set for RF protection timeout");
+        cJSON_AddStringToObject(jsonRoot, "timeout", "No timer set for RF"); 
+    }
+    else if ((remain_tm > 0) && (remain_tm <= 0x3C))
+    {
+        ALOGI("RF protection will timeout in %u seconds", remain_tm);
+        cJSON_AddNumberToObject(jsonRoot, "will timeout(s)", remain_tm);
+    }
+    else if ((remain_tm >= 0x41) && (remain_tm <= 0xFE))
+    {
+        ALOGI("RF protection will timeout in %u minutes", remain_tm - 63);
+        cJSON_AddNumberToObject(jsonRoot, "will timeout(m)", remain_tm - 63);
+    }
+    else if (remain_tm == 0xFF)
+    {
+        ALOGI("RF protection is always on");
+        cJSON_AddStringToObject(jsonRoot, "timeout", "always on");
+    }  
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_prot_timeout_rep_setup - Setup protection timeout report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_prot_timeout_rep_setup(hl_appl_ctx_t  *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_prot_tmout_rpt_set(ifd, hl_prot_tmout_rep_cb);
+    if(result == 0)
+    {
+        result = zwif_prot_tmout_get(ifd);
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_prot_rep_setup with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_protection_timeout_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_prot_timeout_rep_setup(hl_appl);
+    if(result == 1)
+    {
+        ALOGE("zwcontrol_protection_timeout_get command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_prot_tmout_set - Set the RF protection timeout
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_prot_tmout_set(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_prot_tmout_set(ifd, hl_appl->time);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_prot_tmout_set with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_protection_timeout_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t unit, uint8_t time)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_PROTECTION, 0))
+    {
+        return -1;
+    }
+
+    //unsigned    time = 0x40;
+
+    // Timeout unit
+    // (0) seconds (1 to 60) 
+    // (1) minutes (2 to 191) 
+    // (2) No timeout (always protected)
+    if (unit == 2)
+    {   //No timeout
+        hl_appl->time = 0xFF;
+    }
+    else
+    {
+        //time = prompt_uint("Timeout:");
+        if (unit == 0)
+        {   //Seconds
+            if ((time > 0) && (time <= 60))
+            {
+                hl_appl->time = time;
+            }
+        }
+        else
+        {   //Minutes
+            if ((time >= 2) && (time <= 191))
+            {
+                hl_appl->time = time + 63;
+            }
+        }
+    }
+
+    int result = hl_prot_tmout_set(hl_appl);
+    if(result == 1)
+    {
+        ALOGE("zwcontrol_protection_timeout_set command queued");
+    }
+
+    return result;
+}

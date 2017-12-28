@@ -330,4 +330,29 @@ int  zwcontrol_firmwareupdate_request(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
                                       uint8_t firmwareTarget, uint16_t hw_ver, const char* firmwareFile);
 
 
+/*
+ **  Command Class Multi Cmd
+ */
+int  zwcontrol_multi_cmd_encap(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+
+
+/*
+ **  Command Class Indicator v1
+ */
+int  zwcontrol_indicator_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_indicator_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint16_t value);
+
+
+/*
+ **  Command Class Protection v1-v3
+ */
+int  zwcontrol_protection_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_protection_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t local_prot, uint8_t rf_prot);
+int  zwcontrol_supported_protection_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_protection_exclusive_control_node_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_protection_exclusive_control_node_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t node_id);
+int  zwcontrol_protection_timeout_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_protection_timeout_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t unit, uint8_t time);
+
+
 #endif
