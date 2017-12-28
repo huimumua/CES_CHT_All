@@ -330,32 +330,32 @@ static int controller_getPowerLevel(JNIEnv *env, jclass object, jint nodeId)
 
 static int controller_setSwitchAllOn(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_switch_all_on(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_setSwitchAllOnBroadcast(JNIEnv *env, jclass object)
 {
-    return 0;
+    return 0;//zwcontrol_switch_all_on_broadcast(&appl_ctx);
 }
 
 static int controller_setSwitchAllOff(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_switch_all_off(&appl_ctx,(uint32_t)nodeId);
 }
 
 static int controller_setSwitchAllOffBroadcast(JNIEnv *env, jclass object)
 {
-    return 0;
+    return 0;//zwcontrol_switch_all_off_broadcast(&appl_ctx);
 }
 
 static int controller_setSwitchAll(JNIEnv *env, jclass object, jint nodeId, jint value)
 {
-    return 0;
+    return zwcontrol_switch_all_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)value);
 }
 
 static int controller_getSwitchAll(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_switch_all_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_startLearnMode(JNIEnv *env, jclass object)
@@ -626,12 +626,12 @@ static int controller_getSupportedCentralScene(JNIEnv *env, jclass object, jint 
 
 static int controller_getSceneActuatorConf(JNIEnv *env, jclass object, jint nodeId, jint sceneId)
 {
-    return 0;//zwcontrol_scene_actuator_conf_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)sceneId);
+    return zwcontrol_scene_actuator_conf_get(&appl_ctx, (uint32_t)nodeId, (uint8_t)sceneId);
 }
 
 static int controller_setSceneActuatorConf(JNIEnv *env, jclass object, jint nodeId, jint sceneId, jint dimDuration, jint override, jint level)
 {
-    return 0;
+    return zwcontrol_scene_actuator_conf_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)sceneId, (uint8_t)dimDuration, (uint8_t)override, (uint8_t)level);
 }
 
 static int controller_multiCmdEncap(JNIEnv *env, jclass object, jint nodeId)
@@ -641,14 +641,15 @@ static int controller_multiCmdEncap(JNIEnv *env, jclass object, jint nodeId)
 
 static int controller_getFirmwareUpdateInfo(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_firmwareupdate_info_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_requestFirmwareUpdate(JNIEnv *env, jclass object, jint nodeId, jint vendorId, jint firmwareId,
-                                            jint firmwareTarget, jint fragmentSize, jstring firmwareFile)
+                                            jint firmwareTarget, jint hw_ver, jstring firmwareFile)
 {
     const char *updateFile = env->GetStringUTFChars(firmwareFile, 0);
-    int result = 0;
+    int result = zwcontrol_firmwareupdate_request(&appl_ctx, (uint32_t)nodeId, (uint8_t)vendorId, (uint8_t)firmwareId,
+                                            (uint8_t)firmwareTarget, (uint16_t)hw_ver, updateFile);
 
     env->ReleaseStringUTFChars(firmwareFile, updateFile);
 

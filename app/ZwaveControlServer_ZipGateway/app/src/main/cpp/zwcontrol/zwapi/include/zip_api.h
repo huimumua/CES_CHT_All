@@ -330,6 +330,12 @@ control and data in the mesh network.
 #define ZW_CID_NOTIFICATION_SET	         111	   /**< zwif_notification_set */
 #define ZW_CID_NOTIFICATION_SUP_GET      112	   /**< zwif_notification_sup_get */
 #define ZW_CID_NOTIFICATION_SUP_EVT_GET  113	   /**< zwif_notification_sup_evt_get */
+#define ZW_CID_SWITCH_ALL_ON     114	   /**< zwif_switch_all_on */
+#define ZW_CID_SWITCH_ALL_OFF    115       /**< zwif_switch_all_off */
+#define ZW_CID_SWITCH_ALL_SET    116       /**< zwif_switch_all_set */
+#define ZW_CID_SWITCH_ALL_GET    117       /**< zwif_switch_all_get */
+#define ZW_CID_SCENE_ACT_CONF_GET        118       /**< zwif_scene_actuator_conf_get */
+#define ZW_CID_SCENE_ACT_CONF_SET        119       /**< zwif_scene_actuator_conf_set */
 
 // skysoft modified end
 /****************************************************************************/
@@ -6894,6 +6900,72 @@ typedef struct
     uint8_t     scene_num;                 // scene number
 }
 zwcentral_scene_notify_t, *zwcentral_scene_notify_p;
+
+
+/*
+ **  Command Class Switch All
+ */
+
+/**<
+zwif_switch_all_on - set switch all on
+@param[in]	net	     internet
+@return		ZW_ERR_XXX
+*/
+int zwif_switch_all_on(zwifd_p ifd);
+
+// For broadcast
+int zwif_switch_all_on_broadcast(zwnet_p net);
+
+/**<
+zwif_switch_all_off - set switch all off
+@param[in]  net     internet
+@return ZW_ERR_XXX
+*/
+int zwif_switch_all_off(zwifd_p ifd);
+
+// For broadcast
+int zwif_switch_all_off_broadcast(zwnet_p net);
+
+/**
+zwif_switch_all_set - set switch all value
+@param[in]  ifd     interface
+@param[in]  v       value (the range of value is device specific)
+@return ZW_ERR_XXX
+*/
+int zwif_switch_all_set(zwifd_p ifd, uint8_t v);
+
+typedef void (*zwrep_switch_all_get_fn)(zwifd_p ifd, uint8_t mode);
+/**<
+report callback for switch all get
+@param[in]	ifd	    interface
+@param[in]	mode current mode,The 'Mode' can return the following values
+			0x00	excluded from the all on/all off functionality
+			0x01	excluded from the all on functionality but not all off
+			0x02	excluded from the all off functionality but not all on
+			0xFF	included in the all on/all off functionality
+*/
+
+int zwif_switch_all_get_rpt_set(zwifd_p ifd, zwrep_switch_all_get_fn rpt_cb);
+/**<
+setup switch all get report callback function
+@param[in]	ifd         interface
+@param[in]	rpt_cb	    report callback function
+return      ZW_ERR_XXX
+*/
+
+int zwif_switch_all_get(zwifd_p ifd);
+/**<
+get the switch all mode in use by the node through report callback
+@param[in]	ifd	        interface
+@return		ZW_ERR_XXX
+*/
+
+/*
+ **  Command Class Scene Actuator Conf ver 1
+ */
+typedef void (*zwrep_scene_actuator_conf_get_fn)(zwifd_p ifd, uint8_t sceneId, uint8_t level, uint8_t dimDuration);
+int zwif_scene_actuator_conf_get(zwifd_p ifd, uint8_t sceneId, zwrep_scene_actuator_conf_get_fn rpt_cb);
+int zwif_scene_actuator_conf_set(zwifd_p ifd, uint8_t sceneId, uint8_t dimDuration, uint8_t override, uint8_t level);
 
 
 // skysoft modified end

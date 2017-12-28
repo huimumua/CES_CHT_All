@@ -437,6 +437,15 @@ BOOL SerialAPI_Init(const char* serial_port, const struct SerialAPI_Callbacks* _
     memcpy(&capabilities, &(buffer[IDX_DATA]), byLen -IDX_DATA);
     LOG_PRINTF("Serial API version     : %d.%.2d\n",capabilities.appl_version,capabilities.appl_revision);
 
+    //djnakata
+    cfg.manufacturer_id = (capabilities.manufactor_id1 << 8 |capabilities.manufactor_id2);
+    cfg.product_type = (capabilities.product_type1 << 8 |capabilities.product_type2);
+    cfg.product_id = (capabilities.product_id1 << 8 |capabilities.product_id2);
+
+    LOG_PRINTF("Manufactor ID: %04X\n", cfg.manufacturer_id);
+    LOG_PRINTF("Product Type: %04X\n", cfg.product_type);
+    LOG_PRINTF("Product ID: %04X\n", cfg.product_id);
+
     type= ZW_Version(buf);
     if(type < sizeof(zw_lib_names) /sizeof(char*)) {
       LOG_PRINTF("Z-Wave library version : %s\n",&buf[7]);

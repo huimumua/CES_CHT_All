@@ -138,6 +138,7 @@ typedef struct
     uint16_t            fw_vid;                     ///< Vendor/Manufacturer id
     uint16_t            fw_id;                      ///< Firmware id
     uint16_t            fw_frag_sz;                 ///< Meta data fragment size for firmware update
+    uint16_t            hw_ver;                     ///< Hardware version the firmware is intended for; zero if inapplicable
     uint8_t             fw_tgt;                     ///< Firmware target to update
     uint8_t             poll_ctl;                   ///< Polling control: 0 = off, 1 = on
     zwpoll_req_t        poll_req;                   ///< Polling request
@@ -300,6 +301,33 @@ int  zwcontrol_remove_endpoints_from_group(hl_appl_ctx_t* hl_appl, uint32_t node
 int  zwcontrol_get_max_supported_groups(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId);
 // Association specific(current active) group get
 int  zwcontrol_get_specific_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t endpoindId);
+
+
+/*
+ **  Command Class Switch All
+ */
+int  zwcontrol_switch_all_on(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_switch_all_off(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_switch_all_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t value);
+int  zwcontrol_switch_all_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_switch_all_on_broadcast(hl_appl_ctx_t* hl_appl);  // broadcast not supported
+int  zwcontrol_switch_all_off_broadcast(hl_appl_ctx_t* hl_appl); // broadcast not supported
+
+
+/*
+ **  Command Class Scene Actuator Conf ver 1
+ */
+int  zwcontrol_scene_actuator_conf_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sceneId);
+int  zwcontrol_scene_actuator_conf_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sceneId, uint8_t dimDuration,
+                                       uint8_t override, uint8_t level);
+
+
+/*
+ **  Command Class Firmware Update Md
+ */
+int  zwcontrol_firmwareupdate_info_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_firmwareupdate_request(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t vendorId, uint8_t firmwareId,
+                                      uint8_t firmwareTarget, uint16_t hw_ver, const char* firmwareFile);
 
 
 #endif

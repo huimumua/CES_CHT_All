@@ -10369,6 +10369,278 @@ int zwif_notification_sup_evt_get(zwifd_p ifd, uint8_t ztype, zwrep_notification
 }
 
 
+/**
+zwif_switch_all_on - set switch all on
+@param[in]  ifd     interface
+@return ZW_ERR_XXX
+*/
+int zwif_switch_all_on(zwifd_p ifd)
+{
+    uint8_t     cmd[2];
+    int         result;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_SWITCH_ALL)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_SWITCH_ALL_ON, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Prepare the command
+    cmd[0] = COMMAND_CLASS_SWITCH_ALL;
+    cmd[1] = SWITCH_ALL_ON;
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 2, zwif_exec_cb);
+}
+
+
+/**
+zwif_switch_all_off - set switch all off
+@param[in]  ifd     interface
+@return ZW_ERR_XXX
+*/
+int zwif_switch_all_off(zwifd_p ifd)
+{
+    uint8_t     cmd[2];
+    int         result;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_SWITCH_ALL)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_SWITCH_ALL_OFF, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Prepare the command
+    cmd[0] = COMMAND_CLASS_SWITCH_ALL;
+    cmd[1] = SWITCH_ALL_OFF;
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 2, zwif_exec_cb);
+}
+
+/**
+zwif_switch_all_on_broadcast - set switch all on
+@param[in]  net     internet
+@return ZW_ERR_XXX
+*/
+int zwif_switch_all_on_broadcast(zwnet_p net)
+{
+    appl_snd_data_t *prm;
+    plt_mtx_lck(net->mtx);
+
+    prm = (appl_snd_data_t *)calloc(1, sizeof(appl_snd_data_t) + 2);
+    if (!prm)
+    {
+        debug_zwapi_msg(&net->plt_ctx, "zwnet_reset memory error");
+        plt_mtx_ulck(net->mtx);
+        return ZW_ERR_MEMORY;
+    }
+
+    uint8_t cmd[2] = {COMMAND_CLASS_SWITCH_ALL, SWITCH_ALL_ON};
+    //prm->tx_opt = TRANSMIT_OPTION_ACK | TRANSMIT_OPTION_AUTO_ROUTE | TRANSMIT_OPTION_EXPLORE;
+    prm->flag = ZIP_FLAG_MULTICAST;
+    prm->dat_buf = &cmd;
+    prm->dat_len = 2;
+    prm->node_id = 0xFF;
+    int result = zw_send_data(&net->appl_ctx, prm, NULL, NULL);
+    free(prm);
+    if(result < 0)
+    {
+        ALOGE("send switch all on notification with error:%d", result);
+        plt_mtx_ulck(net->mtx);
+        return ZW_ERR_OP_FAILED;
+    }
+    plt_mtx_ulck(net->mtx);
+
+    return ZW_ERR_NONE;
+}
+
+/**
+zwif_switch_all_off_broadcast - set switch all off
+@param[in]  net     internet
+@return ZW_ERR_XXX
+*/
+int zwif_switch_all_off_broadcast(zwnet_p net)
+{
+    appl_snd_data_t *prm;
+    plt_mtx_lck(net->mtx);
+
+    prm = (appl_snd_data_t *)calloc(1, sizeof(appl_snd_data_t) + 2);
+    if (!prm)
+    {
+        ALOGE("zwnet_reset memory error");
+        plt_mtx_ulck(net->mtx);
+        return ZW_ERR_MEMORY;
+    }
+    uint8_t cmd[2] = {COMMAND_CLASS_SWITCH_ALL, SWITCH_ALL_OFF};
+    //prm->tx_opt = TRANSMIT_OPTION_ACK | TRANSMIT_OPTION_AUTO_ROUTE | TRANSMIT_OPTION_EXPLORE;
+    prm->flag = ZIP_FLAG_MULTICAST;
+    prm->dat_buf = &cmd;
+    prm->dat_len = 2;
+    prm->node_id = 0xFF;
+    int result = zw_send_data(&net->appl_ctx, prm, NULL, NULL);
+    free(prm);
+    if(result < 0)
+    {
+        ALOGE("send switch all off notification with error:%d", result);
+        plt_mtx_ulck(net->mtx);
+        return ZW_ERR_OP_FAILED;
+    }
+    plt_mtx_ulck(net->mtx);
+
+    return ZW_ERR_NONE;
+}
+
+/**
+zwif_switch_all_set - set switch all value
+@param[in]  ifd     interface
+@param[in]  v       value (the range of value is device specific)
+@return ZW_ERR_XXX
+*/
+int zwif_switch_all_set(zwifd_p ifd, uint8_t v)
+{
+    uint8_t     cmd[3];
+    int         result;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_SWITCH_ALL)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_SWITCH_ALL_SET, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Prepare the command
+    cmd[0] = COMMAND_CLASS_SWITCH_ALL;
+    cmd[1] = SWITCH_ALL_SET;
+    cmd[2] = v;
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 3, zwif_exec_cb);
+}
+
+/**
+zwif_switch_all_get_rpt_set - setup switch all get report callback function
+@param[in]  ifd         interface
+@param[in]  rpt_cb      report callback function
+return      ZW_ERR_XXX
+*/
+int zwif_switch_all_get_rpt_set(zwifd_p ifd, zwrep_switch_all_get_fn rpt_cb)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_SWITCH_ALL)
+    {
+        return zwif_set_report(ifd, rpt_cb, SWITCH_ALL_REPORT);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+
+}
+
+/**
+zwif_switch_all_get - get the switch all mode in use by the node through report callback
+@param[in]  ifd         interface
+@return     ZW_ERR_XXX
+*/
+int zwif_switch_all_get(zwifd_p ifd)
+{
+    //Check whether the command class is correct
+    if (ifd->cls == COMMAND_CLASS_SWITCH_ALL)
+    {
+        int result;
+        result = zwif_cmd_id_set(ifd, ZW_CID_SWITCH_ALL_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        return zwif_get_report(ifd, NULL, 0,
+                               SWITCH_ALL_GET, zwif_exec_cb);
+    }
+    return ZW_ERR_CLASS_NOT_FOUND;
+}
+
+
+/**
+zwif_scene_actuator_conf_get - get the scene actuator conf
+@param[in]  ifd     interface
+@param[in]  sceneId scene id
+@param[in]  cb      report callback function
+@return ZW_ERR_XXX
+*/
+int zwif_scene_actuator_conf_get(zwifd_p ifd, uint8_t sceneId, zwrep_scene_actuator_conf_get_fn cb)
+{
+    int     result;
+    zwif_p  intf;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_SCENE_ACTUATOR_CONF)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    //Setup report callback
+    result = zwif_set_report(ifd, cb, SCENE_ACTUATOR_CONF_REPORT);
+
+    if (result == 0)
+    {
+        result = zwif_cmd_id_set(ifd, ZW_CID_SCENE_ACT_CONF_GET, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        //Request for report
+        result = zwif_get_report(ifd, &sceneId, 1,
+                                 SCENE_ACTUATOR_CONF_GET, zwif_exec_cb);
+    }
+    return result;
+}
+
+int zwif_scene_actuator_conf_set(zwifd_p ifd, uint8_t sceneId, uint8_t dimDuration, uint8_t override, uint8_t level)
+{
+    int         result;
+    uint8_t     cmd[6];
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_SCENE_ACTUATOR_CONF)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    result = zwif_cmd_id_set(ifd, ZW_CID_SCENE_ACT_CONF_SET, 1);
+    if ( result < 0)
+    {
+        return result;
+    }
+
+    //Prepare the command
+    cmd[0] = COMMAND_CLASS_SCENE_ACTUATOR_CONF;
+    cmd[1] = SCENE_ACTUATOR_CONF_SET;
+    cmd[2] = sceneId;
+    cmd[3] = dimDuration;
+    cmd[4] = override & 0x80;
+    cmd[5] = level;
+
+    //Send the command
+    return zwif_exec(ifd, cmd, 6, zwif_exec_cb);
+}
+
 // skysoft modified end
 /****************************************************************************/
 

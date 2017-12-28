@@ -7832,3 +7832,861 @@ int  zwcontrol_get_specific_group(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8
 
     return result;
 }
+
+
+/*
+ **  Command Class Switch All
+ */
+
+/**
+hl_basic_set - basic command set value
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_switch_all_on(hl_appl_ctx_t   *hl_appl)
+{
+    int         result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_switch_all_on(ifd);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGW("hl_swich_all_on with error:%d", result);
+    }
+
+    return result;
+
+}
+
+int  zwcontrol_switch_all_on(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL, 0))
+    {
+        return -1;
+    }
+    int result = hl_switch_all_on(hl_appl);
+    if(result != 0)
+    {
+        ALOGW("zwcontrol_switch_all_on with error:%d",result);
+    }
+    return result;
+}
+
+/**
+hl_swich_all_off - set switch all off
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_switch_all_off(hl_appl_ctx_t   *hl_appl)
+{
+    int         result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_switch_all_off(ifd);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0)
+    {
+        ALOGW("hl_swich_all_off with error: %d", result);
+    }
+
+    return result;
+
+}
+
+int  zwcontrol_switch_all_off(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL, 0))
+    {
+        return -1;
+    }
+    int result = hl_switch_all_off(hl_appl);
+    if(result != 0)
+    {
+        ALOGW("zwcontrol_switch_all_off with error: %d",result);
+    }
+    return result;
+}
+
+int  zwcontrol_switch_all_on_broadcast(hl_appl_ctx_t* hl_appl)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    int result = zwif_switch_all_on_broadcast(hl_appl->zwnet);
+    if(result != 0)
+    {
+        ALOGW("zwcontrol_switch_all_on_broadcast with error:%d",result);
+    }
+    return result;
+}
+
+/**
+zwcontrol_swith_all_off_broadcast - set switch all off
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int  zwcontrol_switch_all_off_broadcast(hl_appl_ctx_t* hl_appl)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    int result = zwif_switch_all_off_broadcast(hl_appl->zwnet);
+
+    if(result != 0)
+    {
+        ALOGW("zwcontrol_switch_all_off_broadcast with error:%d",result);
+    }
+    return result;
+}
+
+/**
+hl_switch_all_set - switch all command set value
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_switch_all_set(hl_appl_ctx_t   *hl_appl, uint8_t value)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_switch_all_set(ifd, (uint8_t)value);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGW("hl_switch_all_set with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_switch_all_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t value)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL, 0))
+    {
+        return -1;
+    }
+    int result = hl_switch_all_set(hl_appl, (uint8_t)value);
+    if(result != 0)
+    {
+        ALOGW("zwcontrol_switch_all_set with error:%d",result);
+    }
+    return result;
+}
+
+/**
+hl_switch_all_get_report_cb - switch all command report callback
+@param[in]  ifd     The interface that received the report
+@param[in]  mode   Switch all indicator value
+@return
+*/
+static void hl_switch_all_get_report_cb(zwifd_p ifd, uint8_t mode)
+{
+    ALOGI("Switch all mode is %d", mode);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Switch All Get Information");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+
+    cJSON_AddNumberToObject(jsonRoot, "mode", mode);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_swith_all_get_rep_setup - Setup switch all get command report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_switch_all_get_rep_setup(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_switch_all_get_rpt_set(ifd, hl_switch_all_get_report_cb);
+
+    if(result == 0)
+    {
+        result = zwif_switch_all_get(ifd);
+    }
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0)
+    {
+        ALOGE("hl_switch_all_get_rep_setup with error: %d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_switch_all_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SWITCH_ALL, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_switch_all_get_rep_setup(hl_appl);
+
+    return result;
+}
+
+
+/*
+ **  Command Class Scene Actuator Conf ver 1
+ */
+
+static void hl_scene_actuator_conf_get_report_cb(zwifd_p ifd, uint8_t sceneId, uint8_t level, uint8_t dimDuration)
+{
+    ALOGI("scene actuator conf report, sceneId: %d, level: %d, dimDuration: %d", sceneId, level, dimDuration);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Scene Actuator Conf Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "Scene id", sceneId);
+    cJSON_AddNumberToObject(jsonRoot, "level", level); 
+    cJSON_AddNumberToObject(jsonRoot, "Dimming Duration", dimDuration);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_scene_actuator_conf_get - Setup scene actuator conf get & report
+@param[in]  hl_appl     The high-level api context
+@param[in]  sceneId     The scene id
+@return  0 on success, negative error number on failure
+*/
+int hl_scene_actuator_conf_get(hl_appl_ctx_t   *hl_appl, uint8_t sceneId)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_scene_actuator_conf_get(ifd, sceneId, hl_scene_actuator_conf_get_report_cb);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("zwif_scene_actuator_conf_get with error:%d",result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_scene_actuator_conf_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sceneId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SCENE_ACTUATOR_CONF, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_scene_actuator_conf_get(hl_appl, (uint8_t)sceneId);
+    if (result == 1)
+    {
+        ALOGE("zwcontrol_scene_actuator_conf_get command queued");
+    }
+
+    return result;
+}
+
+/**
+hl_scene_actuator_conf_set - scene actuator conf set
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_scene_actuator_conf_set(hl_appl_ctx_t   *hl_appl, uint8_t sceneId, uint8_t dimDuration, uint8_t override, uint8_t level)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_scene_actuator_conf_set(ifd, (uint8_t)sceneId, (uint8_t)dimDuration, (uint8_t)override, (uint8_t)level);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("zwif_scene_actuator_conf_set with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_scene_actuator_conf_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t sceneId, uint8_t dimDuration,
+                                       uint8_t override, uint8_t level)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_SCENE_ACTUATOR_CONF, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_scene_actuator_conf_set(hl_appl, sceneId, dimDuration, override, level);
+    if (result == 1)
+    {
+        ALOGE("zwcontrol_scene_actuator_conf_set command queued");
+    }
+
+    return result;
+}
+
+
+/*
+ **  Command Class Firmware Update Md
+ */
+
+/**
+hl_fw_info_report_cb - Firmwares information report callback
+@param[in]  ifd     The interface that received the report
+@param[in]  fw_info Firmwares information
+@return
+*/
+static void hl_fw_info_report_cb(zwifd_p ifd, zwfw_info_t *fw_info)
+{
+    ALOGI("Vendor id: %04Xh, z-wave firmware id: %04Xh, checksum: %04Xh",
+                 fw_info->vid, fw_info->zw_fw_id, fw_info->chksum);
+
+    ALOGI("Max fragment size: %u(%s), upgradable: %s",
+                 fw_info->max_frag_sz, (fw_info->fixed_frag_sz)? "fixed" : "variable",
+                 (fw_info->upgrade_flg == ZW_FW_UPGD_YES)? "Y" : "N");
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Firmware Info Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+
+    char str[50] = {0};
+    sprintf(str, "%04X", fw_info->vid);
+    cJSON_AddStringToObject(jsonRoot, "Vendor id", str);
+
+    sprintf(str, "%04X", fw_info->zw_fw_id);
+    cJSON_AddStringToObject(jsonRoot, "Firmware id", str);
+
+    sprintf(str, "%04X", fw_info->chksum);
+    cJSON_AddStringToObject(jsonRoot, "Checksum", str);
+    cJSON_AddNumberToObject(jsonRoot, "Max fragment size", fw_info->max_frag_sz);
+    cJSON_AddStringToObject(jsonRoot, "Size fixed?", (fw_info->fixed_frag_sz)? "fixed" : "variable");
+    cJSON_AddStringToObject(jsonRoot, "Upgradable", (fw_info->upgrade_flg == ZW_FW_UPGD_YES)? "Yes" : "No");
+
+    if (fw_info->other_fw_cnt)
+    {
+        int i;
+        for (i=0; i<fw_info->other_fw_cnt; i++)
+        {
+            ALOGI("Firmware target %d id: %04Xh",
+                         i+1, fw_info->other_fw_id[i]);
+            cJSON_AddNumberToObject(jsonRoot, "Other Firmware targer", (i+1));
+            sprintf(str, "%04X", fw_info->other_fw_id[i]);
+            cJSON_AddStringToObject(jsonRoot, "Other firmware id", str);
+
+        }
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+int hl_fw_info_get(hl_appl_ctx_t *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_fw_info_get(ifd, hl_fw_info_report_cb);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_fw_info_get with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_firmwareupdate_info_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_FIRMWARE_UPDATE_MD, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_fw_info_get(hl_appl);
+
+    if (result < 0)
+    {
+        ALOGE("zwcontrol_firmwareupdate_info_get with error:%d", result);
+    }
+
+    return result;
+}
+
+#define POLY        0x1021      /**< crc-ccitt mask */
+#define CRC_INIT    0x1D0F      /**< crc-ccitt initialization value */
+/**
+hl_chksum_get - calculate checksum
+@param[in]  file        File to be checked
+@return         checksum
+*/
+static uint16_t hl_chksum_get(FILE *file)
+{
+    int         ch;
+    uint16_t    crc;
+    uint8_t     tmp_data;
+    uint8_t     bitmask;
+    uint8_t     new_bit;
+
+    crc = CRC_INIT;
+
+    while ((ch = fgetc(file)) != EOF )
+    {
+        tmp_data = ch;
+        for (bitmask = 0x80; bitmask != 0; bitmask >>= 1)
+        {
+            //Align test bit with next bit of the message byte, starting with msb.
+            new_bit = ((tmp_data & bitmask) != 0) ^ ((crc & 0x8000) != 0);
+            crc <<= 1;
+            if (new_bit)
+            {
+                crc ^= POLY;
+            }
+        }
+    }
+    //Rewind the file pointer
+    fseek(file, 0L, SEEK_SET);
+
+    return crc;
+}
+
+/**
+hl_fw_updt_sts_cb - report callback for firmware update status
+@param[in]  ifd         interface
+@param[in]  status      firmware update status
+*/
+static void hl_fw_updt_sts_cb(zwifd_p ifd, uint8_t status)
+{
+    const char *fw_updt_sts_str[] =
+    {   "Invalid combination of vendor id and firmware id",
+        "Need out-of-band authentication event to enable firmware update",
+        "The requested Fragment Size exceeds the Max Fragment Size",
+        "This firmware target is not upgradable",
+        "OK. Valid combination of vendor id and firmware id",
+        "Unknown status"
+    };
+    int sts_idx;
+
+    if (status <= 3)
+    {
+        sts_idx = status;
+    }
+    else if (status == ZW_FW_UPDT_ERR_VALID)
+    {
+        sts_idx = 4;
+    }
+    else
+    {
+        sts_idx = 5;
+    }
+
+    ALOGI("Firmware update request status:%s(%u)", fw_updt_sts_str[sts_idx], status);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Firmware Update Status Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddStringToObject(jsonRoot, "Update status", fw_updt_sts_str[sts_idx]);  
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_fw_updt_cmplt_cb - report callback for firmware update completion status
+@param[in]  ifd             interface
+@param[in]  status          firmware update completion status, ZW_FW_UPDT_CMPLT_XXX
+@param[in]  wait_tm         time (in seconds) that is needed before the receiving node becomes
+                            available again for communication after the transfer of an image. This parameter is
+                            valid only if wait_tm_valid=1
+@param[in]  wait_tm_valid   flag to indicate the wait_tm parameter is valid.
+*/
+static void hl_fw_updt_cmplt_cb(zwifd_p ifd, uint8_t status, uint16_t wait_tm, int wait_tm_valid)
+{
+    const char *fw_updt_cmplt_str[] =
+    {   "Cheksum error in requested firmware",
+        "Download of the requested firmware failed",
+        "Firmware updated successfully. Device is ready and operational",
+        "Firmware updated successfully. Device will power cycle itself",
+        "Unknown status"
+    };
+    int sts_idx;
+
+    if (status <= 1)
+    {
+        sts_idx = status;
+    }
+    else if (status == ZW_FW_UPDT_CMPLT_OK_NO_RESTART)
+    {
+        sts_idx = 2;
+    }
+    else if (status == ZW_FW_UPDT_CMPLT_OK_RESTART)
+    {
+        sts_idx = 3;
+    }
+    else
+    {
+        sts_idx = 4;
+    }
+
+    ALOGI("Firmware update completion status:%s(%u)", fw_updt_cmplt_str[sts_idx], (unsigned)status);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Firmware Update Completion Status Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddStringToObject(jsonRoot, "Completion Status", fw_updt_cmplt_str[sts_idx]);  
+
+    if (wait_tm_valid)
+    {
+        ALOGI("Expected device reboot time:%u s", (unsigned)wait_tm);
+        cJSON_AddNumberToObject(jsonRoot, "Excepted re-boot time", (unsigned)wait_tm);
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_fw_updt_restart_cb - report callback for firmware update target restart status
+@param[in]  node    node
+@param[in]  status  firmware update target restart status, ZW_FW_UPDT_RESTART_XXX
+*/
+static void hl_fw_updt_restart_cb(zwnoded_p node, uint8_t status)
+{
+    const char *fw_updt_restart_str[] =
+    {   "Node restarted and is ready",
+        "Failed"
+    };
+
+    ALOGI("Firmware update target restart status of node %u:%s",
+                    node->nodeid,
+                    fw_updt_restart_str[status]);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Firmware Update restart Status Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", node->nodeid);
+    cJSON_AddStringToObject(jsonRoot, "Restart Status", fw_updt_restart_str[status]); 
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_fw_updt_req - Request firmware update
+@param[in]  hl_appl     high-level api context
+@return  0 on success, negative error number on failure
+*/
+int hl_fw_updt_req(hl_appl_ctx_t *hl_appl)
+{
+    int                 result;
+    zwifd_p             ifd;
+    FILE                *fw_file;
+    zwfw_updt_req_t     fw_updt_req;
+
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->temp_desc);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    //Open firmware file
+#ifdef USE_SAFE_VERSION
+    if (fopen_s(&fw_file, hl_appl->save_file, "rb") != 0)
+    {
+        ALOGE("Can't open file:%s", hl_appl->save_file);
+        return ZW_ERR_FILE_OPEN;
+    }
+#else
+    fw_file = fopen(hl_appl->save_file, "rb");
+    if (!fw_file)
+    {
+        ALOGE("Can't open file:%s", hl_appl->save_file);
+        return ZW_ERR_FILE_OPEN;
+    }
+#endif
+
+    //Calculate checksum
+    //fw_updt_req.chksum = hl_chksum_get(fw_file);
+    fclose(fw_file);
+
+
+    fw_updt_req.vid = hl_appl->fw_vid;
+    fw_updt_req.fw_id = hl_appl->fw_id;
+    fw_updt_req.fw_tgt = hl_appl->fw_tgt;
+    //fw_updt_req.frag_sz = hl_appl->fw_frag_sz;
+    fw_updt_req.hw_ver = hl_appl->hw_ver;
+    fw_updt_req.fw_file = hl_appl->save_file;
+    fw_updt_req.sts_cb = hl_fw_updt_sts_cb;
+    fw_updt_req.cmplt_cb = hl_fw_updt_cmplt_cb;
+    fw_updt_req.restart_cb = hl_fw_updt_restart_cb;
+
+    result = zwif_fw_updt_req(ifd, &fw_updt_req);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0)
+    {
+        ALOGE("hl_fw_updt_req with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_firmwareupdate_request(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t vendorId, uint8_t firmwareId,
+                              uint8_t firmwareTarget, uint16_t hw_ver, const char* firmwareFile)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_FIRMWARE_UPDATE_MD, 0))
+    {
+        return -1;
+    }
+
+    int result = -1;
+
+    // Vendor id
+    hl_appl->fw_vid = vendorId;
+    // Firmware id (hex)
+    hl_appl->fw_id = firmwareId;
+    // Firmware target
+    hl_appl->fw_tgt = firmwareTarget;
+    // Firmware fragment size
+    hl_appl->hw_ver = hw_ver;
+
+    strcpy(hl_appl->save_file,firmwareFile);
+
+    if (hl_appl->save_file)
+    {
+        ALOGI("firmware update file found, start update req");
+        result = hl_fw_updt_req(hl_appl);
+        if(result != 0)
+        {
+            ALOGE("zwcontrol_firmwareupdate_req with error: %d",result);
+        }
+    }
+
+    return result;
+}

@@ -338,7 +338,7 @@ public class ZwaveControlHelper {
     **/
     public native static int ZwController_getFirmwareUpdateInfo(int deviceId);
     public native static int ZwController_requestFirmwareUpdate(int nodeId, int vendorId, int firmwareId,int firmwareTarget,
-                                                                int fragmentSize, String firmwareFile);
+                                                                int hwVer, String firmwareFile);
 
     /**
     ** zwave controller jni interface
