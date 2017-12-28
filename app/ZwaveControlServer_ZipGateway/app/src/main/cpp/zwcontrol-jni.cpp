@@ -211,12 +211,15 @@ static int controller_getDeviceInfo(JNIEnv *env, jclass object)
 
 static int controller_removeFailedDevice(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_rm_failed_node(&appl_ctx, nodeId);
 }
 
-static int controller_replaceFailedDevice(JNIEnv *env, jclass object, jint nodeId)
+static int controller_replaceFailedDevice(JNIEnv *env, jclass object, jint nodeId, jbyteArray dsk, jint dsklen)
 {
-    return 0;
+    char array[200];
+
+    env->GetByteArrayRegion(dsk, 0, dsklen, (jbyte*)array);
+    return zwcontrol_rp_failed_node(&appl_ctx, nodeId, array, dsklen);
 }
 
 static int controller_setDefault(JNIEnv *env, jclass object)
@@ -686,7 +689,7 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_GetDeviceList", "()I", (void *)controller_getDeviceList},
         {"ZwController_GetDeviceInfo", "()I", (void *)controller_getDeviceInfo},
         {"ZwController_RemoveFailedDevice",    "(I)I", (void *)controller_removeFailedDevice},
-        {"ZwController_ReplaceFailedDevice",    "(I)I", (void *)controller_replaceFailedDevice},
+        {"ZwController_ReplaceFailedDevice",    "(I[BI)I", (void *)controller_replaceFailedDevice},
         {"ZwController_SetDefault", "()I", (void*)controller_setDefault},
         {"ZwController_StopAddDevice", "()I", (void*)controller_stopAddDevice},
         {"ZwController_StopRemoveDevice", "()I", (void*)controller_stopRemoveDevice},

@@ -177,7 +177,8 @@ public static ZwaveControlService getInstance() {
 
         @Override
         public int replaceFailedDevice(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_ReplaceFailedDevice(deviceId);
+            byte[] dsk = new byte[200];
+            int result = ZwaveControlHelper.ZwController_ReplaceFailedDevice(deviceId, dsk, 0);
             return result;
         }
 
@@ -264,18 +265,18 @@ public static ZwaveControlService getInstance() {
             return result;
         }
 
+        public int time = 0x10; 
+
         @Override
         public int setSwitchAllOn(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            //int result = ZwaveControlHelper.ZwController_SetSwitchAllOn(deviceId);
-            int result = ZwaveControlHelper.ZwController_SetBasic(deviceId, 0xFF);
+            int result = ZwaveControlHelper.ZwController_SetSwitchAllOn(deviceId);
             setSwitchAllOnCallBack(String.valueOf(result));
             return result;
         }
 
         @Override
         public int setSwitchAllOff(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            //int result = ZwaveControlHelper.ZwController_SetSwitchAllOff(deviceId);
-            int result = ZwaveControlHelper.ZwController_SetBasic(deviceId, 0x00);
+            int result = ZwaveControlHelper.ZwController_SetSwitchAllOff(deviceId);
             setSwitchAllOffCallBack(String.valueOf(result));
             return result;
         }

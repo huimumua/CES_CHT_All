@@ -3667,6 +3667,100 @@ int  zwcontrol_get_node_info(hl_appl_ctx_t *hl_appl)
     return res;
 }
 
+int  zwcontrol_rm_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId)
+{
+    if (!hl_appl->init_status){
+        ALOGE("Controller not open, please open it and try again");
+        return -1;
+    }
+
+    ALOGD("Remove failed node, id %d",nodeId);
+    hl_appl->failed_node_id = nodeId;
+    int32_t   result;
+    zwnoded_p noded;
+
+    //Get the node descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    noded = hl_node_desc_get(hl_appl->desc_cont_hd, hl_appl->failed_node_id);
+    if (!noded)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_NODE_NOT_FOUND;
+    }
+
+    result = zwnet_fail(hl_appl->zwnet, hl_appl->failed_node_id, 0, NULL, 0);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0)
+    {
+        ALOGE("zwcontrol_rm_failed_node with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_rp_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId, const char* dsk, int dsklen)
+{
+    if (!hl_appl->init_status){
+        ALOGE("Controller not open, please open it and try again");
+        return -1;
+    }
+
+    ALOGD("Replace failed node, id %d",nodeId);
+    hl_appl->failed_node_id = nodeId;
+    int32_t     result;
+    zwnoded_p noded;
+    char    dsk_str[200];
+    zwnetd_p netdesc;
+
+    //Get the node descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    noded = hl_node_desc_get(hl_appl->desc_cont_hd, hl_appl->failed_node_id);
+    if (!noded)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_NODE_NOT_FOUND;
+    }
+
+    netdesc = zwnet_get_desc(hl_appl->zwnet);
+
+    if (netdesc->ctl_cap & ZWNET_CTLR_CAP_S2)
+    {
+        ALOGD("Controller supports security 2.\n");
+        hl_appl->sec2_add_node = 1;
+    }
+    else
+    {
+        hl_appl->sec2_add_node = 0;
+    }
+
+    if (hl_appl->sec2_add_node)
+    {
+        hl_appl->sec2_add_prm.dsk = NULL;
+
+        if(dsk != NULL && dsklen != 0)
+        {
+            memcpy(dsk_str, dsk, 200);
+            hl_appl->sec2_add_prm.dsk = dsk_str;
+        }
+
+        hl_appl->sec2_add_prm.usr_param = hl_appl;
+        hl_appl->sec2_add_prm.cb = hl_add_node_s2_cb;
+    }
+
+    result = zwnet_fail(hl_appl->zwnet, hl_appl->failed_node_id, 1, (hl_appl->sec2_add_node)? &hl_appl->sec2_add_prm : NULL, 0);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result != 0)
+    {
+        ALOGE("zwcontrol_rp_failed_node with error:%d", result);
+    }
+
+    return result;
+}
+
 /**
 hl_deflt_set - Restore factory default
 @param[in]  hl_appl     The high-level api context

@@ -166,15 +166,17 @@ typedef struct
 
 typedef int (*ResCallBack)(const char*);
 
-int zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* infoPath, uint8_t* result);
-int zwcontrol_setcallback(ResCallBack callBack);
-int zwcontrol_add_node(hl_appl_ctx_t *hl_appl, const char* dsk, int dsklen);
-int zwcontrol_rm_node(hl_appl_ctx_t *hl_appl);
-int zwcontrol_exit(hl_appl_ctx_t *hl_appl);
-int zwcontrol_get_node_list(hl_appl_ctx_t *hl_appl);
-int zwcontrol_get_node_info(hl_appl_ctx_t* hl_appl);
-int zwcontrol_default_set(hl_appl_ctx_t *hl_appl);
-int zwcontrol_save_nodeinfo(hl_appl_ctx_t *hl_appl, const char* filepath);
+int  zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* infoPath, uint8_t* result);
+int  zwcontrol_setcallback(ResCallBack callBack);
+int  zwcontrol_add_node(hl_appl_ctx_t *hl_appl, const char* dsk, int dsklen);
+int  zwcontrol_rm_node(hl_appl_ctx_t *hl_appl);
+int  zwcontrol_exit(hl_appl_ctx_t *hl_appl);
+int  zwcontrol_get_node_list(hl_appl_ctx_t *hl_appl);
+int  zwcontrol_get_node_info(hl_appl_ctx_t* hl_appl);
+int  zwcontrol_rm_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
+int  zwcontrol_rp_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId, const char* dsk, int dsklen);
+int  zwcontrol_default_set(hl_appl_ctx_t *hl_appl);
+int  zwcontrol_save_nodeinfo(hl_appl_ctx_t *hl_appl, const char* filepath);
 //Add by jay.k >>start
 int  zwcontrol_stop_op(hl_appl_ctx_t *hl_appl);
 int  zwcontrol_update_node(hl_appl_ctx_t *hl_appl, uint8_t nodeId);
