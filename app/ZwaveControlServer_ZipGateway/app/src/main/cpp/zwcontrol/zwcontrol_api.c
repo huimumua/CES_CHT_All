@@ -1896,7 +1896,7 @@ static void hl_nw_node_cb(void *user, zwnoded_p noded, int mode)
                 if(node)
                 {
                     ALOGI("hl_nw_node_cb node:%u status down",(unsigned)noded->nodeid);
-                    noded->alive = ZWNET_NODE_STATUS_DOWN;
+                    node->alive = ZWNET_NODE_STATUS_DOWN;
                 }
             }
             break;
@@ -1906,7 +1906,7 @@ static void hl_nw_node_cb(void *user, zwnoded_p noded, int mode)
                 if(node)
                 {
                     ALOGI("hl_nw_node_cb node:%u go to sleep.",(unsigned)noded->nodeid);
-                    noded->alive = ZWNET_NODE_STATUS_SLEEP;
+                    node->alive = ZWNET_NODE_STATUS_SLEEP;
                 }
             }
             break;
@@ -2127,7 +2127,7 @@ int zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* info
         hl_appl->load_ni_file = 1;
         hl_appl->save_ni_file = 1;
         ALOGD("nodeinfo file exists, will load it.");
-        strcpy(hl_appl->save_file,infopath);
+        //strcpy(hl_appl->save_file,infopath);
         strcpy(hl_appl->node_info_file,infopath);
     }else{
         ALOGD("nodeinfo file not exists, first init");
@@ -2240,7 +2240,7 @@ int zwcontrol_add_node(hl_appl_ctx_t *hl_appl, const char* dsk, int dsklen)
     {
         if (result == 0)
         {
-            ALOGD("Add node in progress, please wait for status ...\n");
+            ALOGD("Add ndoe status done\n");
         }
         else
         {
@@ -2650,7 +2650,7 @@ static char* hl_zwaveplus_icon_to_device_type(uint16_t  usr_icon)
 // Transfer node status to string
 static char* hl_node_status_str(uint8_t alive)
 {
-    ALOGI("hl_node_status_str, alive:%d",alive);
+    //ALOGI("hl_node_status_str, %d",alive);
     switch(alive)
     {
         case ZWNET_NODE_STATUS_ALIVE:
@@ -3298,12 +3298,12 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
         ALOGI("__________________________________________________________________________");
         ALOGI("Node id:%u[%u], Home id:%08X", (unsigned)node->nodeid,
                      last_node_cont->id, (unsigned)net_desc->id);
-        ALOGI("Node status:%s", hl_node_status_str(node->alive));
+        //ALOGI("Node status:%s", hl_node_status_str(node->alive));
 
         sprintf(str, "%08X", net_desc->id);
         cJSON_AddStringToObject(NodeInfo, "Home id", str);
         cJSON_AddNumberToObject(NodeInfo, "Node id", node->nodeid);
-        cJSON_AddStringToObject(NodeInfo, "Node status", hl_node_status_str(node->alive));
+        //cJSON_AddStringToObject(NodeInfo, "Node status", hl_node_status_str(node->alive));
 
         if (node->sleep_cap)
         {
@@ -3786,7 +3786,7 @@ int  zwcontrol_default_set(hl_appl_ctx_t *hl_appl)
     }
 
     ALOGD("controller set default");
-    if(remove(hl_appl->save_file) == 0)
+    if(remove(hl_appl->node_info_file) == 0)
     {
         ALOGD("remove NodeInfo file successfully");
     } else{
@@ -3809,7 +3809,7 @@ int    hl_save(hl_appl_ctx_t   *hl_appl)
 {
     int result;
 
-    result = zwnet_save(hl_appl->zwnet, hl_appl->save_file);
+    result = zwnet_save(hl_appl->zwnet, hl_appl->node_info_file);
     if (result != 0)
     {
         ALOGE("save NodeInfo with error:%d", result);
@@ -3824,8 +3824,8 @@ int  zwcontrol_save_nodeinfo(hl_appl_ctx_t *hl_appl, const char* filepath)
     ALOGD("zwcontrol_save_nodeinfo started");
     if (hl_appl->init_status)
     {
-        strcpy(hl_appl->save_file,filepath);
-        //hl_appl->save_file = "zwController_nodeInfo.txt";
+        strcpy(hl_appl->node_info_file,filepath);
+        //hl_appl->node_info_file = "zwController_nodeInfo.txt";
         return hl_save(hl_appl);
     }
     return -1;

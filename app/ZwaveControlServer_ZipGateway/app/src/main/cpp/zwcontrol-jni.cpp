@@ -229,12 +229,12 @@ static int controller_setDefault(JNIEnv *env, jclass object)
 
 static int controller_stopAddDevice(JNIEnv *env, jclass object)
 {
-    return 0;
+    return 0; //zwcontrol_stop_op(&appl_ctx);
 }
 
 static int controller_stopRemoveDevice(JNIEnv *env, jclass object)
 {
-    return 0;
+    return zwcontrol_stop_op(&appl_ctx);
 }
 
 static int controller_getDeviceBattery(JNIEnv *env, jclass object, jint nodeId)

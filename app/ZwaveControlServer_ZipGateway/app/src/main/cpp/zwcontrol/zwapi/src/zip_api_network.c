@@ -8856,7 +8856,7 @@ int zwnet_abort(zwnet_p net)
                     result = zw_add_node_to_network(&net->appl_ctx, NULL, ADD_NODE_STOP, TRANSMIT_OPTION_EXPLORE);
                     if (result != 0)
                     {
-                        debug_zwapi_msg(&net->plt_ctx, "zw_add_node_stop with error:%d", result);
+                        ALOGE("zw_add_node_stop with error:%d", result);
                     }
                 }
                 plt_mtx_lck(net->mtx);
@@ -8873,7 +8873,7 @@ int zwnet_abort(zwnet_p net)
                 result = zw_remove_node_from_network(&net->appl_ctx, NULL, REMOVE_NODE_STOP);
                 if (result != 0)
                 {
-                    debug_zwapi_msg(&net->plt_ctx, "zw_remove_node_from_network with error:%d", result);
+                    ALOGE("zw_remove_node_from_network with error:%d", result);
                 }
             }
             break;
@@ -8883,7 +8883,7 @@ int zwnet_abort(zwnet_p net)
                 result = zw_set_learn_mode(&net->appl_ctx, NULL, 0, ZW_SET_LEARN_MODE_DISABLE);
                 if (result != 0)
                 {
-                    debug_zwapi_msg(&net->plt_ctx, "zw_set_learn_mode 'stop' with error:%d", result);
+                    ALOGE("zw_set_learn_mode 'stop' with error:%d", result);
                 }
                 plt_mtx_lck(net->mtx);
                 //Stop state-machines
@@ -8934,7 +8934,7 @@ int zwnet_abort(zwnet_p net)
                     result = zw_replace_failed_node(&net->appl_ctx, NULL, net->failed_id, 0, STOP_FAILED_NODE_REPLACE);
                     if (result != 0)
                     {
-                        debug_zwapi_msg(&net->plt_ctx, "zw_replace_failed_node stop with error:%d", result);
+                        ALOGE("zw_replace_failed_node stop with error:%d", result);
                     }
                 }
                 plt_mtx_lck(net->mtx);

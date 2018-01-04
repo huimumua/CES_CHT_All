@@ -46,6 +46,7 @@ public class ZwaveControlHelper {
     public native static int ZwController_RemoveFailedDevice(int deviceId);
     public native static int ZwController_ReplaceFailedDevice(int deviceId, byte[] dsk, int dsklen);
     public native static int ZwController_SetDefault();
+    // NOTE: when controller going to inclusion process, it's can not be stoped
     public native static int ZwController_StopAddDevice();
     public native static int ZwController_StopRemoveDevice();
     public native static int ZwController_UpdateNode(int deviceId);
