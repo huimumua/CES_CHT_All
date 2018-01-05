@@ -6,6 +6,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 add_subdirectory("src/main/cpp/openssl-1.0.2j")
+add_subdirectory("src/main/cpp/libusb")
 add_subdirectory("src/main/cpp/zipgateway")
 add_subdirectory("src/main/cpp/zwapi")
 

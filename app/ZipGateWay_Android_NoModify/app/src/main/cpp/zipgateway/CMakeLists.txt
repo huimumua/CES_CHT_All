@@ -5,12 +5,14 @@ set(CMAKE_LD_FLAGS "-fPIE")
 
 set(OPENSSL_LIBRARIES "ssl")
 set(LibCRYPTO_LIBRARIES "crypto")
+set(LibUSB_LIBRARIES "usb")
 
 set(CMAKE_SYSTEM_NAME "linux")
 
 add_definitions ( -DZIPGW )
 
 set(OPENSSL_INCLUDE_DIRS "../openssl-1.0.2j/include")
+set(LIBUSB_INCLUDE_DIRS "../libusb/libusb")
 
 set(ZWAVE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Z-Wave/include )
 # Include lib S2
@@ -29,6 +31,7 @@ set(CONTIKI contiki )
 include_directories( 
 ${NDK_INCLUDE_DIR}
 ${OPENSSL_INCLUDE_DIRS}
+${LIBUSB_INCLUDE_DIRS}
 ${LIBS2_INCLUDE_DIRS}
 ${TS2_INCLUDE_DIRS}
 Z-Wave/include 
@@ -100,6 +103,7 @@ src/transport/s2_keystore.c
 src/zwdb.c
 src/zwpgrmr/crc32.c
 src/zwpgrmr/linux_serial_interface.c
+src/zwpgrmr/linux_usb_interface.c
 src/zwpgrmr/zpg.c
 src/zwpgrmr/zpgp.c
 src/CommandAnalyzer.c
@@ -149,7 +153,7 @@ ${CONTIKI}/platform/linux/File_eeprom.c
 add_executable(zipgateway ${GW_SRC} ${CONTIKI_SRC} ${TS2_SRC})
 #add_library(zipgateway SHARED ${GW_SRC} ${CONTIKI_SRC} ${TS2_SRC})
 find_library(log-lib log)
-target_link_libraries(zipgateway ${S2_LIBRARIES} ${OPENSSL_LIBRARIES} ${LibCRYPTO_LIBRARIES} ${log-lib})
+target_link_libraries(zipgateway ${S2_LIBRARIES} ${OPENSSL_LIBRARIES} ${LibCRYPTO_LIBRARIES} ${LibUSB_LIBRARIES} ${log-lib})
 
 
 
