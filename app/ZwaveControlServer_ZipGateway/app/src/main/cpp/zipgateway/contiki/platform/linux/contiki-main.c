@@ -154,6 +154,8 @@ int StartZipGateWay(const char *resPath)
         return -1;
     }
 
+    Started = 1;
+
     int res = pthread_create(&threadId, NULL, thread_func, NULL);
 
     if(res != 0)

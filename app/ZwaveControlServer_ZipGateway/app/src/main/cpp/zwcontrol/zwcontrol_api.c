@@ -1403,16 +1403,18 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
                 cJSON_Delete(jsonRoot);
             }
 
-            //Rebuild the descriptor container linked-list
-            plt_mtx_lck(hl_appl->desc_cont_mtx);
-            hl_desc_cont_rm_all(&hl_appl->desc_cont_hd);
-            result = hl_desc_init(&hl_appl->desc_cont_hd, hl_appl->zwnet);
-            if (result != 0)
-            {
-                ALOGE("hl_desc_init with error:%d", result);
-            }
+            if(notify_msg->sts == ZW_ERR_NONE){
+                //Rebuild the descriptor container linked-list
+                plt_mtx_lck(hl_appl->desc_cont_mtx);
+                hl_desc_cont_rm_all(&hl_appl->desc_cont_hd);
+                result = hl_desc_init(&hl_appl->desc_cont_hd, hl_appl->zwnet);
+                if (result != 0)
+                {
+                    ALOGE("hl_desc_init with error:%d", result);
+                }
 
-            plt_mtx_ulck(hl_appl->desc_cont_mtx);
+                plt_mtx_ulck(hl_appl->desc_cont_mtx);
+            }
 
             // tiny
             /*ALOGI("Network initialized!  Setting up unsolicited address, please wait ...\n");
@@ -2103,7 +2105,7 @@ static int hl_add_node(hl_appl_ctx_t *hl_appl, const char* dsk, int dsklen)
     return res;
 }
 
-int zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* infopath, uint8_t* result)
+int  zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* infopath, uint8_t* result)
 {
     if(hl_appl->init_status != 0)
     {
@@ -2127,7 +2129,7 @@ int zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* info
         hl_appl->load_ni_file = 1;
         hl_appl->save_ni_file = 1;
         ALOGD("nodeinfo file exists, will load it.");
-        //strcpy(hl_appl->save_file,infopath);
+        //strcpy(hl_appl->save_file,firmPath);
         strcpy(hl_appl->node_info_file,infopath);
     }else{
         ALOGD("nodeinfo file not exists, first init");
@@ -8767,7 +8769,7 @@ int  zwcontrol_firmwareupdate_request(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
     hl_appl->fw_id = firmwareId;
     // Firmware target
     hl_appl->fw_tgt = firmwareTarget;
-    // Firmware fragment size
+    // Firmware hardware version
     hl_appl->hw_ver = hw_ver;
 
     strcpy(hl_appl->save_file,firmwareFile);
