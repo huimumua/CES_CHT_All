@@ -56,7 +56,6 @@ PROCINIT(&etimer_process);
 
 extern void set_landev_outputfunc(u8_t (* f)(uip_lladdr_t *a));
 extern int net_fd;
-static int Started = 1;
 static pthread_t threadId = 0;
 
 extern BYTE zip_process_ok;
@@ -69,7 +68,7 @@ extern int UsbSerial_Check();
 
 void* thread_func(void *param)
 {
-    while(Started)
+    while(1)
     {
         fd_set fds;
         int n;
@@ -154,8 +153,6 @@ int StartZipGateWay(const char *resPath)
         return -1;
     }
 
-    Started = 1;
-
     int res = pthread_create(&threadId, NULL, thread_func, NULL);
 
     if(res != 0)
@@ -169,6 +166,5 @@ int StartZipGateWay(const char *resPath)
 void StopZipGateWay()
 {
     process_post(PROCESS_BROADCAST,PROCESS_EVENT_EXIT,0);
-    Started = 0;
     pthread_join(threadId, NULL);
 }
