@@ -100,21 +100,19 @@ int xfer(u8_t* buf,u8_t len,u8_t rlen)
 {
     u8_t null =0 ;
     u8_t r;
-    int i;
 
     if(buf)
     {
-        i = UsbSerial_ReadData(buf, len);
+        UsbSerial_WriteData(buf, len);
         //tcdrain(fd);
         //printf("TX %2.2x %2.2x %2.2x %2.2x\n",buf[0],buf[1],buf[2],buf[3]);
 
         r=0;
-        i=0;
 
-        while((r < rlen) && (i < 3))
+        while(r < rlen)
         {
             r+= UsbSerial_ReadData(&buf[r], rlen-r );
-            i++;
+            usleep(100);
         }
 
         if(rlen ==  r )  {
