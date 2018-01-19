@@ -6,9 +6,18 @@ set(CMAKE_LD_FLAGS "-fPIE")
 set(OPENSSL_LIBRARIES "ssl")
 set(LibCRYPTO_LIBRARIES "crypto")
 
-set(CMAKE_SYSTEM_NAME "linux")
+set(CMAKE_SYSTEM_NAME "Linux")
+set(SYSTEM_PLATFORM "Android")
 
+if(${SYSTEM_PLATFORM} MATCHES "Android")
 add_definitions(-DZIPGW -DANDROID_PLATFORM -DZIPGATEWAY_DEBUG)
+set(LibUSB_LIBRARIES "")
+set(LIBUSB_INCLUDE_DIRS "")
+else()
+add_definitions(-DZIPGW -DZIPGATEWAY_DEBUG)
+set(LIBUSB_INCLUDE_DIRS "../libusb/libusb")
+set(LibUSB_LIBRARIES "usb")
+endif()
 
 set(OPENSSL_INCLUDE_DIRS "../openssl-1.0.2j/include")
 
@@ -29,6 +38,7 @@ set(CONTIKI contiki )
 include_directories( 
 ${NDK_INCLUDE_DIR}
 ${OPENSSL_INCLUDE_DIRS}
+${LIBUSB_INCLUDE_DIRS}
 ${LIBS2_INCLUDE_DIRS}
 ${TS2_INCLUDE_DIRS}
 Z-Wave/include 
@@ -99,6 +109,7 @@ src/transport/s2_keystore.c
 src/zwdb.c
 src/zwpgrmr/crc32.c
 src/zwpgrmr/linux_serial_interface.c
+src/zwpgrmr/linux_usb_interface.c
 src/zwpgrmr/zpg.c
 src/zwpgrmr/zpgp.c
 src/CommandAnalyzer.c
@@ -145,7 +156,7 @@ ${CONTIKI}/platform/linux/File_eeprom.c
 
 add_library(zipgateway SHARED ${GW_SRC} ${CONTIKI_SRC} ${TS2_SRC})
 find_library(log-lib log)
-target_link_libraries(zipgateway ${S2_LIBRARIES} ${OPENSSL_LIBRARIES} ${LibCRYPTO_LIBRARIES}  usbserial-jni ${log-lib})
+target_link_libraries(zipgateway ${S2_LIBRARIES} ${OPENSSL_LIBRARIES} ${LibCRYPTO_LIBRARIES} ${LibUSB_LIBRARIES} usbserial-jni ${log-lib})
 
 
 

@@ -74,12 +74,11 @@
 #ifdef ANDROID_PLATFORM
 #include <stdio.h>
 #include <unistd.h>
+#include <ZIP_Router_logging.h>
 
 #include "zpg.h"
 #include "linux_serial_interface.h"
 
-extern int  UsbSerial_Init();
-extern int  UsbSerial_Destroy();
 extern int  UsbSerial_Open();
 extern void UsbSerial_Close();
 extern void UsbSerial_WriteData(uint8_t *data, int size);
@@ -119,7 +118,7 @@ int xfer(u8_t* buf,u8_t len,u8_t rlen)
             //printf("RX %2.2x %2.2x %2.2x %2.2x\n",buf[0],buf[1],buf[2],buf[3]);
             return r;
         } else {
-            printf("Read too short len = %i\n",r);
+            LOG_PRINTF("Read too short len = %i\n",r);
             return r;
         }
     } else {
