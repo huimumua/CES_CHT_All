@@ -679,6 +679,16 @@ static int controller_cancelAllCommandQueue(JNIEnv *env, jclass object, jint nod
     return zwcontrol_command_queue_cancel(&appl_ctx, (uint32_t)nodeId);
 }
 
+static int controller_getControllerNetworkRssiInfo(JNIEnv *env, jclass object)
+{
+    return zwcontrol_get_network_rssi_info(&appl_ctx, 0x01); // controller node id 1
+}
+
+static int controller_getNodeNetworkRssiInfo(JNIEnv *env, jclass object, jint nodeId)
+{
+    return zwcontrol_get_network_rssi_info(&appl_ctx, (uint32_t)nodeId);
+}
+
 static const JNINativeMethod gMethods[] = {
         {"CreateZwController",     "()I", (void *)create_controller},
         {"OpenZwController",       "(Ljava/lang/String;Ljava/lang/String;[B)I", (void *)open_controller},
@@ -771,6 +781,8 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_controlCommandQueue", "(II)I", (void*)controller_controlCommandQueue},
         {"ZwController_viewCommandQueue", "(I)I", (void*)controller_viewCommandQueue},
         {"ZwController_cancelAllCommandQueue", "(I)I", (void*)controller_cancelAllCommandQueue},
+        {"ZwController_getControllerNetworkRssiInfo", "()I", (void*)controller_getControllerNetworkRssiInfo},
+        {"ZwController_getDeviceNetworkRssiInfo", "(I)I", (void*)controller_getNodeNetworkRssiInfo},
 
 };
 

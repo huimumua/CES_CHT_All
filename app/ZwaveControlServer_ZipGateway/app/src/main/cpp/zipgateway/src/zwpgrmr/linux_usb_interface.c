@@ -98,9 +98,8 @@ static int xfer(u8_t* buf,u8_t len,u8_t rlen)
 {
     u8_t dummy[4] ;
     int actual=0;
-    int i;
-    int r;
-    int m;
+    int i = 0;
+    int m = 0;
 
     if(buf)
     {
@@ -148,6 +147,7 @@ static int xfer(u8_t* buf,u8_t len,u8_t rlen)
 static void close_port()
 {
     UsbSerial_APMClose();
+    sleep(1);
 }
 
 static int open_port(zw_pgmr_t* p, const char* port)

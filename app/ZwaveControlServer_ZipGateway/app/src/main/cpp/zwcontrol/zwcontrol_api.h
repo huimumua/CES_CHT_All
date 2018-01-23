@@ -166,7 +166,7 @@ typedef struct
 
 typedef int (*ResCallBack)(const char*);
 
-int  zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* infoPath, uint8_t* result);
+int  zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* infopath, uint8_t* result);
 int  zwcontrol_setcallback(ResCallBack callBack);
 int  zwcontrol_add_node(hl_appl_ctx_t *hl_appl, const char* dsk, int dsklen);
 int  zwcontrol_rm_node(hl_appl_ctx_t *hl_appl);
@@ -356,5 +356,10 @@ int  zwcontrol_protection_exclusive_control_node_set(hl_appl_ctx_t* hl_appl, uin
 int  zwcontrol_protection_timeout_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_protection_timeout_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t unit, uint8_t time);
 
+
+/*
+ **  Command Class Network Installation_maintenance v2
+ */
+int  zwcontrol_get_network_rssi_info(hl_appl_ctx_t* hl_appl, int nodeId);
 
 #endif

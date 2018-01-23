@@ -9653,3 +9653,87 @@ int  zwcontrol_protection_timeout_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
 
     return result;
 }
+
+
+/*
+ **  Command Class Network Installation_maintenance v2 for RSSI info
+ */
+static void hl_network_rssi_report(zwifd_p ifd, uint8_t channel_1, uint8_t channel_2, uint8_t channel_3)
+{
+    ALOGI("network Rssi info get from node: %d, value: %02X-%02X-%02X",ifd->nodeid, channel_1, channel_2, channel_3);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+    if(ifd->nodeid == 1)
+    {
+        cJSON_AddStringToObject(jsonRoot, "MessageType", "Controller Network RSSI Report");
+    }
+    else 
+    {
+        cJSON_AddStringToObject(jsonRoot, "MessageType", "Device Network RSSI Report");
+    }
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "Value of channel 1", channel_1);
+    cJSON_AddNumberToObject(jsonRoot, "Value of channel 2", channel_2);
+    cJSON_AddNumberToObject(jsonRoot, "Value of channel 3", channel_3);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+static int hl_network_rssi_get(hl_appl_ctx_t * hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_network_rssi_rep_set_get(ifd, hl_network_rssi_report);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_network_rssi_get with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_get_network_rssi_info(hl_appl_ctx_t* hl_appl, int nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_network_rssi_get(hl_appl);
+    if(result == 1)
+    {
+        ALOGI("zwcontrol_get_network_rssi_info command queued");
+    }
+
+    return result;
+}

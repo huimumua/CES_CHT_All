@@ -170,6 +170,7 @@ static const cmd_get_resp_t cmd_get_resp_tbl[] =
     {COMMAND_CLASS_NOTIFICATION_V4,NOTIFICATION_SUPPORTED_GET_V4, NOTIFICATION_SUPPORTED_REPORT_V4},
     {COMMAND_CLASS_NOTIFICATION_V4,EVENT_SUPPORTED_GET_V4, EVENT_SUPPORTED_REPORT_V4},
     {COMMAND_CLASS_SCENE_ACTUATOR_CONF, SCENE_ACTUATOR_CONF_GET, SCENE_ACTUATOR_CONF_REPORT},
+    {COMMAND_CLASS_NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE, RSSI_GET, RSSI_REPORT},
 
 };
 
@@ -2602,6 +2603,15 @@ zwif_p zwif_create(uint16_t cls, uint8_t ver, uint8_t propty)
                 return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
             }
             break;
+
+        case COMMAND_CLASS_NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE:
+            {
+                static const uint8_t intf_settings[] =
+                {
+                    RSSI_REPORT
+                };
+                return zwif_alloc(cls, ver, propty, intf_settings, sizeof(intf_settings));
+            }
 
         // skysoft modified end
         /****************************************************************************/
@@ -10482,6 +10492,21 @@ int zwif_rep_hdlr(zwif_p intf, uint8_t *cmd_buf, uint16_t cmd_len, int nw_lck_st
                         rpt_cb = (zwrep_scene_actuator_conf_get_fn)report_cb;
                         zwif_get_desc(intf, &ifd);
                         //Callback the registered function
+                        rpt_cb(&ifd, cmd_buf[2], cmd_buf[3], cmd_buf[4]);
+                    }
+                }
+            }
+            break;
+
+        case COMMAND_CLASS_NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE:
+            {
+                if(cmd_buf[1] == RSSI_REPORT)
+                {
+                    if(cmd_len >= 5)
+                    {
+                        zwrep_network_rssi_get_fn rpt_cb;
+                        rpt_cb = (zwrep_network_rssi_get_fn)report_cb;
+                        zwif_get_desc(intf, &ifd);
                         rpt_cb(&ifd, cmd_buf[2], cmd_buf[3], cmd_buf[4]);
                     }
                 }

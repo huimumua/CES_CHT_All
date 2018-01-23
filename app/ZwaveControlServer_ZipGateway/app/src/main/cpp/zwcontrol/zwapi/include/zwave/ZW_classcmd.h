@@ -1004,6 +1004,10 @@
 #define COMMAND_CLASS_ENTRY_CONTROL                                                      0x6F
 #define COMMAND_CLASS_INCLUSION_CONTROLLER                                               0x74
 
+/**************** Network Management IMA ************************/
+#define RSSI_GET                                                                    0x07
+#define RSSI_REPORT                                                                 0x08
+
 /*************** command class extended identifiers ****************/
 #define COMMAND_CLASS_SECURITY_SCHEME0_MARK                                              0xF100
 

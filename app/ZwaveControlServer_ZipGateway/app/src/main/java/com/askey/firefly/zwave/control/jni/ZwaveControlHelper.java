@@ -357,4 +357,11 @@ public class ZwaveControlHelper {
     public native static int ZwController_viewCommandQueue(int deviceId);
     public native static int ZwController_cancelAllCommandQueue(int deviceId);
 
+    /**
+    ** zwave controller jni interface
+    ** Add for RSSI info get
+    **/
+    public native static int ZwController_getControllerNetworkRssiInfo();
+    public native static int ZwController_getDeviceNetworkRssiInfo(int deviceId);
+
 }

@@ -198,7 +198,7 @@ public abstract class UsbSerialDevice implements UsbSerialInterface
         return (this instanceof FTDISerialDevice);
     }
 
-    public static boolean isCdcDevice(UsbDevice device)
+    private static boolean isCdcDevice(UsbDevice device)
     {
         int iIndex = device.getInterfaceCount();
         for(int i=0;i<=iIndex-1;i++)

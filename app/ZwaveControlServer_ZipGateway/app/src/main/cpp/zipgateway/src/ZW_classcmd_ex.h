@@ -458,7 +458,9 @@ typedef struct _ZW_FIRMWARE_UPDATE_MD_PREPARE_REPORT_V5_FRAME_
 } ZW_FIRMWARE_UPDATE_MD_PREPARE_REPORT_V5_FRAME;
 
 #define COMMAND_CLASS_NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE 0x67
-
+/**************** Network Management IMA ************************/
+#define RSSI_GET                                                                    0x07
+#define RSSI_REPORT                                                                 0x08
 
 typedef enum {
   ROUTE_CHANGES=0,

@@ -10680,6 +10680,41 @@ int zwif_multi_cmd_encap(zwifd_p ifd)
     return zwif_exec(ifd, cmd, 9, zwif_exec_cb);
 }
 
+
+int zwif_network_rssi_rep_set_get(zwifd_p ifd, zwrep_network_rssi_get_fn cb)
+{
+    int result;
+
+    //Check whether the interface belongs to the right command class
+    if (ifd->cls != COMMAND_CLASS_NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE)
+    {
+        return ZW_ERR_CLASS_NOT_FOUND;
+    }
+
+    //Check version as this command is only valid for version 2 and above
+    if (ifd->ver < 2)
+    {
+        //return ZW_ERR_CMD_VERSION;
+    }
+
+    //Setup report callback
+    result = zwif_set_report(ifd, cb, RSSI_REPORT);
+
+    if (result == 0)
+    {
+        result = zwif_cmd_id_set(ifd, ZW_CID_NET_RSSI, 1);
+        if ( result < 0)
+        {
+            return result;
+        }
+
+        //Request for report
+        result = zwif_get_report(ifd, NULL, 0,
+                                 RSSI_GET, zwif_exec_cb);
+    }
+    return result;
+}
+
 // skysoft modified end
 /****************************************************************************/
 
