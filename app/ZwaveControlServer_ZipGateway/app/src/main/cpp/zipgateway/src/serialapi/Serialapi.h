@@ -178,5 +178,14 @@ void ZW_AutoProgrammingEnable(void);
 
 
 void ZW_GetRoutingInfo_old( BYTE bNodeID, BYTE *buf, BYTE bRemoveBad, BYTE bRemoveNonReps );
+
+#define NUM_CHANNELS 3
+
+typedef struct {
+    signed char rssi_dBm[NUM_CHANNELS];
+} RSSI_LEVELS;
+
+void ZW_GetBackgroundRSSI(RSSI_LEVELS *rssi_levels);
+
 #endif /* SERIAL_API_H_ */
 

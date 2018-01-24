@@ -319,9 +319,15 @@ static command_handler_codes_t ima_CommandHandler(zwave_connection_t *c, BYTE* p
       /* Fixme: Add real background rssi measurements instead of this hardcoded response */
       *r++ = COMMAND_CLASS_NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE;
       *r++ = RSSI_REPORT;
-      *r++ = 0xA2;
-      *r++ = 0x7D;
-      *r++ = 0x7F;
+
+      RSSI_LEVELS rssi;
+      ZW_GetBackgroundRSSI(&rssi);
+      *r++ = (uint8_t)rssi.rssi_dBm[0];
+      *r++ = (uint8_t)rssi.rssi_dBm[1];
+      *r++ = (uint8_t)rssi.rssi_dBm[2];
+      //*r++ = 0xA2;
+      //*r++ = 0x7D;
+      //*r++ = 0x7F;
       ZW_SendDataZIP(c, rssi_buffer,(u8_t)(r - rssi_buffer),0);
     }
     break;

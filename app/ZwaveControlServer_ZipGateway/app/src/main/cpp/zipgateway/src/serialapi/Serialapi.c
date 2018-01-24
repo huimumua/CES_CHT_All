@@ -2869,3 +2869,19 @@ BOOL ZW_SetPriorityRoute(BYTE bNodeID, XBYTE *pLastWorkingRoute) {
   SendFrameWithResponse(FUNC_ID_ZW_SET_LAST_WORKING_ROUTE, buffer, idx , buffer, &byLen );
   return buffer[IDX_DATA];
 }
+
+void ZW_GetBackgroundRSSI(RSSI_LEVELS *rssi_levels)
+{
+    if(rssi_levels == NULL)
+    {
+        return;
+    }
+
+    idx = 0;
+
+    SendFrameWithResponse(0x3B, NULL, idx , buffer, &byLen);
+
+    rssi_levels->rssi_dBm[0] = buffer[IDX_DATA];
+    rssi_levels->rssi_dBm[1] = buffer[IDX_DATA+1];
+    rssi_levels->rssi_dBm[2] = buffer[IDX_DATA+2];
+}
