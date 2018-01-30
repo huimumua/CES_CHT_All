@@ -1814,7 +1814,7 @@ static void hl_add_node_s2_cb(void *usr_param, sec2_add_cb_prm_t *cb_param)
                 dsk_str[2] = hl_appl->dsk[2];
                 dsk_str[3] = hl_appl->dsk[3];
                 dsk_str[4] = hl_appl->dsk[4];
-                dsk_str[5] = '\0';
+                dsk_str[5] = hl_appl->dsk[5];
 
 #ifdef USE_SAFE_VERSION
                 strcat_s(dsk_str, 200, dsk_prm->dsk);
@@ -2075,7 +2075,7 @@ static int hl_add_node(hl_appl_ctx_t *hl_appl, const char* dsk, int dsklen)
             ALOGI("Security 2, assign full dsk code");
             hl_appl->sec2_add_prm.dsk = dsk_str;
         }
-        else if(dsk != NULL && dsklen == 5) // for 5-digit DSK
+        else if(dsk != NULL && dsklen == 6) // for 5-digit DSK
         {
             memcpy(hl_appl->dsk, dsk, dsklen);
         }

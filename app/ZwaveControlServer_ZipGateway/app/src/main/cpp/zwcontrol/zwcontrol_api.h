@@ -153,7 +153,7 @@ typedef struct
                                                     ///< with the first buffer has the highest priority for device matching
 #endif
     uint8_t            sw_color_lvl_change_started; ///< Flag to indicate whether switch color level change started
-    char                dsk[5];                     ///< Security 2, 5-digit DSK
+    char                dsk[6];                     ///< Security 2, 5-digit DSK
 
 } hl_appl_ctx_t;
 
