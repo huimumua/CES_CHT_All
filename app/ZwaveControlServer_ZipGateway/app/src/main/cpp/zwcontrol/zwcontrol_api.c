@@ -1746,7 +1746,7 @@ static void hl_add_node_s2_cb(void *usr_param, sec2_add_cb_prm_t *cb_param)
         ALOGD("                      Security 2 key 2 (04)\n");
         ALOGD("                      Security 0       (80)\n");
 
-        granted_key = prompt_hex(hl_appl, "Grant keys bit-mask (hex):");
+        granted_key = cb_param->cb_prm.req_key.req_keys;
 
         grant_csa = 0;
         if (cb_param->cb_prm.req_key.req_csa)
@@ -1807,8 +1807,14 @@ static void hl_add_node_s2_cb(void *usr_param, sec2_add_cb_prm_t *cb_param)
 
         if (accept && dsk_prm->pin_required)
         {
-            if (prompt_str(hl_appl, "Enter 5-digit PIN that matches the received DSK:", 200, dsk_str))
+            /*if (prompt_str(hl_appl, "Enter 5-digit PIN that matches the received DSK:", 200, dsk_str))*/
             {
+                dsk_str[0] = hl_appl->dsk[0];
+                dsk_str[1] = hl_appl->dsk[1];
+                dsk_str[2] = hl_appl->dsk[2];
+                dsk_str[3] = hl_appl->dsk[3];
+                dsk_str[4] = hl_appl->dsk[4];
+                dsk_str[5] = '\0';
 
 #ifdef USE_SAFE_VERSION
                 strcat_s(dsk_str, 200, dsk_prm->dsk);
@@ -1817,6 +1823,7 @@ static void hl_add_node_s2_cb(void *usr_param, sec2_add_cb_prm_t *cb_param)
 #endif
             }
         }
+        ALOGI("Full DSK:%s",(dsk_prm->pin_required)? dsk_str : dsk_prm->dsk);
 
         res = zwnet_add_sec2_accept(hl_appl->zwnet, accept, (dsk_prm->pin_required)? dsk_str : dsk_prm->dsk);
 
@@ -2062,10 +2069,15 @@ static int hl_add_node(hl_appl_ctx_t *hl_appl, const char* dsk, int dsklen)
     {
         hl_appl->sec2_add_prm.dsk = NULL;
 
-        if(dsk != NULL && dsklen != 0)
+        if(dsk != NULL && dsklen > 10) // dsklen will 5-digit or full code
         {
-            memcpy(dsk_str, dsk, 200);
+            memcpy(dsk_str, dsk, dsklen);
+            ALOGI("Security 2, assign full dsk code");
             hl_appl->sec2_add_prm.dsk = dsk_str;
+        }
+        else if(dsk != NULL && dsklen == 5) // for 5-digit DSK
+        {
+            memcpy(hl_appl->dsk, dsk, dsklen);
         }
 
         hl_appl->sec2_add_prm.usr_param = hl_appl;
@@ -2229,6 +2241,7 @@ int zwcontrol_setcallback(ResCallBack callBack)
 
 int zwcontrol_add_node(hl_appl_ctx_t *hl_appl, const char* dsk, int dsklen)
 {
+    ALOGI("=============> dsk is:%d-%d-%d",dsk[0],dsk[1], dsk[2]);
     if(hl_appl->init_status == 0)
     {
         return -1;
