@@ -2241,7 +2241,6 @@ int zwcontrol_setcallback(ResCallBack callBack)
 
 int zwcontrol_add_node(hl_appl_ctx_t *hl_appl, const char* dsk, int dsklen)
 {
-    ALOGI("=============> dsk is:%d-%d-%d",dsk[0],dsk[1], dsk[2]);
     if(hl_appl->init_status == 0)
     {
         return -1;
@@ -2253,9 +2252,13 @@ int zwcontrol_add_node(hl_appl_ctx_t *hl_appl, const char* dsk, int dsklen)
 
     if(hl_appl->sec2_add_node)
     {
-        if (result == 0)
+        if (dsk != NULL && dsklen > 0 && result == 0)
         {
-            ALOGD("Add ndoe status done\n");
+            ALOGI("Add node in security, please wait...\n");
+        }
+        else if(result == 0)
+        {
+            ALOGI("Add node success!");
         }
         else
         {
