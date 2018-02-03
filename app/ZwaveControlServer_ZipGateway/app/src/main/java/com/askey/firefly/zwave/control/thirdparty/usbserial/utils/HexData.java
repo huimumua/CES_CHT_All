@@ -33,7 +33,7 @@ public class HexData
 
     public static byte[] stringTobytes(String hexString)
     {
-        String stringProcessed = hexString.trim().replaceAll("0x", "");
+        String stringProcessed = hexString.trim().replaceAll("", "");
         stringProcessed = stringProcessed.replaceAll("\\s+","");
         byte[] data = new byte[stringProcessed.length()/2];
         int i = 0;

@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-extern int  UsbSerial_Init();
 extern int  UsbSerial_Destroy();
 extern int  UsbSerial_Open();
 extern void UsbSerial_Close();

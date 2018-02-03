@@ -144,8 +144,15 @@ public static ZwaveControlService getInstance() {
 
         @Override
         public int addDevice(IZwaveContrlCallBack callBack) throws RemoteException {
-            byte[] dsk = new byte[200];
-            int result =  ZwaveControlHelper.ZwController_AddDevice(dsk, 0);
+            /*String str = "36494-17891-09522-29717-11896-35740-65300-09870";
+            byte[] bstr = str.getBytes();
+            byte[] dsk = new byte[str.length()+1];
+
+            for(int i = 0; i < bstr.length; ++i)
+                dsk[i] = bstr[i];
+            dsk[str.length()] = '\0';*/
+            byte[] dsk = new byte[0];
+            int result =  ZwaveControlHelper.ZwController_AddDevice(dsk, dsk.length);
             return result;
         }
 

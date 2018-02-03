@@ -1,19 +1,21 @@
 package com.askey.firefly.zwave.control.thirdparty.usbserial;
 
+import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
-import java.util.HashMap;
-import java.util.Map;
+import android.util.Log;
+
+import java.util.concurrent.Semaphore;
+
 
 import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
-import android.app.PendingIntent;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+
 import com.askey.firefly.zwave.control.thirdparty.usbserial.usbserial.APMSerialDevice;
 import com.askey.firefly.zwave.control.thirdparty.usbserial.usbserial.CDCSerialDevice;
-import com.askey.firefly.zwave.control.thirdparty.usbserial.usbserial.UsbSerialDevice;
-import com.askey.firefly.zwave.control.thirdparty.usbserial.usbserial.UsbSerialInterface;
+
+import static java.lang.Thread.sleep;
+
 
 public class UsbSerial {
 
@@ -21,176 +23,102 @@ public class UsbSerial {
         System.loadLibrary("usbserial-jni");
     }
 
-    private UsbDevice device;
     private final String TAG = "UsbSerial";
-    private UsbDeviceConnection connection;
-    private UsbManager usbManager;
     private Context mContext = null;
-    private UsbSerialDevice serialPort;
-    private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
-	
+
     public UsbSerial(Context context) {
         mContext = context;
         UsbSerial_Set_Object();
     }
-	
-    /*
-     * Request user permission. The response will be received in the BroadcastReceiver
-     */
-    private void requestUserPermission() {
-        PendingIntent mPendingIntent = PendingIntent.getBroadcast(mContext, 0, new Intent(ACTION_USB_PERMISSION), 0);
-        usbManager.requestPermission(device, mPendingIntent);
-    }
-
-    private ISPort isCdc = new ISPort() {
-        @Override
-        public boolean isPort(int vid, int pid) {
-            final int[][] vid_pid = {{0x0658,0x0200}};
-            for(int[] a:vid_pid){
-                if(vid == a[0] && pid == a[1])
-                    return true;
-            }
-            return false;
-        }
-    };
-
-    private ISPort isApm = new ISPort() {
-        @Override
-        public boolean isPort(int vid, int pid) {
-            final int[][] vid_pid = {{0x0658,0x0280}};
-            for(int[] a:vid_pid){
-                if(vid == a[0] && pid == a[1])
-                    return true;
-            }
-            return false;
-        }
-    };
-
-    private UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() {
-        @Override
-        public void onReceivedData(byte[] arg0) {
-            buffer.write(arg0);
-        }
-    };
-
-
-    private boolean FindDevice(ISPort sel){
-        usbManager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
-        HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
-        if (!usbDevices.isEmpty()) {
-            for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
-                device = entry.getValue();
-                int deviceVID = device.getVendorId();
-                int devicePID = device.getProductId();
-                if (sel.isPort(deviceVID, devicePID)) {
-                    if (usbManager.hasPermission(device)) {
-                        return true;
-                    } else {
-                        requestUserPermission();
-                        return false;
-                    }
-                }
-            }
-        }
-        return false;
-    }
 
     public int Open()
     {
-        if(!FindDevice(isCdc)){
-            return -1;
-        }
-		
-        connection = usbManager.openDevice(device);
-        
-		if(connection == null)
-		{
-			return -1;
-		}
-		
-		serialPort = new CDCSerialDevice(device, connection,-1);
-
-        if (serialPort.open()) {
-            serialPort.setBaudRate(115200);
-            serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
-            serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
-            serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-            serialPort.read(mCallback);
-            return 0;
-        }
-
-        return -1;
+        return CDCSerialDevice.Open(mContext);
     }
 
     public void Close()
     {
-        serialPort.close();
+        CDCSerialDevice.Close();
     }
 
     public void Write(byte[] data)
     {
-        serialPort.write(data);
+        CDCSerialDevice.Write(data);
     }
 
     public int Read(byte[] data, int len)
     {
-        return buffer.read(data, 0, len);
+        return CDCSerialDevice.Read(data,len);
     }
 
     public int Check()
     {
-        return buffer.getUsed();
+        return CDCSerialDevice.BytesToRead();
     }
+
+    public void SwitchToApmMode(){
+
+        final byte[] cmd = {0x01,0x03,0x00,0x27,(byte)0xDB};
+        byte[] ret = new byte[16];
+        Write(cmd);
+        try{
+            sleep(1000);
+        }catch(InterruptedException e){
+            e.printStackTrace();
+        }
+        Read(ret,1);
+        if(ret[0] == 0x06){
+            Log.d(TAG,"Device Enter APM...");
+        }else{
+            Log.d(TAG,"Device Enter APM Fail...");
+        }
+        Close();
+    }
+
+    private native void UsbSerial_Set_Object();
 
     public int OpenApm()
     {
-        if(!FindDevice(isApm)){
-            return -1;
+        int ret;
+        int de_cnt = 10;
+        while(de_cnt > 0){
+            try{
+                ret = APMSerialDevice.Open(mContext);
+                if(ret == 0){
+                    return 0;
+                }else if(ret == -1){
+                    return -1;
+                }
+                sleep(3000);
+            }catch (InterruptedException e){
+                Log.e(TAG, "Open Unknown Error....");
+                return -1;
+            }
+            de_cnt--;
         }
-
-        connection = usbManager.openDevice(device);
-
-        if(connection == null)
-        {
-            return -1;
-        }
-
-        serialPort = new APMSerialDevice(device, connection,-1);
-
-        if (serialPort.syncOpen()) {
-            return 0;
-        }
-
+        Log.e(TAG, "Open APM Device Timeout....");
         return -1;
-    }
-	
-    public void WriteApm(byte[] data){
-        serialPort.syncWrite(data,1000);
-    }
-
-    public int ReadApm(byte[] buf,int len){
-        return serialPort.syncRead(buf,2000);
-    }
-
-    public void CloseApm(){
-        serialPort.syncClose();
     }
 
     public int GetApmBcdDevice(){
-        byte[] des;
-        int bcdDevice;
-        des = connection.getRawDescriptors();
-        bcdDevice = 0xFF & des[12];
-        bcdDevice += (0xFF & des[13]) * 0x100;
-        Log.d(TAG,"BcdDevice = " + Integer.toHexString(bcdDevice));
-        return bcdDevice;
+        return APMSerialDevice.GetBcdDevice();
     }
 
-    interface ISPort{
-        boolean isPort(int vid,int pid);
+    public void XFR(byte[] send,byte[] rec){
+        WriteApm(send);
+        ReadApm(rec,rec.length);
     }
 
-    private ByteRingBuffer buffer = new ByteRingBuffer(1024);
+    public void WriteApm(byte[] data){
+        APMSerialDevice.Write(data);
+    }
 
-    private native void UsbSerial_Set_Object();
+    public int ReadApm(byte[] buf,int len){
+        return APMSerialDevice.Read(buf,len);
+    }
+
+    public void CloseApm(){
+        APMSerialDevice.Close();
+    }
+
 }
