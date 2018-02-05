@@ -1825,6 +1825,30 @@ static void hl_add_node_s2_cb(void *usr_param, sec2_add_cb_prm_t *cb_param)
         }
         ALOGI("Full DSK:%s",(dsk_prm->pin_required)? dsk_str : dsk_prm->dsk);
 
+        cJSON *jsonRoot;
+        jsonRoot = cJSON_CreateObject();
+
+        if(NULL != jsonRoot)
+        {
+            ALOGI("Report DSK message to application.");
+            
+            cJSON_AddStringToObject(jsonRoot, "MessageType", "DSK Report");
+            cJSON_AddStringToObject(jsonRoot, "DSK", (dsk_prm->pin_required)? dsk_str : dsk_prm->dsk);
+
+            if(resCallBack)
+            {
+                char *p = cJSON_Print(jsonRoot);
+
+                if(p != NULL)
+                {
+                    resCallBack(p);
+                    free(p);
+                }
+            }
+
+            cJSON_Delete(jsonRoot);
+        }
+
         res = zwnet_add_sec2_accept(hl_appl->zwnet, accept, (dsk_prm->pin_required)? dsk_str : dsk_prm->dsk);
 
         if (res != 0)
