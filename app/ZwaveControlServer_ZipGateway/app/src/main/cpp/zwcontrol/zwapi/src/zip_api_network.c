@@ -1334,6 +1334,7 @@ int zwnet_node_info_update(zwnet_p nw, appl_node_info_t *node_info, sec2_node_in
     //Save node DSK
     if (s2_node_info && s2_node_info->dsk)
     {
+        node->security_incl_status = 2;
         strcpy(node->s2_dsk, s2_node_info->dsk);
     }
 
@@ -1593,6 +1594,7 @@ zwnet_cmd_cls_show - show binary string of command classes
 @param[in] cnt          The number of command classes in cmd_cls
 @return
 */
+int has_s2_cls = 0;
 void zwnet_cmd_cls_show(zwnet_p nw, uint16_t *cmd_cls_buf, uint8_t cnt)
 {
     uint8_t     tmp_cnt;
@@ -1622,6 +1624,11 @@ void zwnet_cmd_cls_show(zwnet_p nw, uint16_t *cmd_cls_buf, uint8_t cnt)
             sprintf_s(tmp, 8, "%02X, ",(unsigned) *cmd_cls_buf++);
             strcat_s(hex_str, MAX_BIN_LINE_LEN * 8, tmp);
 #else
+            if(*cmd_cls_buf == 0x9F)
+            {
+                ALOGI("node supported s2 cls");
+                has_s2_cls = 1;
+            }
             sprintf(tmp,"%02X, ",(unsigned) *cmd_cls_buf++);
             strcat(hex_str, tmp);
 #endif
@@ -9394,6 +9401,9 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
         default:
             status = 3;
     }
+    int security_incl_status = 0;
+    int has_s0_cls = 0;
+    has_s2_cls = 0;
 
     ALOGI("zwnet_add_node_cb: status:%u (%s)", add_ni->status, status_msg[status]);
 
@@ -9409,11 +9419,11 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
 
         if (device_dsk)
         {
-            debug_zwapi_msg(&nw->plt_ctx, "DSK:%s", device_dsk);
+            ALOGI("DSK:%s", device_dsk);
         }
         else
         {
-            debug_zwapi_msg(&nw->plt_ctx, "Invalid DSK:");
+            ALOGI("Invalid DSK:");
             debug_zwapi_bin_msg(&nw->plt_ctx, add_ni_s2->dsk, add_ni_s2->dsk_len);
         }
     }
@@ -9434,6 +9444,7 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
         if (add_ni->cmd_cnt_sec > 0)
         {
             ALOGI("secure command classes:");
+            has_s0_cls = 1;
             zwnet_cmd_cls_show(nw, add_ni->cmd_cls_sec, add_ni->cmd_cnt_sec);
         }
 
@@ -9446,15 +9457,28 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
         {
             s2_nif.grnt_keys_valid = 1;
             s2_nif.grnt_keys = add_ni_s2->grnt_keys;
-
             s2_nif_p = &s2_nif;
         }
 
         if (device_dsk)
         {
             s2_nif.dsk = device_dsk;
-
             s2_nif_p = &s2_nif;
+        }
+
+        if(has_s2_cls && has_s0_cls)
+        {
+            security_incl_status = 2; //s2 inclusion
+        }
+        else if(!has_s2_cls && has_s0_cls)
+        {
+            security_incl_status = 1; // s0 inclusion
+        }
+
+        if (add_ni->status == NODE_ADD_STATUS_SECURITY_FAILED)
+        {
+            ALOGI("Node added but insecure!");
+            security_incl_status = 0;
         }
 
         zwnet_node_info_update(nw, add_ni, s2_nif_p);
@@ -9465,6 +9489,7 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
 
         if (node)
         {
+            node->security_incl_status = security_incl_status;
             zwnet_node_cb(nw, node->nodeid, ZWNET_NODE_ADDED);
         }
 
@@ -9725,6 +9750,7 @@ static void zwnet_node_dsk_cb(appl_layer_ctx_t *appl_ctx, appl_dsk_rpt_t *dsk_rp
         cb_req.type = CB_TYPE_S2_DSK;
         cb_req.cb = cb;
         cb_req.param.dsk_cb.user = usr_param;
+        ALOGI("zwnet_node_dsk_cb...................here");
 
         util_list_add(nw->cb_mtx, &nw->cb_req_hd,
                       (uint8_t *)&cb_req, sizeof(zwnet_cb_req_t));

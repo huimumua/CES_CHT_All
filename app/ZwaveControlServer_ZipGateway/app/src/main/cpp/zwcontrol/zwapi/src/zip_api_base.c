@@ -530,6 +530,7 @@ int zwnode_get_desc(zwnode_p node, zwnoded_p desc)
     desc->wkup_intv = node->wkup_intv;
     desc->s2_keys_valid = node->s2_keys_valid;
     desc->s2_grnt_keys = node->s2_grnt_keys;
+    desc->security_incl_status = node->security_incl_status;
     desc->alive = node->alive;
 
     strcpy(desc->s2_dsk, node->s2_dsk);

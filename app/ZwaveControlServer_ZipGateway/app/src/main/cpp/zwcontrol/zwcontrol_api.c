@@ -2723,15 +2723,15 @@ static char* hl_is_security_inclusion(uint16_t  status)
     {
         case 0:
         {
-            return "Success";
+            return "Normal";
         }
         case 1:
         {
-            return "Error";
+            return "[S0]";
         }
         case 2:
         {
-            return "Normal";
+            return "[S2]";
         }
 
         default:
@@ -3360,7 +3360,7 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
             ALOGI("Node is FLIRS");
         }
 
-        //plt_msg_show(hl_plt_ctx_get(hl_appl), "Node security inclusion status:%s", hl_is_security_inclusion(node->sec_incl_failed));
+        ALOGI("Node security inclusion status:%s", hl_is_security_inclusion(node->security_incl_status));
         ALOGI("Vendor id:%04X", node->vid);
         ALOGI("Product type id:%04X", node->type);
         ALOGI("Product id:%04X", node->pid);
@@ -3372,7 +3372,7 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
         ALOGI("Application version:%u.%02u\n", (unsigned)(node->app_ver >> 8),
                      (unsigned)(node->app_ver & 0xFF));
 
-        //cJSON_AddStringToObject(NodeInfo, "Node security inclusion status", hl_is_security_inclusion(node->sec_incl_failed));
+        cJSON_AddStringToObject(NodeInfo, "Node security inclusion status", hl_is_security_inclusion(node->security_incl_status));
 
         sprintf(str, "%04X", node->vid);
         cJSON_AddStringToObject(NodeInfo, "Vendor id", str);

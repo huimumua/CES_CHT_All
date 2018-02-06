@@ -1656,6 +1656,7 @@ typedef struct  _zwnoded
     uint8_t     listen;         /**< Flag to indicate the node is always listening */
     int32_t     wkup_intv;      /**< Wake up interval in seconds. Negative value = invalid or unknown */
 	uint8_t		s2_keys_valid;  /**< Flag to indicate whether s2_grnt_keys is valid */
+	uint8_t     security_incl_status; 
 	uint8_t		s2_grnt_keys;   /**< Security 2 granted keys (bit-mask), see SEC_KEY_BITMSK_XXX
                                      NOTE: This is valid only s2_keys_valid = 1*/
 	char		s2_dsk[MAX_DSK_STR_LEN + 1];     /**< S2 DSK. If s2_dsk[0] == '\0', the DSK is unavailable for this node */

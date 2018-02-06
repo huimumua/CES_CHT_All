@@ -550,6 +550,7 @@ typedef struct _zwnode
 	uint8_t		s2_keys_valid;  /**< Flag to indicate whether s2_grnt_keys is valid */
 	uint8_t		s2_grnt_keys;   /**< Security 2 granted keys (bit-mask), see SEC_KEY_BITMSK_XXX
                                      NOTE: This is valid only s2_keys_valid = 1*/
+    uint8_t     security_incl_status; 
 	char		s2_dsk[MAX_DSK_STR_LEN + 1];     /**< S2 DSK. If s2_dsk[0] == '\0', the DSK is unavailable for this node */
 
 	/* Firmware update version 3 */
@@ -579,6 +580,7 @@ zwnode_t;
                                 (nw)->ctl.wkup_intv = -1;       \
                                 (nw)->ctl.s2_dsk[0] = '\0';     \
                                 (nw)->ctl.alive = 3;            \
+                                (nw)->ctl.security_incl_status = 2;\
                               } while(0)
 
 int zwnode_intf_reset(zwnode_p first_node);

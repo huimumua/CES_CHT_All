@@ -356,6 +356,9 @@ static int zwutl_node_load(zwnet_p nw, uint8_t *subtag_buf, uint16_t len, uint16
                 node->listen = subtag[2];
                 break;
 
+            case ZW_SUBTAG_SE_STATUS:
+                 node->security_incl_status = subtag[2];
+
 #ifdef CRC16_ENCAP
 //          case ZW_SUBTAG_CRC16_CAP:
 //              node->crc_cap = subtag[2];
@@ -1631,6 +1634,7 @@ int zwutl_ni_save(zwnet_p nw, const char *ni_file)
         zwutl_subtag_wr8(ZW_SUBTAG_NODE_PROPTY, curr_node->propty, &subtag, &tag->len);
         zwutl_subtag_wr8(ZW_SUBTAG_SLEEP_CAP, curr_node->sleep_cap, &subtag, &tag->len);
         zwutl_subtag_wr8(ZW_SUBTAG_LISTEN, curr_node->listen, &subtag, &tag->len);
+        zwutl_subtag_wr8(ZW_SUBTAG_SE_STATUS, curr_node->security_incl_status, &subtag, &tag->len);
 #ifdef CRC16_ENCAP
 //      zwutl_subtag_wr8(ZW_SUBTAG_CRC16_CAP, curr_node->crc_cap, &subtag, &tag->len);
 #endif
