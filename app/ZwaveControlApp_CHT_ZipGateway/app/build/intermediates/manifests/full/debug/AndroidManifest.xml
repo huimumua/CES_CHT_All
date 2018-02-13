@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.askey.firefly.zwave.control"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="19"
+        android:targetSdkVersion="25" />
+
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <meta-data
+        android:name="android.support.VERSION"
+        android:value="25.3.1" />
+
+    <application
+        android:name="com.askey.firefly.zwave.control.application.ZwaveApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/askeylogo"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:screenOrientation="landscape"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme" >
+        <activity android:name="com.askey.firefly.zwave.control.ui.WelcomeActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.askey.firefly.zwave.control.ui.HomeActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.firefly.zwave.control.ui.AddDeviceActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.firefly.zwave.control.ui.RemoveDeviceActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.firefly.zwave.control.ui.BulbActivity"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="stateUnchanged" />
+        <activity
+            android:name="com.askey.firefly.zwave.control.ui.DimmerActivity"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="stateUnchanged" />
+        <activity
+            android:name="com.askey.firefly.zwave.control.ui.PlugActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.firefly.zwave.control.ui.SensorActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.firefly.zwave.control.ui.ControlActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.firefly.zwave.control.ui.RoomActivity"
+            android:launchMode="singleTask" />
+
+        <receiver android:name="com.askey.firefly.zwave.control.service.BootBroadcastReceiver" >
+            <intent-filter>
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name="com.askey.firefly.zwave.control.service.ZwaveControlService" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </service>
+        <service android:name="org.eclipse.paho.android.service.MqttService" />
+        <service android:name="com.askey.firefly.zwave.control.service.MQTTBroker" />
+    </application>
+
+</manifest>

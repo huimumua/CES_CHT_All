@@ -1,0 +1,2 @@
+/usr/bin/ar cr ../lib/libs2_controller.a  CMakeFiles/s2_controller.dir/protocol/S2.c.o CMakeFiles/s2_controller.dir/inclusion/s2_inclusion.c.o
+/usr/bin/ranlib ../lib/libs2_controller.a

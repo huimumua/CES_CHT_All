@@ -1,0 +1,95 @@
+=================================
+To generate Z/IP library
+=================================
+For Ubuntu Linux, run the command:
+make
+
+For Ubuntu Linux with Z/IP version 2, run the commands:
+source install_openssl_lib.sh                           #only need to run once for all platforms
+source build_openssl_lib.sh linux [debug | release]     #build either debug or release library version
+make TARGET_PLATFORM=LINUX_ZIP2 [DEBUG=1]
+
+--------------------------
+For BeagleBone Black platform, run the command:
+make TARGET_PLATFORM=BEAGLEBONE
+
+For BeagleBone Black platform with Z/IP version 2, run the commands:
+source install_openssl_lib.sh                                #only need to run once for all platforms
+source build_openssl_lib.sh beaglebone [debug | release]     #build either debug or release library version
+make TARGET_PLATFORM=BEAGLEBONE_ZIP2 [DEBUG=1]
+
+--------------------------
+For Raspberry Pi platform, run the command:
+make TARGET_PLATFORM=RASPBERRY
+
+For Raspberry Pi platform with Z/IP version 2, run the commands:
+source install_openssl_lib.sh                                #only need to run once for all platforms
+source build_openssl_lib.sh raspberry [debug | release]      #build either debug or release library version
+make TARGET_PLATFORM=RASPBERRY_ZIP2 [DEBUG=1]
+
+--------------------------
+For MAC OS X platform [EXPERIMENTAL, UNSUPPORTED], run the command:
+make TARGET_PLATFORM=OSX
+
+For MAC OS X platform with Z/IP version 2, run the commands:
+source install_openssl_lib.sh                                #only need to run once for all platforms
+source build_openssl_lib.sh osx [debug | release]     #build either debug or release library version
+make TARGET_PLATFORM=OSX_ZIP2 [DEBUG=1]
+
+--------------------------
+For Sigma SMP86XX Tangox platform [EXPERIMENTAL, UNSUPPORTED], run the command:
+make TARGET_PLATFORM=SIGMA
+
+For Sigma SMP86XX Tangox platform with Z/IP version 2, run the commands:
+source install_openssl_lib.sh                                #only need to run once for all platforms
+source build_openssl_lib.sh smp86xx [debug | release]        #build either debug or release library version
+make TARGET_PLATFORM=SIGMA_ZIP2 [DEBUG=1]
+
+--------------------------
+For SMP8756 Vantage platform [EXPERIMENTAL, UNSUPPORTED], run the command:
+make TARGET_PLATFORM=VANTAGE
+
+For SMP8756 Vantage platform with Z/IP version 2, run the commands:
+source install_openssl_lib.sh                                #only need to run once for all platforms
+source build_openssl_lib.sh smp87xx [debug | release]        #build either debug or release library version
+make TARGET_PLATFORM=VANTAGE_ZIP2 [DEBUG=1]
+
+--------------------------
+For Android platform [EXPERIMENTAL, UNSUPPORTED], run the command:
+make TARGET_PLATFORM=ANDROID
+
+For Android platform with Z/IP version 2, run the commands:
+source download_android_ndk.sh                               #only need to run once for all platforms
+source install_android_toolchain.sh                          #only need to run once for all platforms
+source install_openssl_lib.sh                                #only need to run once for all platforms
+source build_openssl_lib.sh android [debug | release]        #build either debug or release library version
+source build_using_android_toolchain.sh
+
+--------------------------
+For D-link mt7628 platform with Z/IP version 2 [EXPERIMENTAL, UNSUPPORTED], run the commands:
+source install_openssl_lib.sh                                #only need to run once for all platforms
+source build_openssl_lib.sh smp86xx [debug | release]        #build either debug or release library version
+make TARGET_PLATFORM=DLINK_ZIP2 [DEBUG=1]
+
+--------------------------
+
+For Windows [EXPERIMENTAL, UNSUPPORTED], run Microsoft Visual C++ 2010 Express using the project file "zipctl.sln".
+
+===============================
+To generate Z/IP portal library
+===============================
+For Linux:
+
+Run these commands to use OpenSSL library:
+source install_openssl_lib.sh                           #only need to run once for all platforms
+source build_openssl_lib.sh linux [debug | release]     #build either debug or release library version
+make TARGET_PRODUCT=PORTAL_OPENSSL [DEBUG=1]
+
+========================================================
+To enable debug information, add "DEBUG=1" at build time
+========================================================
+Examples:
+make DEBUG=1
+make TARGET_PRODUCT=PORTAL_OPENSSL DEBUG=1
+make TARGET_PLATFORM=LINUX_ZIP2 DEBUG=1
+

@@ -1,0 +1,2 @@
+/usr/bin/ar cr ../../lib/libaes.a  CMakeFiles/aes.dir/aes/aes.c.o
+/usr/bin/ranlib ../../lib/libaes.a
