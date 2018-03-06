@@ -497,6 +497,12 @@ static char *hl_class_str_get(uint16_t cls, uint8_t ver)
         }
             break;
 
+        case COMMAND_CLASS_SUPERVISION:
+        {
+            return "COMMAND_CLASS_SUPERVISION";
+        }
+            break;
+
             /******************skysoft******************/
         default:
             return "UNKNOWN";
@@ -9881,7 +9887,7 @@ int  zwcontrol_add_provision_list_entry(hl_appl_ctx_t* hl_appl, const char* dsk,
         return -1;
     }
 
-    pl_info_t* info1 = (pl_info_t*)malloc(sizeof(pl_info_t) * 6);
+    /*pl_info_t* info1 = (pl_info_t*)malloc(sizeof(pl_info_t) * 6);
     if (!info1)
     {
         return -1;
@@ -9914,9 +9920,9 @@ int  zwcontrol_add_provision_list_entry(hl_appl_ctx_t* hl_appl, const char* dsk,
     info1[5].info.prod_id.app_sub_ver = 0x01;
 
 
-    info_cnt = 6;
+    info_cnt = 6;*/
 
-    int result = zwnet_pl_add(hl_appl->zwnet, dsk, info1, info_cnt);
+    int result = zwnet_pl_add(hl_appl->zwnet, dsk, info, info_cnt);
 
     if(result < 0)
     {

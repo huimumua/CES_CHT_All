@@ -43,6 +43,7 @@ import static com.askey.firefly.zwave.control.utils.Const.DEBUG;
 import static com.askey.firefly.zwave.control.utils.Const.ZWCONTROL_CFG_PATH;
 import static com.askey.firefly.zwave.control.utils.Const.FILE_PATH;
 import static com.askey.firefly.zwave.control.utils.Const.SAVE_NODEINFO_FILE;
+import com.askey.firefly.zwave.control.application.ZwaveProvisionList;
 /**
  * 项目名称：ZwaveControl
  * 类描述：
@@ -153,8 +154,14 @@ public static ZwaveControlService getInstance() {
             for(int i = 0; i < bstr.length; ++i)
                 dsk[i] = bstr[i];
             dsk[str.length()] = '\0';*/
-            byte[] dsk = new byte[0];
-            int result =  ZwaveControlHelper.ZwController_AddDevice(dsk, dsk.length);
+            byte[] dsk = new byte[6];
+            dsk[0] = '4';
+            dsk[1] = '4';
+            dsk[2] = '7';
+            dsk[3] = '0';
+            dsk[4] = '2';
+            dsk[5] = '\0';
+            int result =  ZwaveControlHelper.ZwController_AddDevice(dsk, 6);
             return result;
         }
 
@@ -214,7 +221,31 @@ public static ZwaveControlService getInstance() {
         @Override
         public int getSensorMultiLevel(IZwaveContrlCallBack callBack,int deviceId) throws RemoteException {
             Logg.i(TAG,"=====getSensorMultiLevel==deviceId==="+deviceId);
-            int result = ZwaveControlHelper.ZwController_GetSensorMultiLevel(deviceId);
+            String str = "55106-03713-41807-09806-27111-48391-14810-50406";
+            byte[] bstr = str.getBytes();
+            byte[] dsk = new byte[str.length()+1];
+
+            for(int i = 0; i < bstr.length; ++i)
+                dsk[i] = bstr[i];
+            dsk[str.length()] = '\0';
+            //int result = ZwaveControlHelper.ZwController_addProvisionListEntry(dsk, dsk.length);
+
+            try{
+                Thread.sleep(2000);
+            }catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+
+            String str1 = "45106-03713-41807-09806-27111-48391-14810-50406";
+            byte[] bstr1 = str1.getBytes();
+            byte[] dsk1 = new byte[str1.length()+1];
+
+            for(int i = 0; i < bstr.length; ++i)
+                dsk1[i] = bstr1[i];
+            dsk1[str1.length()] = '\0';
+           // result = ZwaveControlHelper.ZwController_addProvisionListEntry(dsk1, dsk1.length);
+            int result = 0;
             return result;
         }
 
@@ -222,9 +253,53 @@ public static ZwaveControlService getInstance() {
         public int updateNode(IZwaveContrlCallBack callBack,int deviceId) throws RemoteException {
             Logg.i(TAG,"=====updateNode==deviceId==="+deviceId);
             //int result = ZwaveControlHelper.ZwController_UpdateNode(deviceId);
+            String str = "55106-03713-41807-09806-27111-48391-14810-50406";
+            byte[] bstr = str.getBytes();
+            byte[] dsk = new byte[str.length()+1];
 
-            int result = ZwaveControlHelper.ZwController_SetDefault();
+            for(int i = 0; i < bstr.length; ++i)
+                dsk[i] = bstr[i];
+            dsk[str.length()] = '\0';
 
+            //int result = ZwaveControlHelper.ZwController_rmProvisionListEntry(dsk, dsk.length);
+            //int result = ZwaveControlHelper.ZwController_getAllProvisionListEntry();
+
+            ZwaveProvisionList[] plList = new ZwaveProvisionList[6];
+            if(plList == null){
+                Log.i(TAG,"======================");
+            }
+
+            for(int i = 0; i < 6; i++)
+            {
+                plList[i] = new ZwaveProvisionList();
+            }
+
+            plList[0].setType(ZwaveProvisionList.PL_INFO_TYPE_INCL_STS);
+
+            plList[0].setInclusionState(ZwaveProvisionList.PL_INCL_STS_PENDING);
+
+            plList[1].setType(ZwaveProvisionList.PL_INFO_TYPE_BOOT_MODE);
+            plList[1].setBootMode(ZwaveProvisionList.PL_BOOT_MODE_SMART_STRT);
+
+            plList[2].setType(ZwaveProvisionList.PL_INFO_TYPE_NAME);
+            plList[2].stProvisionList.name = "skysoft";
+
+            plList[3].setType(ZwaveProvisionList.PL_INFO_TYPE_LOC);
+            plList[3].stProvisionList.loc = "complany";
+
+            plList[4].setType(ZwaveProvisionList.PL_INFO_TYPE_PROD_TYPE);
+            plList[4].stProvisionList.pti.generic_cls = 0x10;
+            plList[4].stProvisionList.pti.specific_cls = 0x01;
+            plList[4].stProvisionList.pti.icon_type = 0x0700;
+
+            plList[5].setType(ZwaveProvisionList.PL_INFO_TYPE_PROD_ID);
+            plList[5].stProvisionList.pii.manf_id = 0;
+            plList[5].stProvisionList.pii.prod_type = 0x0003;
+            plList[5].stProvisionList.pii.prod_id = 0x0002;
+            plList[5].stProvisionList.pii.app_ver = 0x04;
+            plList[5].stProvisionList.pii.app_sub_ver = 0x01;
+
+            int result = ZwaveControlHelper.ZwController_addProvisionListEntry(dsk, dsk.length, plList, 6);
             return result;
         }
 
@@ -270,7 +345,7 @@ public static ZwaveControlService getInstance() {
 
         @Override
         public int getPowerLevel(IZwaveContrlCallBack callBack, int deviceId) throws RemoteException {
-            int result = ZwaveControlHelper.ZwController_GetPowerLevel(deviceId);
+            int result = ZwaveControlHelper.ZwController_rmAllProvisionListEntry();
             return result;
         }
 

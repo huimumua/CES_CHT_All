@@ -694,13 +694,131 @@ static int controller_startNetworkHealthCheck(JNIEnv *env, jclass object)
     return zwcontrol_network_health_check(&appl_ctx);
 }
 
-static int controller_addProvisionListEntry(JNIEnv *env, jclass object, jbyteArray dsk, jint dsklen)
+static int controller_addProvisionListEntry(JNIEnv *env, jclass object, jbyteArray dsk, jint dsklen, jobjectArray plInfo, jint infoCnt)
 {
     char array[200];
 
     env->GetByteArrayRegion(dsk, 0, dsklen, (jbyte*)array);
+    jclass objectClass =  (env)->FindClass("com/askey/firefly/zwave/control/application/ZwaveProvisionList");
 
-    int result = zwcontrol_add_provision_list_entry(&appl_ctx, array, NULL, 0);
+    jobject provision_list = NULL;
+    
+    pl_info_t * pl_info = (pl_info_t*)malloc(sizeof(pl_info_t) * infoCnt);
+
+    for(int i = 0; i < infoCnt; i++)
+    {
+        provision_list = env->GetObjectArrayElement(plInfo, i);
+        if(provision_list == NULL)
+        {
+            ALOGE("GetIntArrayElements Failed");
+            return -1;
+        }
+        
+        jfieldID bType = (env)->GetFieldID(objectClass, "type", "I");
+        pl_info[i].type = (env)->GetIntField(provision_list, bType);
+
+        jclass stProvisionListClass = env->FindClass("com/askey/firefly/zwave/control/application/ZwaveProvisionList$ProvisionListInfo");
+        jfieldID plInfo_st = env->GetFieldID(objectClass, "stProvisionList", "Lcom/askey/firefly/zwave/control/application/ZwaveProvisionList$ProvisionListInfo;");
+        
+        jfieldID name = env->GetFieldID(stProvisionListClass, "name", "Ljava/lang/String;");
+        jfieldID location = env->GetFieldID(stProvisionListClass,"loc", "Ljava/lang/String;");
+        jfieldID interval = env->GetFieldID(stProvisionListClass,"interval", "I");
+        jfieldID inclusion_state = env->GetFieldID(stProvisionListClass,"inclusionState", "I");
+        jfieldID bootmode = env->GetFieldID(stProvisionListClass,"boot_mode", "I");
+        jobject plInfoClassObject = env->GetObjectField(provision_list, plInfo_st); //
+
+        jstring jstr = (jstring)env->GetObjectField(plInfoClassObject, name);
+        const char* pName = NULL;
+        if(jstr)
+        {
+            pName = (char*)env->GetStringUTFChars(jstr, 0);
+        }
+
+        jstring jstr1 = (jstring)env->GetObjectField(plInfoClassObject, location);
+        const char* pLoc = NULL;
+        if(jstr1)
+        {
+             pLoc = (char*)env->GetStringUTFChars(jstr1, 0);
+        }
+
+        jclass ptiClass = env->FindClass("com/askey/firefly/zwave/control/application/ZwaveProvisionList$ProvisionListInfo$ProductTypeInfo");
+        jfieldID pti_st = env->GetFieldID(stProvisionListClass, "pti", "Lcom/askey/firefly/zwave/control/application/ZwaveProvisionList$ProvisionListInfo$ProductTypeInfo;");
+        
+        jfieldID generic_cls = env->GetFieldID(ptiClass,"generic_cls", "I");
+        jfieldID specific_cls = env->GetFieldID(ptiClass,"specific_cls", "I");
+        jfieldID icon_type = env->GetFieldID(ptiClass,"icon_type", "I");
+        jobject plPtiObject = env->GetObjectField(plInfoClassObject, pti_st); // 
+        
+        jclass piiClass = env->FindClass("com/askey/firefly/zwave/control/application/ZwaveProvisionList$ProvisionListInfo$ProductIdInfo");
+        jfieldID pii_st = env->GetFieldID(stProvisionListClass, "pii", "Lcom/askey/firefly/zwave/control/application/ZwaveProvisionList$ProvisionListInfo$ProductIdInfo;");
+        
+        jfieldID manf_id = env->GetFieldID(piiClass,"manf_id", "I");
+        jfieldID prod_type = env->GetFieldID(piiClass,"prod_type", "I");
+        jfieldID prod_id = env->GetFieldID(piiClass,"prod_id", "I");
+        jfieldID app_ver = env->GetFieldID(piiClass,"app_ver", "I");
+        jfieldID app_sub_ver = env->GetFieldID(piiClass,"app_sub_ver", "I");
+        jobject plPiiObject = env->GetObjectField(plInfoClassObject, pii_st); //
+
+        switch (pl_info[i].type)
+        {
+            case PL_INFO_TYPE_PROD_TYPE:
+                pl_info[i].info.prod_type.generic_cls = (env)->GetIntField(plPtiObject, generic_cls);
+                pl_info[i].info.prod_type.specific_cls = (env)->GetIntField(plPtiObject, specific_cls);;
+                pl_info[i].info.prod_type.icon_type = (env)->GetIntField(plPtiObject, icon_type);
+                /*ALOGI(" ==== generic: %x, specific:%x, icon_type:%x,",pl_info[i].info.prod_type.generic_cls, pl_info[i].info.prod_type.specific_cls,
+                      pl_info[i].info.prod_type.icon_type);*/
+                break;
+
+            case PL_INFO_TYPE_PROD_ID:
+                pl_info[i].info.prod_id.manf_id = (env)->GetIntField(plPiiObject, manf_id);
+                pl_info[i].info.prod_id.prod_type = (env)->GetIntField(plPiiObject, prod_type);
+                pl_info[i].info.prod_id.prod_id = (env)->GetIntField(plPiiObject, prod_id);
+                pl_info[i].info.prod_id.app_ver = (env)->GetIntField(plPiiObject, app_ver);
+                pl_info[i].info.prod_id.app_sub_ver = (env)->GetIntField(plPiiObject, app_sub_ver);
+                /*ALOGI(" ==== manf_id:%x, prod_type:%x, prod_id:%x",pl_info[i].info.prod_id.manf_id, pl_info[i].info.prod_id.prod_type,
+                      pl_info[i].info.prod_id.prod_id);*/
+                break;
+
+            case PL_INFO_TYPE_INC_INTV:
+                pl_info[i].info.interval = env->GetIntField(plInfoClassObject, interval);
+                break;
+
+            case PL_INFO_TYPE_NAME:
+                
+                strcpy(pl_info[i].info.name, pName);
+                //ALOGI("==== name :%s",pl_info[i].info.name);
+                break;
+
+            case PL_INFO_TYPE_LOC:
+                
+                strcpy(pl_info[i].info.loc, pLoc);
+                //ALOGI("==== loc: %s",pl_info[i].info.loc);
+                break;
+
+            case PL_INFO_TYPE_INCL_STS:
+                pl_info[i].info.incl_sts = env->GetIntField(plInfoClassObject, inclusion_state);
+                ALOGI("==== inclusion state: %d",pl_info[i].info.incl_sts);
+                break;
+
+            /*case PL_INFO_TYPE_S2_GRNT:
+                buf[j++] = meta_type | PL_INFO_CRITICAL_MASK;
+                buf[j++] = 1;
+                buf[j++] = pl_info[i].info.grnt_keys;
+                break;*/
+
+            case PL_INFO_TYPE_BOOT_MODE:
+                pl_info[i].info.boot_mode = env->GetIntField(plInfoClassObject, bootmode);
+                ALOGI("==== boot_mode: %d",pl_info[i].info.boot_mode);
+                break;
+
+            case PL_INFO_TYPE_NW_STS:
+                //Disallowed
+                break;
+        }
+
+    }
+
+    int result = zwcontrol_add_provision_list_entry(&appl_ctx, array, pl_info, infoCnt);
 
     return result;
 }
@@ -832,7 +950,7 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_getControllerNetworkRssiInfo", "()I", (void*)controller_getControllerNetworkRssiInfo},
         {"ZwController_getDeviceNetworkRssiInfo", "(I)I", (void*)controller_getNodeNetworkRssiInfo},
         {"ZwController_startNetworkHealthCheck", "()I", (void*)controller_startNetworkHealthCheck},
-        {"ZwController_addProvisionListEntry", "([BI)I", (void*)controller_addProvisionListEntry},
+        {"ZwController_addProvisionListEntry", "([BI[Ljava/lang/Object;I)I", (void*)controller_addProvisionListEntry},
         {"ZwController_rmProvisionListEntry", "([BI)I", (void*)controller_rmProvisionListEntry},
         {"ZwController_getProvisionListEntry", "([BI)I", (void*)controller_getProvisionListEntry},
         {"ZwController_getAllProvisionListEntry", "()I", (void*)controller_getAllProvisionListEntry},

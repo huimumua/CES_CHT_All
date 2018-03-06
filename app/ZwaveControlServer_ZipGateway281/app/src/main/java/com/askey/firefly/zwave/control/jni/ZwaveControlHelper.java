@@ -1,6 +1,7 @@
 package com.askey.firefly.zwave.control.jni;
 
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
+import com.askey.firefly.zwave.control.application.ZwaveProvisionList;
 
 /**
  * 项目名称：ZwaveControl
@@ -369,7 +370,7 @@ public class ZwaveControlHelper {
     ** zwave controller jni interface
     ** Smart Start, Provision list operation
     **/
-    public native static int ZwController_addProvisionListEntry(byte[] dsk, int dsklen);
+    public native static int ZwController_addProvisionListEntry(byte[] dsk, int dsklen, Object[] plInfo, int infoCount);
     public native static int ZwController_rmProvisionListEntry(byte[] dsk, int dsklen);
     public native static int ZwController_getProvisionListEntry(byte[] dsk, int dsklen);
     public native static int ZwController_getAllProvisionListEntry();
