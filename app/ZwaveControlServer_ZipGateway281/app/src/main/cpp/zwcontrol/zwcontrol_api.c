@@ -9894,7 +9894,7 @@ int  zwcontrol_add_provision_list_entry(hl_appl_ctx_t* hl_appl, const char* dsk,
     }
 
     info1[0].type = PL_INFO_TYPE_INCL_STS;
-    info1[0].info.boot_mode = PL_INCL_STS_PENDING;
+    info1[0].info.incl_sts = PL_INCL_STS_PENDING;
 
     info1[1].type = PL_INFO_TYPE_BOOT_MODE;
     info1[1].info.boot_mode = PL_BOOT_MODE_SMART_STRT;
@@ -9950,18 +9950,161 @@ int  zwcontrol_rm_provision_list_entry(hl_appl_ctx_t* hl_appl, const char* dsk)
     return result;
 }
 
+
+// Using this function to parse the provision list info
+static void hl_parse_provision_list_info(struct pl_lst_ent *info, cJSON* jsonRoot)
+{
+    cJSON *DeviceSpecificInfo = cJSON_CreateObject();
+    if(DeviceSpecificInfo == NULL)
+    {
+        return ;
+    }
+
+    cJSON *type = cJSON_CreateObject();
+    cJSON_AddItemToObject(jsonRoot,"Device type info", type);
+
+    cJSON *id = cJSON_CreateObject();
+    cJSON_AddItemToObject(jsonRoot,"Device id info", id);
+
+    cJSON *NetworkState = cJSON_CreateObject();
+    cJSON_AddItemToObject(jsonRoot,"Network inclusion state", NetworkState);
+
+    if(info->info_cnt)
+    {
+        for (int i=0; i<info->info_cnt; i++)
+        {
+            switch (info->info[i].type)
+            {
+                case PL_INFO_TYPE_BOOT_MODE:
+                    if(info->info[i].info.boot_mode == PL_BOOT_MODE_S2)
+                    {
+                        cJSON_AddStringToObject(jsonRoot,"Device Boot Mode", "Security S2");
+                    }
+                    else if(info->info[i].info.boot_mode == PL_BOOT_MODE_SMART_STRT)
+                    {
+                        cJSON_AddStringToObject(jsonRoot,"Device Boot Mode", "Smart Start");
+                    }
+                    ALOGI("Device boot mode : %d",info->info[i].info.boot_mode);
+                    break;
+
+                case PL_INFO_TYPE_INCL_STS:
+                    if(info->info[i].info.incl_sts == PL_INCL_STS_PENDING)
+                    {
+                        cJSON_AddStringToObject(jsonRoot,"Device Inclusion state", "State Pending");
+                    }
+                    else if(info->info[i].info.incl_sts == PL_INCL_STS_PASSIVE)
+                    {
+                        cJSON_AddStringToObject(jsonRoot,"Device Inclusion state", "State Parssive");
+                    }
+                    else
+                    {
+                        cJSON_AddStringToObject(jsonRoot,"Device Inclusion state", "State Ignore");
+                    }
+
+                    ALOGI("Device inclusion state: %d", info->info[i].info.incl_sts);
+                    break;
+
+                case PL_INFO_TYPE_NAME:
+                    cJSON_AddStringToObject(jsonRoot,"Device Name", info->info[i].info.name);
+                    ALOGI("Device name : %s", info->info[i].info.name);
+                    break;
+
+                case PL_INFO_TYPE_LOC:
+                    cJSON_AddStringToObject(jsonRoot,"Device Location", info->info[i].info.loc);
+                    ALOGI("Device location: %s",info->info[i].info.loc);
+                    break;
+
+                case PL_INFO_TYPE_INC_INTV:
+                    cJSON_AddNumberToObject(jsonRoot,"Device Interval", info->info[i].info.interval);
+                    ALOGI("Device interval: %d",info->info[i].info.interval);
+                    break;
+
+                case PL_INFO_TYPE_PROD_TYPE:
+                    cJSON_AddNumberToObject(type, "Generic Cls", info->info[i].info.prod_type.generic_cls);
+                    cJSON_AddNumberToObject(type, "Specific Cls", info->info[i].info.prod_type.specific_cls);
+                    cJSON_AddNumberToObject(type, "Icon Type", info->info[i].info.prod_type.icon_type);
+                    ALOGI("Device generic cls: %x, specific cls:%x, icon type:%x,",info->info[i].info.prod_type.generic_cls,
+                           info->info[i].info.prod_type.specific_cls,info->info[i].info.prod_type.icon_type);
+                    break;
+
+                case PL_INFO_TYPE_PROD_ID:
+                    cJSON_AddNumberToObject(id, "Manufacturer Id", info->info[i].info.prod_id.manf_id);
+                    cJSON_AddNumberToObject(id, "Product Type", info->info[i].info.prod_id.prod_type);
+                    cJSON_AddNumberToObject(id, "Product Id", info->info[i].info.prod_id.prod_id);
+                    cJSON_AddNumberToObject(id, "App Version", info->info[i].info.prod_id.app_ver);
+                    cJSON_AddNumberToObject(id, "App Sub Ver", info->info[i].info.prod_id.app_sub_ver);
+                    ALOGI("Device manf_id:%x, prod_type:%x, prod_id:%x",info->info[i].info.prod_id.manf_id, info->info[i].info.prod_id.prod_type,
+                           info->info[i].info.prod_id.prod_id);
+                    break;
+
+                case PL_INFO_TYPE_UUID16:
+                    /*buf[j++] = info->info[i].info.uuid.pres_fmt;
+                    memcpy(buf + j, info->info[i].info.uuid.uuid, PL_UUID_LEN);*/
+                    break;
+
+                case PL_INFO_TYPE_S2_GRNT:
+                    //info->info[i].info.grnt_keys;
+                    break;
+
+                case PL_INFO_TYPE_NW_STS:
+                    cJSON_AddNumberToObject(NetworkState,"Node Id", info->info[i].info.nw_sts.node_id);
+                    if(info->info[i].info.nw_sts.status == PL_NW_STS_NOT_INCL)
+                    {
+                        cJSON_AddStringToObject(NetworkState,"Status","Not Inclusion");
+                    }
+                    else if(info->info[i].info.nw_sts.status == PL_NW_STS_ADDED)
+                    {
+                        cJSON_AddStringToObject(NetworkState,"Status","Inclusion Susccess");
+                    }
+                    else if(info->info[i].info.nw_sts.status == PL_NW_STS_FAILED)
+                    {
+                        cJSON_AddStringToObject(NetworkState,"Status","Inclusion Failed");
+                    }
+                    
+                    ALOGI("network state, nodeId:%d, status:%d",info->info[i].info.nw_sts.node_id, info->info[i].info.nw_sts.status);
+                    //Disallowed
+                    break;
+            }
+        }
+    }
+}
+
 static void hl_provision_list_get_report(void *usr_ctx, struct pl_lst_ent *lst_ent)
 {
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Provision List Report");
+
     if(lst_ent->info_cnt)
     {
-        ALOGI("Provision list report, DSK:%s",lst_ent->dsk);
-        // tiny
-        // Todo: report all additional info
+        ALOGI("Provision list report, list cnt: %d, DSK:%s",lst_ent->info_cnt, lst_ent->dsk);
+        cJSON_AddStringToObject(jsonRoot, "DSK", lst_ent->dsk);
+        hl_parse_provision_list_info(lst_ent, jsonRoot);
     }
     else
     {
+        cJSON_AddStringToObject(jsonRoot,"Error", "No list entry");
         ALOGW("Provision list entry not found, please check weather add it into list.");
     }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
 }
 
 int  zwcontrol_get_provision_list_entry(hl_appl_ctx_t* hl_appl, const char* dsk)
@@ -9986,12 +10129,51 @@ static void hl_all_provision_list_get_report(void *usr_ctx, pl_lst_ent_t *pl_lis
 {
     ALOGI("All PL report, Found %d entry in Provision list", ent_cnt);
 
-    for(int i = 0; i < ent_cnt; i++)
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
     {
-        ALOGI("list entry %d, DSK: %s", i+1, pl_list[i].dsk);
-        // tiny
-        // Todo: report all additional info
+        return;
     }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "All Provision List Report");
+
+    if(ent_cnt > 0)
+    {
+        cJSON* ProvisionList = cJSON_CreateArray();
+        if(ProvisionList == NULL)
+            return;
+        cJSON_AddItemToObject(jsonRoot,"Detial provision list", ProvisionList);
+        
+        for(int i = 0; i < ent_cnt; i++)
+        {
+            cJSON* ProvisionListEachEntry = cJSON_CreateObject();
+            if(ProvisionListEachEntry == NULL)
+                return;
+            cJSON_AddItemToArray(ProvisionList, ProvisionListEachEntry);
+            ALOGI("list entry %d, DSK: %s", i+1, pl_list[i].dsk);
+            cJSON_AddStringToObject(ProvisionListEachEntry, "DSK", pl_list[i].dsk);
+            hl_parse_provision_list_info(&pl_list[i], ProvisionListEachEntry);
+        }
+    }
+    else
+    {
+        cJSON_AddStringToObject(jsonRoot, "Error", "No list entry found");
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
 }
 
 int  zwcontrol_get_all_provision_list_entry(hl_appl_ctx_t* hl_appl)
