@@ -9946,6 +9946,10 @@ int  zwcontrol_rm_provision_list_entry(hl_appl_ctx_t* hl_appl, const char* dsk)
     {
         ALOGE("zwcontrol_rm_provision_list_entry with error: %d", result);
     }
+    else if(result == 0)
+    {
+        ALOGI("remove one provision list entry done.");
+    }
 
     return result;
 }
@@ -10205,6 +10209,10 @@ int  zwcontrol_rm_all_provision_list_entry(hl_appl_ctx_t* hl_appl)
     if(result < 0)
     {
         ALOGE("zwcontrol_rm_all_provision_list_entry with error: %d",result);
+    }
+    else if(result == 0)
+    {
+        ALOGI("Remove all provision list entry done.");
     }
 
     return result;
