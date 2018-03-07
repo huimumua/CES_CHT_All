@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="device_type">
+        <item>SENSOR</item>
+        <item>BULB</item>
+        <item>DIMMER</item>
+        <item>PLUG</item>
+    </string-array>
+
+    <string-array name="brand_type">
+        <item>Aeotec</item>
+        <item>Gunitech</item>
+        <item>Philips Hue</item>
+        <item>myStrom</item>
+    </string-array>
+
+    <string-array name="rooms">
+        <item>My Home</item>
+        <item>Living Room</item>
+        <item>Bedroom</item>
+    </string-array>
+
+    <string-array name="wall_mote_living_icons">
+        <item>@drawable/vector_drawable_ic_96</item>
+        <item>@drawable/vector_drawable_ic_device_79</item>
+        <item>@drawable/vector_drawable_ic_79</item>
+        <item>@drawable/vector_drawable_ic_80</item>
+        <item>@drawable/vector_drawable_ic_81</item>
+        <item>@drawable/vector_drawable_ic_90</item>
+        <item>@drawable/vector_drawable_ic_65</item>
+        <item>@drawable/vector_drawable_ic_98</item>
+        <item>@drawable/vector_drawable_ic_99</item>
+        <item>@drawable/vector_drawable_ic_100</item>
+        <item>@drawable/vector_drawable_ic_105</item>
+        <item>@drawable/vector_drawable_ic_106</item>
+        <item>@drawable/vector_drawable_ic_107</item>
+        <item>@drawable/vector_drawable_ic_108</item>
+    </string-array>
+
+    <string-array name="devcie_commons">
+        <item>@drawable/ic_notify</item>
+        <item>@drawable/ic_consumption</item>
+        <item>@drawable/ic_schedule</item>
+        <item>@drawable/ic_vacation_mode</item>
+        <item>@drawable/ic_trigger</item>
+        <item>@drawable/ic_info</item>
+    </string-array>
+</resources>

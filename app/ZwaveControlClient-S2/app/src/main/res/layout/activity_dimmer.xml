@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_dimmer"
+    android:layout_width="@dimen/device_width"
+    android:layout_height="@dimen/device_heigh"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+    <CheckBox
+        android:id="@+id/cb_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/device_on_off"
+        android:button="@null"
+        />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/vector_drawable_ic_53"
+            android:layout_gravity="center_vertical"
+            />
+
+        <SeekBar
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:progressDrawable="@drawable/progress_rectangle"
+            android:thumb="@drawable/vector_drawable_ic_54"
+            android:maxHeight="2dp"
+            android:max="100"
+            android:layout_gravity="center_vertical"
+            android:id="@+id/seekBar" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/vector_drawable_ic_54_smaller"
+            android:layout_gravity="center_vertical"
+            />
+    </LinearLayout>
+</LinearLayout>

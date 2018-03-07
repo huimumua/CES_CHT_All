@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/activity_plug"
+    android:layout_width="@dimen/device_width"
+    android:layout_height="@dimen/device_heigh"
+    android:orientation="vertical"
+    android:background="@android:color/white"
+    >
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+        <ImageView
+            android:id="@+id/iv_setting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_57"
+            android:layout_gravity="end"
+            android:layout_marginTop="@dimen/device_set_icon_top_10dp"
+            android:layout_marginRight="@dimen/device_set_icon_top_10dp"
+            android:layout_alignParentRight="true"
+            />
+        <TextView
+            android:id="@+id/tv_device_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Device Name"
+            android:textSize="@dimen/device_title_30sp"
+            style="@style/textview_red"
+            android:layout_marginTop="@dimen/device_round_20dp"
+            android:layout_centerHorizontal="true"
+            android:fontFamily="sans-serif-light"
+            />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/ll_trigger_device"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="@dimen/device_round_20dp"
+        android:layout_marginRight="@dimen/device_round_20dp"
+        android:layout_marginLeft="@dimen/device_round_20dp"
+        >
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/vector_drawable_ic_96"
+            android:layout_centerHorizontal="true"
+            />
+        <ImageView
+            android:id="@+id/iv_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_info"
+            android:layout_alignParentRight="true"
+            />
+    </RelativeLayout>
+
+    <RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/device_round_20dp"
+    android:layout_marginBottom="@dimen/device_round_20dp"
+    >
+
+    <Button
+        android:id="@+id/btn_show_key"
+        style="@style/graybutton"
+        android:text="@string/show_key"
+        android:layout_alignLeft="@id/btn_set_key"
+        android:layout_alignRight="@id/btn_set_key"
+        android:gravity="center"
+        />
+
+    <Button
+        android:id="@+id/btn_set_key"
+        style="@style/graybutton"
+        android:layout_marginTop="@dimen/device_round_20dp"
+        android:text="@string/set_key"
+        android:paddingLeft="@dimen/device_round_20dp"
+        android:paddingRight="@dimen/device_round_20dp"
+        android:layout_below="@id/btn_show_key" android:layout_centerHorizontal="true"
+        android:gravity="center"
+
+
+        />
+    </RelativeLayout>
+</LinearLayout>

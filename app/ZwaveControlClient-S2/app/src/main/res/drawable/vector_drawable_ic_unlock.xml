@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:viewportWidth="60"
+    android:viewportHeight="60" android:width="24dp" android:height="24dp">
+    <group android:name="圖層_1">
+        <path android:name="cls-1" android:fillColor="@color/color_4d4d4d"
+            android:pathData="M44.14,3.81A15.81,15.81,0,0,0,28.29,19.65v6.62H3.56A3.56,3.56,0,0,0,0,29.83V49.94a3.55,3.55,0,0,0,3.54,3.55H37.1a3.55,3.55,0,0,0,3.55-3.55V29.83a3.56,3.56,0,0,0-3.55-3.56H35.39V19.65a8.78,8.78,0,0,1,8.75-8.76c11-.37,9.59,14.09,9.75,19.06a2.47,2.47,0,0,0,2.43,2.44h1.23A2.43,2.43,0,0,0,60,30C60,21.22,61.59,3.94,44.14,3.81Z" />
+    </group>
+</vector>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/device_width"
+    android:layout_height="@dimen/device_heigh"
+    android:background="@android:color/white"
+    android:orientation="vertical"
+    tools:context="com.askey.mobile.zwave.control.home.activity.addDevice.InstallSuccessActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="15dp"
+        android:text="Success !"
+        android:textColor="@android:color/black"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/notify_msg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="10dp"
+        android:text="@string/the_rgb_led" />
+
+    <ImageView
+        android:id="@+id/device_icon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:layout_marginBottom="30dp"
+        />
+
+    <!--<TextView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:gravity="center"-->
+        <!--android:padding="10dp"-->
+        <!--android:text="@string/configure_your_device"-->
+        <!--android:textColor="@android:color/holo_red_dark" />-->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Device Name"
+        android:textSize="14sp"
+        android:layout_gravity="center_horizontal"
+        />
+    <RelativeLayout
+        android:layout_width="210dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="3dp"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/device_name"
+            android:layout_width="160dp"
+            android:layout_height="30dp"
+            android:layout_centerHorizontal="true"
+            android:layout_weight="4"
+            android:background="@null"
+            android:gravity="center"
+            android:maxLength="25"
+            android:hint="Device Name"
+            android:textColor="@android:color/holo_red_dark" />
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_toRightOf="@id/device_name"
+            android:src="@drawable/ic_edit" />
+    </RelativeLayout>
+
+    <View
+        android:layout_width="210dp"
+        android:layout_height="1dp"
+        android:layout_gravity="center"
+        android:background="@android:color/darker_gray" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Room"
+        android:textSize="14sp"
+        android:layout_marginTop="20dp"
+        android:layout_gravity="center_horizontal"
+        />
+    <RelativeLayout
+        android:id="@+id/linear_click"
+        android:layout_width="210dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="5dp"
+        android:background="@drawable/stroke_rectangle"
+        android:orientation="horizontal"
+        android:padding="5dp">
+        <!--<Spinner-->
+        <!--android:id="@+id/spinner"-->
+        <!--android:background="@drawable/stroke_rectangle"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_marginBottom="20dip"/>-->
+        <TextView
+            android:id="@+id/room_name_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:gravity="center"
+            android:text="My Home"
+            android:textColor="@android:color/holo_red_dark"
+            android:textSize="18sp" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:src="@drawable/ic_orientation_down" />
+    </RelativeLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="10dp"
+        android:text="@string/add_to_favorites" />
+
+    <CheckBox
+        android:id="@+id/add_favorite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:buttonTint="@android:color/holo_red_dark"
+        android:layout_gravity="center" />
+
+    <Button
+        android:id="@+id/done"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="10dp"
+        style="@style/redbutton"
+        android:text="Done" />
+</LinearLayout>

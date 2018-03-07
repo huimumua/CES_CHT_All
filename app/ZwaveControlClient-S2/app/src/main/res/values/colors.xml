@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="oobe_text">#16e4fe</color>
+    <color name="vehice_status_text">#ffffff</color>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#E1231B</color>
+    <color name="user_name">#50d8c4</color>
+    <color name="menu_background">#252030</color>
+    <color name="white">#ffffff</color>
+    <color name="line1">#cccccc</color>
+    <color name="fragment_background">#efefef</color>
+    <color name="adas_text">#000000</color>
+    <color name="color_cccccc">#cccccc</color>
+    <color name="color_999999">#999999</color>
+    <color name="color_bbbbbb">#BBBBBB</color>
+    <color name="dialog_button_pressed">#009ACD</color>
+    <color name="dialog_button_normal">#ffffff</color>
+    <color name="hui">#e9e3e3</color>
+
+    <color name="color_primary">#3F51B5</color>
+    <color name="color_primaryDark">#303F9F</color>
+    <color name="color_accent">#E1231B</color>
+    <color name="gray">#80BDBDBD</color>
+    <color name="orange">#B4FF8800</color>
+    <color name="remind">#FFFF8F5A</color>
+    <color name="view_item_selected">#FFD7D7D7</color>
+
+    <color name="text_color">#000000</color>
+    <color name="red">#d60808</color>
+
+    <!--二维码扫描-->
+    <color name="contents_text">#ff000000</color>
+    <color name="encode_view">#ffffffff</color>
+    <color name="possible_result_points">#c0ffbd21</color>
+    - <!--  Android standard ICS color
+  -->
+    <color name="result_minor_text">#ffc0c0c0</color>
+    <color name="result_points">#c099cc00</color>
+    - <!--  Android standard ICS color
+  -->
+    <color name="result_text">#ffffffff</color>
+    <color name="result_view">#e0000000</color>
+    <color name="status_text">#ffffffff</color>
+    <color name="transparent">#00000000</color>
+    <color name="viewfinder_laser">#ffcc0000</color>
+    - <!--  Android standard ICS color
+  -->
+    <color name="viewfinder_mask">#60000000</color>
+    <color name="viewfinder_frame">#ff000000</color>
+    <color name="line">#e1dddd</color>
+    <color name="viewfinder_laser_trs">#7f86f60e</color>
+
+    <color name="transparent_background">#bbffffff</color>
+    <color name="text_read">#E1231B</color>
+
+    <color name="color_4d4d4d">#4d4d4d</color>
+
+    <color name="color_e2231a">#e2231a</color>
+    <!--disable-->
+    <color name="color_c9caca">#c9caca</color>
+
+    <!--背景-->
+    <color name="color_e6e6e6">#e6e6e6</color>
+
+    <!--输入框-->
+    <color name="color_727171">#727171</color>
+
+    <!--字体背景-->
+    <color name="color_a0a0a0">#a0a0a0</color>
+</resources>

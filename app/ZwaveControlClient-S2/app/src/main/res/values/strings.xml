@@ -1,0 +1,448 @@
+<resources>
+    <string name="app_name">QBee Home</string>
+    <string name="title_alert">Pairing time out</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="two_click_exit">Click twice then exit</string>
+    <string name="drawer_open">Open</string>
+    <string name="drawer_close">Close</string>
+
+    <string-array name="qos_options">
+        <item name="qos_0">0</item>
+        <item name="qos_1">1</item>
+        <item name="qos_2">2</item>
+    </string-array>
+
+
+    <string name="action_add_connection">Add Connection</string>
+    <string name="add_connection_general_label">General</string>
+    <string name="add_connection_client_id_label">Client ID</string>
+    <string name="add_connection_client_id_default">AndroidClient</string>
+    <string name="add_connection_server_label">Server</string>
+    <string name="add_connection_server_default">iot.eclipse.org</string>
+    <string name="add_connection_port_label">Port</string>
+    <string name="add_connection_clean_session_label">Clean Session</string>
+    <string name="add_connection_advanced_label">Advanced</string>
+    <string name="add_connection_username_label">Username</string>
+    <string name="add_connection_password_label">Password</string>
+    <string name="add_connection_timeout_label">Timeout</string>
+    <string name="add_connection_keepalive_label">Keepalive</string>
+    <string name="add_connection_tls_server_key_label">Server TLS Key</string>
+    <string name="add_connection_tls_client_key_label">Client TLS Key</string>
+    <string name="add_connection_lwt_label">Last Will &amp; Testament</string>
+    <string name="add_connection_lwt_topic_label">Topic</string>
+    <string name="add_connection_lwt_message_label">Message</string>
+    <string name="add_connection_lwt_retain_label">Retain</string>
+    <string name="add_connection_lwt_qos_label">QoS</string>
+    <string name="hello_world">Hello world!</string>
+
+    <string name="connection_connected_to">Connected to</string>
+    <string name="connection_disconnected_from">Disconnected from</string>
+    <string name="connection_unknown_status">Unknown connection status to</string>
+    <string name="connection_connecting_to">Connecting to</string>
+    <string name="connection_disconnecting_from">Disconnecting from</string>
+    <string name="connection_error_connecting_to">An error occurred connecting to</string>
+    <string name="connection_clear">Clear</string>
+    <string name="subscription_new">New Subscription</string>
+
+
+    <string name="manage_title">Manage Connection</string>
+    <string name="manage_delete">Delete Connection</string>
+    <string name="manage_edit">Edit Connection</string>
+
+    <string name="notifyTitle">MQTT Message Received</string>
+    <string name="notifyTitle_connectionLost">MQTT Client Has Lost Connection</string>
+
+    <!-- Strings that need formatting  -->
+    <string name="messageRecieved">Received message %1$s &lt;br/&gt; &lt;small&gt;Topic: %2$s &lt;/small&gt; </string>
+    <string name="timestamp">&lt;br/&gt; &lt;small&gt; %1$s &lt;/small&gt;</string>
+    <string name="notification">%1$s has received %2$s on topic %3$s</string>
+    <string name="toast_pub_success">Published message: %1$s to topic: %2$s</string>
+    <string name="toast_sub_success">Subscribed to %1$s</string>
+    <string name="toast_disconnected">Disconnected</string>
+    <string name="toast_pub_failed">Failed to publish message: %1$s to topic: %2$s</string>
+    <string name="toast_sub_failed">Failed to subscribe to %1$s</string>
+    <string name="connection_lost">%1$s has lost connection to %2$s</string>
+
+    <!-- Strings for Subscriptions Fragment -->
+    <string name="topic_label">Topic</string>
+    <string name="qos_label">QoS</string>
+    <string name="notify_label">Show Notifications</string>
+    <string name="subscribe_ok">OK</string>
+    <string name="subscribe_cancel">Cancel</string>
+    <string name="qos_text">QoS: %1$d</string>
+    <string name="notify_text">Notifications: %1$s</string>
+
+
+    <!-- Strings for Help Fragment -->
+    <string name="help_and_feedback">Help &amp; Feedback</string>
+    <string name="help_paho">Paho</string>
+    <string name="help_title">Eclipse Paho Android Example Utility</string>
+    <string name="help_email_button">Get Help or send Feedback</string>
+    <string name="help_paho_website">Go to the Paho Website</string>
+    <string name="help_enable_logging">Enable Paho Logging</string>
+
+
+    <!-- Home Fragment -->
+    <string name="home_no_connections">No Connections</string>
+    <string name="home_no_cons_message">It looks like there are no connections defined yet.</string>
+
+
+    <!-- messages -->
+    <string name="message_time">Time:</string>
+    <string name="message_time_fmt">Time: %1$s</string>
+    <string name="publish">Publish</string>
+    <string name="topic_fmt">Topic: %1$s</string>
+
+
+    <string name="enabled">Enabled</string>
+    <string name="disabled">Disabled</string>
+
+
+    <!-- placeholders -->
+    <string name="placeholder_main_label">Main Label</string>
+    <string name="placeholder_sub_label">Sub Label</string>
+    <string name="placeholder_example">Example application</string>
+
+
+    <!-- Message List Item -->
+    <string name="message_topic">Topic: </string>
+
+    <!--notification activity-->
+    <string name="notifi_title">\"QBee Home\" Would Like to Send  You Notifications</string>
+    <string name="notifi_content">Notifications may include alerts,sounds and icon badges.These can be configured in Settings.</string>
+
+    <!--log in and sign up-->
+    <string name="firefly">QBee</string>
+    <string name="welcome">Welcome</string>
+    <string name="log_in">Log in</string>
+    <string name="log_in_wait_toast">Please wait a moment while landing</string>
+    <string name="sign_up">Sign up</string>
+    <string name="invalid_eamil_password">Invalid email or password</string>
+    <string name="sign_up_one_title">Your log in credential</string>
+    <string name="sign_up_explain">\ \ Please enter your email address and define a password with at least 8 digits.</string>
+    <string name="email_hint">Email address</string>
+    <string name="password_hint">Password</string>
+    <string name="password_strength">Password strength:</string>
+    <string name="password_explain">\ \ Captial letters,numbers and special characters make your password stronger</string>
+    <string name="nick_name_explain">Enter the name that is shown to other QBee users and when sharing files.</string>
+    <string name="sign_up_second_title">Your filefly nickname</string>
+    <string name="nickname_hint">nickname</string>
+    <string name="sign_up_third_title">Account verification</string>
+    <string name="verification_explain">A verification code has been sent to</string>
+    <string name="verification_explain_one">\ \ Don\'t get a verification code ? Please check your Spam Folder or request a new code.</string>
+    <string name="request_new_password">Request new code</string>
+    <string name="verification_hint">Enter verification code</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="log_in_one_title">Forgot password</string>
+    <string name="forgot_password_explain">Please enter your email address and tap on the send button.Your password recovery code will be sent to the specified address.</string>
+    <string name="log_in_second_title">Enter recovery code</string>
+    <string name="recovery_code_explain">A recovery code has been sent to</string>
+    <string name="recovery_code_hint">Enter recovery code</string>
+    <string name="recovery_explain_one">\ \ Don\'t get a recovery code ? Please check your Spam Folder or request a new code.</string>
+    <string name="log_in_third_title">Define new password</string>
+    <string name="new_password_explain">\  Please enter your new password with at least 8 digits.</string>
+    <string name="new_password_hint">Enter new password</string>
+    <string name="verification_sent">A new code has sent \n to the specified email.</string>
+    <string name="verification_invaild">Invaild verification code</string>
+    <string name="dont_allow">Don\'t allow</string>
+    <string name="password_start">start typing</string>
+    <string name="password_strong">strong</string>
+    <string name="password_weak">weak</string>
+    <string name="invalid_email">Invalid email</string>
+
+    <!--guide-->
+    <string name="setup_title">Your setup</string>
+    <string name="setup_explain">How do you intent to use your QBee Home</string>
+    <string name="cable_connected">Cable-connected to existing router</string>
+    <string name="wifi_connected">WiFi-connected to existing router</string>
+    <string name="lte_connected">QBee is my new router(4G/LTE)</string>
+    <string name="qbox_explain">Here is what you need to start setting up your QBee Home.</string>
+    <string name="qbox">QBee</string>
+    <string name="power_cable">Power Cable</string>
+    <string name="ethernet_cable">Ethernet Cable</string>
+    <string name="sim_card">SIM card</string>
+    <string name="insert_sim_card">Insert SIM card</string>
+    <string name="wifi_setup_one_title">What you\'ll need</string>
+    <string name="wifi_setup_second_title">Connect your QBee</string>
+    <string name="wifi_setup_third_title">WiFi setup</string>
+    <string name="proceed_follows">Proceed as follows</string>
+    <string name="connect_power">Connect QBee with mains power</string>
+    <string name="connect_router">Connect router with QBee</string>
+    <string name="switch_on">Switch the QBee on</string>
+    <string name="connect_means_explain">How do you intent to connect your QBee?</string>
+    <string name="wps_connected">Automatically using WPS</string>
+    <string name="wifi_list">Manually by selecting my Wifi from a list</string>
+    <string name="wps_explain">On both your QBee and your router</string>
+    <string name="wps_title_one">Push the WPS buttons</string>
+    <string name="find_qbox_explain">This can take up to 3 minutes</string>
+    <string name="finding_qbox">Finding your QBee</string>
+    <string name="found_title">QBee Box found</string>
+    <string name="found_not_title">QBee Box not found</string>
+    <string name="found_explain">This can take up to 3 minutes</string>
+    <string name="not_found_explain">Please make sure that&#8230;</string>
+    <string name="found_one">You\'ve pushed the WPS button on both devices</string>
+    <string name="found_second">Your Phones is connected to the same WiFi</string>
+    <string name="found_third">Your QBee is connected with mains power with it\'s LED blinking green</string>
+    <string name="qbox_found_explain">Give your QBee a name</string>
+    <string name="qbox_name_explain">Use a default name or change it.</string>
+    <string name="select_wifi_explain">Please your select your router\'s WiFi. Make sure this phone is connected to the same WiFi.</string>
+    <string name="select_wifi">Select your Wifi</string>
+    <string name="connect_qbox_wifi">Connect to QBee WiFi</string>
+    <string name="connect_qbox_wifi_explain">Please note your QBee WiFi credentials,\n from the underside of your QBee.</string>
+    <string name="connect_qbox_wifi_explain_two">Now connect to the QBee WiFi from your iPone\'s WiFi Settings.</string>
+    <string name="ssid">QBee Box WiFi Name(SSID)</string>
+    <string name="ssid_text">Qbee box-xxxxxx-g</string>
+    <string name="password">QBee Box WiFi Password</string>
+
+    <!--device guide-->
+    <string name="welcome_guide_one">Control from Anywhere</string>
+    <string name="welcome_guide_second">Automate your Home</string>
+    <string name="welcome_guide_third">Tell your Home What to Do</string>
+    <string name="welcome_guide_fourth">Reduce your Electricity Bill</string>
+    <string name="device_guide_one">Single Tap:\n Switch Devices</string>
+    <string name="device_guide_second">Long Tap:\n Device Features</string>
+    <string name="device_guide_third">Tap Outside:\n Close Cards</string>
+    <string name="device_guide_fourth">Use Scenes to \n Control Groups</string>
+    <string name="device_guide_fifth">Talk to Control \n Devices &#038; Scenes</string>
+    <string name="qbox_home">QBee Home</string>
+    <string name="qbox_home_welcome">QBee\nHome</string>
+    <string name="all_set">Congratulations, \n you\'re all set!</string>
+
+    <!--plug-->
+    <string name="detail">View Technical Details</string>
+    <string name="active_mode">Active Modes</string>
+    <string name="trigger_device">Trigger \n device</string>
+    <string name="modes">Modes</string>
+    <string name="energy_option">Energy options</string>
+    <string name="notification_explain">Notification</string>
+    <string name="scheduler">Scheduler</string>
+    <string name="vacation">Vacation Mode</string>
+    <string name="trigger">Triggers</string>
+
+    <!--notify-->
+    <string name="notify_title">Notify me for</string>
+    <string name="high_consumption">High Consumption</string>
+    <string name="atypical_consumption">Atypical Consumption</string>
+    <string name="device_switch_on">Device switched on</string>
+    <string name="switch_switched_on">Switch switched on</string>
+    <string name="notify_setting">Notification settings</string>
+    <string name="notify_via">Notify me via</string>
+    <string name="email">Email</string>
+    <string name="push_notification">Push Notification</string>
+
+    <!--setting-->
+    <string name="device_name">Device name</string>
+    <string name="room">Room</string>
+    <string name="favorite">Add to favorites</string>
+    <string name="tech_detail">Technical Details</string>
+    <string name="delete_device">Delete device</string>
+    <string name="device_type">Device Type</string>
+    <string name="firmware">Firmware</string>
+    <string name="firmware_explain">\ \ Firmware updates \n are run automatically</string>
+
+    <!--remove device-->
+    <string name="delete_device_title">You\'re about to delete </string>
+    <string name="delete_explain">\ \ The device will be permanently \n removed from your QBee Home. </string>
+    <string name="proceed">Proceed</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">favorites fragment</string>
+
+    <!--vacation mode-->
+    <string name="vacation_mode_title">Make your home look inhabited</string>
+    <string name="vacation_mode">Vacation mode</string>
+    <string name="vacation_mode_one">1.Connect a lamp to this switch</string>
+    <string name="vacation_mode_second">2.Activate vacation mode</string>
+    <string name="vacation_mode_explain">Vacation Mode switches the switch on and off in random intervals
+        to make your home look inhabited.Vacation mode is active between 6am and 8am,in random intervals.Vacation
+        mode disables active schedules.</string>
+
+    <!--devices trigger-->
+    <string name="device_trigger_title">Devcie Triggers</string>
+    <string name="leave_switch_off">if leaving \n Switch OFF</string>
+    <string name="enter_switch_on">if entering \n Switch ON</string>
+    <string name="notification_setting">Notification settings</string>
+    <string name="trigger_explain">\ \ Geofencing allows your to use your smartphone \'s
+        location to automatically switch this device ON or OFF.</string>
+    <!--schedule-->
+    <string name="schedule_title">Schedule ON times</string>
+    <string name="schedule_status">Schedule is \ </string>
+
+    <string name="scan_results">Scan results</string>
+    <string name="room_name">My Home</string>
+    <string name="swicth_a_device">Tap to swicth a device</string>
+    <string name="device_options">Tap and hold to access device options</string>
+
+    <!--wall mote living-->
+    <string name="mote_explain">Tap &#038; swipe to use it like the regular Wall Mote</string>
+    <string name="show_key_explain">View the Wall Mote\'s keys</string>
+    <string name="show_key">Show keys</string>
+    <string name="set_key_explain">Configure the Wall Mote\'s keys</string>
+    <string name="set_key">Set up keys</string>
+    <string name="available_commands">Available commands</string>
+    <string name="set_up_key_explain">Tap to modify Swipe to delete</string>
+    <string name="add_action">Add another action</string>
+    <string name="choose_action_title">If&#8230;</string>
+    <string name="choose_device_title">Then&#8230;</string>
+    <string name="do_title">Do&#8230;</string>
+    <string name="white">Whites</string>
+    <string name="colors">Colors</string>
+    <string name="indefinite">Indefinitely</string>
+    <string name="timer">Timer</string>
+    <string name="action_summary">Action Summary</string>
+    <string name="done">Done</string>
+    <string name="favorites">Favorites</string>
+    <string name="favorites_describle">Favorites are available here and in your wedgit</string>
+    <string name="living_room">Living Room</string>
+    <string name="scanning_for_devices">Scanning for devices.This may take a moment.</string>
+    <string name="device_not_found">Device not found?</string>
+    <string name="list_instead">Select from list instead.</string>
+    <string name="add_device">Add Device</string>
+    <string name="no_devices">No devices found.Scan again or select from list</string>
+    <string name="select_from_list1">Select from list</string>
+    <string name="scan_again">Scan again</string>
+    <string name="device_found">Device(s) found. Tap on icon to install</string>
+    <string name="install_device">Install Device</string>
+    <string name="the_rgb_led">The RGB LED of Smart Switch will be solid.</string>
+    <string name="configure_your_device">Configure your device</string>
+    <string name="add_to_favorites">Favorites</string>
+    <string name="choose_devices">Choose your devices brand</string>
+    <string name="select_brand">Select Brand</string>
+    <string name="aeotec">Aeotec</string>
+    <string name="gunitech">Gunitech</string>
+    <string name="philips">Philips Hue</string>
+    <string name="mystrom">myStrom</string>
+    <string name="select_device">Select Device</string>
+    <string name="smart_switch">Smart Switch</string>
+    <string name="led">LED Bulb</string>
+    <string name="wall_mote">WallMote Quad</string>
+    <string name="range">Range Extender</string>
+    <string name="sensor">Sensor</string>
+    <string name="espresso_machine">Espresso Machine</string>
+    <string name="power_strip">Power Strip</string>
+    <string name="tv_back">Tv Rack</string>
+    <string name="dinner_table_1">Dinner Table 1</string>
+    <string name="all_off">All Off</string>
+    <string name="evening_mood">Evening Mood</string>
+    <string name="touch">Touch</string>
+
+    <string name="touch_left_down">Touch(Left/Down)</string>
+    <string name="touch_right_down">Touch(Right/Down)</string>
+    <string name="touch_left_up">Touch(Left/Up)</string>
+    <string name="touch_right_up">Touch(Right/Up)</string>
+
+    <string name="slide_left_up">Sliding(Left/Up)</string>
+    <string name="slide_right_up">Sliding(Right/Up)</string>
+    <string name="slide_left_down">Sliding(Left/Down)</string>
+    <string name="slide_right_down">Sliding(Right/Down)</string>
+
+
+    <string name="swipe">Swipe</string>
+    <string name="touch_hold">Touch &#038; Hold</string>
+    <string name="switch_on_action">Switch ON</string>
+    <string name="switch_off_action">Switch OFF</string>
+    <string name="toggle_action">Toggle</string>
+    <!--consumption-->
+    <string name="consumption_title">Current consumption:\ </string>
+    <string name="today">Today</string>
+    <string name="this_month">This month</string>
+    <string name="always">Always</string>
+    <string name="auto_energy_saving">Automate energy saving</string>
+    <string name="auto_off">Auto -\  </string>
+    <string name="standby_killer">Standby-Killer </string>
+
+    <!--bulb activity-->
+    <string name="bulb_explain">\ \ Tap to change bulb color to favorites.\n
+    Add favorites from Whites and Color views</string>
+    <string name="tap_center_explain">Tap to center to \n switch ON/OFF</string>
+    <string name="bright_explain">Tap to center to switch ON/OFF</string>
+    <string name="add_remove_favorites">Add/remove favorites</string>
+    <string name="slide_light">Slide to set brightness</string>
+    <string name="color">Color</string>
+
+    <!--new scence-->
+    <string name="new_scence_title">New Scence</string>
+    <string name="scence_icon">Scence Icon</string>
+    <string name="scence_name">Scence Name(max 16 chars)</string>
+    <string name="scence_continue">Continue</string>
+    <string name="scene_action">View Scene Actions</string>
+    <string name="dining_evening">Dining Evening</string>
+    <string name="schedule_on_time">Schedule run times</string>
+    <string name="run_scene">Run scene</string>
+    <string name="add_another_schedule">Add another schedule</string>
+    <string name="active">active</string>
+    <string name="set_up_timer">Set up timer</string>
+
+    <!--scene action-->
+    <string name="scene_action_title">Scene Actions</string>
+    <string name="define_action">Define actions for your Scene</string>
+    <string name="first_scene">Add a first action</string>
+    <string name="delete_room_notify">The room\'s devices will be assigned to the room of your choosing</string>
+    <string name="ethernet">Ethernet</string>
+    <string name="lte">4G/LTE</string>
+    <string name="scenes">Scenes</string>
+    <string name="add_your_first_scene">Add your first Scene</string>
+    <string name="scene_notify">With scenes, you control multiple devices at the same time.</string>
+
+    <string name="please_wait_a_moment">Please wait a moment...</string>
+    <string name="step_1">Step 1</string>
+    <string name="step_switch_notify">Keep the wall switch in the \' ON \' status.</string>
+    <string name="step_switch_notify_1">Toggle LED Bulb\'s wall switch off,on,off,on,off,on in fast succession.</string>
+    <string name="device_del_success_notify">if Smart Switch has been successfully removed from your network, it\'s RGB LED will remain colorful gradient status. If not, the RGB LED will still solid</string>
+
+    <string name="add_device_result">With other users in this order operation,</string>
+    <string name="select_brand_type">Select Devices Type</string>
+    <string name="alarms">Alarms</string>
+
+    <!--zwave device-->
+    <string name="select_room">Select Room</string>
+    <string name="manage_room">Manage Rooms</string>
+    <string name="fail_add_notify">Are you going to pairing the Smart Switch again ?</string>
+    <string name="fail_del_notify">Are you going to remove the Smart Switch again ?</string>
+    <string name="wall_mote_add_action_toast">Please long press the trigger button</string>
+    <string name="scene_name">The scene name cannot be empty</string>
+    <string name="scene_name_length">Scene name max 16 chars</string>
+    <string name="add_first_device">Add your first device</string>
+    <string name="delete_room">Delete Room</string>
+    <string name="remove_no_exist_device">Device is not exist</string>
+    <string name="get_iot_cert_fail">IOT request failed</string>
+    <string name="no_network_message">No network,Please check</string>
+    <string name="extender_no_contrl">Extender has no control operation</string>
+    <string name="remove_device">Remove</string>
+    <string name="reset_device">Reset</string>
+    <string name="skip">Skip</string>
+    <string name="add">ADD</string>
+    <string name="delete">DELETE</string>
+
+    <!--account activity-->
+    <string name="activity_account_title">My QBee Account</string>
+    <string name="activity_account_username">Username</string>
+    <string name="activity_account_password">Password</string>
+    <string name="activity_account_newpassword">New Password(Above 8 characters)</string>
+    <string name="activity_account_confirmpassword">Confirm Password</string>
+    <string name="activity_account_continue">Continue</string>
+    <string name="activity_account_wrongpassword">Wrong-newpassword</string>
+    <string name="activity_account_changepassword">Your password has been changed.\nPlease login with new password next time.</string>
+    <string name="activity_account_logout">Log out</string>
+
+    <string name="switch_1">Plug the Smart Switch into the Wall outlet which you want it to be.</string>
+    <string name="switch_2">Press the Action button on your Smart Switch ,then continue to next step.</string>
+    <string name="bulb_1">Removing any existing light bulb and replace it with the LED Bulb. Be sure you toggle off the wall switch into the OFF position before the installation</string>
+    <string name="bulb_2">Wait 2 seconds after LED Bulb is in its fitting, toggle your wall switch ON, then continue to next step.</string>
+    <string name="wallmote_1">Take your WallMote Quad near to QBee Box</string>
+    <string name="wallmote_2">Press the Action Button once your WallMote Qua, the LED will blink with green color, then continue to next step.</string>
+    <string name="extender_1">Plug the Range Extender into the wall outlet which you want it to be.</string>
+    <string name="extender_2">Press the Z-Wave Button on your Range Extender , then continue to next step.</string>
+
+    <string name="switch_installing">Pairing with your Smart Switch</string>
+    <string name="bulb_installing">LED Bulbs\'s green LED will blink to indicate that it\'s looking of a Z-Wave network to connect to.</string>
+    <string name="wallmote_installing">Please waiting for it finish</string>
+    <string name="extender_installing">Pairing with your Range Extender</string>
+    <string name="account_is_not_null">User name password cannot be empty</string>
+    <string name="retry">Retry</string>
+    <string name="iot_conn_fail">IOT connected failed</string>
+    <string name="iot_conn_fail_detail">Please try again</string>
+    <string name="device_not_exist">Device does not exist</string>
+    <string name="device_name_is_long">The maximum 25 bytes of the device name</string>
+</resources>

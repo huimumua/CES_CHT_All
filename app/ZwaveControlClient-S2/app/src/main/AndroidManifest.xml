@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.askey.mobile.zwave.control">
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+
+    <application
+        android:name=".application.ZwaveClientApplication"
+        android:allowBackup="true"
+        android:configChanges="orientation|screenSize"
+        android:icon="@mipmap/ic_qbee"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/BaseThem">
+        <activity
+            android:name=".welcome.ui.WelcomeActivity"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <meta-data
+            android:name="com.askeycloud.webservice.sdk.ApiKey"
+            android:value="oVBRnoD59u7zBG2hFvHUb6gvkdclf6E75JUmrD1b" />
+        <meta-data
+            android:name="com.askeycloud.webservice.sdk.clientid"
+            android:value="GXJKBA63QGFFQT5WG4PAIZAMCUAAAAK6ZUP4HMAAAC45PECRKDIQ.auis.askeycloud.com" />
+
+        <activity
+            android:name=".welcome.ui.GuideActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".welcome.ui.NotificationActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".login.ui.LoginPageActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".login.ui.SignUpActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".login.ui.LogInActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".login.ui.LogInHomeActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".guideSetting.ui.SetupHomeActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.DeviceGuideActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.DeviceGuideHomeActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.BaseDeviceActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.DeviceSettingActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ConsumptionActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.NotifyActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ScheduleActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.TriggerActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.PlugActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.DimmerActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.DetailActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.NotificationSetting"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.HomeActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/HomeActivityThem"
+            android:windowSoftInputMode="adjustPan" />
+        <activity
+            android:name=".deviceContr.rooms.ui.VacationModeActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.BulbActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.WallMoteLivingActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.AvailableActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.SetupKeyActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ActionChooseActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ChooseDeviceActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.DoActionActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ToggleActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.TimerActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ActionSummaryActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addDevice.AddDeviceActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addDevice.SelectBrandActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addDevice.InstallDeviceActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addDevice.InstallSuccessActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addDevice.DeviceListActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.scenes.NewScenceActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.scenes.SceneActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.scenes.SceneActionsActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.scenes.ScheduleRunTimeActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.scenes.SetTimerActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.FavoriteEditActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/Translucent"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.scenes.NewScenceActionActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.WifiSetupOneActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.WifiSetupSecondActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.WifSetupThirdActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.WpsOneActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.WpsFindingActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.WpsNotFoundActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.WpsFoundActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.CableConnectOneActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.CableConnectSecondActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.RouterConnectOneActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.RouterConnectSecondActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.RouterConnectThirdActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".guideSetting.ui.RouterConnectFourActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addRoom.AddRoomActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addRoom.DeleteRoomActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+
+        <service
+            android:name="com.askeycloud.webservice.sdk.iot.MqttService"
+            android:exported="true" />
+        <service android:name="org.eclipse.paho.android.service.MqttService" />
+
+        <activity
+            android:name=".home.activity.addDevice.DeleteDeviceActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addDevice.DeleteDeviceSuccessActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ExtenderDeviceActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.SelectRoomActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.ManageRoomActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.WallMoteDeviceActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.WallMoteActionActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addDevice.ChooseRoomActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".deviceContr.rooms.ui.WallMoteCommandsActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.TakePictureActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.PreviewPhotoActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <meta-data
+            android:name="net.hockeyapp.android.appIdentifier"
+            android:value="${HOCKEYAPP_APP_ID}" />
+
+        <activity android:name=".home.activity.MenuAccountActivity" />
+        <activity
+            android:name=".home.activity.addDevice.InstallGuideActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity android:name=".deviceContr.rooms.ui.SensorActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize"
+            />
+    </application>
+
+</manifest>

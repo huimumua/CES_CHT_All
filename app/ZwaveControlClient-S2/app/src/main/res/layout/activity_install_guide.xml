@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/device_width"
+    android:layout_height="@dimen/device_heigh"
+    android:background="@android:color/white"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context="com.askey.mobile.zwave.control.home.activity.addDevice.InstallGuideActivity">
+
+    <LinearLayout
+        android:id="@+id/linear_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="visible"
+        >
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Install Device"
+            android:textColor="@android:color/background_dark"
+            android:textSize="@dimen/device_title_20sp" />
+
+        <ImageView
+            android:id="@+id/brand_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="30dp"
+            android:src="@mipmap/aeotec_logo_big" />
+
+        <TextView
+            android:id="@+id/brand_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp"
+            android:gravity="center"
+            android:text="Aeotec"
+            android:textColor="@android:color/background_dark" />
+
+        <ImageView
+            android:id="@+id/device_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="40dp"
+            android:src="@mipmap/switch_icon" />
+
+        <TextView
+            android:id="@+id/device_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="switch"
+            android:textColor="@android:color/background_dark" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linear_step"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        >
+
+        <TextView
+            android:id="@+id/step_index"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/step_1"
+            android:textSize="20sp"
+            android:textColor="@android:color/background_dark"
+            android:layout_marginBottom="10dp"
+            />
+
+        <TextView
+            android:id="@+id/step_notify"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="notify1111111111111111111111111111111111111111111111"
+            android:gravity="center"
+            android:textColor="@android:color/background_dark"
+            />
+
+        <ImageView
+            android:id="@+id/step_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="300dp"
+            android:src="@drawable/smart_switch_02"
+            />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/step_iv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerInParent="true"
+        android:src="@drawable/vector_drawable_ic_next_solid" />
+
+</RelativeLayout>

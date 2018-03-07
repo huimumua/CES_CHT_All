@@ -1,0 +1,53 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="margin_5dp">5dp</dimen>
+    <dimen name="text_firefly">30sp</dimen>
+    <dimen name="text_welcome">40sp</dimen>
+    <dimen name="sign_up_title_text">20sp</dimen>
+    <dimen name="device_width">270dp</dimen>
+    <dimen name="device_heigh">450dp</dimen>
+    <dimen name="device_title_20sp">20sp</dimen>
+
+    <!--cable-two-->
+    <dimen name="activity_cable_two_left">40dp</dimen>
+    <dimen name="activity_cable_title_top_40dp">40dp</dimen>
+    <dimen name="activity_cable_left">40dp</dimen>
+    <dimen name="activity_cable_two_text">10dp</dimen>
+    <dimen name="activity_router_one_top_bottom">40dp</dimen>
+    <dimen name="activity_router_second_top_bottom">30dp</dimen>
+
+    <!--device guide-->
+    <dimen name="device_guide_top_bottom">40dp</dimen>
+
+    <!--bulb activity-->
+    <dimen name="device_round_20dp">20dp</dimen>
+    <dimen name="device_smaller_icon_10dp">10dp</dimen>
+    <dimen name="device_smallericon_topbottom_10dp">10dp</dimen>
+    <dimen name="color_width_200dp">200dp</dimen>
+    <dimen name="color_heigh_200dp">200dp</dimen>
+    <dimen name="color_top_bottom_10dp">10dp</dimen>
+    <dimen name="device_bulb_icon_top_20dp">20dp</dimen>
+    <dimen name="device_icon_20dp">20dp</dimen>
+    <dimen name="device_title_30sp">30sp</dimen>
+    <dimen name="device_smaller_icon_15dp">15dp</dimen>
+    <dimen name="device_smaller_icon_18dp">18dp</dimen>
+    <dimen name="device_bigger_icon_40dp">30dp</dimen>
+    <dimen name="device_set_icon_top_10dp">10dp</dimen>
+    <dimen name="device_on_off_40dp">40dp</dimen>
+
+    <!--plug activity-->
+    <dimen name="plug_smallericon_bottom_20dp">20dp</dimen>
+    <dimen name="plug_biggericon_topbottom_20dp">20dp</dimen>
+
+    <!--control activity-->
+    <dimen name="device_control_icon_22dp">22dp</dimen>
+    <dimen name="device_control_title_16sp">16sp</dimen>
+    <dimen name="device_control_content_12sp">12sp</dimen>
+    <dimen name="device_notify_via_icon_20dp">20dp</dimen>
+
+    <!--account activity-->
+    <dimen name="activity_account_title_25sp">25sp</dimen>
+    <dimen name="activity_account_password_5dp">5dp</dimen>
+</resources>

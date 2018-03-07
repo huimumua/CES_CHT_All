@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/linear"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_margin="8dp"
+        android:background="@drawable/device_info_item"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/iv_linear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/schedule"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_marginBottom="5dp"
+                    android:src="@drawable/ic_schedule" />
+
+                <ImageView
+                    android:id="@+id/notify"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_marginBottom="5dp"
+                    android:src="@drawable/ic_notify" />
+
+                <ImageView
+                    android:id="@+id/location"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:src="@drawable/ic_location" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="10dp"
+                android:layout_height="10dp"/>
+
+            <ImageView
+                android:id="@+id/device_img"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/nophoto"
+                android:scaleType="centerCrop" />
+
+            <FrameLayout
+                android:layout_width="10dp"
+                android:layout_height="10dp"/>
+            <FrameLayout
+                android:layout_width="10dp"
+                android:layout_height="10dp"/>
+        </LinearLayout>
+        <FrameLayout
+            android:layout_width="10dp"
+            android:layout_height="10dp"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/iv_linear"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/device_toggle_state"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="33W"
+                style="@style/textview_regular"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/device_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="TV bacl"
+                style="@style/textview_regular"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/delete_device"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_marginLeft="88dp"
+        android:src="@drawable/ic_close"
+        android:visibility="invisible"
+        android:layout_marginStart="88dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignLeft="@+id/linear"
+        android:layout_alignStart="@+id/linear" />
+
+    <LinearLayout
+        android:id="@+id/choose_linear"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_margin="8dp"
+        android:background="@drawable/device_info_choose"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/choose_iv"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_unfavorite" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/device_state"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_margin="7dp"
+        android:background="@drawable/device_info_choose"
+        android:gravity="center"
+        android:visibility="gone"
+        android:orientation="vertical"
+        />
+</RelativeLayout>
