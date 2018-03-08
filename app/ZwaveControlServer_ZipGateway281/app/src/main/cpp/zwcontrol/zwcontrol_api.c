@@ -1380,9 +1380,19 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
                         sprintf(str, "%08X", (unsigned)hl_appl->zwnet->homeid);
                         cJSON_AddStringToObject(jsonRoot, "Home Id", str);
                         cJSON_AddNumberToObject(jsonRoot, "Node Id", (unsigned)zw_node->nodeid);
+
                         ALOGI("________________________________________________________");
                         ALOGI("Controller Reset done, attribute:");
                         ALOGI("               Home Id: %s",str);
+                        if(hl_appl->zwnet->ctl_role & ZWNET_CTLR_ROLE_INCL)
+                        {
+                            ALOGI("               Role type: Real Primary");
+                            cJSON_AddStringToObject(jsonRoot,"Network Role","Real Primary, SUC");
+                        }
+                        else
+                        {
+                            cJSON_AddStringToObject(jsonRoot,"Network Role","Unknown");
+                        }
 
                         sprintf(str, "%04X", zw_node->vid);
                         cJSON_AddStringToObject(jsonRoot, "Vendor Id", str);
@@ -2294,6 +2304,16 @@ int  zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* inf
         sprintf(str, "%08X", (unsigned)hl_appl->zwnet->homeid);
         cJSON_AddStringToObject(jsonRoot, "Home Id", str);
         cJSON_AddNumberToObject(jsonRoot, "Node Id", (unsigned)zw_node->nodeid);
+
+        if(hl_appl->zwnet->ctl_role & ZWNET_CTLR_ROLE_INCL)
+        {
+            ALOGI("controller role type: support inclusion");
+            cJSON_AddStringToObject(jsonRoot,"Network Role","Real Primary, SUC");
+        }
+        else
+        {
+            cJSON_AddStringToObject(jsonRoot,"Network Role","Unknown");
+        }
 
         sprintf(str, "%04X", zw_node->vid);
         cJSON_AddStringToObject(jsonRoot, "Vendor Id", str);
@@ -9948,7 +9968,7 @@ int  zwcontrol_rm_provision_list_entry(hl_appl_ctx_t* hl_appl, const char* dsk)
     }
     else if(result == 0)
     {
-        ALOGI("remove one provision list entry done.");
+        ALOGI("Remove one provision list entry done, DSK: %s",dsk);
     }
 
     return result;
@@ -10212,7 +10232,7 @@ int  zwcontrol_rm_all_provision_list_entry(hl_appl_ctx_t* hl_appl)
     }
     else if(result == 0)
     {
-        ALOGI("Remove all provision list entry done.");
+        ALOGI("Remove all provision list done.");
     }
 
     return result;
