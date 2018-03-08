@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">ZwaveControlServer</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="title_alert">Prompt information</string>
+    <string name="zwaveNodeTitle">Node Info</string>
+    <string-array name="devType">
+        <item>BLUB</item>
+        <item>DIMMER</item>
+        <item>PLUG</item>
+        <item>SENSOR</item>
+        <item>OTHER</item>
+    </string-array>
+</resources>
