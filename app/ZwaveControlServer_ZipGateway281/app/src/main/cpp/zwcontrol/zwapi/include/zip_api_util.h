@@ -199,6 +199,7 @@ Some utility/miscellaneous functions.
 #define ZW_SUBTAG_NODE_PROPTY       33       /**< Node properties bit mask*/
 #define ZW_SUBTAG_DSK_STR           34       /**< DSK string */
 #define ZW_SUBTAG_WAKEUP_INTV       35       /**< Wakeup interval */
+#define ZW_SUBTAG_SE_STATUS         36       /**< Security status */
 
 
 /** End point sub-tag identifier definition */

@@ -3456,7 +3456,7 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
             ALOGI("Node is FLIRS");
         }
 
-        //ALOGI("Node security inclusion status:%s", hl_is_security_inclusion(node->security_incl_status));
+        ALOGI("Node security inclusion status:%s", hl_is_security_inclusion(node->security_incl_status));
         ALOGI("Vendor id:%04X", node->vid);
         ALOGI("Product type id:%04X", node->type);
         ALOGI("Product id:%04X", node->pid);
@@ -3468,7 +3468,7 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
         ALOGI("Application version:%u.%02u\n", (unsigned)(node->app_ver >> 8),
               (unsigned)(node->app_ver & 0xFF));
 
-        //cJSON_AddStringToObject(NodeInfo, "Node security inclusion status", hl_is_security_inclusion(node->security_incl_status));
+        cJSON_AddStringToObject(NodeInfo, "Node security inclusion status", hl_is_security_inclusion(node->security_incl_status));
 
         sprintf(str, "%04X", node->vid);
         cJSON_AddStringToObject(NodeInfo, "Vendor id", str);

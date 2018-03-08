@@ -5,7 +5,7 @@
 
 @version    1.0 7-6-11  Initial release
 
-@copyright © 2014 SIGMA DESIGNS, INC. THIS IS AN UNPUBLISHED WORK PROTECTED BY SIGMA DESIGNS, INC.
+@copyright @ 2014 SIGMA DESIGNS, INC. THIS IS AN UNPUBLISHED WORK PROTECTED BY SIGMA DESIGNS, INC.
 AS A TRADE SECRET, AND IS NOT TO BE USED OR DISCLOSED EXCEPT AS PROVIDED Z-WAVE CONTROLLER DEVELOPMENT KIT
 LIMITED LICENSE AGREEMENT. ALL RIGHTS RESERVED.
 
@@ -1395,6 +1395,7 @@ int zwnet_node_info_update(zwnet_p nw, appl_node_info_t *node_info, sec2_node_in
     //Save node DSK
     if (s2_node_info && s2_node_info->dsk)
     {
+        node->security_incl_status = 2;
         strcpy(node->s2_dsk, s2_node_info->dsk);
     }
 
@@ -1688,6 +1689,7 @@ zwnet_cmd_cls_show - show binary string of command classes
 @param[in] cnt          The number of command classes in cmd_cls
 @return
 */
+int has_s2_cls = 0;
 void zwnet_cmd_cls_show(zwnet_p nw, uint16_t *cmd_cls_buf, uint8_t cnt)
 {
     uint8_t     tmp_cnt;
@@ -1717,6 +1719,11 @@ void zwnet_cmd_cls_show(zwnet_p nw, uint16_t *cmd_cls_buf, uint8_t cnt)
             sprintf_s(tmp, 8, "%02X, ",(unsigned) *cmd_cls_buf++);
             strcat_s(hex_str, MAX_BIN_LINE_LEN * 8, tmp);
 #else
+            if(*cmd_cls_buf == 0x9F)
+            {
+                ALOGI("node supported S2 CC");
+                has_s2_cls = 1;
+            }
             sprintf(tmp,"%02X, ",(unsigned) *cmd_cls_buf++);
             strcat(hex_str, tmp);
 #endif
@@ -8494,7 +8501,7 @@ static void zwnet_app_nif_set(zwnet_p nw, zwifd_p zipgw_ifd)
     cmd[cmd_cnt++] = COMMAND_APPLICATION_NODE_INFO_SET;
 #ifdef  DYNAMIC_APP_NIF_SET
     //-----------------------------------------------------------------------------------------
-    //Determine if we are “alone” in the network, if so set Application NIF to Non-Secure NIF
+    //Determine if we are ï¿½aloneï¿½ in the network, if so set Application NIF to Non-Secure NIF
     //If other nodes in the network and we are still secure, set Application NIF to Secure NIF
     //If other nodes in the network and we are non-secure, set Application NIF to Non-Secure NIF
     //-----------------------------------------------------------------------------------------
@@ -10168,6 +10175,10 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
             status = 3;
     }
 
+    int security_incl_status = 0;
+    int has_s0_cls = 0;
+    has_s2_cls = 0;
+
     debug_zwapi_msg(&nw->plt_ctx, "add_node_nw_cb: status:%u (%s)", add_ni->status, status_msg[status]);
 
     if (add_ni_s2->sec2_valid)
@@ -10207,6 +10218,7 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
         if (add_ni->cmd_cnt_sec > 0)
         {
             debug_zwapi_msg(&nw->plt_ctx, "secure command classes:");
+            has_s0_cls = 1;
             zwnet_cmd_cls_show(nw, add_ni->cmd_cls_sec, add_ni->cmd_cnt_sec);
         }
 
@@ -10230,6 +10242,21 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
             s2_nif_p = &s2_nif;
         }
 
+        if(has_s2_cls && has_s0_cls)
+        {
+            security_incl_status = 2; //s2 inclusion
+        }
+        else if(!has_s2_cls && has_s0_cls)
+        {
+            security_incl_status = 1; // s0 inclusion
+        }
+
+        if (add_ni->status == NODE_ADD_STATUS_SECURITY_FAILED)
+        {
+            ALOGI("Node added but insecure!");
+            security_incl_status = 0;
+        }
+
         zwnet_node_info_update(nw, add_ni, s2_nif_p);
 
         plt_mtx_lck(nw->mtx);
@@ -10238,6 +10265,7 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
 
         if (node)
         {
+            node->security_incl_status = security_incl_status;
             zwnet_node_cb(nw, node->nodeid, ZWNET_NODE_ADDED);
         }
 
