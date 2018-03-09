@@ -1380,9 +1380,31 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
                         sprintf(str, "%08X", (unsigned)hl_appl->zwnet->homeid);
                         cJSON_AddStringToObject(jsonRoot, "Home Id", str);
                         cJSON_AddNumberToObject(jsonRoot, "Node Id", (unsigned)zw_node->nodeid);
+
                         ALOGI("________________________________________________________");
                         ALOGI("Controller Reset done, attribute:");
                         ALOGI("               Home Id: %s",str);
+                        if(hl_appl->zwnet->zwave_role & ZW_ROLE_SIS)
+                        {
+                            ALOGI("controller role type: ZW_ROLE_SIS");
+                            cJSON_AddStringToObject(jsonRoot,"Network Role","SIS");
+                        }
+                        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_INCLUSION)
+                        {
+                            cJSON_AddStringToObject(jsonRoot,"Network Role","INCLUSION");
+                        }
+                        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_PRIMARY)
+                        {
+                            cJSON_AddStringToObject(jsonRoot,"Network Role","PRIMARY");
+                        }
+                        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_SECONDARY)
+                        {
+                            cJSON_AddStringToObject(jsonRoot,"Network Role","SECONDARY");
+                        }
+                        else
+                        {
+                            cJSON_AddStringToObject(jsonRoot,"Network Role","Unknown");
+                        }
 
                         sprintf(str, "%04X", zw_node->vid);
                         cJSON_AddStringToObject(jsonRoot, "Vendor Id", str);
@@ -1539,30 +1561,18 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Failed");
         }
-        /*else if(sts == OP_ADD_NODE_ADDING)
-        {
-            cJSON_AddStringToObject(jsonRoot, "Status", "Adding");
-        }
         else if(sts == OP_ADD_NODE_PROTOCOL_DONE)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Protocol Done");
         }
-        else if(sts == OP_ADD_NODE_LEARN_READY)
-        {
-            cJSON_AddStringToObject(jsonRoot, "Status", "Learn Ready");
-        }
-        else if(sts == OP_ADD_NODE_SEC_INCD)
-        {
-            cJSON_AddStringToObject(jsonRoot, "Status", "Adding Node Securely");
-        }*/
         else if(sts == OP_ADD_NODE_GET_NODE_INFO)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Getting Node Information");
         }
-        /*else if(sts == OP_ADD_NODE_FOUND)
+        else if(sts == OP_ADD_NODE_PROTOCOL_START)
         {
-            cJSON_AddStringToObject(jsonRoot, "Status", "Node Found");
-        }*/
+            cJSON_AddStringToObject(jsonRoot, "Status", "Smart Start Protocol Started");
+        }
         else if(sts == OP_DONE)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Success");
@@ -2294,6 +2304,29 @@ int  zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* inf
         sprintf(str, "%08X", (unsigned)hl_appl->zwnet->homeid);
         cJSON_AddStringToObject(jsonRoot, "Home Id", str);
         cJSON_AddNumberToObject(jsonRoot, "Node Id", (unsigned)zw_node->nodeid);
+        //ALOGI("controller DSK: %s",hl_appl->zwnet->gw_dsk);
+
+        if(hl_appl->zwnet->zwave_role & ZW_ROLE_SIS)
+        {
+            ALOGI("controller role type: ZW_ROLE_SIS");
+            cJSON_AddStringToObject(jsonRoot,"Network Role","SIS");
+        }
+        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_INCLUSION)
+        {
+            cJSON_AddStringToObject(jsonRoot,"Network Role","INCLUSION");
+        }
+        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_PRIMARY)
+        {
+            cJSON_AddStringToObject(jsonRoot,"Network Role","PRIMARY");
+        }
+        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_SECONDARY)
+        {
+            cJSON_AddStringToObject(jsonRoot,"Network Role","SECONDARY");
+        }
+        else
+        {
+            cJSON_AddStringToObject(jsonRoot,"Network Role","Unknown");
+        }
 
         sprintf(str, "%04X", zw_node->vid);
         cJSON_AddStringToObject(jsonRoot, "Vendor Id", str);
@@ -3436,7 +3469,7 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
             ALOGI("Node is FLIRS");
         }
 
-        //ALOGI("Node security inclusion status:%s", hl_is_security_inclusion(node->security_incl_status));
+        ALOGI("Node security inclusion status:%s", hl_is_security_inclusion(node->security_incl_status));
         ALOGI("Vendor id:%04X", node->vid);
         ALOGI("Product type id:%04X", node->type);
         ALOGI("Product id:%04X", node->pid);
@@ -3448,7 +3481,7 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
         ALOGI("Application version:%u.%02u\n", (unsigned)(node->app_ver >> 8),
               (unsigned)(node->app_ver & 0xFF));
 
-        //cJSON_AddStringToObject(NodeInfo, "Node security inclusion status", hl_is_security_inclusion(node->security_incl_status));
+        cJSON_AddStringToObject(NodeInfo, "Node security inclusion status", hl_is_security_inclusion(node->security_incl_status));
 
         sprintf(str, "%04X", node->vid);
         cJSON_AddStringToObject(NodeInfo, "Vendor id", str);
@@ -9877,6 +9910,133 @@ int  zwcontrol_network_health_check(hl_appl_ctx_t* hl_appl)
 }
 
 
+void zwcontrol_nwtwork_health_rssi_report(int8_t *rssi, uint8_t rssi_cnt)
+{
+    ALOGI("zwcontrol_nwtwork_health_rssi_report, rssi_cnt: %d,",rssi_cnt);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Network RSSI Info Report");
+    if (rssi_cnt == 2)
+    {
+        ALOGI("GW background RSSI, ch 0:%d, ch1:%d", rssi[0], rssi[1]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 1", rssi[0]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 2", rssi[1]);
+    }
+    else if (rssi_cnt == 3)
+    {
+        ALOGI("GW background RSSI, ch 0:%d, ch1:%d, ch2:%d", rssi[0], rssi[1], rssi[2]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 1", rssi[0]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 2", rssi[1]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 3", rssi[2]);
+    }
+    else if(rssi_cnt == 1)
+    {
+        ALOGI("GW background RSSI, ch 0:%d", rssi[0]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 1", rssi[0]);
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+void zwcontrol_network_ima_report(nhchk_sm_ctx_t *sm_ctx)
+{
+    ALOGI("zwcontrol_network_ima_report callBack");
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Network IMA Info Report");
+
+    if (sm_ctx->lwr_cnt == NHCHK_UNKNOWN_LWR)
+    {
+        cJSON_AddStringToObject(jsonRoot, "Error", "LWR not found");
+        ALOGW("LWR not found in IMA report!");
+    }
+    else if (sm_ctx->lwr_cnt == 0)
+    {
+        ALOGI("Direct range to node id:%u", sm_ctx->health_rpt.sts[sm_ctx->node_idx].node_id);
+        cJSON_AddNumberToObject(jsonRoot, "Direct nodeid", sm_ctx->health_rpt.sts[sm_ctx->node_idx].node_id);
+        if(sm_ctx->health_rpt.sts[sm_ctx->node_idx].sts_cat == NW_HEALTH_GREEN)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Network Health", "Green");
+        }
+        else if(sm_ctx->health_rpt.sts[sm_ctx->node_idx].sts_cat == NW_HEALTH_YELLOW)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Network Health", "Yellow");
+        }
+        else if(sm_ctx->health_rpt.sts[sm_ctx->node_idx].sts_cat == NW_HEALTH_RED)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Network Health", "Red");
+        }
+        else if(sm_ctx->health_rpt.sts[sm_ctx->node_idx].sts_cat == NW_HEALTH_CRITICAL)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Network Health", "Critical");
+        }
+    }
+    else
+    {
+        for (int i=0; i<sm_ctx->lwr_cnt; i++)
+        {
+            cJSON_AddNumberToObject(jsonRoot, "Repeater nodeId", sm_ctx->lwr[i]);
+            ALOGI("Repeater %d node id:%u", i+1, sm_ctx->lwr[i]);
+        }
+    }
+
+    ALOGI("Number of RSSI hops:%u", sm_ctx->rssi_cnt);
+    cJSON_AddNumberToObject(jsonRoot, "RSSI hops number", sm_ctx->rssi_cnt);
+
+    for (int i=0; i<sm_ctx->rssi_cnt; i++)
+    {
+        cJSON_AddNumberToObject(jsonRoot, "RSSI hops value", sm_ctx->rssi[i]);
+        ALOGI("RSSI hop %d value:%d", i+1, sm_ctx->rssi[i]);
+    }
+
+    if (sm_ctx->tx_ch == NHCHK_UNKNOWN_TX_CH)
+    {
+        cJSON_AddStringToObject(jsonRoot, "Transmit channel error", "Unknown");
+        ALOGI("Transmit channel is unknown");
+    }
+    else
+    {
+        cJSON_AddNumberToObject(jsonRoot, "Transmit channel", sm_ctx->tx_ch);
+        ALOGI("Transmit channel is %u", sm_ctx->tx_ch);
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
 /*
  ** Smart Start, Provision list operation
  */
@@ -9948,7 +10108,7 @@ int  zwcontrol_rm_provision_list_entry(hl_appl_ctx_t* hl_appl, const char* dsk)
     }
     else if(result == 0)
     {
-        ALOGI("remove one provision list entry done.");
+        ALOGI("Remove one provision list entry done, DSK: %s",dsk);
     }
 
     return result;
@@ -10212,7 +10372,7 @@ int  zwcontrol_rm_all_provision_list_entry(hl_appl_ctx_t* hl_appl)
     }
     else if(result == 0)
     {
-        ALOGI("Remove all provision list entry done.");
+        ALOGI("Remove all provision list done.");
     }
 
     return result;

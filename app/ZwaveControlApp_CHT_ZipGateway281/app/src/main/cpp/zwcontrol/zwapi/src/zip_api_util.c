@@ -6,7 +6,7 @@
 
 @version    1.0 7-6-11  Initial release
 
-@copyright © 2014 SIGMA DESIGNS, INC. THIS IS AN UNPUBLISHED WORK PROTECTED BY SIGMA DESIGNS, INC.
+@copyright ï¿½ 2014 SIGMA DESIGNS, INC. THIS IS AN UNPUBLISHED WORK PROTECTED BY SIGMA DESIGNS, INC.
 AS A TRADE SECRET, AND IS NOT TO BE USED OR DISCLOSED EXCEPT AS PROVIDED Z-WAVE CONTROLLER DEVELOPMENT KIT
 LIMITED LICENSE AGREEMENT. ALL RIGHTS RESERVED.
 
@@ -453,6 +453,8 @@ static int zwutl_node_load(zwnet_p nw, uint8_t *subtag_buf, uint16_t len, uint16
             case ZW_SUBTAG_LISTEN:
                 node->listen = subtag[2];
                 break;
+            case ZW_SUBTAG_SE_STATUS:
+                 node->security_incl_status = subtag[2];
 
 #ifdef CRC16_ENCAP
 //          case ZW_SUBTAG_CRC16_CAP:
@@ -1969,6 +1971,7 @@ int zwutl_ni_save(zwnet_p nw, const char *ni_file)
         zwutl_subtag_wr8(ZW_SUBTAG_NODE_PROPTY, curr_node->propty, dbuf);
         zwutl_subtag_wr8(ZW_SUBTAG_SLEEP_CAP, curr_node->sleep_cap, dbuf);
         zwutl_subtag_wr8(ZW_SUBTAG_LISTEN, curr_node->listen, dbuf);
+        zwutl_subtag_wr8(ZW_SUBTAG_SE_STATUS, curr_node->security_incl_status, dbuf);
 #ifdef CRC16_ENCAP
 //      zwutl_subtag_wr8(ZW_SUBTAG_CRC16_CAP, curr_node->crc_cap, dbuf);
 #endif

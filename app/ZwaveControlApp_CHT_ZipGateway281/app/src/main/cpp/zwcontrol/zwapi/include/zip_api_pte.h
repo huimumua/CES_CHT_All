@@ -593,7 +593,7 @@ typedef struct _zwnode
     /* Device configuration */
     int         dev_cfg_valid;  /**< Flag to indicate dev_cfg_rec is valid*/
     dev_rec_t   dev_cfg_rec;    /**< Device configuration record*/
-
+    uint8_t     security_incl_status;     /**< node security add status */
 
 }
 zwnode_t;
@@ -612,6 +612,7 @@ zwnode_t;
                                 (nw)->ctl.propty = 0;           \
                                 (nw)->ctl.wkup_intv = -1;       \
                                 (nw)->ctl.s2_dsk[0] = '\0';     \
+                                (nw)->ctl.security_incl_status = 2;\
                               } while(0)
 
 

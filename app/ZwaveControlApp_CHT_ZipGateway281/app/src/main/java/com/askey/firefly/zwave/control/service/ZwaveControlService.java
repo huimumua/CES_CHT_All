@@ -1620,6 +1620,8 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("All Provision List Report", jniResult);
         } else if ("Network Health Check".equals(messageType)) {
             zwaveControlResultCallBack("Network Health Check", jniResult);
+        } else if ("Network IMA Info Report".equals(messageType)) {
+            zwaveControlResultCallBack("Network IMA Info Report", jniResult);
         }
     }
 }
