@@ -9910,6 +9910,117 @@ int  zwcontrol_network_health_check(hl_appl_ctx_t* hl_appl)
 }
 
 
+void zwcontrol_nwtwork_health_rssi_report(int8_t *rssi, uint8_t rssi_cnt)
+{
+    ALOGI("zwcontrol_nwtwork_health_rssi_report, rssi_cnt: %d,",rssi_cnt);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Network RSSI Info Report");
+    if (rssi_cnt == 2)
+    {
+        ALOGI("GW background RSSI, ch 0:%d, ch1:%d", rssi[0], rssi[1]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 1", rssi[0]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 2", rssi[1]);
+    }
+    else if (rssi_cnt == 3)
+    {
+        ALOGI("GW background RSSI, ch 0:%d, ch1:%d, ch2:%d", rssi[0], rssi[1], rssi[2]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 1", rssi[0]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 2", rssi[1]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 3", rssi[2]);
+    }
+    else if(rssi_cnt == 1)
+    {
+        ALOGI("GW background RSSI, ch 0:%d", rssi[0]);
+        cJSON_AddNumberToObject(jsonRoot, "Value of channel 1", rssi[0]);
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+void zwcontrol_network_ima_report(nhchk_sm_ctx_t *sm_ctx)
+{
+    ALOGI("zwcontrol_network_ima_report callBack");
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Network IMA Info Report");
+
+    if (sm_ctx->lwr_cnt == NHCHK_UNKNOWN_LWR)
+    {
+        cJSON_AddStringToObject(jsonRoot, "Error", "LWR not found");
+        ALOGW("LWR not found in IMA report!");
+    }
+    else if (sm_ctx->lwr_cnt == 0)
+    {
+        ALOGI("Direct range to node id:%u", sm_ctx->health_rpt.sts[sm_ctx->node_idx].node_id);
+        cJSON_AddNumberToObject(jsonRoot, "Direct nodeid", sm_ctx->health_rpt.sts[sm_ctx->node_idx].node_id);
+    }
+    else
+    {
+        for (int i=0; i<sm_ctx->lwr_cnt; i++)
+        {
+            cJSON_AddNumberToObject(jsonRoot, "Repeater nodeId", sm_ctx->lwr[i]);
+            ALOGI("Repeater %d node id:%u", i+1, sm_ctx->lwr[i]);
+        }
+    }
+
+    ALOGI("Number of RSSI hops:%u", sm_ctx->rssi_cnt);
+    cJSON_AddNumberToObject(jsonRoot, "RSSI hops number", sm_ctx->rssi_cnt);
+
+    for (int i=0; i<sm_ctx->rssi_cnt; i++)
+    {
+        cJSON_AddNumberToObject(jsonRoot, "RSSI hops value", sm_ctx->rssi[i]);
+        ALOGI("RSSI hop %d value:%d", i+1, sm_ctx->rssi[i]);
+    }
+
+    if (sm_ctx->tx_ch == NHCHK_UNKNOWN_TX_CH)
+    {
+        cJSON_AddStringToObject(jsonRoot, "Transmit channel error", "Unknown");
+        ALOGI("Transmit channel is unknown");
+    }
+    else
+    {
+        cJSON_AddNumberToObject(jsonRoot, "Transmit channel", sm_ctx->tx_ch);
+        ALOGI("Transmit channel is %u", sm_ctx->tx_ch);
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
 /*
  ** Smart Start, Provision list operation
  */

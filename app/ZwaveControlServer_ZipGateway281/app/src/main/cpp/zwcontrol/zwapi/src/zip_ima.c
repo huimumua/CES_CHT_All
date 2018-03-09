@@ -71,6 +71,7 @@ Cloud Service Environment that Company chooses to utilize.
 #include <signal.h>
 #endif
 #include "../include/zip_api_pte.h"
+#include "../include/zwave/ZW_controller_api.h"
 
 #define USE_ADDENDUM_A4     //Calculate LWR_RSSI based on Addendum to PSP-12298 Appendix A.4
 #define SHOW_BK_RSSI        //Show background RSSI for each channel
@@ -105,6 +106,7 @@ static void nhchk_stat_cb(appl_layer_ctx_t *appl_ctx, zw_ima_stat_t *stat, uint8
 
     data[0] = node_id;
     data[1] = stat_cnt;
+    ALOGI("node stats check report:, type: %d, value:%d",stat->type, stat->val);
 
     memcpy(data + 4, &stat, sizeof(zw_ima_stat_t *));
 
@@ -229,14 +231,21 @@ static void nhchk_gw_rssi_cb(appl_layer_ctx_t *appl_ctx, int8_t *rssi, uint8_t r
         data[i + 1] = (uint8_t)rssi[i];
     }
 
-//  if (rssi_cnt == 2)
-//  {
-//      debug_zwapi_msg(appl_ctx->plt_ctx, "GW background RSSI, ch 0:%d, ch1:%d", rssi[0], rssi[1]);
-//  }
-//  else if (rssi_cnt == 3)
-//  {
-//      debug_zwapi_msg(appl_ctx->plt_ctx, "GW background RSSI, ch 0:%d, ch1:%d, ch2:%d", rssi[0], rssi[1], rssi[2]);
-//  }
+    if (rssi_cnt == 2)
+    {
+        ALOGI("nhchk_gw_rssi_cb, GW background RSSI, ch 0:%d, ch1:%d", rssi[0], rssi[1]);
+    }
+    else if (rssi_cnt == 3)
+    {
+        ALOGI("nhchk_gw_rssi_cb, GW background RSSI, ch 0:%d, ch1:%d, ch2:%d", rssi[0], rssi[1], rssi[2]);
+    }
+    else if(rssi_cnt == 1)
+    {
+        ALOGI("nhchk_gw_rssi_cb, GW background RSSI, ch 0:%d", rssi[0]);
+    }
+
+    // callback to application
+    zwcontrol_nwtwork_health_rssi_report(rssi, rssi_cnt);
 
     plt_mtx_lck(nw->mtx);
 
@@ -509,7 +518,7 @@ static int nhchk_int8_compare(const void *a, const void *b)
 static void display_int(zwnet_p nw, int8_t *buf, const char *str)
 {
 
-    debug_zwapi_msg(&nw->plt_ctx, "%s %d %d %d %d %d %d %d %d %d %d", str, buf[0],  buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7], buf[8], buf[9]);
+    ALOGI("%s %d %d %d %d %d %d %d %d %d %d", str, buf[0],  buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7], buf[8], buf[9]);
 }
 #endif
 
@@ -550,7 +559,7 @@ static void nhchk_rssi_cal(zwnet_p nw, nhchk_sm_ctx_t *sm_ctx)
 
         sm_ctx->bkgnd_rssi[i][0] = (int8_t)(rssi_sum/5);
 
-        debug_zwapi_msg(&nw->plt_ctx, "Ave background RSSI for channel %u is %d", i, sm_ctx->bkgnd_rssi[i][0]);
+        ALOGI("Ave background RSSI for channel %u is %d", i, sm_ctx->bkgnd_rssi[i][0]);
 
     }
 
@@ -760,30 +769,30 @@ static void nhchk_ima_rpt_parse(zwnet_p nw, nhchk_sm_ctx_t *sm_ctx, uint8_t *ima
     //Display parse result
     if (sm_ctx->lwr_cnt == NHCHK_UNKNOWN_LWR)
     {
-        debug_zwapi_msg(&nw->plt_ctx, "LWR not found in IMA report!");
+        ALOGW("LWR not found in IMA report!");
     }
     else if (sm_ctx->lwr_cnt == 0)
     {
-        debug_zwapi_msg(&nw->plt_ctx, "Direct range to node id:%u", sm_ctx->health_rpt.sts[sm_ctx->node_idx].node_id);
+        ALOGI("Direct range to node id:%u", sm_ctx->health_rpt.sts[sm_ctx->node_idx].node_id);
     }
     else
     {
         for (i=0; i<sm_ctx->lwr_cnt; i++)
         {
-            debug_zwapi_msg(&nw->plt_ctx, "Repeater %d node id:%u", i+1, sm_ctx->lwr[i]);
+            ALOGI("Repeater %d node id:%u", i+1, sm_ctx->lwr[i]);
         }
     }
 
-    debug_zwapi_msg(&nw->plt_ctx, "Number of RSSI hops:%u", sm_ctx->rssi_cnt);
+    ALOGI("Number of RSSI hops:%u", sm_ctx->rssi_cnt);
 
     for (i=0; i<sm_ctx->rssi_cnt; i++)
     {
-        debug_zwapi_msg(&nw->plt_ctx, "RSSI hop %d value:%d", i+1, sm_ctx->rssi[i]);
+        ALOGI("RSSI hop %d value:%d", i+1, sm_ctx->rssi[i]);
     }
 
     if (sm_ctx->ack_ch == NHCHK_UNKNOWN_ACK_CH)
     {
-        debug_zwapi_msg(&nw->plt_ctx, "ACK channel is unknown");
+        ALOGI("ACK channel is unknown");
     }
     else
     {
@@ -792,12 +801,15 @@ static void nhchk_ima_rpt_parse(zwnet_p nw, nhchk_sm_ctx_t *sm_ctx, uint8_t *ima
 
     if (sm_ctx->tx_ch == NHCHK_UNKNOWN_TX_CH)
     {
-        debug_zwapi_msg(&nw->plt_ctx, "Transmit channel is unknown");
+        ALOGI("Transmit channel is unknown");
     }
     else
     {
-        debug_zwapi_msg(&nw->plt_ctx, "Transmit channel is %u", sm_ctx->tx_ch);
+        ALOGI("Transmit channel is %u", sm_ctx->tx_ch);
     }
+
+    // Report this info to application
+    zwcontrol_network_ima_report(sm_ctx);
 
 }
 
@@ -1504,6 +1516,10 @@ int nhchk_sm(zwnet_p nw, zwnet_nh_chk_evt_t evt, uint8_t *data)
                                         break;
                                     }
                                 }
+                                else
+                                {
+                                    ALOGW("nhchk_rssi_sup_chk failed, this node not support RSSI, nodeid: %d",node_id);
+                                }
 
                                 //Change state to calculate network health value
                                 sm_ctx->state = NH_CHK_STA_WAIT_ALL_TEST;
@@ -1681,7 +1697,7 @@ int nhchk_sm(zwnet_p nw, zwnet_nh_chk_evt_t evt, uint8_t *data)
                         nhchk_val_cal(nw, &sm_ctx->ima_sta, sm_ctx->lwr_pwrlvl_ok, sm_ctx->lwr_rssi_ok, &nhv, &sts_cat);
 
                         //Save the calculated network health value
-                        debug_zwapi_ts_msg(&nw->plt_ctx, "============ node:%u, nhv=%u, sts_cat=%u ============", node_id, nhv, sts_cat);
+                        ALOGI("node:%u, nhv=%u, sts_cat=%u", node_id, nhv, sts_cat);
                         sm_ctx->nhv_sum += nhv;
                         sm_ctx->chk_cnt++;
 

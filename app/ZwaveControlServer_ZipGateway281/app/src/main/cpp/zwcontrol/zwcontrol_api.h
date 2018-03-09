@@ -363,7 +363,8 @@ int  zwcontrol_protection_timeout_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, u
  */
 int  zwcontrol_get_network_rssi_info(hl_appl_ctx_t* hl_appl, int nodeId);
 int  zwcontrol_network_health_check(hl_appl_ctx_t* hl_appl);
-
+void zwcontrol_nwtwork_health_rssi_report(int8_t *rssi, uint8_t rssi_cnt);
+void zwcontrol_network_ima_report(nhchk_sm_ctx_t *sm_ctx);
 
 /*
  ** Smart Start, Provision list operation
