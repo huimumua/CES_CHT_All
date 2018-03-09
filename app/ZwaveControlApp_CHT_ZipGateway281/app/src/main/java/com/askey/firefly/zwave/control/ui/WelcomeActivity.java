@@ -634,7 +634,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             //register mCallback
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
-                requestControlUSBPermission();
+                openController();
             }
         }
 
@@ -691,9 +691,38 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         txApi.setText(result);
                     }
                 }
+            } else if (className.equals("openController")) {
+                getOpenControllerInfo(result);
+            } else if (className.equals("Network IMA Info Report")) {
+                getImaInfo(result);
             }
         }
     };
+
+    private void getImaInfo(String result) {
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = new JSONObject(result);
+            String ima = jsonObject.optString("RSSI hops value");
+            txAllMsg.setText("rssi: "+ ima);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getOpenControllerInfo(String result) {
+        JSONObject jsonObject = null;
+
+        try {
+            jsonObject = new JSONObject(result);
+            String tmp = jsonObject.optString("Network Role");
+            txAllMsg.setText("Network Role: "+ tmp);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 
     //顯示command class
     private void showCommandClass(String result) {

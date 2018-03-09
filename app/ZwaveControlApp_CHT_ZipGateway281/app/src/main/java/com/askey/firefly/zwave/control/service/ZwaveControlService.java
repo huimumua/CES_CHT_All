@@ -1622,6 +1622,8 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("Network Health Check", jniResult);
         } else if ("Network IMA Info Report".equals(messageType)) {
             zwaveControlResultCallBack("Network IMA Info Report", jniResult);
+        } else if ("Network RSSI Info Report".equals(messageType)) {
+            zwaveControlResultCallBack("Network RSSI Info Report", jniResult);
         }
     }
 }
