@@ -9977,6 +9977,22 @@ void zwcontrol_network_ima_report(nhchk_sm_ctx_t *sm_ctx)
     {
         ALOGI("Direct range to node id:%u", sm_ctx->health_rpt.sts[sm_ctx->node_idx].node_id);
         cJSON_AddNumberToObject(jsonRoot, "Direct nodeid", sm_ctx->health_rpt.sts[sm_ctx->node_idx].node_id);
+        if(sm_ctx->health_rpt.sts[sm_ctx->node_idx].sts_cat == NW_HEALTH_GREEN)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Network Health", "Green");
+        }
+        else if(sm_ctx->health_rpt.sts[sm_ctx->node_idx].sts_cat == NW_HEALTH_YELLOW)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Network Health", "Yellow");
+        }
+        else if(sm_ctx->health_rpt.sts[sm_ctx->node_idx].sts_cat == NW_HEALTH_RED)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Network Health", "Red");
+        }
+        else if(sm_ctx->health_rpt.sts[sm_ctx->node_idx].sts_cat == NW_HEALTH_CRITICAL)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Network Health", "Critical");
+        }
     }
     else
     {
