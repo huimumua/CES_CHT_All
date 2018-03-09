@@ -1384,10 +1384,22 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
                         ALOGI("________________________________________________________");
                         ALOGI("Controller Reset done, attribute:");
                         ALOGI("               Home Id: %s",str);
-                        if(hl_appl->zwnet->ctl_role & ZWNET_CTLR_ROLE_INCL)
+                        if(hl_appl->zwnet->zwave_role & ZW_ROLE_SIS)
                         {
-                            ALOGI("               Role type: Real Primary");
-                            cJSON_AddStringToObject(jsonRoot,"Network Role","Real Primary, SUC");
+                            ALOGI("controller role type: ZW_ROLE_SIS");
+                            cJSON_AddStringToObject(jsonRoot,"Network Role","SIS");
+                        }
+                        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_INCLUSION)
+                        {
+                            cJSON_AddStringToObject(jsonRoot,"Network Role","INCLUSION");
+                        }
+                        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_PRIMARY)
+                        {
+                            cJSON_AddStringToObject(jsonRoot,"Network Role","PRIMARY");
+                        }
+                        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_SECONDARY)
+                        {
+                            cJSON_AddStringToObject(jsonRoot,"Network Role","SECONDARY");
                         }
                         else
                         {
@@ -1549,30 +1561,18 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Failed");
         }
-        /*else if(sts == OP_ADD_NODE_ADDING)
-        {
-            cJSON_AddStringToObject(jsonRoot, "Status", "Adding");
-        }
         else if(sts == OP_ADD_NODE_PROTOCOL_DONE)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Protocol Done");
         }
-        else if(sts == OP_ADD_NODE_LEARN_READY)
-        {
-            cJSON_AddStringToObject(jsonRoot, "Status", "Learn Ready");
-        }
-        else if(sts == OP_ADD_NODE_SEC_INCD)
-        {
-            cJSON_AddStringToObject(jsonRoot, "Status", "Adding Node Securely");
-        }*/
         else if(sts == OP_ADD_NODE_GET_NODE_INFO)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Getting Node Information");
         }
-        /*else if(sts == OP_ADD_NODE_FOUND)
+        else if(sts == OP_ADD_NODE_PROTOCOL_START)
         {
-            cJSON_AddStringToObject(jsonRoot, "Status", "Node Found");
-        }*/
+            cJSON_AddStringToObject(jsonRoot, "Status", "Smart Start Protocol Started");
+        }
         else if(sts == OP_DONE)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Success");
@@ -2304,11 +2304,24 @@ int  zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* inf
         sprintf(str, "%08X", (unsigned)hl_appl->zwnet->homeid);
         cJSON_AddStringToObject(jsonRoot, "Home Id", str);
         cJSON_AddNumberToObject(jsonRoot, "Node Id", (unsigned)zw_node->nodeid);
+        //ALOGI("controller DSK: %s",hl_appl->zwnet->gw_dsk);
 
-        if(hl_appl->zwnet->ctl_role & ZWNET_CTLR_ROLE_INCL)
+        if(hl_appl->zwnet->zwave_role & ZW_ROLE_SIS)
         {
-            ALOGI("controller role type: support inclusion");
-            cJSON_AddStringToObject(jsonRoot,"Network Role","Real Primary, SUC");
+            ALOGI("controller role type: ZW_ROLE_SIS");
+            cJSON_AddStringToObject(jsonRoot,"Network Role","SIS");
+        }
+        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_INCLUSION)
+        {
+            cJSON_AddStringToObject(jsonRoot,"Network Role","INCLUSION");
+        }
+        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_PRIMARY)
+        {
+            cJSON_AddStringToObject(jsonRoot,"Network Role","PRIMARY");
+        }
+        else if(hl_appl->zwnet->zwave_role & ZW_ROLE_SECONDARY)
+        {
+            cJSON_AddStringToObject(jsonRoot,"Network Role","SECONDARY");
         }
         else
         {
