@@ -102,18 +102,16 @@ extern int  UsbSerial_APMGetBcdDevice();
 
 #define DUMP 0 /* Dump APM communications to debug log if enabled  */
 #if DUMP
-static FILE *fp;
 
 void hexdump(u8_t *buf, int len) {
   int i=0;
   int j=0;
   for(i=0; i < len; i++) {
     for(j=0; (j < 0xF) && (i+j < len); j++) {
-      fprintf(fp, "%2.2x",buf[i+j]);
+      DBG_PRINTF("%2.2x",buf[i+j]);
     }
     i+=j;
   }
-  fprintf(fp,"\n");
 }
 #endif
 
@@ -130,7 +128,7 @@ static int xfer(u8_t* buf,u8_t len,u8_t rlen)
         for(i=0; i < len ; )
         {
 #if DUMP
-            fprintf(fp, "%lu TX:", clock_time());
+            DBG_PRINTF("%lu TX:", clock_time());
             hexdump(&buf[i],len);
 #endif
             m = len -i;
@@ -149,34 +147,34 @@ static int xfer(u8_t* buf,u8_t len,u8_t rlen)
                 break;
             }
 #if DUMP
-            fprintf(fp, "%lu RX:", clock_time());
+            DBG_PRINTF("%lu RX:", clock_time());
             hexdump(&rx_buf[i],actual);
 #endif
             if (actual < 0) {
                 /* This probably cannot happen, but better safe than sorry */
-                printf("actual usb read was negative - skipping!\n");
+                DBG_PRINTF("actual usb read was negative - skipping!\n");
                 continue;
             }
             /* Make sure we don't overflow buf by writing more than rlen*/
             if (actual > rlen - i) {
-                printf("Warning: USB read overflow. Discarding %i bytes", actual - (rlen - i));
+                DBG_PRINTF("Warning: USB read overflow. Discarding %i bytes", actual - (rlen - i));
                 actual = rlen - i;
             }
             memcpy(&buf[i], rx_buf, actual);
             i +=actual;
             if(actual == -1) {
-                printf("libusb error %i\n", r);
+                DBG_PRINTF("libusb error %i\n", r);
 #if DUMP
-                fprintf(fp, "libusb error %i\n", r);
+                DBG_PRINTF("libusb error %i\n", r);
 #endif
                 //perror("in error:);
-                printf("got %i bytes expcted %i\n",i,rlen);
+                DBG_PRINTF("got %i bytes expcted %i\n",i,rlen);
                 return i;
             }
         } /* for (... ) */
         return i;
     } else {
-        printf("sync\n");
+        DBG_PRINTF("sync\n");
         dummy[0]=0;
         UsbSerial_APMWriteData(dummy, 1);
         return 1;
@@ -194,12 +192,6 @@ static int open_port(zw_pgmr_t* p, const char* port)
     if(strncmp("USB",port,3) !=0) {
         return 0;
     }
-
-#if DUMP
-    fp = fopen("./prog.log", "a");
-    if (!fp)
-        ERR_PRINTF("Error opening APM debug log file\n");
-#endif
 
     if(UsbSerial_APMOpen() != 0)
     {
