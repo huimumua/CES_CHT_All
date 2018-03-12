@@ -120,7 +120,6 @@ static int xfer(u8_t* buf,u8_t len,u8_t rlen)
     u8_t dummy[4] ;
     int actual=0;
     int i;
-    int r;
     int m;
 
     if(buf)
@@ -152,8 +151,8 @@ static int xfer(u8_t* buf,u8_t len,u8_t rlen)
 #endif
             if (actual < 0) {
                 /* This probably cannot happen, but better safe than sorry */
-                DBG_PRINTF("actual usb read was negative - skipping!\n");
-                continue;
+                DBG_PRINTF("UsbSerial_APMReadData error, got %i bytes expcted %i\n",i,rlen);
+                return i;
             }
             /* Make sure we don't overflow buf by writing more than rlen*/
             if (actual > rlen - i) {
@@ -162,15 +161,6 @@ static int xfer(u8_t* buf,u8_t len,u8_t rlen)
             }
             memcpy(&buf[i], rx_buf, actual);
             i +=actual;
-            if(actual == -1) {
-                DBG_PRINTF("libusb error %i\n", r);
-#if DUMP
-                DBG_PRINTF("libusb error %i\n", r);
-#endif
-                //perror("in error:);
-                DBG_PRINTF("got %i bytes expcted %i\n",i,rlen);
-                return i;
-            }
         } /* for (... ) */
         return i;
     } else {
