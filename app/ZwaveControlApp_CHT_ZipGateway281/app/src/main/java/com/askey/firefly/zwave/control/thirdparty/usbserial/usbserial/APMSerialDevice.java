@@ -156,7 +156,21 @@ public class APMSerialDevice
             Log.e(TAG,"Read Task Not Running...");
             return -1;
         }
+
         n = buffer.read(data, 0, len);
+        while(0 == n)
+        {
+            Log.w(TAG,"APM read data length is 0, retry....");
+            try{
+                Thread.sleep(2);
+                n = buffer.read(data, 0, len);
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+        }
+
         Log.d(TAG,"Actually  Read Data Length = " + n);
         if(n > 0){
             byte[] buf = new byte[n];

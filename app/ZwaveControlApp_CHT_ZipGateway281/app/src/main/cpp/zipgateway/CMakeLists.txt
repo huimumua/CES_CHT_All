@@ -106,7 +106,7 @@ set(CONTIKI contiki )
 
 include_directories( 
 ${OPENSSL_INCLUDE_DIRS}
-${LibUSB_INCLUDE_DIRS}
+${LIBUSB_INCLUDE_DIRS}
 ${LIBS2_INCLUDE_DIRS}
 ${TS2_INCLUDE_DIRS}
 Z-Wave/include 
