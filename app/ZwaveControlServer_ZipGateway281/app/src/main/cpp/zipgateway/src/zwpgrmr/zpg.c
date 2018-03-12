@@ -535,7 +535,7 @@ zpg_program_chip(zw_pgmr_t* p, u8_t* data, int size)
 
     //usleep(2*1000*1000);
 
-    if(!p->open(p,"USB")) {
+    /*if(!p->open(p,"USB")) {
 #ifdef ANDROID_PLATFORM
       DBG_PRINTF("Unable to re-connect to usb loader #1\n");
 #else
@@ -550,6 +550,10 @@ zpg_program_chip(zw_pgmr_t* p, u8_t* data, int size)
       p->err("Unable to re-connect to usb loader #2\n");
 #endif
       return -1;
+    }*/
+    while(!p->open(p,"USB") || p->usb!=2 ) {
+      p->err("Unable to re-connect to usb loader\n");
+      sleep(2);
     }
   }
 
@@ -588,7 +592,9 @@ zpg_program_chip(zw_pgmr_t* p, u8_t* data, int size)
     /* Wait for chip to reappear in APM mode. Watchdog restart causes one second delay. */
     usleep(1000*1000);
 
-    p->open(p,"USB");
+    // p->open(p,"USB"); TINY
+    while (!p->open(p,"USB"))
+      sleep(1);
 
     if(p->usb != 1) {
 #ifdef ANDROID_PLATFORM
