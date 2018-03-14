@@ -127,6 +127,13 @@
             android:text="REMOVE" />
 
         <Button
+            android:id="@+id/btnLearn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="learn" />
+
+        <Button
             android:id="@+id/btnaddProList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -146,6 +153,13 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Edit_list" />
+
+        <Button
+            android:id="@+id/btnPassive"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="passive" />
     </LinearLayout>
 
     <LinearLayout

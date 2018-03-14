@@ -172,6 +172,11 @@ public class ZwaveControlService extends Service {
         return doOpenController();
     }
 
+    public void  StartLearnMode(){
+         int result = ZwaveControlHelper.ZwController_StartLearnMode();
+    }
+
+
     public void addDevice(String devType,byte[] dskNumber){
         if (devType.equals(zwaveType)) {
              ZwaveControlHelper.ZwController_AddDevice(dskNumber, dskNumber.length);
@@ -201,8 +206,10 @@ public class ZwaveControlService extends Service {
         }
     }
 
-    public void addProvisionListEntry (String devType,byte[] dskNumber) {
+    public void addProvisionListEntry (String devType, byte[] dskNumber,boolean InclusionState) {
         if (devType.equals(zwaveType)) {
+            //updateTimestamp(deviceId);
+            /*
             String str = "11394-65466-64100-20934-53255-51784-15710-22718";
             byte[] bstr = str.getBytes();
             byte[] dsk = new byte[str.length()+1];
@@ -210,7 +217,7 @@ public class ZwaveControlService extends Service {
             for(int i = 0; i < bstr.length; ++i)
                 dsk[i] = bstr[i];
             dsk[str.length()] = '\0';
-
+            */
             ZwaveProvisionList[] plList = new ZwaveProvisionList[6];
             if(plList == null){
                 Log.i(LOG_TAG,"======================");
@@ -223,7 +230,13 @@ public class ZwaveControlService extends Service {
 
             plList[0].setType(ZwaveProvisionList.PL_INFO_TYPE_INCL_STS);
 
-            plList[0].setInclusionState(ZwaveProvisionList.PL_INCL_STS_PENDING);
+            if(InclusionState) {
+                plList[0].setInclusionState(ZwaveProvisionList.PL_INCL_STS_PENDING);
+                Log.d(LOG_TAG,"PENDING mode");
+            } else {
+                plList[0].setInclusionState(ZwaveProvisionList.PL_INCL_STS_PASSIVE);
+                Log.d(LOG_TAG,"PASSIVE mode");
+            }
 
             plList[1].setType(ZwaveProvisionList.PL_INFO_TYPE_BOOT_MODE);
             plList[1].setBootMode(ZwaveProvisionList.PL_BOOT_MODE_SMART_STRT);
@@ -246,7 +259,24 @@ public class ZwaveControlService extends Service {
             plList[5].stProvisionList.pii.app_ver = 0x04;
             plList[5].stProvisionList.pii.app_sub_ver = 0x01;
 
-            ZwaveControlHelper.ZwController_addProvisionListEntry(dskNumber, dskNumber.length, plList,6);
+            String result = "false";
+            int res = ZwaveControlHelper.ZwController_addProvisionListEntry(dskNumber, dskNumber.length, plList,6);
+            if (res == 0){
+                result = "true";
+            }
+
+            JSONObject jsonResult = new JSONObject();
+            try {
+                jsonResult.put("Interface","addProvisionListEntry");
+                //jsonResult.put("NodeId",new Integer(deviceId));
+                //jsonResult.put("devType",zwaveType);
+                jsonResult.put("Result", result);
+
+                zwaveControlResultCallBack("addProvisionListEntry",jsonResult.toString());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
         } else if (devType.equals(btType)){
             /*
             try {
@@ -260,6 +290,7 @@ public class ZwaveControlService extends Service {
 
     public void rmProvisionListEntry (String devType,byte[] dskNumber) {
         if (devType.equals(zwaveType)) {
+            /*
             String str = "11394-65466-64100-20934-53255-51784-15710-22718";
             byte[] bstr = str.getBytes();
             byte[] dsk = new byte[str.length()+1];
@@ -267,7 +298,26 @@ public class ZwaveControlService extends Service {
             for(int i = 0; i < bstr.length; ++i)
                 dsk[i] = bstr[i];
             dsk[str.length()] = '\0';
-            ZwaveControlHelper.ZwController_rmProvisionListEntry(dskNumber, dskNumber.length);
+            */
+
+            String result = "false";
+            int res =  ZwaveControlHelper.ZwController_rmProvisionListEntry(dskNumber, dskNumber.length);
+            if (res == 0){
+                result = "true";
+            }
+
+            JSONObject jsonResult = new JSONObject();
+            try {
+                jsonResult.put("Interface","rmProvisionListEntry");
+                //jsonResult.put("NodeId",new Integer(deviceId));
+                //jsonResult.put("devType",zwaveType);
+                jsonResult.put("Result", result);
+
+                zwaveControlResultCallBack("rmProvisionListEntry",jsonResult.toString());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
         } else if (devType.equals(btType)){
             /*
             try {
@@ -281,6 +331,7 @@ public class ZwaveControlService extends Service {
 
     public void getProvisionListEntry(String devType,byte[] dskNumber) {
         if (devType.equals(zwaveType)) {
+            /*
             String str = "11394-65466-64100-20934-53255-51784-15710-22718";
             byte[] bstr = str.getBytes();
             byte[] dsk = new byte[str.length()+1];
@@ -288,6 +339,7 @@ public class ZwaveControlService extends Service {
             for(int i = 0; i < bstr.length; ++i)
                 dsk[i] = bstr[i];
             dsk[str.length()] = '\0';
+            */
             ZwaveControlHelper.ZwController_getProvisionListEntry(dskNumber, dskNumber.length);
         } else if (devType.equals(btType)){
             /*
@@ -305,7 +357,23 @@ public class ZwaveControlService extends Service {
     }
 
     public void ZwController_rmAllProvisionListEntry(){
-        ZwaveControlHelper.ZwController_rmAllProvisionListEntry();
+        String result = "false";
+        int res = ZwaveControlHelper.ZwController_rmAllProvisionListEntry();
+        if (res == 0){
+            result = "true";
+        }
+
+        JSONObject jsonResult = new JSONObject();
+        try {
+            jsonResult.put("Interface","rmProvisionListEntry");
+            //jsonResult.put("NodeId",new Integer(deviceId));
+            //jsonResult.put("devType",zwaveType);
+            jsonResult.put("Result", result);
+
+            zwaveControlResultCallBack("rmProvisionListEntry",jsonResult.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
 

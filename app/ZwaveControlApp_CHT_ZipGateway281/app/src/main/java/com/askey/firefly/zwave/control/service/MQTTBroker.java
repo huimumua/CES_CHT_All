@@ -886,67 +886,9 @@ public class MQTTBroker extends Service {
             JSONObject message = new JSONObject();
 
             if (className.equals("addDevice") || className.equals("removeDevice")) {
-
-                mTCPServer.sendMessage(Const.TCPClientPort, result);
-
-                if (result.contains("addDevice:") || result.contains("removeDevice:")) {
-                    String[] tokens = result.split(":");
-                    if (tokens.length < 3) {
-                        Log.i(LOG_TAG, "AIDLResult " + className + " : wrong format " + result);
-                    }
-                    else
-                    {
-                        String devType = tokens[1];
-                        String tNodeId = tokens[2];
-
-                        if (className.equals("addDevice")) {
-
-                            try {
-                                message.put("Interface", "addDevice");
-                                message.put("NodeId", tNodeId);
-                                message.put("Result", "true");
-                                //  obj.put("reported", message);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-
-                            subscribeToTopic(Const.PublicTopicName + devType + tNodeId);
-                            publishMessage(Const.PublicTopicName, message.toString());
-                        } else {
-                            try {
-                                message.put("Interface", "removeDevice");
-                                message.put("NodeId", tNodeId);
-                                if (tNodeId.equals("fail")){
-                                    message.put("Result", "fail");
-                                }else {
-                                    unsubscribeTopic(Const.PublicTopicName + devType + tNodeId);
-                                    message.put("Result", "true");
-                                }
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            publishMessage(Const.PublicTopicName, message.toString());
-                        }
-
-                        Const.TCPClientPort = 0;
-                    }
-                }
+                addRemoveDevice(className,result,message);
             } else if (className.equals("getDeviceInfo")) {
-                Log.i(LOG_TAG, "getDeviceInfo!!!!!!!");
-
-                ArrayList<String> tmpLine = Utils.searchString(result, "Node id");
-
-                for (int idx = 1; idx < tmpLine.size(); idx++) {
-                    Log.i(LOG_TAG, "Node id (" + idx + ") = " + tmpLine.get(idx));
-                    subscribeToTopic(Const.PublicTopicName + "Zwave" + tmpLine.get(idx));
-                }
-                //publish result to MQTT public topic
-                publishMessage(Const.PublicTopicName, result);
-                Log.i(LOG_TAG, "node cnt = " + DeviceInfo.localSubTopiclist.size());
-                if (!DeviceInfo.isZwaveInitFinish) {
-                    Log.i(LOG_TAG, " ===== isZwaveInitFinish  = true ====");
-                    DeviceInfo.isZwaveInitFinish = true;
-                }
+                getDeviceInfo(result);
             } else if (className.equals("removeFailedDevice") ||
                     className.equals("replaceFailedDevice") || className.equals("stopAddDevice") ||
                     className.equals("stopRemoveDevice")) {
@@ -955,21 +897,10 @@ public class MQTTBroker extends Service {
                 Const.TCPClientPort = 0;
 
             } else if (className.equals("reNameDevice")) {
-
-                try {
-                    result = result.substring(13);
-                    message = new JSONObject(result);
-                    String devType = message.getString("devType");
-                    String NodeId = message.getString("NodeId");
-                    Log.i(LOG_TAG, "devType=" + devType + " NodeId=" + NodeId);
-
-                    publishMessage(Const.PublicTopicName + devType + NodeId, result);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-            else
-            {
+                reNameDevice(result);
+            } else if (className.equals("reNameDevice")) {
+                reNameDevice(result);
+            } else {
                 try {
                     Log.i(LOG_TAG,"result = "+result);
                     message = new JSONObject(result);
@@ -993,6 +924,84 @@ public class MQTTBroker extends Service {
             }
         }
     };
+
+    private void reNameDevice(String result) {
+        try {
+            result = result.substring(13);
+            JSONObject message = new JSONObject(result);
+            String devType = message.getString("devType");
+            String NodeId = message.getString("NodeId");
+            Log.i(LOG_TAG, "devType=" + devType + " NodeId=" + NodeId);
+
+            publishMessage(Const.PublicTopicName + devType + NodeId, result);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getDeviceInfo(String result) {
+        Log.i(LOG_TAG, "getDeviceInfo");
+        ArrayList<String> tmpLine = Utils.searchString(result, "Node id");
+
+        for (int idx = 1; idx < tmpLine.size(); idx++) {
+            Log.i(LOG_TAG, "Node id (" + idx + ") = " + tmpLine.get(idx));
+            subscribeToTopic(Const.PublicTopicName + "Zwave" + tmpLine.get(idx));
+        }
+        //publish result to MQTT public topic
+        publishMessage(Const.PublicTopicName, result);
+        Log.i(LOG_TAG, "node cnt = " + DeviceInfo.localSubTopiclist.size());
+        if (!DeviceInfo.isZwaveInitFinish) {
+            Log.i(LOG_TAG, " ===== isZwaveInitFinish  = true ====");
+            DeviceInfo.isZwaveInitFinish = true;
+        }
+    }
+
+    private void addRemoveDevice(String className, String result, JSONObject message) {
+        mTCPServer.sendMessage(Const.TCPClientPort, result);
+
+        if (result.contains("addDevice:") || result.contains("removeDevice:")) {
+            String[] tokens = result.split(":");
+            if (tokens.length < 3) {
+                Log.i(LOG_TAG, "AIDLResult " + className + " : wrong format " + result);
+            }
+            else
+            {
+                String devType = tokens[1];
+                String tNodeId = tokens[2];
+
+                if (className.equals("addDevice")) {
+
+                    try {
+                        message.put("Interface", "addDevice");
+                        message.put("NodeId", tNodeId);
+                        message.put("Result", "true");
+                        //  obj.put("reported", message);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    subscribeToTopic(Const.PublicTopicName + devType + tNodeId);
+                    publishMessage(Const.PublicTopicName, message.toString());
+                } else {
+                    try {
+                        message.put("Interface", "removeDevice");
+                        message.put("NodeId", tNodeId);
+                        if (tNodeId.equals("fail")){
+                            message.put("Result", "fail");
+                        }else {
+                            unsubscribeTopic(Const.PublicTopicName + devType + tNodeId);
+                            message.put("Result", "true");
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    publishMessage(Const.PublicTopicName, message.toString());
+                }
+
+                Const.TCPClientPort = 0;
+            }
+        }
+    }
 }
 
 

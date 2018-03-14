@@ -71,7 +71,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
     private ArrayList<Integer> nodeIdArr = new ArrayList<>();
     private ArrayList<String> provisionListArr = new ArrayList<>();
-    private Button btnAdd,btnRemove,btnButton,btnAddPorList,btnRmProList,btnEditProvision;
+    private Button btnAdd,btnRemove,btnButton,btnAddPorList,btnRmProList,btnEditProvision,btnPassive,btnLearn;
     private Spinner spNodeIdList,spApiList,spProvisionList;
     private TextView txText,txDsk,txAllMsg,txApi;
     private EditText editDsk,editSetApiValue;
@@ -83,7 +83,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     private int getDeviceInfoFlag = 0;
     private boolean getProvisionListFlag = false;
     private boolean getProvisionNodeFlag = false;
-
+    private boolean InclusionState = true;
 
 
 
@@ -131,10 +131,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
         btnAdd  = (Button) findViewById(R.id.btnAdd);
         btnRemove  = (Button) findViewById(R.id.btnRemove);
+        btnLearn = (Button) findViewById(R.id.btnLearn);
         btnButton = (Button) findViewById(R.id.btnButton);
         btnAddPorList = (Button) findViewById(R.id.btnaddProList);
         btnRmProList = (Button) findViewById(R.id.btnrmProList);
         btnEditProvision = (Button) findViewById(R.id.btnEditProvision);
+        btnPassive = (Button) findViewById(R.id.btnPassive);
 
         cb1 = (CheckBox) findViewById(R.id.cb1);
         cb2 = (CheckBox) findViewById(R.id.cb2);
@@ -151,10 +153,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
         btnAdd.setOnClickListener(this);
         btnRemove.setOnClickListener(this);
+        btnLearn.setOnClickListener(this);
         btnButton.setOnClickListener(this);
         btnAddPorList.setOnClickListener(this);
         btnRmProList.setOnClickListener(this);
         btnEditProvision.setOnClickListener(this);
+        btnPassive.setOnClickListener(this);
 
         cb1.setOnCheckedChangeListener(this);
         cb2.setOnCheckedChangeListener(this);
@@ -270,7 +274,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         //Log.d(LOG_TAG,"node ID : " + selectNode);
         switch (view.getId()) {
             case R.id.btnAdd:
-                if(editDsk.length() != 0 && editDsk.length() == 47) {    // editDsk will 5-digit or full code
+                if (editDsk.length() != 0 && editDsk.length() == 47) {    // editDsk will 5-digit or full code
                     //Log.i(LOG_TAG, "call zwaveService.addDevice()");
                     inputDsk = editDsk.getText().toString() + "\0";
                     byte[] dskNumber = inputDsk.getBytes();
@@ -288,8 +292,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 break;
 
             case R.id.btnRemove:
-                Log.i(LOG_TAG,"call zwaveService.removeDevice()");
-                zwaveService.removeDevice(devType,0);
+                Log.i(LOG_TAG, "call zwaveService.removeDevice()");
+                zwaveService.removeDevice(devType, 0);
+                break;
+
+            case R.id.btnLearn:
+                zwaveService.StartLearnMode();
                 break;
 
             case R.id.btnButton:
@@ -302,7 +310,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_rmAllProvisionListEntry")) {
                     zwaveService.ZwController_rmAllProvisionListEntry();
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_battery_get")) {
-                    zwaveService.getDeviceBattery(devType,Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
+                    zwaveService.getDeviceBattery(devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_sensor_multilevel_get")) {
                     try {
                         zwaveService.getSensorMultiLevel(devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
@@ -316,13 +324,13 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     getDeviceInfoFlag = 3;
                     zwaveService.getDeviceInfo();
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_basic_get")) {
-                    zwaveService.getBasic(devType,selectNode);
+                    zwaveService.getBasic(devType, selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_basic_set")) {
-                    zwaveService.setBasic(devType,selectNode,Integer.valueOf(editSetApiValue.getText().toString()));
+                    zwaveService.setBasic(devType, selectNode, Integer.valueOf(editSetApiValue.getText().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_multilevel_get")) {
-                    zwaveService.getSwitchMultiLevel(devType,selectNode);
+                    zwaveService.getSwitchMultiLevel(devType, selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_multilevel_set")) {
-                    zwaveService.setSwitchMultiLevel(devType,selectNode,Integer.valueOf(editSetApiValue.getText().toString()),1);
+                    zwaveService.setSwitchMultiLevel(devType, selectNode, Integer.valueOf(editSetApiValue.getText().toString()), 1);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_get_support_switch_type")) {
                     zwaveService.getSupportedSwitchType(selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_start_stop_switchlevel_change")) {
@@ -334,9 +342,9 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_powerLevel_get")) {
                     zwaveService.getPowerLevel(selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_on")) {
-                    zwaveService.setSwitchAllOn(devType,selectNode);
+                    zwaveService.setSwitchAllOn(devType, selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_off")) {
-                    zwaveService.setSwitchAllOff(devType,selectNode);
+                    zwaveService.setSwitchAllOff(devType, selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_set")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_get")) {
@@ -354,7 +362,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_sensor_binary_supported_sensor_get")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_meter_get")) {
-                    zwaveService.getMeter(devType,selectNode,10);
+                    zwaveService.getMeter(devType, selectNode, 10);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_meter_supported_get")) {
                     zwaveService.getMeterSupported(selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_meter_reset")) {
@@ -404,12 +412,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_language_set")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_color_get")) {
-                    zwaveService.getLampColor(devType,selectNode);
+                    zwaveService.getLampColor(devType, selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_color_supported_get")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_color_set")) {
                     String[] temp = editSetApiValue.getText().toString().split(",");
-                    zwaveService.setLampColor(devType,selectNode,Integer.valueOf(temp[0]),Integer.valueOf(temp[1]),Integer.valueOf(temp[2]));
+                    zwaveService.setLampColor(devType, selectNode, Integer.valueOf(temp[0]), Integer.valueOf(temp[1]), Integer.valueOf(temp[2]));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_start_stop_color_levelchange")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_barrier_operator_set")) {
@@ -457,25 +465,33 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 }
                 break;
             case R.id.btnaddProList:
-                if(editDsk.length() != 0 && editDsk.length() == 47) {    // editDsk will 5-digit or full code
+                if (editDsk.length() != 0 && editDsk.length() == 47) {    // editDsk will 5-digit or full code
+                    InclusionState = true;
                     addProvisionList();
                 } else
                     Toast.makeText(this, "格式錯誤 !", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.btnrmProList:
-                if(selectProvisionList != null) {    // editDsk will 5-digit or full code
+                if (selectProvisionList != null) {    // editDsk will 5-digit or full code
                     rmProvisionList();
                 }
                 break;
             case R.id.btnEditProvision:
-                if(selectProvisionList != null) {
+                if (selectProvisionList != null) {
                     editDsk.setText(selectProvisionList);
                     rmProvisionList();
                 } else {
                     txAllMsg.setText("Provision List is null");
                 }
+                break;
+            case R.id.btnPassive:
+                if (selectProvisionList != null) {
+                    InclusionState = false;
+                    editDsk.setText(selectProvisionList);
+                    rmProvisionList();
+                    addProvisionList();
+                }
         }
-
     }
 
     //載入provision list
@@ -562,7 +578,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             Toast.makeText(this,"already Provision List", Toast.LENGTH_SHORT).show();
         } else {
             provisionListArr.add(editDsk.getText().toString());
-            zwaveService.addProvisionListEntry(devType,dskNumber);
+            zwaveService.addProvisionListEntry(devType,dskNumber,InclusionState);
             Toast.makeText(this, "add Provision List", Toast.LENGTH_SHORT).show();
         }
         ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
@@ -602,7 +618,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
     class mTimerTask extends TimerTask {
         public void run() {
-            zwaveService.closeController();
+            //zwaveService.closeController();
             Log.d(LOG_TAG,"timer on schedule");
             Message message = new Message();
             message.what = 2001;
@@ -716,8 +732,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
         try {
             jsonObject = new JSONObject(result);
-            String tmp = jsonObject.optString("Network Role");
-            txAllMsg.setText("Network Role: "+ tmp);
+            String NetworkRole = jsonObject.optString("Network Role");
+            txAllMsg.setText("Network Role: "+ NetworkRole);
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -944,6 +960,16 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
     //開啟z-wave dongle
     private void openController() {
+        /*
+        try{
+            // delay 1 second
+            Thread.sleep(1000);
+
+        } catch(InterruptedException e){
+            e.printStackTrace();
+
+        }
+        */
         //timer.schedule(new mTimerTask(), 1000 * 120);
         String openResult = zwaveService.openController();
         if (openResult.contains(":0")){
