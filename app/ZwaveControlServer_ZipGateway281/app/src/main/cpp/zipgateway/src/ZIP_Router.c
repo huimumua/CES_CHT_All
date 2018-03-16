@@ -322,26 +322,29 @@ void macOfNode(uip_lladdr_t* dst, u8_t nodeID) {
 /**
  * Return the node is corresponding to an ip address, returns 0 if the
  * ip address is not in the pan
- */BYTE
-nodeOfIP(uip_ip6addr_t* ip)
+ */
+BYTE nodeOfIP(uip_ip6addr_t* ip)
 {
-  if (uip_ipaddr_prefixcmp(ip,&cfg.pan_prefix,64))
-  {
-		return ip->u8[15];
-  }
+    if (uip_ipaddr_prefixcmp(ip,&cfg.pan_prefix,64))
+    {
+        return ip->u8[15];
+    }
 
-  if (uip_ds6_is_my_addr(ip))
-  {
-    return MyNodeID;
-  }
-
-  else if (is_4to6_addr((ip6addr_t*) ip))
-  {
-    //return ipv46_get_nat_addr((uip_ipv4addr_t*) &ip->u8[12]); //djnakata
-    return ip->u8[15];
-  }
-		return 0;
-	}
+    if (uip_ds6_is_my_addr(ip))
+    {
+        return MyNodeID;
+    }
+    else if (is_4to6_addr((ip6addr_t*) ip))
+    {
+        //return ipv46_get_nat_addr((uip_ipv4addr_t*) &ip->u8[12]); //djnakata
+        if(ip->u8[15] == 1)
+        {
+            return MyNodeID;
+        }
+        return ip->u8[15];
+    }
+    return 0;
+}
 
 /**
  *   Search through a received multi cmd encap and notify mailbox if a Wake Up Notification is found.

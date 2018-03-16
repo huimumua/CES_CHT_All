@@ -1356,7 +1356,7 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
                 }
             }
 
-            if(notify_msg->op == ZWNET_OP_RESET && notify_msg->sts == ZW_ERR_NONE)
+            if(((notify_msg->op == ZWNET_OP_RESET) || (notify_msg->op == ZWNET_OP_INITIATE)) && notify_msg->sts == ZW_ERR_NONE)
             {
                 // Report controller info
                 cJSON *jsonRoot;
@@ -1382,7 +1382,7 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
                         cJSON_AddNumberToObject(jsonRoot, "Node Id", (unsigned)zw_node->nodeid);
 
                         ALOGI("________________________________________________________");
-                        ALOGI("Controller Reset done, attribute:");
+                        ALOGI("Controller attribute:");
                         ALOGI("               Home Id: %s",str);
                         if(hl_appl->zwnet->zwave_role & ZW_ROLE_SIS)
                         {
