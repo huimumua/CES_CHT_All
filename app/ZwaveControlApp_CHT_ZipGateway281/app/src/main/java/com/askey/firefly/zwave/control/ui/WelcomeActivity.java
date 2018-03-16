@@ -94,9 +94,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
         mContext = this;
-        initBtn();
 
-        //showProgressDialog(mContext, "Initializing，Open Zwave Controller...");
+        showProgressDialog(mContext, "Initializing，Open Zwave Controller...");
 
         Intent MqttIntent = new Intent(WelcomeActivity.this, MQTTBroker.class);
         startService(MqttIntent);
@@ -108,6 +107,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         this.bindService(serviceIntent, conn, Context.BIND_AUTO_CREATE);
 
         new Thread(checkInitStatus).start();
+        initBtn();
 
     }
 
@@ -194,7 +194,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 }
             }
             initSensorfunc();
-            //initZwave();
+            initZwave();
         }
     };
 
@@ -205,7 +205,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 timerCancel();
                 //Intent intent = new Intent();
                 //intent.setClass(mContext, HomeActivity.class);
-                //hideProgressDialog();
+                hideProgressDialog();
                 //mContext.startActivity(intent);
                 //finish();
             }
@@ -334,11 +334,11 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_get_support_switch_type")) {
                     zwaveService.getSupportedSwitchType(selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_start_stop_switchlevel_change")) {
-                    //zwaveService.startStopSwitchLevelChange();
+                    //zwaveService.startStopSwitchLevelChange(); many parameter
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_configuration_get")) {
-                    //zwaveService.getConfiguration();
+                    //zwaveService.getConfiguration(); many parameter
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_configuration_set")) {
-                    //zwaveService.setConfiguration();
+                    //zwaveService.setConfiguration(); many parameter
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_powerLevel_get")) {
                     zwaveService.getPowerLevel(selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_on")) {
@@ -618,7 +618,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
     class mTimerTask extends TimerTask {
         public void run() {
-            //zwaveService.closeController();
+            zwaveService.closeController();
             Log.d(LOG_TAG,"timer on schedule");
             Message message = new Message();
             message.what = 2001;
@@ -650,7 +650,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             //register mCallback
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
-                openController();
+                requestControlUSBPermission();
             }
         }
 
@@ -673,47 +673,77 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         }
     }
 
-    public ZwaveControlService.zwaveCallBack mCallback = new ZwaveControlService.zwaveCallBack() {
+    public ZwaveControlService.zwaveCallBack mCallback;
 
-        //監聽關鍵字回報 從ZwaveControlService.jave zwaveCallBack -> zwcontrol_api.c "MessageType"
-        @Override
-        public void zwaveControlResultCallBack(String className, String result) {
-            Log.i(LOG_TAG,"class name = [" + className + "]| result = " + result);
-            if (className.equals("addDevice") || className.equals("removeDevice") ){
-                addRemoveResult(result);
-            } else if (className.equals("DSK")) {
-                showDsk(result);
-            } else if (className.equals("getDeviceInfo")) {
-                zwaveService.getAllProvisionListEntry();
-                if(getDeviceInfoFlag == 1) {
-                    showSecurityStatus(result);
-                } else if (getDeviceInfoFlag == 2) {
-                    showCommandClass(result);
-                } else if (getDeviceInfoFlag == 3) {
-                    showNodeInfo(result);
-                }
-            } else if (className.equals("getSensorMultiLevel") || className.equals("getSensorNotification") ||
-                    className.equals("getLampColor") || className.equals("getBasic") || className.equals("getPowerLevel")) {
-                for(int i = 0; i < result.length(); i++) {
-                    txApi.setText(result);
-                }
-            } else if (className.equals("All Provision List Report")) {
-                loadProvisionList(result);
-            } else if (className.equals("Provision List Report")) {
-                if(getProvisionNodeFlag) {
-                    getProvisionNode(result);
-                } else {
-                    for(int i = 0; i < result.length(); i++) {
+    {
+        mCallback = new ZwaveControlService.zwaveCallBack() {
+
+            //監聽關鍵字回報 從ZwaveControlService.jave zwaveCallBack -> zwcontrol_api.c "MessageType"
+            @Override
+            public void zwaveControlResultCallBack(String className, String result) {
+                Log.i(LOG_TAG, "class name = [" + className + "]| result = " + result);
+                if (className.equals("addDevice") || className.equals("removeDevice")) {
+                    addRemoveResult(result);
+                } else if (className.equals("DSK")) {
+                    showDsk(result);
+                } else if (className.equals("getDeviceInfo")) {
+                    zwaveService.getAllProvisionListEntry();
+                    if (getDeviceInfoFlag == 1) {
+                        showSecurityStatus(result);
+                    } else if (getDeviceInfoFlag == 2) {
+                        showCommandClass(result);
+                    } else if (getDeviceInfoFlag == 3) {
+                        showNodeInfo(result);
+                    }
+                } else if (className.equals("getSensorMultiLevel") || className.equals("getSensorNotification") ||
+                        className.equals("getLampColor") || className.equals("getBasic") || className.equals("getPowerLevel")) {
+                    for (int i = 0; i < result.length(); i++) {
                         txApi.setText(result);
                     }
+                } else if (className.equals("All Provision List Report")) {
+                    loadProvisionList(result);
+                } else if (className.equals("Provision List Report")) {
+                    if (getProvisionNodeFlag) {
+                        getProvisionNode(result);
+                    } else {
+                        for (int i = 0; i < result.length(); i++) {
+                            txApi.setText(result);
+                        }
+                    }
+                } else if (className.equals("addProvisionListEntry")) {
+                    Log.d(LOG_TAG, DeviceInfo.dskNumber + " gino!!!!!!!!!");
+                    if (provisionListArr.contains(DeviceInfo.dskNumber)) {
+                        Log.d(LOG_TAG,"already Provision List");
+                    } else {
+                        provisionListArr.add(DeviceInfo.dskNumber);
+                        //zwaveService.addProvisionListEntry(devType, dskNumber, InclusionState);
+                        Log.d(LOG_TAG,"add Provision List");
+                    }
+                    ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
+                            android.R.layout.simple_spinner_dropdown_item, converProvisionList(provisionListArr));
+                    spProvisionList.setAdapter(provisionList);
+
+                    spProvisionList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+                        @Override
+                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                            selectProvisionList = spProvisionList.getSelectedItem().toString();
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parent) {
+
+                        }
+                    });
+                } else if (className.equals("openController")) {
+                    getOpenControllerInfo(result);
+                } else if (className.equals("Network IMA Info Report")) {
+                    getImaInfo(result);
                 }
-            } else if (className.equals("openController")) {
-                getOpenControllerInfo(result);
-            } else if (className.equals("Network IMA Info Report")) {
-                getImaInfo(result);
             }
-        }
-    };
+        };
+    }
+
 
     private void getImaInfo(String result) {
         JSONObject jsonObject = null;
@@ -868,14 +898,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                             }
                         });
-
-                        //Message message = new Message();
-                        //Bundle data = new Bundle();
-                        //data.putInt("nodeId", Integer.parseInt(tNodeId));
-                        //data.putString("homeId", tHomeId);
-                        //message.setData(data);
-                        //message.what = 2001;
-                        //mHandler.sendMessage(message);
                     }
                 }
             }
@@ -960,17 +982,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
     //開啟z-wave dongle
     private void openController() {
-        /*
-        try{
-            // delay 1 second
-            Thread.sleep(1000);
-
-        } catch(InterruptedException e){
-            e.printStackTrace();
-
-        }
-        */
-        //timer.schedule(new mTimerTask(), 1000 * 120);
+        timer.schedule(new mTimerTask(), 1000 * 120);
         String openResult = zwaveService.openController();
         if (openResult.contains(":0")){
             DeviceInfo.isOpenControllerFinish = true;
@@ -982,7 +994,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
         List<ZwaveDevice> list = zwDevManager.queryZwaveDeviceList();
 
-        Log.e(LOG_TAG,"######## initSensorfunc start #######");
+        Log.d(LOG_TAG,"######## initSensorfunc start #######");
         for (int idx = 1; idx < list.size(); idx++) {
 
             int nodeId = list.get(idx).getNodeId();
@@ -1038,7 +1050,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         int getResult = zwaveService.getControllerRssi();
         Log.i(LOG_TAG,"getResult = "+getResult);
 
-        Log.e(LOG_TAG,"######## initSensorfunc end #######");
+        Log.d(LOG_TAG,"######## initSensorfunc end #######");
 
     }
 

@@ -22,7 +22,8 @@ public class DeviceInfo {
     public static List<zwScenceMember> roomList = new ArrayList<>();
     public static String[] deviceType = {"BULB", "DIMMER", "PLUG", "SENSOR", "CONTROL", "OTHER"};
     public static String[] allRoomName = {"My Home","Living Room","Bedroom"};
-    public static String dskNumber = "00000\0";
-    public static byte[] tempDsk = dskNumber.getBytes();
+    public static String pinCode = "00000\0";
+    public static byte[] tempDsk = pinCode.getBytes();
+    public static String dskNumber = null;
 
 }

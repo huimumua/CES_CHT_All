@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -50,6 +51,8 @@ public class MQTTBroker extends Service {
     // for get/set device info from db
     private ZwaveDeviceManager zwDevManager;
     public ZwaveControlService zwaveService;
+
+    private byte[] dskNumber;
 
     @Override
     public void onCreate() {
@@ -213,7 +216,49 @@ public class MQTTBroker extends Service {
                         Log.i(LOG_TAG, "deviceService.setDefault(mCallback)");
                         zwaveService.setDefault();
 
-                    } else {
+                    }
+                    /*
+                    else if (message.contains("addProvisionListEntry")) {
+                        if (Const.TCPClientPort != 0) {
+                            mTCPServer.sendMessage(clientID, Const.TCPSTRING + "addProvisionListEntry:other");
+                        } else {
+                            String[] tokens = message.split(":");
+                            String devType = tokens[2];
+                            Const.TCPClientPort = clientID;
+                            Log.i(LOG_TAG, "deviceService.addProvisionListEntry(mCallback)");
+
+                            String str = "11394-65466-64100-20934-53255-51784-15710-22718";
+                            byte[] bstr = str.getBytes();
+                            byte[] dsk = new byte[str.length()+1];
+
+                            for(int i = 0; i < bstr.length; ++i)
+                                dsk[i] = bstr[i];
+                            dsk[str.length()] = '\0';
+
+                            zwaveService.addProvisionListEntry(devType,dsk,true);
+                        }
+                    } else if (message.contains("rmProvisionListEntry")) {
+                        if (Const.TCPClientPort != 0) {
+                            mTCPServer.sendMessage(clientID, Const.TCPSTRING + "rmProvisionListEntry:other");
+                        } else {
+                            String[] tokens = message.split(":");
+                            String devType = tokens[2];
+                            Const.TCPClientPort = clientID;
+                            Log.i(LOG_TAG, "deviceService.addProvisionListEntry(mCallback)");
+
+                            String str = "11394-65466-64100-20934-53255-51784-15710-22718";
+                            byte[] bstr = str.getBytes();
+                            byte[] dsk = new byte[str.length()+1];
+
+                            for(int i = 0; i < bstr.length; ++i)
+                                dsk[i] = bstr[i];
+                            dsk[str.length()] = '\0';
+
+                            zwaveService.rmProvisionListEntry(devType,dsk);
+                        }
+                    }
+                     */
+                    else {
                         mTCPServer.sendMessage(clientID, Const.TCPSTRING + " Wrong Payload");
                     }
                 }
@@ -511,6 +556,7 @@ public class MQTTBroker extends Service {
                 case "setConfiguration":
                     Log.i(LOG_TAG, "deviceService.setConfiguration");
                     parameter = Integer.parseInt(payload.getString("parameter"));
+                    //zwaveService.setConfiguration(); many parameter
                     break;
 
                 case "getPower":
@@ -671,6 +717,117 @@ public class MQTTBroker extends Service {
                     sceneName = payload.getString("sceneName");
                     Log.i(LOG_TAG, "deviceService.removeScene " +sceneName + " action = "+action);
                     //zwaveService.editScene(sceneName);
+                    break;
+
+                case "addProvisionListEntry":
+                    Log.i(LOG_TAG, "deviceService.addProvisionListEntry");
+
+                    String str = payload.getString("dsk") +'\0';
+                    Log.i(LOG_TAG, str);
+                    dskNumber = str.getBytes();
+
+                    //zwaveService.getAllProvisionListEntry();
+                    String str2 = "11394-65466-64100-20934-53255-51784-15710-22718";
+                    DeviceInfo.dskNumber = str2;
+                    String str3 = str2 + '\0';
+                    Log.i(LOG_TAG, str3);
+                    byte[] bstr = str3.getBytes();
+                    zwaveService.addProvisionListEntry("Zwave",bstr,true);
+
+                    break;
+
+                case "getAllProvisionListEntry":
+                    Log.i(LOG_TAG, "deviceService.getAllProvisionListEntry");
+                    zwaveService.getAllProvisionListEntry();
+                    break;
+
+                case "getProvisionListEntry":
+                    Log.i(LOG_TAG, "deviceService.getProvisionListEntry");
+                    break;
+
+                case "rmProvisionListEntry":
+                    Log.i(LOG_TAG, "deviceService.rmProvisionListEntry");
+                    zwaveService.ZwController_rmAllProvisionListEntry();
+                    break;
+
+                case "getRssiState":
+                    Log.i(LOG_TAG, "deviceService.getRssiState");
+                    zwaveService.startNetworkHealthCheck();
+                    break;
+
+                case "getBattery":
+                    Log.i(LOG_TAG, "deviceService.getBattery");
+                    zwaveService.getDeviceBattery(devType,tNodeid);
+                    break;
+
+                case "getSensorMultilevel":
+                    Log.i(LOG_TAG, "deviceService.getSensorMultilevel");
+                    try {
+                        zwaveService.getSensorMultiLevel(devType,tNodeid);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+
+                case "getSupportSwitchType":
+                    Log.i(LOG_TAG, "deviceService.getSupportSwitchType");
+                    //non
+                    break;
+
+                case "startStopSwitchLevelChange":
+                    Log.i(LOG_TAG, "deviceService.startStopSwitchLevelChange");
+                    //zwaveService.startStopSwitchLevelChange(); many parameter
+                    break;
+
+                case "getPowerLevel":
+                    Log.i(LOG_TAG, "deviceService.getPowerLevel");
+                    zwaveService.getPowerLevel(tNodeid);
+                    break;
+
+                case "switchAllOn":
+                    Log.i(LOG_TAG, "deviceService.switchAllOn");
+                    zwaveService.setSwitchAllOn(devType,tNodeid);
+                    break;
+
+                case "switchAllOff":
+                    Log.i(LOG_TAG, "deviceService.switchAllOff");
+                    zwaveService.setSwitchAllOff(devType,tNodeid);
+                    break;
+
+                case "getSensorBinary":
+                    Log.i(LOG_TAG, "deviceService.getSensorBinary");
+                    //zwaveService.getSensorBasic(tNodeid,sensorType); no sensorType
+                    break;
+
+                case "getSensorBinarySupportedSensor":
+                    Log.i(LOG_TAG, "deviceService.getSensorBinarySupportedSensor");
+                    zwaveService.GetSensorBinarySupportedSensor(tNodeid);
+                    break;
+
+                case "getMeterSupported":
+                    Log.i(LOG_TAG, "deviceService.getMeterSupported");
+                    zwaveService.getMeterSupported(tNodeid);
+                    break;
+
+                case "getSpecificGroup":
+                    Log.i(LOG_TAG, "deviceService.getSpecificGroup");
+                    EndpointId = Integer.parseInt(payload.getString("endpointId"));
+                    zwaveService.getSpecificGroup(tNodeid,EndpointId);
+                    break;
+
+                case "getNotification":
+                    Log.i(LOG_TAG, "deviceService.getNotification");
+                    //zwaveService.getSensorNotification(); many parameter
+                    break;
+
+                case "getSupportedNotification":
+                    Log.i(LOG_TAG, "deviceService.getSupportedNotification");
+                    zwaveService.getSupportedNotification(tNodeid);
+                    break;
+
+                case "getSupportedEventNotification":
+                    Log.i(LOG_TAG, "deviceService.getSupportedEventNotification");
+                    // zwaveService.getSupportedEventNotification(tNodeid,typeDef); no typeDef
                     break;
 
                 default:
