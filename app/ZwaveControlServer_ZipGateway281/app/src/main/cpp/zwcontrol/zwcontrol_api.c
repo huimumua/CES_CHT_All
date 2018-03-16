@@ -12,6 +12,7 @@ extern int  StartZipGateWay(const char *resPath);
 extern void StopZipGateWay();
 
 static ResCallBack resCallBack = NULL;
+static ReqCallBack reqCallBack = NULL;
 static int initStatus = 0;
 
 #define MAX_DTLS_PSK  64  //Maximum DTLS pre-shared key hex string length
@@ -2366,9 +2367,10 @@ int  zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* inf
     return -1;
 }
 
-int zwcontrol_setcallback(ResCallBack callBack)
+int zwcontrol_setcallback(ResCallBack callBackRes, ReqCallBack callBackReq)
 {
-    resCallBack = callBack;
+    resCallBack = callBackRes;
+    reqCallBack = callBackReq;
     return 0;
 }
 

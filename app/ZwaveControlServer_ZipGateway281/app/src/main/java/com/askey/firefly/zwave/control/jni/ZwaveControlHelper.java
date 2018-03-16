@@ -31,6 +31,12 @@ public class ZwaveControlHelper {
 
     }
 
+    public static int ZwaveControlReq_CallBack(byte[] result, int len)
+    {
+        android.util.Log.d("ZwaveControlHelper", "ZwaveControlReq_CallBack " + new String(result));
+        return 0;
+    }
+
     public native static int CreateZwController();
     public native static int OpenZwController(String FilePath, String NodeInfoPath, byte[] result);
     public native static int CloseZwController();
