@@ -721,19 +721,11 @@ public class MQTTBroker extends Service {
 
                 case "addProvisionListEntry":
                     Log.i(LOG_TAG, "deviceService.addProvisionListEntry");
-
+                    DeviceInfo.dskNumber = payload.getString("dsk");
                     String str = payload.getString("dsk") +'\0';
                     Log.i(LOG_TAG, str);
                     dskNumber = str.getBytes();
-
-                    //zwaveService.getAllProvisionListEntry();
-                    String str2 = "11394-65466-64100-20934-53255-51784-15710-22718";
-                    DeviceInfo.dskNumber = str2;
-                    String str3 = str2 + '\0';
-                    Log.i(LOG_TAG, str3);
-                    byte[] bstr = str3.getBytes();
-                    zwaveService.addProvisionListEntry("Zwave",bstr,true);
-
+                    zwaveService.addProvisionListEntry("Zwave",dskNumber,true);
                     break;
 
                 case "getAllProvisionListEntry":

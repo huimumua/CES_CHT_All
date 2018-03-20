@@ -715,9 +715,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     if (provisionListArr.contains(DeviceInfo.dskNumber)) {
                         Log.d(LOG_TAG,"already Provision List");
                     } else {
-                        provisionListArr.add(DeviceInfo.dskNumber);
-                        //zwaveService.addProvisionListEntry(devType, dskNumber, InclusionState);
-                        Log.d(LOG_TAG,"add Provision List");
+                        if( DeviceInfo.dskNumber != null) {
+                            provisionListArr.add(DeviceInfo.dskNumber);
+                            //zwaveService.addProvisionListEntry(devType, dskNumber, InclusionState);
+                            Log.d(LOG_TAG, "add Provision List");
+                            DeviceInfo.dskNumber = null;
+                        }
                     }
                     ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
                             android.R.layout.simple_spinner_dropdown_item, converProvisionList(provisionListArr));
