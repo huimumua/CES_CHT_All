@@ -12,6 +12,7 @@ extern int  StartZipGateWay(const char *resPath);
 extern void StopZipGateWay();
 
 static ResCallBack resCallBack = NULL;
+static ReqCallBack reqCallBack = NULL;
 static int initStatus = 0;
 
 #define MAX_DTLS_PSK  64  //Maximum DTLS pre-shared key hex string length
@@ -1356,7 +1357,7 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
                 }
             }
 
-            if(notify_msg->op == ZWNET_OP_RESET && notify_msg->sts == ZW_ERR_NONE)
+            if(((notify_msg->op == ZWNET_OP_RESET) || (notify_msg->op == ZWNET_OP_INITIATE)) && notify_msg->sts == ZW_ERR_NONE)
             {
                 // Report controller info
                 cJSON *jsonRoot;
@@ -1367,7 +1368,7 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
                     return ;
                 }
 
-                cJSON_AddStringToObject(jsonRoot, "MessageType", "Controller(reset) Attribute");
+                cJSON_AddStringToObject(jsonRoot, "MessageType", "Controller Attribute");
                 {
                     zwnode_p    zw_node;
                     char str[50] = {0};
@@ -1382,7 +1383,7 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
                         cJSON_AddNumberToObject(jsonRoot, "Node Id", (unsigned)zw_node->nodeid);
 
                         ALOGI("________________________________________________________");
-                        ALOGI("Controller Reset done, attribute:");
+                        ALOGI("Controller attribute:");
                         ALOGI("               Home Id: %s",str);
                         if(hl_appl->zwnet->zwave_role & ZW_ROLE_SIS)
                         {
@@ -2366,9 +2367,10 @@ int  zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* inf
     return -1;
 }
 
-int zwcontrol_setcallback(ResCallBack callBack)
+int zwcontrol_setcallback(ResCallBack callBackRes, ReqCallBack callBackReq)
 {
-    resCallBack = callBack;
+    resCallBack = callBackRes;
+    reqCallBack = callBackReq;
     return 0;
 }
 
@@ -4049,9 +4051,9 @@ int  zwcontrol_update_node(hl_appl_ctx_t *hl_appl, uint8_t nodeId)
     return result;
 }
 //Callback function for zwnet_initiate.
-void cb_get_dsk_fn(void *usr_ctx, char *dsk){
-
-
+void cb_get_dsk_fn(void *usr_ctx, char *dsk)
+{
+    ALOGI("learn mode callback, cb_get_dsk_fn, dsk: %s",dsk);
 }
 
 int  zwcontrol_start_learn_mode(hl_appl_ctx_t* hl_appl)
@@ -4062,7 +4064,7 @@ int  zwcontrol_start_learn_mode(hl_appl_ctx_t* hl_appl)
 
     if (result != 0)
     {
-        plt_msg_ts_show(hl_plt_ctx_get(hl_appl), "hl_lrn_mod_set with error:%d", result);
+        ALOGI("hl_lrn_mod_set with error:%d", result);
     }
 
     return result;

@@ -16,6 +16,7 @@ static jclass  ZwControlServiceClass;
 static JavaVM  *ZwControlServiceVM = NULL;
 
 static jmethodID CallBackMethodID = NULL;
+static jmethodID CallBackMethodID2 = NULL;
 
 static void check_and_clear_exceptions(JNIEnv* env, const char* method_name)
 {
@@ -122,6 +123,51 @@ static int ZwControlResCallBack(const char* res)
     return 0;
 }
 
+static int ZwControlReqCallBack(const char* res)
+{
+    if(ZwControlServiceClass == NULL)
+        return -1;
+
+    int needDetach;
+
+    JNIEnv* env = getJNIEnv(&needDetach);
+
+    if(env == NULL)
+    {
+        return -1;
+    }
+
+    if(CallBackMethodID2 == NULL)
+    {
+        CallBackMethodID2 = env->GetStaticMethodID(ZwControlServiceClass, "ZwaveControlReq_CallBack", "([BI)I");
+
+        if(CallBackMethodID2 == NULL)
+        {
+            if(needDetach)
+            {
+                detachJNI();
+            }
+
+            return -1;
+        }
+    }
+
+    int len = strlen(res);
+
+    jbyteArray bytes = env->NewByteArray(len);
+    env->SetByteArrayRegion(bytes, 0, len, (jbyte*)res);
+    int val = env->CallStaticIntMethod(ZwControlServiceClass, CallBackMethodID2, bytes, len);
+    check_and_clear_exceptions(env, __FUNCTION__);
+    env->DeleteLocalRef(bytes);
+
+    if(needDetach)
+    {
+        detachJNI();
+    }
+
+    return val;
+}
+
 static int create_controller(JNIEnv *env, jclass object)
 {
     if(ZwControlServiceClass == NULL)
@@ -154,7 +200,7 @@ static jint open_controller(JNIEnv *env, jclass object, jstring path, jstring In
     env->ReleaseStringUTFChars(path, resPath);
     env->ReleaseStringUTFChars(InfoPath, infoFile);
 
-    zwcontrol_setcallback(ZwControlResCallBack);
+    zwcontrol_setcallback(ZwControlResCallBack, ZwControlReqCallBack);
 
     int len = (int)strlen((char*)str);
 
@@ -363,7 +409,7 @@ static int controller_getSwitchAll(JNIEnv *env, jclass object, jint nodeId)
 
 static int controller_startLearnMode(JNIEnv *env, jclass object)
 {
-    return 0;
+    return zwcontrol_start_learn_mode(&appl_ctx);
 }
 
 static int controller_setBinarySwitchState(JNIEnv *env, jclass object, jint nodeId, jint state)
