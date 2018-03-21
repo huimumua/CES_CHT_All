@@ -1395,6 +1395,8 @@ public class ZwaveControlService extends Service {
         return 0;
     }
 
+
+    //Device寫入DB
     private void insertDevice(String devType, String result, int status) {
         Log.i(LOG_TAG, "=======insertDevice==");
         Gson gson = new Gson();
@@ -1692,6 +1694,8 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("Network IMA Info Report", jniResult);
         } else if ("Network RSSI Info Report".equals(messageType)) {
             zwaveControlResultCallBack("Network RSSI Info Report", jniResult);
+        } else if ("Switch Multi-lvl Report Information".equals(messageType)) {
+            zwaveControlResultCallBack("Switch Multi-lvl Report Information", jniResult);
         }
     }
 }
