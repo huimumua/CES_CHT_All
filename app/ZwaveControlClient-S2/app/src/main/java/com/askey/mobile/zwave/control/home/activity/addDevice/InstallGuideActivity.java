@@ -3,8 +3,10 @@ package com.askey.mobile.zwave.control.home.activity.addDevice;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -17,6 +19,7 @@ public class InstallGuideActivity extends AppCompatActivity implements View.OnCl
     private ImageView brand_icon, device_icon, step_iv, step_icon;
     private TextView brand_name, device_name, step_index, step_notify;
     private LinearLayout linear_info, linear_step;
+    private Button smartStart;
     private String brand = "";
     private String deviceType = "";
     private int icon;
@@ -40,6 +43,8 @@ public class InstallGuideActivity extends AppCompatActivity implements View.OnCl
         device_icon = (ImageView) findViewById(R.id.device_icon);
         step_iv = (ImageView) findViewById(R.id.step_iv);
         step_iv.setOnClickListener(this);
+        smartStart = (Button) findViewById(R.id.smart_start);
+        smartStart.setOnClickListener(this);
 
         brand_name = (TextView) findViewById(R.id.brand_name);
         device_name = (TextView) findViewById(R.id.device_name);
@@ -99,6 +104,14 @@ public class InstallGuideActivity extends AppCompatActivity implements View.OnCl
                         finish();
                     }
                 }
+                break;
+            case R.id.smart_start:
+                Intent intent = new Intent(this, AddSmartStartActivity.class);
+                //intent.putExtra("brand",brand);
+                //intent.putExtra("deviceType",deviceType);
+                startActivity(intent);
+                finish();
+                Log.i("InstallGuideActivity", "onClick: smart_start ");
                 break;
         }
     }

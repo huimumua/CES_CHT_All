@@ -2,6 +2,7 @@ package com.askey.mobile.zwave.control.qrcode;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -12,6 +13,7 @@ import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
@@ -54,6 +56,7 @@ public class CaptureActivity extends BaseActivity implements Callback
 		viewfinderView = (ViewfinderView) findViewById(R.id.viewfinder_view);
 		hasSurface = false;
 		inactivityTimer = new InactivityTimer(this);
+		Log.i(TAG, "~~~~~~~~~~~~onCreate:");
 
 
 	}
@@ -61,6 +64,7 @@ public class CaptureActivity extends BaseActivity implements Callback
 	@Override
 	protected void onResume()
 	{
+		Log.i(TAG, "~~~~~~~~~~~~~~~onResume: ");
 		super.onResume();
 		SurfaceView surfaceView = (SurfaceView) findViewById(R.id.preview_view);
 		SurfaceHolder surfaceHolder = surfaceView.getHolder();
@@ -84,6 +88,7 @@ public class CaptureActivity extends BaseActivity implements Callback
 		}
 		initBeepSound();
 		vibrate = true;
+
 	}
 
 	@Override
@@ -107,6 +112,7 @@ public class CaptureActivity extends BaseActivity implements Callback
 
 	private void initCamera(SurfaceHolder surfaceHolder)
 	{
+		Log.i(TAG, "~~~~~~~~initCamera: ");
 		try
 		{
 			CameraManager.get().openDriver(surfaceHolder);
@@ -180,6 +186,12 @@ public class CaptureActivity extends BaseActivity implements Callback
 		dialog.setTitle(saomiaoTitle);
 		String str = obj.getText().toString();
 
+		Log.i(TAG, "~~~~~~~~~~handleDecode: "+str);
+		Intent intent = new Intent();
+		intent.putExtra("QR_CODE_DATA",str);
+		CaptureActivity.this.setResult(1,intent);
+		CaptureActivity.this.finish();
+
 	}
 
 
@@ -221,7 +233,7 @@ public class CaptureActivity extends BaseActivity implements Callback
 		if (vibrate)
 		{
 			Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-			vibrator.vibrate(VIBRATE_DURATION);
+			//vibrator.vibrate(VIBRATE_DURATION);
 		}
 	}
 

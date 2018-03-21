@@ -66,10 +66,10 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     private HomeAdapter myAdapter;
     private ImageView edit, voice, head_cion;
 
-    private String[] titles = new String[]{"Favorites", "Rooms"};
+    private String[] titles = new String[]{"Favorites", "Rooms","Provisioning List"};
 
     private int[] icon = new int[]{
-            R.drawable.tab_favorite_bg, R.drawable.tab_rooms_bg
+            R.drawable.tab_favorite_bg, R.drawable.tab_rooms_bg,R.drawable.tab_scenes_bg
     };
     private int currentIndex;
     public static String shadowTopic = "";

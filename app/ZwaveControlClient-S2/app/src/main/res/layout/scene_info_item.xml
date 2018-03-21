@@ -25,9 +25,16 @@
             />
 
         <TextView
+            android:id="@+id/dsk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="dsk"
+            />
+        <TextView
             android:id="@+id/scene_name"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:gravity="center"
             android:text="scenes"
             />

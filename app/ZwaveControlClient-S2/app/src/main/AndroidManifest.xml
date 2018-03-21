@@ -251,7 +251,7 @@
             android:theme="@style/AppTheme.DeviceDialog"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".deviceContr.scenes.NewScenceActivity"
+            android:name=".deviceContr.scenes.DeviceTestActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.DeviceDialog"
@@ -449,12 +449,28 @@
             android:name=".home.activity.addDevice.InstallGuideActivity"
             android:launchMode="singleTask"
             android:theme="@style/AppTheme.DeviceDialog" />
-        <activity android:name=".deviceContr.rooms.ui.SensorActivity"
+        <activity
+            android:name=".deviceContr.rooms.ui.SensorActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".deviceContr.scenes.DeviceTestEditActivity"
+            android:theme="@style/AppTheme.DeviceDialog">
+        </activity>
+        <activity
+            android:name=".home.activity.addDevice.AddSmartStartActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize"
-            />
+            android:theme="@style/AppTheme.DeviceDialog" />
+        <activity android:name=".qrcode.CaptureActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".deviceContr.scenes.APITestActivity"
+            android:theme="@style/AppTheme.DeviceDialog">
+        </activity>
     </application>
 
 </manifest>

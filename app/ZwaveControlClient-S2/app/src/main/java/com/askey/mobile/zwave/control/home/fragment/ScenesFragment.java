@@ -9,25 +9,32 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.base.BaseFragment;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
-import com.askey.mobile.zwave.control.deviceContr.model.ScenesInfo;
-import com.askey.mobile.zwave.control.deviceContr.scenes.NewScenceActivity;
+import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
+import com.askey.mobile.zwave.control.deviceContr.model.ProvisionInfo;
+import com.askey.mobile.zwave.control.deviceContr.scenes.DeviceTestActivity;
+import com.askey.mobile.zwave.control.deviceContr.scenes.DeviceTestEditActivity;
 import com.askey.mobile.zwave.control.home.activity.HomeActivity;
+import com.askey.mobile.zwave.control.home.activity.addDevice.AddSmartStartActivity;
+import com.askey.mobile.zwave.control.home.adapter.RecentlyAdapter;
 import com.askey.mobile.zwave.control.home.adapter.ScenesAdapter;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +45,7 @@ import java.util.List;
 public class ScenesFragment extends BaseFragment implements View.OnClickListener, ScenesAdapter.OnItemClickListener {
     private final String TAG = ScenesFragment.class.getSimpleName();
     private ImageView menu, voice, edit;
-    private List<ScenesInfo> dataList;
+    private List<ProvisionInfo> dataList;
     private RecyclerView scene_recycler;
     private ScenesAdapter adapter;
 
@@ -54,6 +61,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
     }
 
     @Override
@@ -62,9 +70,14 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_scenes, container, false);
         initView(view);
-        initData();
+        dataList = new ArrayList<>();
+        adapter = new ScenesAdapter(dataList);
+        adapter.setOnItemClickListener(this);
+        scene_recycler.setAdapter(adapter);
+        requestProvisionList();
         return view;
     }
+
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -90,92 +103,109 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
             if (result.contains("desired")) {
                 return;
             }
-//            mqttMessageResult(result);
+            mqttMessageResult(result);
 
         }
     };
 
-//    private void mqttMessageResult(String mqttResult) {
-//        JSONObject jsonObject = null;
-//        try {
-//            jsonObject = new JSONObject(mqttResult);
-//            String reported = jsonObject.optString("reported");
-//            JSONObject reportedObject = new JSONObject(reported);
-//            String Interface = reportedObject.optString("Interface");
-//         if(Interface.equals("getSceneList")){
-//
-//            JSONArray scenes = reportedObject.optJSONArray("scene");
-//             for (int i = 0;i < scenes.length();i++) {
-//                 JSONArray conditions = reportedObject.optJSONArray("condition");
-//                 for (int j = 0;j < conditions.length();j++) {
-//                     ScenesInfo scenesInfo = new ScenesInfo();
-//                     scenesInfo.setScenesName(scenes.getJSONObject(i).getString("sceneName"));
-//                     scenesInfo.setIconName(scenes.getJSONObject(i).getString("iconName"));
-//                     scenesInfo.setCurrentStatus(scenes.getJSONObject(i).getString("iconName"));
-//                 }
-//             }
-//             JSONArray conditon =
-//            JSONArray columnInfo = new JSONArray(DeviceList);
-//            int size = columnInfo.length();
-//            if(size > 0){
-//                recentlyDeviceList.clear();
-//                for(int i=0;i<size;i++){
-//                    JSONObject info=columnInfo.getJSONObject(i);
-//                    String nodeId = info.getString("nodeId");
-//                    String brand = info.getString("brand");
-//                    String devType = info.getString("deviceType");
-//                    String category = info.getString("category");
-//                    String Room = info.getString("Room");
-//                    String isFavorite = info.getString("isFavorite");
-//                    String name = info.getString("name");
-//                    Logg.i(TAG,"==getDeviceResult=JSONArray===devName=="+name);
-//                    DeviceInfo deviceInfo = new DeviceInfo();
-//                    deviceInfo.setDeviceId(nodeId);
-//                    deviceInfo.setDisplayName(name);
-//                    deviceInfo.setDeviceType(category);
-//                    deviceInfo.setRooms(Room);
-//                    deviceInfo.setIsFavorite(isFavorite);
-//                    recentlyDeviceList.add(deviceInfo);
-//
-////                        String nodeTopic = Const.subscriptionTopic+"Zwave" + nodeId;
-////                        // 订阅新设备的topic为 sn + nodeId
-////                        MQTTManagement.getSingInstance().subscribeToTopic(nodeTopic, null);
-//                }
+    private void requestProvisionList() {
+        showWaitingDialog();
+        Log.d(TAG, "======requestProvisionList=======");
+        MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
+        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getAllProvisionListEntry());
+    }
+
+    private void mqttMessageResult(String mqttResult) {
+        ((Activity) getContext()).runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                stopWaitDialog();
+            }
+        });
+        JSONObject jsonObject = null;
+        try {
+//            {
+//                "reported": {
+//                "MessageType": "All Provision List Report",
+//                        "Detial provision list": [{
+//                    "DSK": "51525-35455-41424-34445-31323-33435-21222-32425",
+//                            "Device type info": {
+//                        "Generic Cls": 16,
+//                                "Specific Cls": 1,
+//                                "Icon Type": 1792
+//                    },
+//                    "Device id info": {
+//                        "Manufacturer Id": 0,
+//                                "Product Type": 3,
+//                                "Product Id": 2,
+//                                "App Version": 4,
+//                                "App Sub Ver": 1
+//                    },
+//                    "Network inclusion state": {
+//                        "Node Id": 0,
+//                                "Status": "Not Inclusion"
+//                    },
+//                    "Device Boot Mode": "Smart Start",
+//                            "Device Inclusion state": "State Pending",
+//                            "Device Location": "complany",
+//                            "Device Name": "skysoft"
+//                }]
 //            }
-//
-//            ((Activity) getContext()).runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    stopWaitDialog();
-//                    recentlyAdapter.notifyDataSetChanged();
-//                }
-//            });
-//        }
-//        } catch (JSONException e) {
-//            e.printStackTrace();
-//        }
-//
-//    }
+//            }
+            jsonObject = new JSONObject(mqttResult);
+            String reported = jsonObject.optString("reported");
+            JSONObject reportedObject = new JSONObject(reported);
+            String Interface = reportedObject.optString("MessageType");
+         if(Interface.equals("All Provision List Report")){
+             ProvisionInfo provisionInfo;
+JSONArray provisionList = reportedObject.optJSONArray("Detial provision list");
+             for (int i = 0;i < provisionList.length();i++) {
+                 JSONObject temp = provisionList.getJSONObject(i);
+                 String deviceType = temp.getString("Device type info");
+                 String deviceId = temp.getString("Device id info");
+                 String networkState = temp.getString("Network inclusion state");
 
-    private void initData() {
-        dataList = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            ScenesInfo scenesInfo = new ScenesInfo();
-            scenesInfo.setNodeId(String.valueOf(i + 1));
-            scenesInfo.setScenesName("SceneTest");
+                 JSONObject deviceTypeObject = new JSONObject(deviceType);
+                 String  genericCls = deviceTypeObject.getString("Generic Cls");
+                 String  specificCls = deviceTypeObject.getString("Specific Cls");
+                 String  iconType = deviceTypeObject.getString("Icon Type");
 
-            dataList.add(scenesInfo);
+                 JSONObject deviceIdObject = new JSONObject(deviceId);
+                 String  manufacturerId = deviceIdObject.getString("Manufacturer Id");
+                 String  productType = deviceIdObject.getString("Product Type");
+                 String  productId = deviceIdObject.getString("Product Id");
+                 String  appVersion = deviceIdObject.getString("App Version");
+                 String  appSubVer = deviceIdObject.getString("App Sub Ver");
+
+                 JSONObject networkStateObject = new JSONObject(networkState);
+                 String  nodeId = networkStateObject.getString("Node Id");
+                 String  status = networkStateObject.getString("Status");
+
+                 provisionInfo = new ProvisionInfo();
+                 provisionInfo.setDsk(temp.getString("DSK"));
+                 provisionInfo.setDeviceName(temp.getString("Device Name"));
+                 provisionInfo.setDeviceBootMode(temp.getString("Device Boot Mode"));
+                 provisionInfo.setDeviceLocation(temp.getString("Device Location"));
+                 provisionInfo.setDeviceInclusionState(temp.getString("Device Inclusion state"));
+                 provisionInfo.setNodeId(nodeId);
+                 provisionInfo.setStatus(status);
+
+                 dataList.add(provisionInfo);
+             }
+
+            ((Activity) getContext()).runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    adapter.notifyDataSetChanged();
+                }
+            });
+        }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
 
-
-        //获取灯泡状态
-        Logg.i(TAG, "===publishMessage_local=====");
-        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getScene());
-
-        adapter = new ScenesAdapter(dataList);
-        adapter.setOnItemClickListener(this);
-        scene_recycler.setAdapter(adapter);
     }
+
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
@@ -230,20 +260,23 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
     }
 
     @Override
-    public void onItemClick(View view, ScenesInfo scenesInfo) {
-        Toast.makeText(getActivity(), "item click", Toast.LENGTH_SHORT).show();
+    public void onItemClick(View view, ProvisionInfo provisionInfo) {
+        Intent intent = new Intent(getActivity(), DeviceTestActivity.class);
+        intent.putExtra("provisionInfo", provisionInfo);
+        startActivity(intent);
 
     }
 
     @Override
-    public void onItemLongClick(View view, ScenesInfo scenesInfo) {
-        Intent intent = new Intent(getActivity(), NewScenceActivity.class);
+    public void onItemLongClick(View view, ProvisionInfo provisionInfo) {
+        Intent intent = new Intent(getActivity(), DeviceTestEditActivity.class);
+        intent.putExtra("provisionInfo", provisionInfo);
         startActivity(intent);
     }
 
     @Override
     public void addItemClick() {
-        Intent intent = new Intent(getActivity(), NewScenceActivity.class);
+        Intent intent = new Intent(getActivity(), AddSmartStartActivity.class);
         startActivity(intent);
     }
 
@@ -255,7 +288,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
             if (Const.getIsDataChange()) {
                 Const.setIsDataChange(false);
                 Logg.i(TAG, "===publishMessage_register=====");
-                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getScene());
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getAllProvisionListEntry());
             }
         }
     }

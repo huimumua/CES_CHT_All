@@ -1,14 +1,21 @@
 package com.askey.mobile.zwave.control.welcome.ui;
 
+import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.base.BaseActivity;
@@ -21,6 +28,7 @@ import com.askey.mobile.zwave.control.util.PreferencesUtils;
 import com.askey.mobile.zwave.control.welcome.udp.UdpConnect;
 
 public class WelcomeActivity extends BaseActivity {
+    private static final int REQUEST_CAMERA = 0;
     private String TAG = "WelcomeActivity";
     private UdpConnect mUdpConnect;
     //延时时间，用于由欢迎界面进入另外的页面的延时效果
@@ -103,12 +111,62 @@ public class WelcomeActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
+        if (Build.VERSION.SDK_INT >= 23) {
+            getPermission();
+        } else {
+            showWaitingDialog();
+            mUdpConnect = new UdpConnect();
+            mUdpConnect.search(this, onGatwayFindRunnable, oncanNotFindGWayRunnable);
+        }
 
-        showWaitingDialog();
-        mUdpConnect = new UdpConnect();
-        mUdpConnect.search(this, onGatwayFindRunnable, oncanNotFindGWayRunnable);
+
 
     }
+
+    private void getPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            //未授权，提起权限申请
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.CAMERA)) {
+                //用于开发者提示用户权限的用途
+                Toast.makeText(this, "您已禁止该权限，需要重新开启。", Toast.LENGTH_SHORT).show();
+            } else {
+                //申请权限
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.CAMERA},
+                        REQUEST_CAMERA);
+
+            }
+
+        } else {
+            //权限已授权，功能操作
+            showWaitingDialog();
+            mUdpConnect = new UdpConnect();
+            mUdpConnect.search(this, onGatwayFindRunnable, oncanNotFindGWayRunnable);
+        }
+
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        //判断请求码，确定当前申请的权限
+        if (requestCode == REQUEST_CAMERA) {
+            //判断权限是否申请通过
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                //授权成功
+                showWaitingDialog();
+                mUdpConnect = new UdpConnect();
+                mUdpConnect.search(this, onGatwayFindRunnable, oncanNotFindGWayRunnable);
+            } else {
+                //授权失败
+                Toast.makeText(this, "您已禁止该权限，需要重新开启。", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
 
     private void initLocalMqtt() {
         String serverUri = (String) PreferencesUtils.get(mContext, Const.SERVER_URI_TAG, "");

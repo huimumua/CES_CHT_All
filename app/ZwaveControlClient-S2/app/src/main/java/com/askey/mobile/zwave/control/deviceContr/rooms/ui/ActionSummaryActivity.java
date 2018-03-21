@@ -181,8 +181,8 @@ public class ActionSummaryActivity extends AppCompatActivity implements View.OnC
             case R.id.btn_done:
                 scenesInfos.add(scenesInfo);
                 MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
-                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+scenesInfo.getNodeId(),
-                        LocalMqttData.setSceneAction(scenesInfo.getScenesName(),scenesInfo.getIconName(),scenesInfos));
+//                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+scenesInfo.getNodeId(),
+//                        LocalMqttData.setSceneAction(scenesInfo.getScenesName(),scenesInfo.getIconName(),scenesInfos));
                 break;
 
         }

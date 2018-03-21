@@ -9,7 +9,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
-import com.askey.mobile.zwave.control.deviceContr.model.ScenesInfo;
+import com.askey.mobile.zwave.control.deviceContr.model.ProvisionInfo;
 
 import java.util.List;
 
@@ -19,12 +19,12 @@ import java.util.List;
 
 public class ScenesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements View.OnClickListener, View.OnLongClickListener{
 
-    private List<ScenesInfo> dataList;
+    private List<ProvisionInfo> dataList;
     private final static int ITEM = 0;
     private final static int PLUS = 1;
     private OnItemClickListener onItemClickListener = null;
 
-    public ScenesAdapter(List<ScenesInfo> dataList) {
+    public ScenesAdapter(List<ProvisionInfo> dataList) {
         this.dataList = dataList;
     }
 
@@ -44,8 +44,9 @@ public class ScenesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof MyViewHolder) {
-            ScenesInfo info = dataList.get(position);
-            ((MyViewHolder)holder).scene_name.setText(info.getScenesName());
+            ProvisionInfo info = dataList.get(position);
+            ((MyViewHolder)holder).scene_name.setText(info.getDeviceName());
+            ((MyViewHolder)holder).dsk.setText(info.getDsk());
             ((MyViewHolder)holder).linear.setTag(info);
             ((MyViewHolder)holder).linear.setOnClickListener(this);
             ((MyViewHolder)holder).linear.setOnLongClickListener(this);
@@ -73,7 +74,7 @@ public class ScenesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.linear:
-                onItemClickListener.onItemClick(v, (ScenesInfo) v.getTag());
+                onItemClickListener.onItemClick(v, (ProvisionInfo) v.getTag());
                 break;
             default:
                 onItemClickListener.addItemClick();
@@ -84,16 +85,16 @@ public class ScenesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     public boolean onLongClick(View v) {
         switch (v.getId()) {
             case R.id.linear:
-                onItemClickListener.onItemLongClick(v , (ScenesInfo) v.getTag());
+                onItemClickListener.onItemLongClick(v , (ProvisionInfo) v.getTag());
                 break;
         }
         return true;
     }
 
     public static interface OnItemClickListener {
-        void onItemClick(View view, ScenesInfo scenesInfo);
+        void onItemClick(View view, ProvisionInfo provisionInfo);
 
-        void onItemLongClick(View view, ScenesInfo scenesInfo);
+        void onItemLongClick(View view, ProvisionInfo provisionInfo);
 
         void addItemClick();
     }
@@ -104,11 +105,13 @@ public class ScenesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     public static class MyViewHolder extends RecyclerView.ViewHolder {
         private TextView scene_name;
+        private TextView dsk;
         private LinearLayout linear;
 
         public MyViewHolder(View itemView) {
             super(itemView);
             scene_name = (TextView) itemView.findViewById(R.id.scene_name);
+            dsk = (TextView) itemView.findViewById(R.id.dsk);
             linear = (LinearLayout) itemView.findViewById(R.id.linear);
         }
     }

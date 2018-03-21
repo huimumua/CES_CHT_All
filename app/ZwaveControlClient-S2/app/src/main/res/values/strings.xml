@@ -362,7 +362,7 @@
     <string name="color">Color</string>
 
     <!--new scence-->
-    <string name="new_scence_title">New Scence</string>
+    <string name="new_scence_title">Plug test</string>
     <string name="scence_icon">Scence Icon</string>
     <string name="scence_name">Scence Name(max 16 chars)</string>
     <string name="scence_continue">Continue</string>
@@ -414,6 +414,7 @@
     <string name="skip">Skip</string>
     <string name="add">ADD</string>
     <string name="delete">DELETE</string>
+    <string name="smart_start">Smart start</string>
 
     <!--account activity-->
     <string name="activity_account_title">My QBee Account</string>

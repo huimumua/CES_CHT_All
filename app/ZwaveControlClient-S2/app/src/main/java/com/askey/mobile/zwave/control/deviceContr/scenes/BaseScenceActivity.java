@@ -68,7 +68,7 @@ public class BaseScenceActivity extends AppCompatActivity implements View.OnClic
     }
 
     public void setting() {
-        intent = new Intent(this,NewScenceActivity.class);
+        intent = new Intent(this,DeviceTestActivity.class);
         startActivity(intent);
     }
 

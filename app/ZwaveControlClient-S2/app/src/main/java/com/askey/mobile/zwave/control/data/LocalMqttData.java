@@ -2,6 +2,7 @@ package com.askey.mobile.zwave.control.data;
 
 import android.util.Log;
 
+
 import com.askey.mobile.zwave.control.deviceContr.model.ScenesInfo;
 
 import org.json.JSONArray;
@@ -352,6 +353,45 @@ public class LocalMqttData {
         }
         return result;
     }
+
+    public static String getAllProvisionListEntry() {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "getAllProvisionListEntry");
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+    public static String editProvisionListEntry(String dsk,String inclusionState,String boot_mode) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "editProvisionListEntry");
+            function.put("inclusionState", inclusionState);
+            function.put("boot_mode", boot_mode);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+    public static String getDeviceInfo(String nodeId) {//为了获得cmdlist
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "editProvisionListEntry");
+            function.put("nodeId", nodeId);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+
     /*
         {
             "desired": {
@@ -892,39 +932,39 @@ public class LocalMqttData {
         return result;
     }
 
-    public static String removeSceneAction(String sceneName, String iconName, ArrayList<ScenesInfo> sceneInfoList) {
-        String result = "";
-        JSONObject function = new JSONObject();
-        try {
-            JSONArray jsonArray = new JSONArray();
-            JSONObject tmpObj = null;
-            int count = sceneInfoList.size();
-            for (int i = 0; i < count; i++) {
-                tmpObj = new JSONObject();
-                ScenesInfo scenesInfo = sceneInfoList.get(i);
-//                tmpObj.put("scenesId" ,scenesInfo.getScenesId());
-//                tmpObj.put("scenesName" ,scenesInfo.getScenesName());
-                tmpObj.put("nodeId", scenesInfo.getNodeId());
-                tmpObj.put("category", scenesInfo.getCategory());
-                tmpObj.put("targetSatus", scenesInfo.getTargetSatus());
-                tmpObj.put("currentStatus", scenesInfo.getCurrentStatus());
-                tmpObj.put("targetColor", scenesInfo.getTargetColor());
-                tmpObj.put("currentColor", scenesInfo.getCurrentColor());
-                tmpObj.put("timer", scenesInfo.getTimer());
-                jsonArray.put(tmpObj);
-                tmpObj = null;
-            }
-            String conditions = jsonArray.toString(); // 将JSONArray转换得到String
-            function.put("function", "removeSceneAction");
-            function.put("sceneName", sceneName);
-            function.put("iconName", iconName);
-            function.put("condition", conditions);
-            result = getPublicJson(function).toString();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
+//    public static String removeSceneAction(String sceneName, String iconName, ArrayList<ScenesInfo> sceneInfoList) {
+//        String result = "";
+//        JSONObject function = new JSONObject();
+//        try {
+//            JSONArray jsonArray = new JSONArray();
+//            JSONObject tmpObj = null;
+//            int count = sceneInfoList.size();
+//            for (int i = 0; i < count; i++) {
+//                tmpObj = new JSONObject();
+//                ScenesInfo scenesInfo = sceneInfoList.get(i);
+////                tmpObj.put("scenesId" ,scenesInfo.getScenesId());
+////                tmpObj.put("scenesName" ,scenesInfo.getScenesName());
+//                tmpObj.put("nodeId", scenesInfo.getNodeId());
+//                tmpObj.put("category", scenesInfo.getCategory());
+//                tmpObj.put("targetSatus", scenesInfo.getTargetSatus());
+//                tmpObj.put("currentStatus", scenesInfo.getCurrentStatus());
+//                tmpObj.put("targetColor", scenesInfo.getTargetColor());
+//                tmpObj.put("currentColor", scenesInfo.getCurrentColor());
+//                tmpObj.put("timer", scenesInfo.getTimer());
+//                jsonArray.put(tmpObj);
+//                tmpObj = null;
+//            }
+//            String conditions = jsonArray.toString(); // 将JSONArray转换得到String
+//            function.put("function", "removeSceneAction");
+//            function.put("sceneName", sceneName);
+//            function.put("iconName", iconName);
+//            function.put("condition", conditions);
+//            result = getPublicJson(function).toString();
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//        return result;
+//    }
 
     //    {
 //        "desired": {
@@ -1023,6 +1063,21 @@ public class LocalMqttData {
         try {
             function.put("function", "getSensorMultiLevel");
             function.put("deviceId", deviceId);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String addProvisionList(String dsk, String length,String qrCode) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "addProvisionListEntry");
+            function.put("dsk", dsk);
+            function.put("dsklen", length);
+            function.put("QrCode", qrCode);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();
