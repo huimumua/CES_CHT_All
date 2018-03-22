@@ -356,7 +356,7 @@ public class ZwaveControlService extends Service {
         ZwaveControlHelper.ZwController_getAllProvisionListEntry();
     }
 
-    public void ZwController_rmAllProvisionListEntry(){
+    public void rmAllProvisionListEntry(){
         String result = "false";
         int res = ZwaveControlHelper.ZwController_rmAllProvisionListEntry();
         if (res == 0){

@@ -728,6 +728,34 @@ public class MQTTBroker extends Service {
                     zwaveService.addProvisionListEntry("Zwave",dskNumber,true);
                     break;
 
+                case "rmProvisionListEntry":
+                    Log.i(LOG_TAG, "deviceService.rmProvisionListEntry");
+                    DeviceInfo.dskNumber = payload.getString("dsk");
+                    str = payload.getString("dsk") +'\0';
+                    Log.i(LOG_TAG, str);
+                    dskNumber = str.getBytes();
+                    zwaveService.rmProvisionListEntry("Zwave",dskNumber);
+                    break;
+
+                case "rmAllProvisionListEntry":
+                    Log.i(LOG_TAG, "deviceService.rmAllProvisionListEntry");
+                    zwaveService.rmAllProvisionListEntry();
+                    break;
+
+                case "editProvisionListEntry":
+                    Log.i(LOG_TAG, "deviceService.editProvisionListEntry");
+                    DeviceInfo.dskNumber = payload.getString("originalDsk");
+                    str = payload.getString("originalDsk") +'\0';
+                    Log.i(LOG_TAG, str);
+                    dskNumber = str.getBytes();
+                    zwaveService.rmProvisionListEntry("Zwave",dskNumber);
+                    DeviceInfo.dskNumber = payload.getString("dsk");
+                    str = payload.getString("dsk") +'\0';
+                    Log.i(LOG_TAG, str);
+                    dskNumber = str.getBytes();
+                    zwaveService.addProvisionListEntry("Zwave",dskNumber,true);
+                    break;
+
                 case "getAllProvisionListEntry":
                     Log.i(LOG_TAG, "deviceService.getAllProvisionListEntry");
                     zwaveService.getAllProvisionListEntry();
@@ -735,11 +763,6 @@ public class MQTTBroker extends Service {
 
                 case "getProvisionListEntry":
                     Log.i(LOG_TAG, "deviceService.getProvisionListEntry");
-                    break;
-
-                case "rmProvisionListEntry":
-                    Log.i(LOG_TAG, "deviceService.rmProvisionListEntry");
-                    zwaveService.ZwController_rmAllProvisionListEntry();
                     break;
 
                 case "getRssiState":

@@ -308,7 +308,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_getAllProvisionListEntry")) {
                     zwaveService.getAllProvisionListEntry();
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_rmAllProvisionListEntry")) {
-                    zwaveService.ZwController_rmAllProvisionListEntry();
+                    zwaveService.rmAllProvisionListEntry();
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_battery_get")) {
                     zwaveService.getDeviceBattery(devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_sensor_multilevel_get")) {
@@ -738,7 +738,35 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                         }
                     });
-                } else if (className.equals("openController")) {
+                } else if (className.equals("rmProvisionListEntry")) {
+                    Log.d(LOG_TAG, DeviceInfo.dskNumber + " gino!!!!!!!!!");
+                    if (provisionListArr.contains(DeviceInfo.dskNumber)) {
+                        Log.d(LOG_TAG,"remove Provision List");
+                        provisionListArr.remove(DeviceInfo.dskNumber);
+                    } else {
+                        if( DeviceInfo.dskNumber != null) {
+                            //zwaveService.addProvisionListEntry(devType, dskNumber, InclusionState);
+                            Log.d(LOG_TAG, "already remove Provision List");
+                            DeviceInfo.dskNumber = null;
+                        }
+                    }
+                    ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
+                            android.R.layout.simple_spinner_dropdown_item, converProvisionList(provisionListArr));
+                    spProvisionList.setAdapter(provisionList);
+
+                    spProvisionList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+                        @Override
+                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                            selectProvisionList = spProvisionList.getSelectedItem().toString();
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parent) {
+
+                        }
+                    });
+                }else if (className.equals("openController")) {
                     getOpenControllerInfo(result);
                 } else if (className.equals("Network IMA Info Report")) {
                     getImaInfo(result);
@@ -788,16 +816,16 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         String securityStatus = "";
         for(int i = 10; i < resultSplit.length; i++) { //i =10 不顯示Controller 的 security Status
             if (resultSplit[i].contains("Node security inclusion status")) {
-                    if (resultSplit[i].contains("S2")) {
-                        //Log.i(LOG_TAG, "S2 gino!!!!!!!!!!!!!!!!!!");
-                        securityStatus = "Device is S2 security";
-                    } else if (resultSplit[i].contains("Normal")) {
-                        //Log.i(LOG_TAG, "Normal gino!!!!!!!!!!!!!!!!!!");
-                        securityStatus = "Device is none security";
-                    } else if (resultSplit[i].contains("S0")) {
-                        //Log.i(LOG_TAG, "S0 gino!!!!!!!!!!!!!!!!!!");
-                        securityStatus = "Device is S0 security";
-                    }
+                if (resultSplit[i].contains("S2")) {
+                    //Log.i(LOG_TAG, "S2 gino!!!!!!!!!!!!!!!!!!");
+                    securityStatus = "Device is S2 security";
+                } else if (resultSplit[i].contains("Normal")) {
+                    //Log.i(LOG_TAG, "Normal gino!!!!!!!!!!!!!!!!!!");
+                    securityStatus = "Device is none security";
+                } else if (resultSplit[i].contains("S0")) {
+                    //Log.i(LOG_TAG, "S0 gino!!!!!!!!!!!!!!!!!!");
+                    securityStatus = "Device is S0 security";
+                }
             }
         }
         txAllMsg.setText(securityStatus);
