@@ -2,6 +2,7 @@ package com.askey.firefly.zwave.control.jni;
 
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
 import com.askey.firefly.zwave.control.application.ZwaveProvisionList;
+import com.askey.firefly.zwave.control.utils.DeviceInfo;
 
 /**
  * 项目名称：ZwaveControl
@@ -31,10 +32,10 @@ public class ZwaveControlHelper {
 
     }
 
-    public static int ZwaveControlReq_CallBack(byte[] result, int len)
-    {
+    public static int ZwaveControlReq_CallBack(byte[] result, int len){
+        ZwaveControlService.getInstance().zwaveControlReq_CallBack(result,len);
         android.util.Log.d("ZwaveControlHelper", "ZwaveControlReq_CallBack " + new String(result));
-        return 0;
+        return DeviceInfo.grant;
     }
 
     public native static int CreateZwController();

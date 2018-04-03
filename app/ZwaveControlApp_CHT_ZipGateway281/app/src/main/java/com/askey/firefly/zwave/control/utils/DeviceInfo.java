@@ -2,6 +2,7 @@ package com.askey.firefly.zwave.control.utils;
 
 import com.askey.firefly.zwave.control.page.zwNodeMember;
 import com.askey.firefly.zwave.control.page.zwScenceMember;
+import com.askey.firefly.zwave.control.service.ZwaveControlService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,5 +26,8 @@ public class DeviceInfo {
     public static String pinCode = "00000\0";
     public static byte[] tempDsk = pinCode.getBytes();
     public static String dskNumber = null;
+    public static int grant;
+    public static boolean grantFlag = false;
+
 
 }

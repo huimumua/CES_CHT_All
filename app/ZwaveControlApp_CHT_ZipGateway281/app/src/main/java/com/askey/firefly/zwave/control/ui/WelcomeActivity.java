@@ -22,6 +22,7 @@ import android.text.style.UnderlineSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -73,7 +74,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     private ArrayList<String> provisionListArr = new ArrayList<>();
     private Button btnAdd,btnRemove,btnButton,btnAddPorList,btnRmProList,btnEditProvision,btnPassive,btnLearn;
     private Spinner spNodeIdList,spApiList,spProvisionList;
-    private TextView txText,txDsk,txAllMsg,txApi;
+    private TextView txDsk,txAllMsg;
     private EditText editDsk,editSetApiValue;
     private CheckBox cb1,cb2,cb3;
     private String devType = "Zwave";
@@ -84,8 +85,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     private boolean getProvisionListFlag = false;
     private boolean getProvisionNodeFlag = false;
     private boolean InclusionState = true;
-
-
 
 
     @Override
@@ -108,6 +107,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
         new Thread(checkInitStatus).start();
         initBtn();
+
 
     }
 
@@ -143,9 +143,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         cb3 = (CheckBox) findViewById(R.id.cb3);
 
         txDsk = (TextView) findViewById(R.id.txDsk);
-        txText = (TextView) findViewById(R.id.txMsg);
         txAllMsg = (TextView) findViewById(R.id.txAllMsg);
-        txApi = (TextView) findViewById(R.id.txApi);
 
         spNodeIdList = (Spinner) findViewById(R.id.nodeIdList);
         spApiList = (Spinner) findViewById(R.id.spApiList);
@@ -175,10 +173,14 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
             ArrayAdapter<String> getApiList = new ArrayAdapter<>(this,
                     android.R.layout.simple_spinner_dropdown_item,apiName);
+
             spApiList.setAdapter(getApiList);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        InputMethodManager imm = (InputMethodManager)getSystemService(WelcomeActivity.this.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(editDsk, 0);
 
     }
 
@@ -274,6 +276,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         //Log.d(LOG_TAG,"node ID : " + selectNode);
         switch (view.getId()) {
             case R.id.btnAdd:
+
                 if (editDsk.length() != 0 && editDsk.length() == 47) {    // editDsk will 5-digit or full code
                     //Log.i(LOG_TAG, "call zwaveService.addDevice()");
                     inputDsk = editDsk.getText().toString() + "\0";
@@ -288,12 +291,17 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     zwaveService.addDevice(devType, DeviceInfo.tempDsk);
                 } else
                     Toast.makeText(this, "格式錯誤 !", Toast.LENGTH_SHORT).show();
+                /*
+                inputDsk = "11394" + "\0";
+                byte[] dskNumber = inputDsk.getBytes();
+                zwaveService.addDevice(devType, dskNumber);
+                */
                 getDeviceInfoFlag = 1;
                 break;
 
             case R.id.btnRemove:
                 Log.i(LOG_TAG, "call zwaveService.removeDevice()");
-                zwaveService.removeDevice(devType, 0);
+                zwaveService.removeDevice(devType,0);
                 break;
 
             case R.id.btnLearn:
@@ -336,7 +344,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_start_stop_switchlevel_change")) {
                     //zwaveService.startStopSwitchLevelChange(); many parameter
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_configuration_get")) {
-                    //zwaveService.getConfiguration(); many parameter
+                    zwaveService.getConfiguration(selectNode,0,0,0,0);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_configuration_set")) {
                     //zwaveService.setConfiguration(); many parameter
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_powerLevel_get")) {
@@ -503,12 +511,14 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             String provisinoInfo = jsonObject.optString("Detial provision list");
             String[] dskNumber = provisinoInfo.split(",");
             for(int i = 0; i < dskNumber.length; i++) {
+                txAllMsg.setText(result);
                 if (dskNumber[i].contains("DSK")) {
                     String[] tmpDsk = dskNumber[i].split("\"");
                     for(int j = 0; j < tmpDsk.length; j++) {
                         if(j % 4 == 0 && getProvisionListFlag == false) {
                             Log.d(LOG_TAG, tmpDsk[j + 3]);
                             provisionListArr.add(tmpDsk[j + 3]); //抓取DSK值
+                            txAllMsg.setText(tmpDsk[j + 3]);
                         }
                     }
                 }
@@ -535,6 +545,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         final String provisionInfo = result;
         JSONObject jsonObject = null;
         JSONObject jsonObject2 = null;
+        txAllMsg.setText(result);
         try {
             jsonObject = new JSONObject(provisionInfo);
             String provisionState = jsonObject.optString("Network inclusion state");
@@ -650,6 +661,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             //register mCallback
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
+                zwaveService.register(mReqCallBacks);
                 requestControlUSBPermission();
             }
         }
@@ -664,6 +676,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     protected void onDestroy() {
         super.onDestroy();
         zwaveService.unregister(mCallback);
+        zwaveService.unregister(mReqCallBacks);
+
         if (usbReceiver != null)
             unregisterReceiver(usbReceiver);
         try {
@@ -674,6 +688,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     }
 
     public ZwaveControlService.zwaveCallBack mCallback;
+    public ZwaveControlService.zwaveControlReq_CallBack mReqCallBacks;
+
 
     {
         mCallback = new ZwaveControlService.zwaveCallBack() {
@@ -698,20 +714,21 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (className.equals("getSensorMultiLevel") || className.equals("getSensorNotification") ||
                         className.equals("getLampColor") || className.equals("getBasic") || className.equals("getPowerLevel")) {
                     for (int i = 0; i < result.length(); i++) {
-                        txApi.setText(result);
+                        txAllMsg.setText(result);
                     }
-                } else if (className.equals("All Provision List Report")) {
+                } else if (className.equals("All Provision List Report") || className.equals("getAllProvisionListEntry")) {
                     loadProvisionList(result);
                 } else if (className.equals("Provision List Report")) {
                     if (getProvisionNodeFlag) {
                         getProvisionNode(result);
                     } else {
                         for (int i = 0; i < result.length(); i++) {
-                            txApi.setText(result);
+                            txAllMsg.setText(result);
                         }
                     }
                 } else if (className.equals("addProvisionListEntry")) {
-                    Log.d(LOG_TAG, DeviceInfo.dskNumber + " gino!!!!!!!!!");
+                    //Log.d(LOG_TAG, DeviceInfo.dskNumber + " gino!!!!!!!!!");
+                    txAllMsg.setText("addProvisionListEntry : " +DeviceInfo.dskNumber);
                     if (provisionListArr.contains(DeviceInfo.dskNumber)) {
                         Log.d(LOG_TAG,"already Provision List");
                     } else {
@@ -742,6 +759,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     Log.d(LOG_TAG, DeviceInfo.dskNumber + " gino!!!!!!!!!");
                     if (provisionListArr.contains(DeviceInfo.dskNumber)) {
                         Log.d(LOG_TAG,"remove Provision List");
+                        txAllMsg.setText("rmProvisionListEntry : "+ DeviceInfo.dskNumber);
                         provisionListArr.remove(DeviceInfo.dskNumber);
                     } else {
                         if( DeviceInfo.dskNumber != null) {
@@ -766,14 +784,77 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                         }
                     });
-                }else if (className.equals("openController")) {
+                }  else if (className.equals("rmAllProvisionListEntry")) {
+                    //Log.d(LOG_TAG, DeviceInfo.dskNumber + " gino!!!!!!!!!");
+                    Log.d(LOG_TAG,"rmAllProvisionListEntry");
+                    txAllMsg.setText("rmAllProvisionListEntry");
+                    provisionListArr.clear();
+
+                    ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
+                            android.R.layout.simple_spinner_dropdown_item, converProvisionList(provisionListArr));
+                    spProvisionList.setAdapter(provisionList);
+
+                } else if (className.equals("getDeviceBattery")) {
+                    txAllMsg.setText(result);
+                } else if (className.equals("openController")) {
                     getOpenControllerInfo(result);
                 } else if (className.equals("Network IMA Info Report")) {
                     getImaInfo(result);
                 }
             }
+
+        };
+
+        mReqCallBacks = new ZwaveControlService.zwaveControlReq_CallBack() {
+            @Override
+            public void zwaveControlReqResultCallBack(String className, String result) {
+                Log.i(LOG_TAG, "class name = [" + className + "]| result = " + result);
+
+                if (className.equals("Grant Keys Msg")) {
+
+                    //這裡 HOLD 住!!!!!!!
+
+                    new Thread(setGrantKey).start();
+
+                    try {
+                        while (!DeviceInfo.grantFlag) {
+                            Thread.sleep(100);
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    DeviceInfo.grantFlag = false;
+                    Log.i(LOG_TAG,String.valueOf(DeviceInfo.grant)+" 2");
+                    //setGrantKey(result);
+                } else if (className.equals("Client Side Au Msg")) {
+                    Log.i(LOG_TAG,"Client Side Au Msg");
+                }
+            }
         };
     }
+
+    public Runnable setGrantKey = new Runnable() {
+        @Override
+        public void run() {
+            //showAddDialog();
+            Log.d(LOG_TAG, "showAddDialog gino 2");
+
+
+            try {
+                //while (!DeviceInfo.grantKeyFlag) {
+                    Thread.sleep(10000);
+                //}
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            DeviceInfo.grant = Integer.valueOf(editSetApiValue.getText().toString());
+            Log.i(LOG_TAG,String.valueOf(DeviceInfo.grant)+" 1");
+            DeviceInfo.grantFlag = true;
+            Log.d(LOG_TAG,"grantFlag");
+
+        }
+    };
 
 
     private void getImaInfo(String result) {
@@ -806,7 +887,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         String[] resultSplit = result.split("Interface Class\":\"");
         for(int i = 0; i < resultSplit.length; i++) {
             Log.d(LOG_TAG,resultSplit[i]);
-            txApi.setText(resultSplit[i]);
+            txAllMsg.setText(resultSplit[i]);
         }
     }
 
@@ -834,7 +915,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     //顯示dongle info
     private void showNodeInfo(String result) {
         String[] resultSplit = result.split("Home id");
-        txApi.setText(resultSplit[1]);
+        txAllMsg.setText(resultSplit[1]);
     }
 
     //顯示DSK number
@@ -873,13 +954,13 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         String status = jsonObject.optString("Status");
                         if ("Node Add Status".equals(messageType)) {
                             if ("Success".equals(status)) {
-                                txText.setText("Success");
+                                txAllMsg.setText("Success");
                                 zwaveService.getDeviceInfo();   //有delay所以做兩次
                                 zwaveService.getDeviceInfo();
                             } else if("Learn Ready".equals(status)){
-                                txText.setText("Please press the trigger button of the device");
+                                txAllMsg.setText("Please press the trigger button of the device");
                             }else{
-                                txText.setText(status);
+                                txAllMsg.setText(status);
                             }
                         }
                     } catch (JSONException e) {
@@ -902,7 +983,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         String tNodeId = tokens[2];
 
                         Log.i(LOG_TAG,addRemoveMode+" HomeId = "+tHomeId+" | NodeId = "+tNodeId);
-                        txText.setText(addRemoveMode+" Success " + " | NodeId = "+tNodeId);
+                        txAllMsg.setText(addRemoveMode+" Success " + " | NodeId = "+tNodeId);
 
 
                         if (addRemoveMode.equals("addDevice")) {
@@ -1025,7 +1106,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
         List<ZwaveDevice> list = zwDevManager.queryZwaveDeviceList();
 
-        Log.d(LOG_TAG,"######## initSensorfunc start #######");
         for (int idx = 1; idx < list.size(); idx++) {
 
             int nodeId = list.get(idx).getNodeId();
@@ -1078,10 +1158,62 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
             }
         }
-        int getResult = zwaveService.getControllerRssi();
-        Log.i(LOG_TAG,"getResult = "+getResult);
 
-        Log.d(LOG_TAG,"######## initSensorfunc end #######");
+    }
+
+    private void showAddDialog() {
+
+        final android.app.AlertDialog.Builder addDialog = new android.app.AlertDialog.Builder(WelcomeActivity.this);
+        LayoutInflater layoutInflater = LayoutInflater.from(WelcomeActivity.this);
+        View view = layoutInflater.inflate(R.layout.dialog_add_layout, null);
+        addDialog.setView(view);
+
+        final android.app.AlertDialog alertDialog = addDialog.create();
+        alertDialog.show();
+        TextView title = (TextView) view.findViewById(R.id.title);
+        title.setText("Add Device Success");
+
+        // type spinner
+        final EditText message = (EditText) view.findViewById(R.id.message);
+        final Spinner spDevType = (Spinner) view.findViewById(R.id.spDevType);
+        Button positiveButton = (Button) view.findViewById(R.id.positiveButton);
+        Button negativeButton = (Button) view.findViewById(R.id.negativeButton);
+
+        ArrayAdapter<String> devTypeList = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_dropdown_item,
+                DeviceInfo.deviceType);
+
+        spDevType.setAdapter(devTypeList);
+
+        // room spinner
+
+        final Spinner spRoom = (Spinner) view.findViewById(R.id.spAllRoom);
+
+        ArrayAdapter<String> roomList = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_dropdown_item,
+                DeviceInfo.allRoomName);
+
+        spRoom.setAdapter(roomList);
+
+        //message.setText(nodeId);
+        positiveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                alertDialog.dismiss();
+                backToHomeActivity();
+            }
+        });
+
+        negativeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                alertDialog.dismiss();
+                finish();
+            }
+        });
+
+        alertDialog.show();
 
     }
 

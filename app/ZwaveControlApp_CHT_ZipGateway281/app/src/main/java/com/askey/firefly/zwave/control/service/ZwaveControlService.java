@@ -23,7 +23,6 @@ import com.askey.firefly.zwave.control.dao.ZwaveScheduleManager;
 import com.askey.firefly.zwave.control.jni.ZwaveControlHelper;
 import com.askey.firefly.zwave.control.scheduler.ScheduleJobManager;
 import com.askey.firefly.zwave.control.thirdparty.usbserial.UsbSerial;
-import com.askey.firefly.zwave.control.utils.DeviceInfo;
 import com.askey.firefly.zwave.control.utils.Logg;
 import com.askey.firefly.zwave.control.application.ZwaveProvisionList;
 
@@ -61,6 +60,8 @@ public class ZwaveControlService extends Service {
     private ZwaveSceneManager sceneManager;
     private ZwaveDeviceRoomManager roomManager;
     private static ArrayList <zwaveCallBack> mCallBacks = new ArrayList<>();
+    private static ArrayList <zwaveControlReq_CallBack> mReqCallBacks = new ArrayList<>();
+
 
     @Override
     public void onCreate() {
@@ -164,8 +165,16 @@ public class ZwaveControlService extends Service {
         mCallBacks.add(callback);
     }
 
+    public void register(zwaveControlReq_CallBack callReqback){
+        mReqCallBacks.add(callReqback);
+    }
+
     public void unregister(zwaveCallBack callback){
         mCallBacks.remove(callback);
+    }
+
+    public void unregister(zwaveControlReq_CallBack callReqback){
+        mReqCallBacks.remove(callReqback);
     }
 
     public String openController(){
@@ -173,13 +182,12 @@ public class ZwaveControlService extends Service {
     }
 
     public void  StartLearnMode(){
-         int result = ZwaveControlHelper.ZwController_StartLearnMode();
+        int result = ZwaveControlHelper.ZwController_StartLearnMode();
     }
-
 
     public void addDevice(String devType,byte[] dskNumber){
         if (devType.equals(zwaveType)) {
-             ZwaveControlHelper.ZwController_AddDevice(dskNumber, dskNumber.length);
+            ZwaveControlHelper.ZwController_AddDevice(dskNumber, dskNumber.length);
         } else if (devType.equals(btType)){
             /*
             try {
@@ -376,11 +384,11 @@ public class ZwaveControlService extends Service {
         }
     }
 
-
+/*
     public void getDeviceNetworkRssiInfo (int noid) {
         ZwaveControlHelper.ZwController_getDeviceNetworkRssiInfo(noid);
     }
-
+*/
     public void startNetworkHealthCheck () {
         ZwaveControlHelper.ZwController_startNetworkHealthCheck();
     }
@@ -672,7 +680,7 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_GetSupportedSwitchType(deviceId);
     }
 
-    public int startStopSwitchLevelChange(String homeId, int deviceId, int startLvlVal, int duration, int pmyChangeDir, int secChangeDir, int secStep){
+    public int startStopSwitchLevelChange(int deviceId, int startLvlVal, int duration, int pmyChangeDir, int secChangeDir, int secStep){
         updateTimestamp(deviceId);
         int result = ZwaveControlHelper.ZwController_startStopSwitchLevelChange(deviceId,startLvlVal,duration,pmyChangeDir,secChangeDir,secStep);
         zwaveControlResultCallBack("startStopSwitchLevelChange",String.valueOf(result));
@@ -922,7 +930,7 @@ public class ZwaveControlService extends Service {
         return result;
     }
 
-    public void getGroupInfo(String devType, int deviceId ,int maxGroupId){
+    public void getGroupInfo(String devType, int deviceId){
         Log.i(LOG_TAG,"=====getGroupInfo==deviceId==="+deviceId);
         updateTimestamp(deviceId);
 
@@ -1260,11 +1268,11 @@ public class ZwaveControlService extends Service {
             e.printStackTrace();
         }
     }
-
+/*
     public int  getControllerRssi(){
         return ZwaveControlHelper.ZwController_getControllerNetworkRssiInfo();
     }
-
+*/
     public interface zwaveCallBack {
         void zwaveControlResultCallBack(String className, String result);
     }
@@ -1274,6 +1282,17 @@ public class ZwaveControlService extends Service {
             callback.zwaveControlResultCallBack(className, result);
         }
     }
+
+    public interface zwaveControlReq_CallBack {
+        void zwaveControlReqResultCallBack(String className, String result);
+    }
+
+    private void zwaveControlReqResultCallBack(String className, String result) {
+        for (zwaveControlReq_CallBack callReqback : mReqCallBacks) {
+            callReqback.zwaveControlReqResultCallBack(className, result);
+        }
+    }
+
 
     public String doOpenController() {
         Log.i(LOG_TAG, "=====doOpenController=========");
@@ -1287,6 +1306,7 @@ public class ZwaveControlService extends Service {
         String openResult = "openController:" + isOK;
 
         String tmpString = new String(result);
+        Log.i(LOG_TAG, tmpString);
 
         zwaveControlResultCallBack("openController", new String(tmpString.substring(0, tmpString.indexOf("}") + 1)));
         return openResult;
@@ -1477,6 +1497,40 @@ public class ZwaveControlService extends Service {
         }
     }
 
+    public int sentGrantKey(int key) {
+        return key;
+    }
+
+    public void ZwaveControlReq_CallBack(byte[] result, int len) {
+        ZwaveControlHelper.ZwaveControlReq_CallBack(result,len);
+    }
+
+    public void zwaveControlReq_CallBack(byte[] result, int len) {
+        // jni callback
+        String jniResult = new String(result);
+        JSONObject jsonObject = null;
+        Logg.showLongLog(LOG_TAG, "zwaveControlReq_CallBack jniResult===" + jniResult);
+        String grantKeysMsg = null;
+        String csaMsg = null;
+
+        try {
+            jsonObject = new JSONObject(jniResult);
+            grantKeysMsg = jsonObject.optString("Grant Keys Msg");
+            csaMsg = jsonObject.optString("Client Side Au Msg");
+
+
+        } catch (JSONException e) {
+            Log.i(LOG_TAG, "JSONException");
+            e.printStackTrace();
+        }
+
+        if ("Request Keys".contains(grantKeysMsg)) {
+            zwaveControlReqResultCallBack("Grant Keys Msg", jniResult);
+        } else if ("Request CSA".contains(csaMsg)) {
+            zwaveControlReqResultCallBack("Request CSA", jniResult);
+        }
+    }
+
     public void zwaveCallBack(byte[] result, int len) {
         // jni callback
         String jniResult = new String(result);
@@ -1664,9 +1718,6 @@ public class ZwaveControlService extends Service {
             }
         } else if (messageType.equals("Binary Sensor Support Get Information")) {
             zwaveControlResultCallBack("GetSensorBinarySupportedSensor", jniResult);
-        } else if (messageType.equals("Notification Supported Report")) {
-            zwaveControlResultCallBack("getSupportedNotification", jniResult);
-        /*
         } else if (messageType.equals("Group Info Report")) {
 
             try {
@@ -1677,7 +1728,7 @@ public class ZwaveControlService extends Service {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-        */
+
         } else if (messageType.equals("Notification Supported Report")) {
             zwaveControlResultCallBack("getSupportedNotification", jniResult);
         } else if (messageType.equals("Controller Network RSSI Report")) {
@@ -1696,6 +1747,40 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("Network RSSI Info Report", jniResult);
         } else if ("Switch Multi-lvl Report Information".equals(messageType)) {
             zwaveControlResultCallBack("Switch Multi-lvl Report Information", jniResult);
+        } else if ("Switch All Get Information".equals(messageType)) {
+            zwaveControlResultCallBack("Switch All Get Information", jniResult);
+        } else if ("Binary Sensor Information".equals(messageType)) {
+            zwaveControlResultCallBack("Binary Sensor Information", jniResult);
+        } else if ("Meter Cap Informationn".equals(messageType)) {
+            zwaveControlResultCallBack("Meter Cap Information", jniResult);
+        } else if ("Wake Up Cap Report".equals(messageType)) {
+            zwaveControlResultCallBack("Wake Up Cap Report", jniResult);
+        } else if ("Supported Color Report".equals(messageType)) {
+            zwaveControlResultCallBack("Supported Color Report", jniResult);
+        } else if ("Active Groups Report".equals(messageType)) {
+            zwaveControlResultCallBack("Active Groups Report", jniResult);
+        } else if ("Supported Notification Event Report".equals(messageType)) {
+            zwaveControlResultCallBack("Supported Notification Event Report", jniResult);
+        } else if ("Central Scene Supported Report".equals(messageType)) {
+            zwaveControlResultCallBack("Central Scene Supported Report", jniResult);
+        } else if ("Central Scene Notification".equals(messageType)) {
+            zwaveControlResultCallBack("Central Scene Notification", jniResult);
+        } else if ("Firmware Info Report".equals(messageType)) {
+            zwaveControlResultCallBack("Firmware Info Report", jniResult);
+        } else if ("Firmware Update Status Report".equals(messageType)) {
+            zwaveControlResultCallBack("Firmware Update Status Report", jniResult);
+        } else if ("Firmware Update Completion Status Report".equals(messageType)) {
+            zwaveControlResultCallBack("Firmware Update Completion Status Report", jniResult);
+        } else if ("Firmware Update restart Status Report".equals(messageType)) {
+            zwaveControlResultCallBack("Firmware Update restart Status Report", jniResult);
+        } else if ("Command Queue State Report".equals(messageType)) {
+            zwaveControlResultCallBack("Command Queue State Report", jniResult);
+        } else if ("Command Queue Info Report".equals(messageType)) {
+            zwaveControlResultCallBack("Command Queue Info Report", jniResult);
+        } else if ("All Node List Report".equals(messageType)) {
+            zwaveControlResultCallBack("All Node List Report", jniResult);
+        } else if ("openController".equals(messageType)) {
+            zwaveControlResultCallBack("openController", jniResult);
         }
     }
 }
