@@ -185,9 +185,9 @@ public class ZwaveControlService extends Service {
         int result = ZwaveControlHelper.ZwController_StartLearnMode();
     }
 
-    public void addDevice(String devType,byte[] dskNumber){
+    public void addDevice(String devType){
         if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_AddDevice(dskNumber, dskNumber.length);
+            ZwaveControlHelper.ZwController_AddDevice();
         } else if (devType.equals(btType)){
             /*
             try {
@@ -601,6 +601,10 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_GetDeviceInfo();
     }
 
+    public void getSpecifyDeviceInfo(int deviceId) {
+        ZwaveControlHelper.ZwController_getSpecifyDeviceInfo(deviceId);
+    }
+
     public int removeFailedDevice(int deviceId){
         return ZwaveControlHelper.ZwController_RemoveFailedDevice(deviceId);
     }
@@ -693,38 +697,18 @@ public class ZwaveControlService extends Service {
     }
 
     public void setSwitchAllOn(String devType, int deviceId){
-
-        Log.i(LOG_TAG,"=====setSwitchAllOn==deviceId==="+deviceId+"| devType = "+devType);
         updateTimestamp(deviceId);
-
         if (devType.equals(zwaveType)) {
-            int result = ZwaveControlHelper.ZwController_SetSwitchAllOn(deviceId);
-            zwaveControlResultCallBack("setSwitchAllOn", String.valueOf(result));
+            ZwaveControlHelper.ZwController_SetSwitchAllOn(deviceId);
         } else if (devType.equals(btType)) {
-            /*
-            if (zwaveDeviceManager.getDeviceCategory(deviceId).equals("PLUG")) {
 
-                try {
-                    btControlService.setPlugOnOff(deviceId,true);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-            }else{
-                try {
-                    btControlService.setLampOnOff(deviceId,true);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-            }
-            */
         }
     }
 
     public void setSwitchAllOff(String devType, int deviceId){
         updateTimestamp(deviceId);
         if (devType.equals(zwaveType)) {
-            int result = ZwaveControlHelper.ZwController_SetSwitchAllOff(deviceId);
-            zwaveControlResultCallBack("setSwitchAllOff",String.valueOf(result));
+            ZwaveControlHelper.ZwController_SetSwitchAllOff(deviceId);
         } else if (devType.equals(btType)){
             //btControlService.
         }
@@ -1497,26 +1481,23 @@ public class ZwaveControlService extends Service {
         }
     }
 
-    public int sentGrantKey(int key) {
-        return key;
-    }
 
-    public void ZwaveControlReq_CallBack(byte[] result, int len) {
-        ZwaveControlHelper.ZwaveControlReq_CallBack(result,len);
-    }
 
     public void zwaveControlReq_CallBack(byte[] result, int len) {
         // jni callback
         String jniResult = new String(result);
         JSONObject jsonObject = null;
-        Logg.showLongLog(LOG_TAG, "zwaveControlReq_CallBack jniResult===" + jniResult);
+        Log.d(LOG_TAG, "zwaveControlReq_CallBack jniResult===" + jniResult);
         String grantKeysMsg = null;
         String csaMsg = null;
+        String pinReq = null;
 
         try {
             jsonObject = new JSONObject(jniResult);
             grantKeysMsg = jsonObject.optString("Grant Keys Msg");
             csaMsg = jsonObject.optString("Client Side Au Msg");
+            pinReq = jsonObject.optString("PIN Requested Msg");
+
 
 
         } catch (JSONException e) {
@@ -1528,6 +1509,8 @@ public class ZwaveControlService extends Service {
             zwaveControlReqResultCallBack("Grant Keys Msg", jniResult);
         } else if ("Request CSA".contains(csaMsg)) {
             zwaveControlReqResultCallBack("Request CSA", jniResult);
+        } else if ("PIN Requested Msg".contains(pinReq)) {
+            zwaveControlReqResultCallBack("PIN Requested Msg", jniResult);
         }
     }
 
@@ -1781,6 +1764,14 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("All Node List Report", jniResult);
         } else if ("openController".equals(messageType)) {
             zwaveControlResultCallBack("openController", jniResult);
+        } else if ("setSwitchAllOn".equals(messageType)) {
+            zwaveControlResultCallBack("setSwitchAllOn", jniResult);
+        } else if ("setSwitchAllOff".equals(messageType)) {
+            zwaveControlResultCallBack("setSwitchAllOff", jniResult);
+        } else if ("Specify Node Info".equals(messageType)) {
+            zwaveControlResultCallBack("getSpecifyDeviceInfo", jniResult);
+        } else if ("All Provision List Report".equals(messageType)) {
+            zwaveControlResultCallBack("getAllProvisionListEntry", jniResult);
         }
     }
 }

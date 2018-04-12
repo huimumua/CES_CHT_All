@@ -170,11 +170,12 @@ typedef int (*ReqCallBack)(const char*);
 
 int  zwcontrol_init(hl_appl_ctx_t *hl_appl, const char *resPath, const char* infopath, uint8_t* result);
 int  zwcontrol_setcallback(ResCallBack callBackRes, ReqCallBack callBackReq);
-int  zwcontrol_add_node(hl_appl_ctx_t *hl_appl, const char* dsk, int dsklen);
+int  zwcontrol_add_node(hl_appl_ctx_t *hl_appl);
 int  zwcontrol_rm_node(hl_appl_ctx_t *hl_appl);
 int  zwcontrol_exit(hl_appl_ctx_t *hl_appl);
 int  zwcontrol_get_node_list(hl_appl_ctx_t *hl_appl);
 int  zwcontrol_get_node_info(hl_appl_ctx_t* hl_appl);
+int  zwcontrol_get_specify_node_info(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_rm_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
 int  zwcontrol_rp_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId, const char* dsk, int dsklen);
 int  zwcontrol_default_set(hl_appl_ctx_t *hl_appl);

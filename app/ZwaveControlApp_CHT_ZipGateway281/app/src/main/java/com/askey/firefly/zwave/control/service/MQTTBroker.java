@@ -5,7 +5,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -14,6 +16,7 @@ import com.askey.firefly.zwave.control.dao.ZwaveDeviceManager;
 import com.askey.firefly.zwave.control.dao.ZwaveDeviceSceneManager;
 import com.askey.firefly.zwave.control.net.TCPServer;
 import com.askey.firefly.zwave.control.net.UDPConnectin;
+import com.askey.firefly.zwave.control.ui.WelcomeActivity;
 import com.askey.firefly.zwave.control.utils.Const;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
 import com.askey.firefly.zwave.control.utils.Utils;
@@ -34,6 +37,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MQTTBroker extends Service {
 
@@ -53,6 +58,7 @@ public class MQTTBroker extends Service {
     public ZwaveControlService zwaveService;
 
     private byte[] dskNumber;
+    private int currentNodeId = 0;
 
     @Override
     public void onCreate() {
@@ -82,6 +88,7 @@ public class MQTTBroker extends Service {
         if (Const.remoteMqttFlag) {
             mqttRemoteConnect(mqttConnectOptions);
         }
+
         /*  connect to local mqtt server */
         mqttLocalConnect(mqttConnectOptions);
 
@@ -145,18 +152,19 @@ public class MQTTBroker extends Service {
                 if (message.contains("mobile_zwave")) {
                     if (message.contains("addDevice")) {
                         if (Const.TCPClientPort != 0) {
-                            mTCPServer.sendMessage(clientID, Const.TCPSTRING + "addDevice:other");
+                            mTCPServer.sendMessage(clientID, Const.TCPSTRING + "addDevice:other"); //TCP format
                         } else {
                             String[] tokens = message.split(":");
                             String devType = tokens[2];
                             Const.TCPClientPort = clientID;
                             Log.i(LOG_TAG, "deviceService.addDevice(mCallback)");
-                            zwaveService.addDevice(devType, DeviceInfo.tempDsk);
+                            zwaveService.addDevice(devType);
+
                         }
                     } else if (message.contains("removeDevice")) {
                         if (Const.TCPClientPort != 0) {
                             Log.i(LOG_TAG,"removeDevice other!");
-                            mTCPServer.sendMessage(clientID, Const.TCPSTRING + "removeDevice:other");
+                            mTCPServer.sendMessage(clientID, Const.TCPSTRING + "removeDevice:other");  //TCP format
                         } else {
 
                             String[] tokens = message.split(":");
@@ -219,51 +227,25 @@ public class MQTTBroker extends Service {
                         Log.i(LOG_TAG, "deviceService.setDefault(mCallback)");
                         zwaveService.setDefault();
 
+                    } else {
+                        mTCPServer.sendMessage(clientID, Const.TCPSTRING + " Wrong Payload");  //TCP format
                     }
-                    /*
-                    else if (message.contains("addProvisionListEntry")) {
-                        if (Const.TCPClientPort != 0) {
-                            mTCPServer.sendMessage(clientID, Const.TCPSTRING + "addProvisionListEntry:other");
-                        } else {
-                            String[] tokens = message.split(":");
-                            String devType = tokens[2];
-                            Const.TCPClientPort = clientID;
-                            Log.i(LOG_TAG, "deviceService.addProvisionListEntry(mCallback)");
-
-                            String str = "11394-65466-64100-20934-53255-51784-15710-22718";
-                            byte[] bstr = str.getBytes();
-                            byte[] dsk = new byte[str.length()+1];
-
-                            for(int i = 0; i < bstr.length; ++i)
-                                dsk[i] = bstr[i];
-                            dsk[str.length()] = '\0';
-
-                            zwaveService.addProvisionListEntry(devType,dsk,true);
-                        }
-                    } else if (message.contains("rmProvisionListEntry")) {
-                        if (Const.TCPClientPort != 0) {
-                            mTCPServer.sendMessage(clientID, Const.TCPSTRING + "rmProvisionListEntry:other");
-                        } else {
-                            String[] tokens = message.split(":");
-                            String devType = tokens[2];
-                            Const.TCPClientPort = clientID;
-                            Log.i(LOG_TAG, "deviceService.addProvisionListEntry(mCallback)");
-
-                            String str = "11394-65466-64100-20934-53255-51784-15710-22718";
-                            byte[] bstr = str.getBytes();
-                            byte[] dsk = new byte[str.length()+1];
-
-                            for(int i = 0; i < bstr.length; ++i)
-                                dsk[i] = bstr[i];
-                            dsk[str.length()] = '\0';
-
-                            zwaveService.rmProvisionListEntry(devType,dsk);
-                        }
+                } else if (message.contains("GrantKeys")) {
+                    String[] tmp = message.split(":");
+                    if (tmp[1].equals("87")) {
+                        mTCPServer.sendMessage(clientID, "dsk:1"); //TCP format
                     }
-                     */
-                    else {
-                        mTCPServer.sendMessage(clientID, Const.TCPSTRING + " Wrong Payload");
-                    }
+                    DeviceInfo.reqKey = Integer.valueOf(tmp[1]);
+
+                } else if (message.contains("dsk")) {
+                    String[] tmp = message.split(":");
+                    DeviceInfo.reqKey = Integer.valueOf(tmp[1]);
+                    mTCPServer.sendMessage(clientID, "CSA:CSA"); //TCP format
+
+                } else if (message.contains("CSA")) {
+                    String[] tmp = message.split(":");
+                    DeviceInfo.reqKey = Integer.valueOf(tmp[1]);
+
                 }
             }
         });
@@ -420,19 +402,22 @@ public class MQTTBroker extends Service {
         String[] tokens = TopicName.split(Const.PublicTopicName);
         String[] devInfo = new String[2];
         String devType = null;
-        int tNodeid = 0;
         int value = 0;
 
         if (!TopicName.equals(Const.PublicTopicName)) {
             if (tokens[1].contains("Zwave")) {
                 devInfo = tokens[1].split("Zwave");
                 devType = "Zwave";
-                tNodeid = Integer.parseInt(devInfo[1]);
-            } else if (tokens[1].contains("BT")) {
+                currentNodeId = Integer.valueOf(devInfo[1]);
+                Log.d(LOG_TAG,"tNodeid: "+currentNodeId);
+            }
+            /*
+            else if (tokens[1].contains("BT")) {
                 devInfo = tokens[1].split("BT");
                 devType = "BT";
                 tNodeid = Integer.parseInt(devInfo[1]);
             }
+            */
         }
 
         JSONObject payload = new JSONObject(mqttMessage);
@@ -441,10 +426,14 @@ public class MQTTBroker extends Service {
             String function = payload.getString("function");
 
             switch (function) {
+                case "addDevice":
+                    Log.i(LOG_TAG, "deviceService.removeDeviceFromRoom");
+                    zwaveService.addDevice("Zwave");
+                    break;
 
                 case "removeDeviceFromRoom":
                     Log.i(LOG_TAG, "deviceService.removeDeviceFromRoom");
-                    zwaveService.removeDeviceFromRoom(tNodeid);
+                    zwaveService.removeDeviceFromRoom(currentNodeId);
                     break;
 
                 case "getDeviceList": //public channel
@@ -461,7 +450,7 @@ public class MQTTBroker extends Service {
                     String name = payload.getJSONObject("parameter").getString("name");
                     String type = payload.getJSONObject("parameter").getString("type");
 
-                    zwaveService.editNodeInfo("", tNodeid, name, devType, type, Room, isFavorite);
+                    zwaveService.editNodeInfo("", currentNodeId, name, devType, type, Room, isFavorite);
                     break;
 
                 case "getRecentDeviceList": //public channel
@@ -495,29 +484,29 @@ public class MQTTBroker extends Service {
                     break;
 
                 case "getBasic":
-                    zwaveService.getBasic(devType, tNodeid);
+                    zwaveService.getBasic(devType, currentNodeId);
                     break;
 
                 case "setBasic":
                     String switchStatus = payload.getString("value");
                     Log.i(LOG_TAG, "deviceService.setSwitchStatus value=" + value);
-                    zwaveService.setBasic(devType, tNodeid, Integer.parseInt(switchStatus));
+                    zwaveService.setBasic(devType, currentNodeId, Integer.parseInt(switchStatus));
                     break;
 
                 case "getSwitchMultilevel":
                     Log.i(LOG_TAG, "deviceService.getBrightness");
-                    zwaveService.getSwitchMultiLevel(devType, tNodeid);
+                    zwaveService.getSwitchMultiLevel(devType, currentNodeId);
                     break;
 
                 case "setSwitchMultilevel":
                     Log.i(LOG_TAG, "deviceService.setBrightness value=" + value);
                     value = Integer.parseInt(payload.getString("value"));
-                    zwaveService.setSwitchMultiLevel(devType, tNodeid, value, 0);
+                    zwaveService.setSwitchMultiLevel(devType, currentNodeId, value, 0);
                     break;
 
                 case "getSwitchColor":
                     Log.i(LOG_TAG, "deviceService.getLampColor");
-                    zwaveService.getLampColor(devType, tNodeid);
+                    zwaveService.getLampColor(devType, currentNodeId);
                     break;
 
                 case "setSwitchColor":
@@ -529,13 +518,13 @@ public class MQTTBroker extends Service {
                             int r_value = Integer.parseInt(payload.getString("R"));
                             int g_value = Integer.parseInt(payload.getString("G"));
                             int b_value = Integer.parseInt(payload.getString("B"));
-                            zwaveService.setLampColor(devType, tNodeid, r_value, g_value, b_value);
+                            zwaveService.setLampColor(devType, currentNodeId, r_value, g_value, b_value);
                             break;
                         case "warmWhite":
-                            zwaveService.setLampToWarmWhite(devType, tNodeid);
+                            zwaveService.setLampToWarmWhite(devType, currentNodeId);
                             break;
                         case "coldWhite":
-                            zwaveService.setLampToColdWhite(devType, tNodeid);
+                            zwaveService.setLampToColdWhite(devType, currentNodeId);
                             break;
                         default:
                             break;
@@ -545,7 +534,7 @@ public class MQTTBroker extends Service {
                 case "getConfiguration":
                     Log.i(LOG_TAG, "deviceService.getConfiguration");
                     int parameter = Integer.parseInt(payload.getString("parameter"));
-                    zwaveService.getConfiguration(tNodeid,0,parameter,0,0);
+                    zwaveService.getConfiguration(currentNodeId,0,parameter,0,0);
                     break;
 
                 case "setConfiguration":
@@ -556,9 +545,9 @@ public class MQTTBroker extends Service {
 
                 case "getMeter":
                     Log.i(LOG_TAG, "deviceService.getPower");
-                    zwaveService.getMeter(devType, tNodeid, 0);
-                    zwaveService.getMeter(devType, tNodeid, 2);
-                    zwaveService.getMeter(devType, tNodeid, 5);
+                    zwaveService.getMeter(devType, currentNodeId, 0);
+                    zwaveService.getMeter(devType, currentNodeId, 2);
+                    zwaveService.getMeter(devType, currentNodeId, 5);
                     break;
 
                 case "getGroupInfo":
@@ -566,7 +555,7 @@ public class MQTTBroker extends Service {
                     int EndpointId = Integer.parseInt(payload.getString("endpointId"));
                     Log.i(LOG_TAG, "deviceService.getGroupInfo max="+maxGroupId+" | endpoint="+EndpointId);
 
-                    zwaveService.getGroupInfo(devType, tNodeid);
+                    zwaveService.getGroupInfo(devType, currentNodeId);
                     break;
 
                 case "addEndpointsToGroup":
@@ -582,7 +571,7 @@ public class MQTTBroker extends Service {
                         JSONObject json = ja.getJSONObject(j);
                         arrList.add(Integer.valueOf(json.getString("controlNodeId").toString()));
                     }
-                    zwaveService.addEndpointsToGroup(devType,tNodeid,GroupId,Utils.convertIntegers(arrList),EndpointId);
+                    zwaveService.addEndpointsToGroup(devType,currentNodeId,GroupId,Utils.convertIntegers(arrList),EndpointId);
                     break;
 
                 case "removeEndpointsFromGroup":
@@ -599,30 +588,30 @@ public class MQTTBroker extends Service {
                         arrList.add(Integer.valueOf(json.getString("controlNodeId").toString()));
                     }
 
-                    zwaveService.removeEndpointsFromGroup(devType,tNodeid,GroupId,Utils.convertIntegers(arrList),EndpointId);
+                    zwaveService.removeEndpointsFromGroup(devType,currentNodeId,GroupId,Utils.convertIntegers(arrList),EndpointId);
                     break;
 
                 case "getMaxSupportedGroups":
                     Log.i(LOG_TAG, "deviceService.getMaxSupportedGroups");
                     EndpointId = Integer.parseInt(payload.getString("endpointId"));
-                    zwaveService.getMaxSupportedGroups(tNodeid,EndpointId);
+                    zwaveService.getMaxSupportedGroups(currentNodeId,EndpointId);
                     break;
 
                 case "setScheduleActive":
                     String active = payload.getString("active");
                     Log.i(LOG_TAG, "deviceService.setScheduleActive "+active);
-                    zwaveService.setScheduleActive(devType,tNodeid,active);
+                    zwaveService.setScheduleActive(devType,currentNodeId,active);
                     break;
 
                 case "getScheduleList":
                     Log.i(LOG_TAG, "deviceService.getScheduleList");
-                    zwaveService.getScheduleList(devType,tNodeid);
+                    zwaveService.getScheduleList(devType,currentNodeId);
                     break;
 
                 case "removeSchedule":
                     String Day = payload.getString("dayOfWeek");
                     Log.i(LOG_TAG, "deviceService.removeSchedule " +Day);
-                    zwaveService.removeSchedule(devType,tNodeid,Day);
+                    zwaveService.removeSchedule(devType,currentNodeId,Day);
                     break;
 
                 case "setSchedule":
@@ -632,7 +621,7 @@ public class MQTTBroker extends Service {
                     String startTime = payload.getString("StartTime");
                     String endTime = payload.getString("EndTime");
                     Log.i(LOG_TAG, "deviceService.setSchedule " +Day);
-                    zwaveService.setSchedule(devType,tNodeid,Day,startTime,endTime,Integer.valueOf(variableValue),active);
+                    zwaveService.setSchedule(devType,currentNodeId,Day,startTime,endTime,Integer.valueOf(variableValue),active);
                     break;
 
                 case "getFavoriteList": //public channel
@@ -772,13 +761,13 @@ public class MQTTBroker extends Service {
 
                 case "getBattery":
                     Log.i(LOG_TAG, "deviceService.getBattery");
-                    zwaveService.getDeviceBattery(devType,tNodeid);
+                    zwaveService.getDeviceBattery(devType,currentNodeId);
                     break;
 
                 case "getSensorMultilevel":
                     Log.i(LOG_TAG, "deviceService.getSensorMultilevel");
                     try {
-                        zwaveService.getSensorMultiLevel(devType,tNodeid);
+                        zwaveService.getSensorMultiLevel(devType,currentNodeId);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
@@ -786,48 +775,48 @@ public class MQTTBroker extends Service {
 
                 case "getSupportSwitchType":
                     Log.i(LOG_TAG, "deviceService.getSupportSwitchType");
-                    zwaveService.getSupportedSwitchType(tNodeid);
+                    zwaveService.getSupportedSwitchType(currentNodeId);
                     break;
 
                 case "startStopSwitchLevelChange":
                     Log.i(LOG_TAG, "deviceService.startStopSwitchLevelChange");
-                    zwaveService.startStopSwitchLevelChange(tNodeid,99,2,1,1,50);
+                    zwaveService.startStopSwitchLevelChange(currentNodeId,99,2,1,1,50);
                     break;
 
                 case "getPowerLevel":
                     Log.i(LOG_TAG, "deviceService.getPowerLevel");
-                    zwaveService.getPowerLevel(tNodeid);
+                    zwaveService.getPowerLevel(currentNodeId);
                     break;
 
-                case "switchAllOn":
-                    Log.i(LOG_TAG, "deviceService.switchAllOn");
-                    zwaveService.setSwitchAllOn(devType,tNodeid);
+                case "setSwitchAllOn":
+                    Log.i(LOG_TAG, "deviceService.setSwitchAllOn");
+                    zwaveService.setSwitchAllOn(devType,currentNodeId);
                     break;
 
-                case "switchAllOff":
-                    Log.i(LOG_TAG, "deviceService.switchAllOff");
-                    zwaveService.setSwitchAllOff(devType,tNodeid);
+                case "setSwitchAllOff":
+                    Log.i(LOG_TAG, "deviceService.setSwitchAllOff");
+                    zwaveService.setSwitchAllOff(devType,currentNodeId);
                     break;
 
                 case "getSensorBinary":
                     Log.i(LOG_TAG, "deviceService.getSensorBinary");
-                    //zwaveService.getSensorBasic(tNodeid,sensorType); no sensorType
+                    //zwaveService.getSensorBasic(currentNodeId,sensorType); no sensorType
                     break;
 
                 case "getSensorBinarySupportedSensor":
                     Log.i(LOG_TAG, "deviceService.getSensorBinarySupportedSensor");
-                    zwaveService.GetSensorBinarySupportedSensor(tNodeid);
+                    zwaveService.GetSensorBinarySupportedSensor(currentNodeId);
                     break;
 
                 case "getMeterSupported":
                     Log.i(LOG_TAG, "deviceService.getMeterSupported");
-                    zwaveService.getMeterSupported(tNodeid);
+                    zwaveService.getMeterSupported(currentNodeId);
                     break;
 
                 case "getSpecificGroup":
                     Log.i(LOG_TAG, "deviceService.getSpecificGroup");
                     EndpointId = Integer.parseInt(payload.getString("endpointId"));
-                    zwaveService.getSpecificGroup(tNodeid,EndpointId);
+                    zwaveService.getSpecificGroup(currentNodeId,EndpointId);
                     break;
 
                 case "getNotification":
@@ -837,12 +826,18 @@ public class MQTTBroker extends Service {
 
                 case "getSupportedNotification":
                     Log.i(LOG_TAG, "deviceService.getSupportedNotification");
-                    zwaveService.getSupportedNotification(tNodeid);
+                    zwaveService.getSupportedNotification(currentNodeId);
                     break;
 
                 case "getSupportedEventNotification":
                     Log.i(LOG_TAG, "deviceService.getSupportedEventNotification");
-                    // zwaveService.getSupportedEventNotification(tNodeid,typeDef); no typeDef
+                    // zwaveService.getSupportedEventNotification(currentNodeId,typeDef); no typeDef
+                    break;
+
+                case "getSpecifyDeviceInfo":
+                    Log.i(LOG_TAG, "deviceService.getSpecifyDeviceInfo");
+                    Log.i(LOG_TAG, "currentNodeId: "+currentNodeId + "GINO!!!!!");
+                    zwaveService.getSpecifyDeviceInfo(currentNodeId);
                     break;
 
                 default:
@@ -1054,11 +1049,17 @@ public class MQTTBroker extends Service {
     public ZwaveControlService.zwaveControlReq_CallBack ZWCtlReq = new ZwaveControlService.zwaveControlReq_CallBack() {
         @Override
         public void zwaveControlReqResultCallBack(String className, String result) {
+            Log.d(LOG_TAG,"class : "+ className + " result: "+result);
             JSONObject obj = new JSONObject();
             JSONObject message = new JSONObject();
 
-            if (className.equals("Grant Keys Msg")) {
-                grantKey(className, result, message);
+            if (result.contains("Grant Keys Msg")) {
+                grantKey(result);
+                //sleep();
+
+            } else if (result.contains("PIN Requested Msg")) {
+                //sleep();
+
             }
         }
     };
@@ -1073,29 +1074,27 @@ public class MQTTBroker extends Service {
             if (className.equals("addDevice") || className.equals("removeDevice")) {
                 addRemoveDevice(className,result,message);
             } else if (className.equals("getDeviceInfo")) {
-                getDeviceInfo(result);
+                getDeviceInfo(result,message);
             } else if (className.equals("removeFailedDevice") ||
                     className.equals("replaceFailedDevice") || className.equals("stopAddDevice") ||
                     className.equals("stopRemoveDevice")) {
 
-                mTCPServer.sendMessage(Const.TCPClientPort, result);
+                mTCPServer.sendMessage(Const.TCPClientPort, result); //TCP format
                 Const.TCPClientPort = 0;
 
             } else if (className.equals("reNameDevice")) {
                 reNameDevice(result);
-            } else if (className.equals("reNameDevice")) {
-                reNameDevice(result);
-            } else if (className.equals("Grant Keys Msg")) {
-                grantKey(className, result, message);
             } else if (result.contains("Network Role")) {
                 String[] roleTmp = result.split(",");
                 networkRole(roleTmp[3], message);
                 Log.i(LOG_TAG,"Network Role = "+roleTmp[3]);
-            } else {
+            }
+            else {
+
                 try {
                     Log.i(LOG_TAG,"result = "+result);
                     message = new JSONObject(result);
-                    if (result.contains("devType") && result.contains("NodeId")) {
+                    if (result.contains("NodeId")) {
                         String devType = message.getString("devType");
                         String NodeId = message.getString("NodeId");
                         publishMessage(Const.PublicTopicName + devType + NodeId, result);
@@ -1116,6 +1115,17 @@ public class MQTTBroker extends Service {
         }
     };
 
+    private void getAllProvisionListEntry(String result, JSONObject message) {
+        try {
+            message.put("Interface", "getAllProvision2ListEntry");
+            message.put("Result", result + " gino");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        publishMessage(Const.PublicTopicName, message.toString());
+    }
+
     private void reNameDevice(String result) {
         try {
             result = result.substring(13);
@@ -1130,7 +1140,7 @@ public class MQTTBroker extends Service {
         }
     }
 
-    private void getDeviceInfo(String result) {
+    private void getDeviceInfo(String result, JSONObject message) {
         Log.i(LOG_TAG, "getDeviceInfo");
         ArrayList<String> tmpLine = Utils.searchString(result, "Node id");
 
@@ -1145,10 +1155,43 @@ public class MQTTBroker extends Service {
             Log.i(LOG_TAG, " ===== isZwaveInitFinish  = true ====");
             DeviceInfo.isZwaveInitFinish = true;
         }
+
+        String[] resultSplit = result.split(",");
+        for(int i = 10; i < resultSplit.length; i++) { //i =10 no display security Status of Controller
+            if (resultSplit[i].contains("Node security inclusion status")) {
+                if (resultSplit[i].contains("S2")) {
+                    try {
+                        message.put("Interface", "Node security inclusion status");
+                        message.put("Result", "Device is S2 security");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                } else if (resultSplit[i].contains("Normal")) {
+                    try {
+                        message.put("Interface", "Node security inclusion status");
+                        message.put("Result", "Device is none security");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                } else if (resultSplit[i].contains("S0")) {
+                    try {
+                        message.put("Interface", "Node security inclusion status");
+                        message.put("Result", "Device is S0 security");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            }
+        }
     }
 
     private void addRemoveDevice(String className, String result, JSONObject message) {
-        mTCPServer.sendMessage(Const.TCPClientPort, result);
+
+        mTCPServer.sendMessage(Const.TCPClientPort, result); //TCP format
+        Log.i(LOG_TAG,result);
 
         if (result.contains("addDevice:") || result.contains("removeDevice:")) {
             String[] tokens = result.split(":");
@@ -1171,7 +1214,7 @@ public class MQTTBroker extends Service {
                         e.printStackTrace();
                     }
 
-                    subscribeToTopic(Const.PublicTopicName + devType + tNodeId);
+                    subscribeToTopic(Const.PublicTopicName  + tNodeId);
                     publishMessage(Const.PublicTopicName, message.toString());
                 } else {
                     try {
@@ -1192,9 +1235,11 @@ public class MQTTBroker extends Service {
                 Const.TCPClientPort = 0;
             }
         }
+
+
     }
 
-    private void grantKey(String className, String result, JSONObject message) {
+    private void grantKey(String result) {
 
         if (result.contains("Grant Keys Msg")) {
             Log.d(LOG_TAG,result);
@@ -1202,24 +1247,42 @@ public class MQTTBroker extends Service {
             try {
                 jsonObject = new JSONObject(result);
                 String keyValue = jsonObject.optString("Keys");
-                mTCPServer.sendMessage(Const.TCPClientPort, "Grant Keys:"+keyValue);
-                Log.d(LOG_TAG,keyValue + " gino!!!!!!!!!!!!!!!!!");
-                try {
-                    message.put("Interface", "Grant Keys");
-                    message.put("keyValue", keyValue);
-                    message.put("Result", "true");
-                    //  obj.put("reported", message);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-                subscribeToTopic(Const.PublicTopicName + keyValue);
-                publishMessage(Const.PublicTopicName, message.toString());
+                mTCPServer.sendMessage(Const.TCPClientPort, "GrantKeys:"+keyValue); //TCP format
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
+            Timer timer = new Timer(true);
+            timer.schedule(new mTimerTask(), 5000);
+
             Const.TCPClientPort = 0;
+
+        }
+    }
+
+    public Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case 2001:
+                    Log.d(LOG_TAG,"grant: start---------------------");
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    DeviceInfo.reqKeyFlag = true;
+                    Log.d(LOG_TAG,"grant: end---------------------");
+                    break;
+            }
+        }
+    };
+
+    class mTimerTask extends TimerTask {
+        public void run() {
+            Message message = new Message();
+            message.what = 2001;
+            mHandler.sendMessage(message);
         }
     }
 
@@ -1235,23 +1298,21 @@ public class MQTTBroker extends Service {
             networkRole = "Include role";
         }
 
-        mTCPServer.sendMessage(Const.TCPClientPort, "Network Role:"+ networkRole);
-        try {
-                    message.put("Interface", "Network Role");
-                    message.put("keyValue", networkRole);
-                    message.put("Result", "true");
-                    //  obj.put("reported", message);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        subscribeToTopic(Const.PublicTopicName + networkRole);
-        publishMessage(Const.PublicTopicName, message.toString());
+        mTCPServer.sendMessage(Const.TCPClientPort, "Network Role:"+ networkRole); //TCP format
+        Log.d(LOG_TAG,"Network Role:"+ networkRole + " gino!!!!!!!!!!");
 
         Const.TCPClientPort = 0;
 
     }
 
+    private void sleep() {
+        Log.i(LOG_TAG,"------------------------sleep---------------------------------");
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }
 
 

@@ -1,5 +1,7 @@
 package com.askey.firefly.zwave.control.jni;
 
+import android.util.Log;
+
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
 import com.askey.firefly.zwave.control.application.ZwaveProvisionList;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
@@ -35,7 +37,14 @@ public class ZwaveControlHelper {
     public static int ZwaveControlReq_CallBack(byte[] result, int len){
         ZwaveControlService.getInstance().zwaveControlReq_CallBack(result,len);
         android.util.Log.d("ZwaveControlHelper", "ZwaveControlReq_CallBack " + new String(result));
-        return DeviceInfo.grant;
+        while (!DeviceInfo.reqKeyFlag) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return DeviceInfo.reqKey;
     }
 
     public native static int CreateZwController();
@@ -47,10 +56,11 @@ public class ZwaveControlHelper {
     ** zwave controller jni interface
     ** controller/device control
     **/
-    public native static int ZwController_AddDevice(byte[] dsk, int dsklen);
+    public native static int ZwController_AddDevice();
     public native static int ZwController_RemoveDevice();
     public native static int ZwController_GetDeviceInfo();
     public native static int ZwController_GetDeviceList();
+    public native static int ZwController_getSpecifyDeviceInfo(int deviceId);
     public native static int ZwController_RemoveFailedDevice(int deviceId);
     public native static int ZwController_ReplaceFailedDevice(int deviceId, byte[] dsk, int dsklen);
     public native static int ZwController_SetDefault();

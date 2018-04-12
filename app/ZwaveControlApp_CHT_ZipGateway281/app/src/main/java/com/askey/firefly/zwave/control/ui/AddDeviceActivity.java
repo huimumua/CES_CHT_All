@@ -116,7 +116,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
 
-                zwaveService.addDevice("Zwave", DeviceInfo.tempDsk);
+                zwaveService.addDevice("Zwave");
             }
         }
 
@@ -185,7 +185,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
             @Override
             public void onClick(View view) {
                 //tap retry button
-                zwaveService.addDevice("Zwave", DeviceInfo.tempDsk);
+                zwaveService.addDevice("Zwave");
             }
         });
 
@@ -331,7 +331,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
             //tap retry button
             proBar.setIndeterminate(true);
 
-            zwaveService.addDevice("Zwave", DeviceInfo.tempDsk);
+            zwaveService.addDevice("Zwave");
             alertDialog.dismiss();
             }
         });

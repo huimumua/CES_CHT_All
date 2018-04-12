@@ -23,11 +23,12 @@ public class DeviceInfo {
     public static List<zwScenceMember> roomList = new ArrayList<>();
     public static String[] deviceType = {"BULB", "DIMMER", "PLUG", "SENSOR", "CONTROL", "OTHER"};
     public static String[] allRoomName = {"My Home","Living Room","Bedroom"};
-    public static String pinCode = "00000\0";
-    public static byte[] tempDsk = pinCode.getBytes();
     public static String dskNumber = null;
-    public static int grant;
+    public static int reqKey;
+    public static boolean reqKeyFlag = false;
     public static boolean grantFlag = false;
+    public static String devType = "Zwave";
+
 
 
 }

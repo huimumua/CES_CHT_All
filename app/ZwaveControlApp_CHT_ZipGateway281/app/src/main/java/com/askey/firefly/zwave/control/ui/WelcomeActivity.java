@@ -77,7 +77,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     private TextView txDsk,txAllMsg;
     private EditText editDsk,editSetApiValue;
     private CheckBox cb1,cb2,cb3;
-    private String devType = "Zwave";
     private String inputDsk;
     private int selectNode;
     private String selectProvisionList;
@@ -267,6 +266,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     hideProgressDialog();
                     showZwaveControlTimeOutDialog("Zwave OpenController Timeout");
                     break;
+
             }
         }
     };
@@ -281,27 +281,27 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     //Log.i(LOG_TAG, "call zwaveService.addDevice()");
                     inputDsk = editDsk.getText().toString() + "\0";
                     byte[] dskNumber = inputDsk.getBytes();
-                    zwaveService.addDevice(devType, dskNumber);
+                    zwaveService.addDevice(DeviceInfo.devType);
                 } else if (editDsk.length() != 0 && editDsk.length() == 5) {
                     //Log.i(LOG_TAG, "call zwaveService.addDevice()");
                     inputDsk = editDsk.getText().toString() + "\0";
                     byte[] dskNumber = inputDsk.getBytes();
-                    zwaveService.addDevice(devType, dskNumber);
+                    zwaveService.addDevice(DeviceInfo.devType);
                 } else if (editDsk.length() == 0) {
-                    zwaveService.addDevice(devType, DeviceInfo.tempDsk);
+                    zwaveService.addDevice(DeviceInfo.devType);
                 } else
                     Toast.makeText(this, "格式錯誤 !", Toast.LENGTH_SHORT).show();
                 /*
                 inputDsk = "11394" + "\0";
                 byte[] dskNumber = inputDsk.getBytes();
-                zwaveService.addDevice(devType, dskNumber);
+                zwaveService.addDevice(DeviceInfo.devType, dskNumber);
                 */
                 getDeviceInfoFlag = 1;
                 break;
 
             case R.id.btnRemove:
                 Log.i(LOG_TAG, "call zwaveService.removeDevice()");
-                zwaveService.removeDevice(devType,0);
+                zwaveService.removeDevice(DeviceInfo.devType,0);
                 break;
 
             case R.id.btnLearn:
@@ -318,10 +318,10 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_rmAllProvisionListEntry")) {
                     zwaveService.rmAllProvisionListEntry();
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_battery_get")) {
-                    zwaveService.getDeviceBattery(devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
+                    zwaveService.getDeviceBattery(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_sensor_multilevel_get")) {
                     try {
-                        zwaveService.getSensorMultiLevel(devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
+                        zwaveService.getSensorMultiLevel(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
@@ -332,13 +332,13 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     getDeviceInfoFlag = 3;
                     zwaveService.getDeviceInfo();
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_basic_get")) {
-                    zwaveService.getBasic(devType, selectNode);
+                    zwaveService.getBasic(DeviceInfo.devType, selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_basic_set")) {
-                    zwaveService.setBasic(devType, selectNode, Integer.valueOf(editSetApiValue.getText().toString()));
+                    zwaveService.setBasic(DeviceInfo.devType, selectNode, Integer.valueOf(editSetApiValue.getText().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_multilevel_get")) {
-                    zwaveService.getSwitchMultiLevel(devType, selectNode);
+                    zwaveService.getSwitchMultiLevel(DeviceInfo.devType, selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_multilevel_set")) {
-                    zwaveService.setSwitchMultiLevel(devType, selectNode, Integer.valueOf(editSetApiValue.getText().toString()), 1);
+                    zwaveService.setSwitchMultiLevel(DeviceInfo.devType, selectNode, Integer.valueOf(editSetApiValue.getText().toString()), 1);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_get_support_switch_type")) {
                     zwaveService.getSupportedSwitchType(selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_start_stop_switchlevel_change")) {
@@ -350,9 +350,9 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_powerLevel_get")) {
                     zwaveService.getPowerLevel(selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_on")) {
-                    zwaveService.setSwitchAllOn(devType, selectNode);
+                    zwaveService.setSwitchAllOn(DeviceInfo.devType, selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_off")) {
-                    zwaveService.setSwitchAllOff(devType, selectNode);
+                    zwaveService.setSwitchAllOff(DeviceInfo.devType, selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_set")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_get")) {
@@ -370,7 +370,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_sensor_binary_supported_sensor_get")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_meter_get")) {
-                    zwaveService.getMeter(devType, selectNode, 10);
+                    zwaveService.getMeter(DeviceInfo.devType, selectNode, 10);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_meter_supported_get")) {
                     zwaveService.getMeterSupported(selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_meter_reset")) {
@@ -420,12 +420,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_language_set")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_color_get")) {
-                    zwaveService.getLampColor(devType, selectNode);
+                    zwaveService.getLampColor(DeviceInfo.devType, selectNode);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_color_supported_get")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_color_set")) {
                     String[] temp = editSetApiValue.getText().toString().split(",");
-                    zwaveService.setLampColor(devType, selectNode, Integer.valueOf(temp[0]), Integer.valueOf(temp[1]), Integer.valueOf(temp[2]));
+                    zwaveService.setLampColor(DeviceInfo.devType, selectNode, Integer.valueOf(temp[0]), Integer.valueOf(temp[1]), Integer.valueOf(temp[2]));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_start_stop_color_levelchange")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_barrier_operator_set")) {
@@ -470,6 +470,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_multi_cmd_encap")) {
                     //zwaveService.
+                } else if (spApiList.getSelectedItem().toString().contains("ZwController_getSpecifyDeviceInfo")) {
+                    zwaveService.getSpecifyDeviceInfo(selectNode);
                 }
                 break;
             case R.id.btnaddProList:
@@ -538,7 +540,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         inputDsk =  selectProvisionList + "\0";
         //Log.d(LOG_TAG,inputDsk);
         byte[] dskNumber = inputDsk.getBytes();
-        zwaveService.getProvisionListEntry(devType,dskNumber);
+        zwaveService.getProvisionListEntry(DeviceInfo.devType,dskNumber);
     }
 
     private void getProvisionNode(String result) {
@@ -571,8 +573,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         inputDsk =  selectProvisionList + "\0";
         Log.d(LOG_TAG,inputDsk);
         byte[] dskNumber = inputDsk.getBytes();
-        zwaveService.getProvisionListEntry(devType,dskNumber);
-        zwaveService.rmProvisionListEntry(devType,dskNumber);
+        zwaveService.getProvisionListEntry(DeviceInfo.devType,dskNumber);
+        zwaveService.rmProvisionListEntry(DeviceInfo.devType,dskNumber);
         provisionListArr.remove(selectProvisionList);
         ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
                 android.R.layout.simple_spinner_dropdown_item, converProvisionList(provisionListArr));
@@ -589,7 +591,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             Toast.makeText(this,"already Provision List", Toast.LENGTH_SHORT).show();
         } else {
             provisionListArr.add(editDsk.getText().toString());
-            zwaveService.addProvisionListEntry(devType,dskNumber,InclusionState);
+            zwaveService.addProvisionListEntry(DeviceInfo.devType,dskNumber,InclusionState);
             Toast.makeText(this, "add Provision List", Toast.LENGTH_SHORT).show();
         }
         ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
@@ -734,7 +736,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     } else {
                         if( DeviceInfo.dskNumber != null) {
                             provisionListArr.add(DeviceInfo.dskNumber);
-                            //zwaveService.addProvisionListEntry(devType, dskNumber, InclusionState);
+                            //zwaveService.addProvisionListEntry(DeviceInfo.devType, dskNumber, InclusionState);
                             Log.d(LOG_TAG, "add Provision List");
                             DeviceInfo.dskNumber = null;
                         }
@@ -763,7 +765,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         provisionListArr.remove(DeviceInfo.dskNumber);
                     } else {
                         if( DeviceInfo.dskNumber != null) {
-                            //zwaveService.addProvisionListEntry(devType, dskNumber, InclusionState);
+                            //zwaveService.addProvisionListEntry(DeviceInfo.devType, dskNumber, InclusionState);
                             Log.d(LOG_TAG, "already remove Provision List");
                             DeviceInfo.dskNumber = null;
                         }
@@ -810,25 +812,23 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             public void zwaveControlReqResultCallBack(String className, String result) {
                 Log.i(LOG_TAG, "class name = [" + className + "]| result = " + result);
 
-                if (className.equals("Grant Keys Msg")) {
+                if (result.contains("Grant Keys Msg")) {
 
                     //這裡 HOLD 住!!!!!!!
 
-                    new Thread(setGrantKey).start();
-
-                    try {
-                        while (!DeviceInfo.grantFlag) {
-                            Thread.sleep(100);
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                    //new Thread(setGrantKey).start();
+/*
+                    while (!DeviceInfo.grantFlag) {
+                        Log.i(LOG_TAG,"grantFlag");
                     }
-
+*/
                     DeviceInfo.grantFlag = false;
-                    Log.i(LOG_TAG,String.valueOf(DeviceInfo.grant)+" 2");
-                    //setGrantKey(result);
-                } else if (className.equals("Client Side Au Msg")) {
-                    Log.i(LOG_TAG,"Client Side Au Msg");
+
+                } else if (result.contains("PIN Requested Msg")) {
+                    //DeviceInfo.reqKey = 11394;
+
+                } else if (result.contains("Client Side Au Msg")) {
+                    //DeviceInfo.reqKey = 0;
                 }
             }
         };
@@ -838,20 +838,18 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         @Override
         public void run() {
             //showAddDialog();
-            Log.d(LOG_TAG, "showAddDialog gino 2");
-
-
+            DeviceInfo.reqKey = 131;
+            /*
             try {
-                //while (!DeviceInfo.grantKeyFlag) {
-                    Thread.sleep(10000);
-                //}
+                while (!DeviceInfo.grantKeyFlag) {
+                    Thread.sleep(100);
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            DeviceInfo.grant = Integer.valueOf(editSetApiValue.getText().toString());
-            Log.i(LOG_TAG,String.valueOf(DeviceInfo.grant)+" 1");
+
             DeviceInfo.grantFlag = true;
-            Log.d(LOG_TAG,"grantFlag");
+            */
 
         }
     };

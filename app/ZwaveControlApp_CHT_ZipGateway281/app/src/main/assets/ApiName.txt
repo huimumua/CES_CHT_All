@@ -1,4 +1,5 @@
 ,
+ZwController_getSpecifyDeviceInfo,
 ZwController_startNetworkHealthCheck,
 ZwController_getProvisionListEntry,
 ZwController_getAllProvisionListEntry,

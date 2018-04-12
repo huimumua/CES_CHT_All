@@ -229,15 +229,9 @@ static int destroy_controller(JNIEnv *env, jclass object)
     return 0;
 }
 
-static int controller_adddevice(JNIEnv *env, jclass object, jbyteArray dsk, jint dsklen)
+static int controller_adddevice(JNIEnv *env, jclass object)
 {
-    char array[200];
-
-    env->GetByteArrayRegion(dsk, 0, dsklen, (jbyte*)array);
-
-    int result = zwcontrol_add_node(&appl_ctx, array, dsklen);
-
-    return result;
+    return zwcontrol_add_node(&appl_ctx);
 }
 
 static int controller_removedevice(JNIEnv *env, jclass object)
@@ -253,6 +247,11 @@ static int controller_getDeviceList(JNIEnv *env, jclass object)
 static int controller_getDeviceInfo(JNIEnv *env, jclass object)
 {
     return zwcontrol_get_node_info(&appl_ctx);
+}
+
+static int controller_getSpecifyDeviceInfo(JNIEnv *env, jclass object, jint nodeId)
+{
+    return zwcontrol_get_specify_node_info(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_removeFailedDevice(JNIEnv *env, jclass object, jint nodeId)
@@ -906,10 +905,11 @@ static const JNINativeMethod gMethods[] = {
         {"OpenZwController",       "(Ljava/lang/String;Ljava/lang/String;[B)I", (void *)open_controller},
         {"CloseZwController",    "()I", (void *)close_controller},
         {"DestoryZwController",    "()I", (void *)destroy_controller},
-        {"ZwController_AddDevice", "([BI)I", (void*)controller_adddevice},
+        {"ZwController_AddDevice", "()I", (void*)controller_adddevice},
         {"ZwController_RemoveDevice", "()I", (void *)controller_removedevice},
         {"ZwController_GetDeviceList", "()I", (void *)controller_getDeviceList},
         {"ZwController_GetDeviceInfo", "()I", (void *)controller_getDeviceInfo},
+        {"ZwController_getSpecifyDeviceInfo", "(I)I", (void *)controller_getSpecifyDeviceInfo},
         {"ZwController_RemoveFailedDevice",    "(I)I", (void *)controller_removeFailedDevice},
         {"ZwController_ReplaceFailedDevice",    "(I[BI)I", (void *)controller_replaceFailedDevice},
         {"ZwController_SetDefault", "()I", (void*)controller_setDefault},

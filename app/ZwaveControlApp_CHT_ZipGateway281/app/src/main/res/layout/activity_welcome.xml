@@ -47,16 +47,13 @@
 
         <TextView
             android:id="@+id/txAllMsg"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:textSize="24sp" />
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="vertical"
+        android:singleLine="false"
+        android:maxLines="15"
+        android:textColor="#FF0000" />
 
-        <TextView
-            android:id="@+id/txMsg"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:textSize="24sp" />
 
         <TextView
             android:id="@+id/txDsk"
@@ -197,14 +194,6 @@
             android:text="確認" />
 
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/txApi"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.01"
-        android:textAlignment="center"
-        android:textSize="24sp" />
 
 
 </LinearLayout>
