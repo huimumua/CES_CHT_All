@@ -6086,6 +6086,8 @@ int  zwcontrol_powerLevel_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint32_t 
 
     int result = zwif_power_level_set(ifd, powerLvl, timeout);
 
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
     if(result < 0)
     {
         ALOGE("zwcontrol_powerLevel_set with error: %d",result);
