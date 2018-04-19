@@ -259,12 +259,9 @@ static int controller_removeFailedDevice(JNIEnv *env, jclass object, jint nodeId
     return zwcontrol_rm_failed_node(&appl_ctx, nodeId);
 }
 
-static int controller_replaceFailedDevice(JNIEnv *env, jclass object, jint nodeId, jbyteArray dsk, jint dsklen)
+static int controller_replaceFailedDevice(JNIEnv *env, jclass object, jint nodeId)
 {
-    char array[200];
-
-    env->GetByteArrayRegion(dsk, 0, dsklen, (jbyte*)array);
-    return zwcontrol_rp_failed_node(&appl_ctx, nodeId, array, dsklen);
+    return zwcontrol_rp_failed_node(&appl_ctx, nodeId);
 }
 
 static int controller_setDefault(JNIEnv *env, jclass object)
@@ -294,7 +291,7 @@ static int controller_getSensorMultiLevel(JNIEnv *env, jclass object, jint nodeI
 
 static int control_update_node(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_update_node(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int control_saveNodeInfo(JNIEnv *env, jclass object, jstring infoFile)
@@ -376,25 +373,30 @@ static int controller_getPowerLevel(JNIEnv *env, jclass object, jint nodeId)
     return zwcontrol_powerLevel_get(&appl_ctx, (uint32_t)nodeId);
 }
 
+static int controller_setPowerLevel(JNIEnv *env, jclass object, jint nodeId, jint powerLvl, jint timeout)
+{
+    return zwcontrol_powerLevel_set(&appl_ctx, (uint32_t)nodeId, (uint32_t)powerLvl, (uint32_t)timeout);
+}
+
 static int controller_setSwitchAllOn(JNIEnv *env, jclass object, jint nodeId)
 {
     return zwcontrol_switch_all_on(&appl_ctx, (uint32_t)nodeId);
 }
 
-static int controller_setSwitchAllOnBroadcast(JNIEnv *env, jclass object)
+/*static int controller_setSwitchAllOnBroadcast(JNIEnv *env, jclass object)
 {
     return zwcontrol_switch_all_on_broadcast(&appl_ctx);
-}
+}*/
 
 static int controller_setSwitchAllOff(JNIEnv *env, jclass object, jint nodeId)
 {
     return zwcontrol_switch_all_off(&appl_ctx,(uint32_t)nodeId);
 }
 
-static int controller_setSwitchAllOffBroadcast(JNIEnv *env, jclass object)
+/*static int controller_setSwitchAllOffBroadcast(JNIEnv *env, jclass object)
 {
     return zwcontrol_switch_all_off_broadcast(&appl_ctx);
-}
+}*/
 
 static int controller_setSwitchAll(JNIEnv *env, jclass object, jint nodeId, jint value)
 {
@@ -458,26 +460,27 @@ static int controller_setWakeUpInterval(JNIEnv *env, jclass object, jint nodeId,
 
 static int controller_getDoorLockOperation(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_door_lock_operation_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_setDoorLockOperation(JNIEnv *env, jclass object, jint nodeId, jint mode)
 {
-    return 0;
+    return zwcontrol_door_lock_operation_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)mode);
 }
 
 static int controller_getDoorLockConfiguration(JNIEnv *env, jclass object, jint nodeId)
 {
-    return 0;
+    return zwcontrol_door_lock_config_get(&appl_ctx, (uint32_t)nodeId);
 }
 
 static int controller_setDoorLockConfiguration(JNIEnv *env, jclass object, jint nodeId, jint type, jint out_sta,
                                                jint in_sta, jint tmout_min, jint tmout_sec)
 {
-    return 0;
+    return zwcontrol_door_lock_config_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)type, (uint8_t)out_sta,
+                                          (uint8_t)in_sta, (uint8_t)tmout_min, (uint8_t)tmout_sec);
 }
 
-static int controller_getUserCode(JNIEnv *env, jclass object, jint nodeId, jint user_id)
+/*static int controller_getUserCode(JNIEnv *env, jclass object, jint nodeId, jint user_id)
 {
     return 0;
 }
@@ -490,7 +493,7 @@ static int controller_setUserCode(JNIEnv *env, jclass object, jint nodeId, jint 
 static int controller_getUserCodeNumber(JNIEnv *env, jclass object, jint nodeId)
 {
     return 0;
-}
+}*/
 
 static int controller_getProtection(JNIEnv *env, jclass object, jint nodeId)
 {
@@ -537,7 +540,7 @@ static int controller_setProtectionTimeout(JNIEnv *env, jclass object, jint node
     return zwcontrol_protection_timeout_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)unit, (uint8_t)time);
 }
 
-static int controller_getDoorLockLoggingSupportedRecords(JNIEnv *env, jclass object, jint nodeId)
+/*static int controller_getDoorLockLoggingSupportedRecords(JNIEnv *env, jclass object, jint nodeId)
 {
     return 0;
 }
@@ -550,7 +553,7 @@ static int controller_getDoorLockLoggingRecords(JNIEnv *env, jclass object, jint
 static int controller_getLanguage(JNIEnv *env, jclass object, jint nodeId)
 {
     return 0;
-}
+}*/
 
 static int controller_getSwitchColor(JNIEnv *env, jclass object, jint nodeId, jint compId)
 {
@@ -574,7 +577,7 @@ static int controller_startStopSwitchColorLevelChange(JNIEnv *env, jclass object
                                                   (uint8_t)compId, (uint8_t)startLvlVal);
 }
 
-static int controller_setBarrierOperator(JNIEnv *env, jclass object, jint nodeId, jint value)
+/*static int controller_setBarrierOperator(JNIEnv *env, jclass object, jint nodeId, jint value)
 {
     return 0;
 }
@@ -602,7 +605,7 @@ static int controller_getSupportedBarrierOperatorSignal(JNIEnv *env, jclass obje
 static int controller_getBasicTariffInfo(JNIEnv *env, jclass object, jint nodeId)
 {
     return 0;
-}
+}*/
 
 static int controller_getGroupInfo(JNIEnv *env, jclass object, jint nodeId, jint groupId, jint endpointId)
 {
@@ -652,9 +655,9 @@ static int controller_setNotification(JNIEnv *env, jclass object, jint nodeId, j
     return zwcontrol_notification_set(&appl_ctx, (uint32_t)nodeId, (uint8_t)type, (uint8_t)status);
 }
 
-static int controller_getNotification(JNIEnv *env, jclass object, jint nodeId, jint alarmType, jint notifType, jint status)
+static int controller_getNotification(JNIEnv *env, jclass object, jint nodeId, jint alarmType, jint notifType, jint evt)
 {
-    return zwcontrol_notification_get(&appl_ctx,(uint32_t)nodeId, (uint8_t)alarmType, (uint8_t)notifType, (uint8_t)status);
+    return zwcontrol_notification_get(&appl_ctx,(uint32_t)nodeId, (uint8_t)alarmType, (uint8_t)notifType, (uint8_t)evt);
 }
 
 static int controller_getSupportedNotification(JNIEnv *env, jclass object, jint nodeId)
@@ -724,7 +727,7 @@ static int controller_cancelAllCommandQueue(JNIEnv *env, jclass object, jint nod
     return zwcontrol_command_queue_cancel(&appl_ctx, (uint32_t)nodeId);
 }
 
-static int controller_getControllerNetworkRssiInfo(JNIEnv *env, jclass object)
+/*static int controller_getControllerNetworkRssiInfo(JNIEnv *env, jclass object)
 {
     return zwcontrol_get_network_rssi_info(&appl_ctx, 0x01); // controller node id 1
 }
@@ -732,7 +735,7 @@ static int controller_getControllerNetworkRssiInfo(JNIEnv *env, jclass object)
 static int controller_getNodeNetworkRssiInfo(JNIEnv *env, jclass object, jint nodeId)
 {
     return zwcontrol_get_network_rssi_info(&appl_ctx, (uint32_t)nodeId);
-}
+}*/
 
 static int controller_startNetworkHealthCheck(JNIEnv *env, jclass object)
 {
@@ -900,6 +903,11 @@ static int controller_rmAllProvisionListEntry(JNIEnv *env, jclass object)
     return zwcontrol_rm_all_provision_list_entry(&appl_ctx); 
 }
 
+static int controller_checkNodeIsFailed(JNIEnv *env, jclass object, jint nodeId)
+{
+    return zwcontrol_check_node_isFailed(&appl_ctx, (uint32_t)nodeId);
+}
+
 static const JNINativeMethod gMethods[] = {
         {"CreateZwController",     "()I", (void *)create_controller},
         {"OpenZwController",       "(Ljava/lang/String;Ljava/lang/String;[B)I", (void *)open_controller},
@@ -911,7 +919,7 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_GetDeviceInfo", "()I", (void *)controller_getDeviceInfo},
         {"ZwController_getSpecifyDeviceInfo", "(I)I", (void *)controller_getSpecifyDeviceInfo},
         {"ZwController_RemoveFailedDevice",    "(I)I", (void *)controller_removeFailedDevice},
-        {"ZwController_ReplaceFailedDevice",    "(I[BI)I", (void *)controller_replaceFailedDevice},
+        {"ZwController_ReplaceFailedDevice",    "(I)I", (void *)controller_replaceFailedDevice},
         {"ZwController_SetDefault", "()I", (void*)controller_setDefault},
         {"ZwController_StopAddDevice", "()I", (void*)controller_stopAddDevice},
         {"ZwController_StopRemoveDevice", "()I", (void*)controller_stopRemoveDevice},
@@ -929,10 +937,11 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_SetConfigurationBulk", "(IIIIII[I)I", (void*)controller_setConfigurationBulk},
         {"ZwController_startStopSwitchLevelChange", "(IIIIII)I", (void*)controller_startStopSwitchLevelChange},
         {"ZwController_GetPowerLevel", "(I)I", (void*)controller_getPowerLevel},
+        {"ZwController_SetPowerLevel", "(III)I", (void*)controller_setPowerLevel},
         {"ZwController_SetSwitchAllOn", "(I)I", (void*)controller_setSwitchAllOn},
         {"ZwController_SetSwitchAllOff", "(I)I", (void*)controller_setSwitchAllOff},
-        {"ZwController_SetSwitchAllOnBroadcast", "()I", (void*)controller_setSwitchAllOnBroadcast},
-        {"ZwController_SetSwitchAllOffBroadcast", "()I", (void*)controller_setSwitchAllOffBroadcast},
+        //{"ZwController_SetSwitchAllOnBroadcast", "()I", (void*)controller_setSwitchAllOnBroadcast},
+        //{"ZwController_SetSwitchAllOffBroadcast", "()I", (void*)controller_setSwitchAllOffBroadcast},
         {"ZwController_SetSwitchAll", "(II)I", (void*)controller_setSwitchAll},
         {"ZwController_GetSwitchAll", "(I)I", (void*)controller_getSwitchAll},
         {"ZwController_StartLearnMode", "()I", (void*)controller_startLearnMode},
@@ -949,9 +958,9 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_setDoorLockOperation", "(II)I", (void*)controller_setDoorLockOperation},
         {"ZwController_getDoorLockConfiguration", "(I)I", (void*)controller_getDoorLockConfiguration},
         {"ZwController_setDoorLockConfiguration", "(IIIIII)I", (void*)controller_setDoorLockConfiguration},
-        {"ZwController_getUserCode", "(II)I", (void*)controller_getUserCode},
+        /*{"ZwController_getUserCode", "(II)I", (void*)controller_getUserCode},
         {"ZwController_setUserCode", "(III)I", (void*)controller_setUserCode},
-        {"ZwController_getUserCodeNumber", "(I)I", (void*)controller_getUserCodeNumber},
+        {"ZwController_getUserCodeNumber", "(I)I", (void*)controller_getUserCodeNumber},*/
         {"ZwController_getProtection", "(I)I", (void*)controller_getProtection},
         {"ZwController_setProtection", "(III)I", (void*)controller_setProtection},
         {"ZwController_getSupportedProtection", "(I)I", (void*)controller_getSupportedProtection},
@@ -961,19 +970,19 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_setProtectionTimeout", "(III)I", (void*)controller_setProtectionTimeout},
         {"ZwController_getIndicator", "(I)I", (void*)controller_getIndicator},
         {"ZwController_setIndicator", "(II)I", (void*)controller_setIndicator},
-        {"ZwController_getDoorLockLoggingSupportedRecords", "(I)I", (void*)controller_getDoorLockLoggingSupportedRecords},
+        /*{"ZwController_getDoorLockLoggingSupportedRecords", "(I)I", (void*)controller_getDoorLockLoggingSupportedRecords},
         {"ZwController_getDoorLockLoggingRecords", "(II)I", (void*)controller_getDoorLockLoggingRecords},
-        {"ZwController_getLanguage", "(I)I", (void*)controller_getLanguage},
+        {"ZwController_getLanguage", "(I)I", (void*)controller_getLanguage},*/
         {"ZwController_getSwitchColor", "(II)I", (void*)controller_getSwitchColor},
         {"ZwController_getSupportedSwitchColor", "(I)I", (void*)controller_getSupportedSwitchColor},
         {"ZwController_setSwitchColor", "(III)I", (void*)controller_setSwitchColor},
         {"ZwController_startStopSwitchColorLevelChange", "(IIIII)I", (void*)controller_startStopSwitchColorLevelChange},
-        {"ZwController_setBarrierOperator", "(II)I", (void*)controller_setBarrierOperator},
+        /*{"ZwController_setBarrierOperator", "(II)I", (void*)controller_setBarrierOperator},
         {"ZwController_getBarrierOperator", "(I)I", (void*)controller_getBarrierOperator},
         {"ZwController_setBarrierOperatorSignal", "(III)I", (void*)controller_setBarrierOperatorSignal},
         {"ZwController_getBarrierOperatorSignal", "(II)I", (void*)controller_getBarrierOperatorSignal},
         {"ZwController_getSupportedBarrierOperatorSignal", "(I)I", (void*)controller_getSupportedBarrierOperatorSignal},
-        {"ZwController_getBasicTariffInfo", "(I)I", (void*)controller_getBasicTariffInfo},
+        {"ZwController_getBasicTariffInfo", "(I)I", (void*)controller_getBasicTariffInfo},*/
         {"ZwController_getGroupInfo", "(III)I", (void*)controller_getGroupInfo},
         {"ZwController_addEndpointsToGroup", "(II[II)I", (void*)controller_addEndpointsToGroup},
         {"ZwController_removeEndpointsFromGroup", "(II[II)I", (void*)controller_removeEndpointsFromGroup},
@@ -993,14 +1002,15 @@ static const JNINativeMethod gMethods[] = {
         {"ZwController_controlCommandQueue", "(II)I", (void*)controller_controlCommandQueue},
         {"ZwController_viewCommandQueue", "(I)I", (void*)controller_viewCommandQueue},
         {"ZwController_cancelAllCommandQueue", "(I)I", (void*)controller_cancelAllCommandQueue},
-        {"ZwController_getControllerNetworkRssiInfo", "()I", (void*)controller_getControllerNetworkRssiInfo},
-        {"ZwController_getDeviceNetworkRssiInfo", "(I)I", (void*)controller_getNodeNetworkRssiInfo},
+        /*{"ZwController_getControllerNetworkRssiInfo", "()I", (void*)controller_getControllerNetworkRssiInfo},
+        {"ZwController_getDeviceNetworkRssiInfo", "(I)I", (void*)controller_getNodeNetworkRssiInfo},*/
         {"ZwController_startNetworkHealthCheck", "()I", (void*)controller_startNetworkHealthCheck},
         {"ZwController_addProvisionListEntry", "([BI[Ljava/lang/Object;I)I", (void*)controller_addProvisionListEntry},
         {"ZwController_rmProvisionListEntry", "([BI)I", (void*)controller_rmProvisionListEntry},
         {"ZwController_getProvisionListEntry", "([BI)I", (void*)controller_getProvisionListEntry},
         {"ZwController_getAllProvisionListEntry", "()I", (void*)controller_getAllProvisionListEntry},
         {"ZwController_rmAllProvisionListEntry", "()I", (void*)controller_rmAllProvisionListEntry},
+        {"ZwController_checkNodeIsFailed", "(I)I", (void*)controller_checkNodeIsFailed},
 
 };
 

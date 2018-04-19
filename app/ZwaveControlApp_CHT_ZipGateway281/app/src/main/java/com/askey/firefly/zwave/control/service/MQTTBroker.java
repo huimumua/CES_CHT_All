@@ -59,6 +59,14 @@ public class MQTTBroker extends Service {
 
     private byte[] dskNumber;
     private int currentNodeId = 0;
+    private int mqttDeviceId = 0;
+    private int mqttValue = 0;
+    private int mqttTmp = 0;
+    private int mqttTmp2 = 0;
+    private int mqttTmp3 = 0;
+    private int mqttTmp4 = 0;
+    private int mqttTmp5 = 0;
+
 
     @Override
     public void onCreate() {
@@ -74,21 +82,19 @@ public class MQTTBroker extends Service {
         Log.i("MQTTClient", "UDP server = [" + bResult + "]");
         Log.i("MQTTClient", "MQTT Local Server = [" + mqttServer.getServerStatus() + "]");
 
-        //serverusername="";
-        //serverpassword="";
 
         /*   set MQTT broker parmeter  */
         MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
         mqttConnectOptions.setAutomaticReconnect(true);
         mqttConnectOptions.setCleanSession(true);
-        //mqttConnectOptions.setUserName(serverusername);
-        //mqttConnectOptions.setPassword(serverpassword.toCharArray());
+
 
         /*  connect to remote mqtt server */
+        /*
         if (Const.remoteMqttFlag) {
             mqttRemoteConnect(mqttConnectOptions);
         }
-
+        */
         /*  connect to local mqtt server */
         mqttLocalConnect(mqttConnectOptions);
 
@@ -98,12 +104,24 @@ public class MQTTBroker extends Service {
         //bind service with ZwaveControlService
         Intent serviceIntent = new Intent(this, ZwaveControlService.class);
         this.bindService(serviceIntent, ZWserviceConn, Context.BIND_AUTO_CREATE);
-        //Log.i(LOG_TAG, "AIDL status = [" + bbindResult + "]");
+        //this.bindService(serviceIntent, ZWserviceReq, Context.BIND_AUTO_CREATE);
+
+       new Thread(reqCallBack).start();
 
         // init zwSceneManager and zwDevManager
         zwSceneManager = ZwaveDeviceSceneManager.getInstance(this);
         zwDevManager = ZwaveDeviceManager.getInstance(this);
     }
+
+    // only execute one time
+    public Runnable reqCallBack = new Runnable() {
+        @Override
+        public void run() {
+            Intent serviceIntent = new Intent(MQTTBroker.this, ZwaveControlService.class);
+            MQTTBroker.this.bindService(serviceIntent, ZWserviceReq, Context.BIND_AUTO_CREATE);
+        }
+    };
+
 
     @Override
     public void onDestroy() {
@@ -119,6 +137,7 @@ public class MQTTBroker extends Service {
         }
 
         unbindService(ZWserviceConn);
+        unbindService(ZWserviceReq);
 
         uDPConnecting.stopConn();
         if (mqttServer.getServerStatus()) {
@@ -173,23 +192,6 @@ public class MQTTBroker extends Service {
                             Log.i(LOG_TAG, "deviceService.removeDevice(mCallback)");
                             zwaveService.removeDevice(devType, 1);
                         }
-                    } else if (message.contains("removeFailedDevice")) {
-
-                        String[] tokens = message.split(":");
-                        if (tokens.length > 2) {
-                            int tNodeId = Integer.parseInt(tokens[2]);
-                            Log.i(LOG_TAG, "deviceService.removeFailedDevice(mCallback, " + tNodeId + ")");
-                            zwaveService.removeFailedDevice(tNodeId);
-                        }
-                    } else if (message.contains("replaceFailedDevice")) {
-
-                        String[] tokens = message.split(":");
-                        if (tokens.length > 2) {
-
-                            int tNodeId = Integer.parseInt(tokens[2]);
-                            Log.i(LOG_TAG, "deviceService.replaceFailedDevice(mCallback, " + tNodeId + ")");
-                            zwaveService.replaceFailedDevice(tNodeId);
-                        }
                     } else if (message.contains("stopAddDevice")) {
 
                         Log.i(LOG_TAG, "deviceService.stopAddDevice(mCallback)");
@@ -220,22 +222,18 @@ public class MQTTBroker extends Service {
                             zwaveService.editNodeInfo(tHomeId, tDeviceId, tNewName, tDevType, tRoomName, "", "");
 
                         }
-                    } else if (message.contains("setDefault")) {
-
-                        Const.TCPClientPort = clientID;
-
-                        Log.i(LOG_TAG, "deviceService.setDefault(mCallback)");
-                        zwaveService.setDefault();
-
                     } else {
                         mTCPServer.sendMessage(clientID, Const.TCPSTRING + " Wrong Payload");  //TCP format
                     }
                 } else if (message.contains("GrantKeys")) {
                     String[] tmp = message.split(":");
+                    /*
                     if (tmp[1].equals("87")) {
                         mTCPServer.sendMessage(clientID, "dsk:1"); //TCP format
                     }
+                    */
                     DeviceInfo.reqKey = Integer.valueOf(tmp[1]);
+
 
                 } else if (message.contains("dsk")) {
                     String[] tmp = message.split(":");
@@ -401,9 +399,8 @@ public class MQTTBroker extends Service {
 
         String[] tokens = TopicName.split(Const.PublicTopicName);
         String[] devInfo = new String[2];
-        String devType = null;
-        int value = 0;
-
+        String devType = "Zwave";
+ /*
         if (!TopicName.equals(Const.PublicTopicName)) {
             if (tokens[1].contains("Zwave")) {
                 devInfo = tokens[1].split("Zwave");
@@ -411,15 +408,15 @@ public class MQTTBroker extends Service {
                 currentNodeId = Integer.valueOf(devInfo[1]);
                 Log.d(LOG_TAG,"tNodeid: "+currentNodeId);
             }
-            /*
+
             else if (tokens[1].contains("BT")) {
                 devInfo = tokens[1].split("BT");
                 devType = "BT";
                 tNodeid = Integer.parseInt(devInfo[1]);
             }
-            */
-        }
 
+        }
+*/
         JSONObject payload = new JSONObject(mqttMessage);
 
         if (mqttMessage.contains("function")) {
@@ -432,8 +429,9 @@ public class MQTTBroker extends Service {
                     break;
 
                 case "removeDeviceFromRoom":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
                     Log.i(LOG_TAG, "deviceService.removeDeviceFromRoom");
-                    zwaveService.removeDeviceFromRoom(currentNodeId);
+                    zwaveService.removeDeviceFromRoom(mqttDeviceId);
                     break;
 
                 case "getDeviceList": //public channel
@@ -443,6 +441,7 @@ public class MQTTBroker extends Service {
                     break;
 
                 case "editNodeInfo":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
                     Log.i(LOG_TAG, "deviceService.editNodeInfo payload:" + payload);
 
                     String Room = payload.getJSONObject("parameter").getString("Room");
@@ -450,7 +449,7 @@ public class MQTTBroker extends Service {
                     String name = payload.getJSONObject("parameter").getString("name");
                     String type = payload.getJSONObject("parameter").getString("type");
 
-                    zwaveService.editNodeInfo("", currentNodeId, name, devType, type, Room, isFavorite);
+                    zwaveService.editNodeInfo("", mqttDeviceId, name, devType, type, Room, isFavorite);
                     break;
 
                 case "getRecentDeviceList": //public channel
@@ -484,85 +483,118 @@ public class MQTTBroker extends Service {
                     break;
 
                 case "getBasic":
-                    zwaveService.getBasic(devType, currentNodeId);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getBasic"+mqttDeviceId);
+                    zwaveService.getBasic(devType, mqttDeviceId);
                     break;
 
                 case "setBasic":
-                    String switchStatus = payload.getString("value");
-                    Log.i(LOG_TAG, "deviceService.setSwitchStatus value=" + value);
-                    zwaveService.setBasic(devType, currentNodeId, Integer.parseInt(switchStatus));
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttValue = Integer.parseInt(payload.getString("value"));
+                    Log.i(LOG_TAG, "deviceService.setBasic deviceId= " + mqttDeviceId + " value = "+mqttValue);
+                    zwaveService.setBasic(devType, mqttDeviceId, mqttValue);
                     break;
 
                 case "getSwitchMultilevel":
-                    Log.i(LOG_TAG, "deviceService.getBrightness");
-                    zwaveService.getSwitchMultiLevel(devType, currentNodeId);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getBrightness"+mqttDeviceId);
+                    zwaveService.getSwitchMultiLevel(devType, mqttDeviceId);
                     break;
 
                 case "setSwitchMultilevel":
-                    Log.i(LOG_TAG, "deviceService.setBrightness value=" + value);
-                    value = Integer.parseInt(payload.getString("value"));
-                    zwaveService.setSwitchMultiLevel(devType, currentNodeId, value, 0);
+                    mqttValue = Integer.parseInt(payload.getString("value"));
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("duration"));
+                    Log.i(LOG_TAG, "deviceService.setSwitchMultilevel deviceId= " + mqttDeviceId + " value = "+mqttValue + "duration "+mqttTmp);
+                    zwaveService.setSwitchMultiLevel(devType, mqttDeviceId, mqttValue, mqttTmp);
                     break;
 
                 case "getSwitchColor":
-                    Log.i(LOG_TAG, "deviceService.getLampColor");
-                    zwaveService.getLampColor(devType, currentNodeId);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("compId"));
+                    Log.i(LOG_TAG, "deviceService.getLampColor"+mqttDeviceId+mqttTmp);
+                    zwaveService.getSwitchColor(devType, mqttDeviceId,mqttTmp);
                     break;
 
                 case "setSwitchColor":
-                    Log.i(LOG_TAG, "deviceService.setLampColor");
-                    String lampcolor = payload.getString("lampcolor");
-                    Log.i(LOG_TAG,"Lampcolor = "+lampcolor);
-                    switch (lampcolor) {
-                        case "RGB":
-                            int r_value = Integer.parseInt(payload.getString("R"));
-                            int g_value = Integer.parseInt(payload.getString("G"));
-                            int b_value = Integer.parseInt(payload.getString("B"));
-                            zwaveService.setLampColor(devType, currentNodeId, r_value, g_value, b_value);
-                            break;
-                        case "warmWhite":
-                            zwaveService.setLampToWarmWhite(devType, currentNodeId);
-                            break;
-                        case "coldWhite":
-                            zwaveService.setLampToColdWhite(devType, currentNodeId);
-                            break;
-                        default:
-                            break;
-                    }
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("colorId"));
+                    mqttTmp2 = Integer.parseInt(payload.getString("colorValue"));
+                    Log.i(LOG_TAG, "deviceService.setSwitchColor"+mqttDeviceId+mqttTmp+mqttTmp2);
+                    zwaveService.setSwitchColor(devType,mqttDeviceId,mqttTmp,mqttTmp2);
                     break;
 
+                case "getSupportedColor":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getSupportedColor"+mqttDeviceId);
+                    zwaveService.getSupportColor(devType,mqttDeviceId);
+                    break;
+
+                case "startStopColorLevelChange":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("dir"));
+                    mqttTmp2 = Integer.parseInt(payload.getString("ignore"));
+                    mqttTmp3 = Integer.parseInt(payload.getString("colorId"));
+                    mqttTmp4 = Integer.parseInt(payload.getString("startLevel"));
+
+                    Log.i(LOG_TAG, "deviceService.startStopColorLevelChange"+mqttDeviceId+mqttTmp+mqttTmp2+mqttTmp3+mqttTmp4);
+                    zwaveService.startStopColorLevelChange(devType,mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3,mqttTmp4);
+                    break;
+
+
                 case "getConfiguration":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("paramMode"));
+                    mqttTmp2 = Integer.parseInt(payload.getString("paramNumber"));
+                    mqttTmp3 = Integer.parseInt(payload.getString("rangeStart"));
+                    mqttTmp4 = Integer.parseInt(payload.getString("rangeEnd"));
                     Log.i(LOG_TAG, "deviceService.getConfiguration");
-                    int parameter = Integer.parseInt(payload.getString("parameter"));
-                    zwaveService.getConfiguration(currentNodeId,0,parameter,0,0);
+                    zwaveService.getConfiguration(mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3,mqttTmp4);
                     break;
 
                 case "setConfiguration":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("paramNumber"));
+                    mqttTmp2 = Integer.parseInt(payload.getString("paramSize"));
+                    mqttTmp3 = Integer.parseInt(payload.getString("useDefault"));
+                    mqttTmp4 = Integer.parseInt(payload.getString("paramValue"));
                     Log.i(LOG_TAG, "deviceService.setConfiguration");
-                    parameter = Integer.parseInt(payload.getString("parameter"));
-                    //zwaveService.setConfiguration(); many parameter
+                    try {
+                        zwaveService.setConfiguration(mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3,mqttTmp4);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                     break;
 
                 case "getMeter":
-                    Log.i(LOG_TAG, "deviceService.getPower");
-                    zwaveService.getMeter(devType, currentNodeId, 0);
-                    zwaveService.getMeter(devType, currentNodeId, 2);
-                    zwaveService.getMeter(devType, currentNodeId, 5);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("meterUnit"));
+                    Log.i(LOG_TAG, "deviceService.getPower"+mqttDeviceId+mqttTmp);
+                    zwaveService.getMeter(devType, mqttDeviceId, mqttTmp);
+                    break;
+
+                case "resetMeter":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.resetMeter"+mqttDeviceId);
+                    zwaveService.resetMeter(devType, mqttDeviceId);
                     break;
 
                 case "getGroupInfo":
-                    int maxGroupId = Integer.parseInt(payload.getString("maxGroupId"));
-                    int EndpointId = Integer.parseInt(payload.getString("endpointId"));
-                    Log.i(LOG_TAG, "deviceService.getGroupInfo max="+maxGroupId+" | endpoint="+EndpointId);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("groupId"));
+                    mqttTmp2 = Integer.parseInt(payload.getString("endpointId"));
+                    Log.i(LOG_TAG, "deviceService.getGroupInfo");
 
-                    zwaveService.getGroupInfo(devType, currentNodeId);
+                    zwaveService.getGroupInfo(devType, mqttDeviceId,mqttTmp,mqttTmp2);
                     break;
 
                 case "addEndpointsToGroup":
-                    Log.i(LOG_TAG, "deviceService.addEndpointsToGroup");
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("groupId"));
+                    //mqttTmp2 = Integer.parseInt(payload.getString("arr"));
+                    mqttTmp3 = Integer.parseInt(payload.getString("endpointId"));
 
-                    int GroupId = Integer.parseInt(payload.getString("groupId"));
-                    EndpointId = Integer.parseInt(payload.getString("endpointId"));
+                    Log.i(LOG_TAG, "deviceService.addEndpointsToGroup");
 
                     String arr = payload.optString("arr");
                     JSONArray ja = new JSONArray(arr);
@@ -571,14 +603,16 @@ public class MQTTBroker extends Service {
                         JSONObject json = ja.getJSONObject(j);
                         arrList.add(Integer.valueOf(json.getString("controlNodeId").toString()));
                     }
-                    zwaveService.addEndpointsToGroup(devType,currentNodeId,GroupId,Utils.convertIntegers(arrList),EndpointId);
+                    zwaveService.addEndpointsToGroup(devType,mqttDeviceId,mqttTmp,Utils.convertIntegers(arrList),mqttTmp3);
                     break;
 
                 case "removeEndpointsFromGroup":
-                    Log.i(LOG_TAG, "deviceService.removeEndpointsFromGroup");
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("groupId"));
+                    //mqttTmp2 = Integer.parseInt(payload.getString("arr"));
+                    mqttTmp3 = Integer.parseInt(payload.getString("endpointId"));
 
-                    GroupId = Integer.parseInt(payload.getString("groupId"));
-                    EndpointId = Integer.parseInt(payload.getString("endpointId"));
+                    Log.i(LOG_TAG, "deviceService.removeEndpointsFromGroup");
 
                     arr = payload.optString("arr");
                     ja = new JSONArray(arr);
@@ -588,40 +622,46 @@ public class MQTTBroker extends Service {
                         arrList.add(Integer.valueOf(json.getString("controlNodeId").toString()));
                     }
 
-                    zwaveService.removeEndpointsFromGroup(devType,currentNodeId,GroupId,Utils.convertIntegers(arrList),EndpointId);
+                    zwaveService.removeEndpointsFromGroup(devType,mqttDeviceId,mqttTmp,Utils.convertIntegers(arrList),mqttTmp3);
                     break;
 
                 case "getMaxSupportedGroups":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("endpointId"));
+
                     Log.i(LOG_TAG, "deviceService.getMaxSupportedGroups");
-                    EndpointId = Integer.parseInt(payload.getString("endpointId"));
-                    zwaveService.getMaxSupportedGroups(currentNodeId,EndpointId);
+                    zwaveService.getMaxSupportedGroups(mqttDeviceId,mqttTmp);
                     break;
 
                 case "setScheduleActive":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
                     String active = payload.getString("active");
                     Log.i(LOG_TAG, "deviceService.setScheduleActive "+active);
-                    zwaveService.setScheduleActive(devType,currentNodeId,active);
+                    zwaveService.setScheduleActive(devType,mqttDeviceId,active);
                     break;
 
                 case "getScheduleList":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
                     Log.i(LOG_TAG, "deviceService.getScheduleList");
-                    zwaveService.getScheduleList(devType,currentNodeId);
+                    zwaveService.getScheduleList(devType,mqttDeviceId);
                     break;
 
                 case "removeSchedule":
                     String Day = payload.getString("dayOfWeek");
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
                     Log.i(LOG_TAG, "deviceService.removeSchedule " +Day);
-                    zwaveService.removeSchedule(devType,currentNodeId,Day);
+                    zwaveService.removeSchedule(devType,mqttDeviceId,Day);
                     break;
 
                 case "setSchedule":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
                     Day = payload.getString("dayOfWeek");
                     active = payload.getString("active");
                     String variableValue = payload.getString("variableValue");
                     String startTime = payload.getString("StartTime");
                     String endTime = payload.getString("EndTime");
                     Log.i(LOG_TAG, "deviceService.setSchedule " +Day);
-                    zwaveService.setSchedule(devType,currentNodeId,Day,startTime,endTime,Integer.valueOf(variableValue),active);
+                    zwaveService.setSchedule(devType,mqttDeviceId,Day,startTime,endTime,Integer.valueOf(variableValue),active);
                     break;
 
                 case "getFavoriteList": //public channel
@@ -705,6 +745,19 @@ public class MQTTBroker extends Service {
 
                 case "addProvisionListEntry":
                     Log.i(LOG_TAG, "deviceService.addProvisionListEntry");
+                    String bootMode = payload.getString("BootMode");
+                    if(bootMode.contains("01")) {
+                        DeviceInfo.bootMode = true;
+                        Log.d(LOG_TAG,"DeviceInfo.bootMode = true");
+
+                    } else if (bootMode.contains("00")) {
+                        DeviceInfo.bootMode = false;
+                        Log.d(LOG_TAG,"DeviceInfo.bootMode = false");
+                    }
+
+                    Log.i(LOG_TAG, "BootMode : "+ DeviceInfo.bootMode);
+
+
                     DeviceInfo.dskNumber = payload.getString("dsk");
                     String str = payload.getString("dsk") +'\0';
                     Log.i(LOG_TAG, str);
@@ -716,7 +769,6 @@ public class MQTTBroker extends Service {
                     Log.i(LOG_TAG, "deviceService.rmProvisionListEntry");
                     DeviceInfo.dskNumber = payload.getString("dsk");
                     str = payload.getString("dsk") +'\0';
-                    Log.i(LOG_TAG, str);
                     dskNumber = str.getBytes();
                     zwaveService.rmProvisionListEntry("Zwave",dskNumber);
                     break;
@@ -737,7 +789,15 @@ public class MQTTBroker extends Service {
                     str = payload.getString("dsk") +'\0';
                     Log.i(LOG_TAG, str);
                     dskNumber = str.getBytes();
-                    zwaveService.addProvisionListEntry("Zwave",dskNumber,true);
+                    mqttTmp = Integer.parseInt(payload.getString("inclusionState"));
+                    mqttTmp2 = Integer.parseInt(payload.getString("boot_mode"));
+
+                    if(mqttTmp == 0 ){
+                        zwaveService.addProvisionListEntry("Zwave",dskNumber,false);
+                    } else {
+                        zwaveService.addProvisionListEntry("Zwave",dskNumber,true);
+                    }
+
                     break;
 
                 case "getAllProvisionListEntry":
@@ -755,90 +815,242 @@ public class MQTTBroker extends Service {
                     break;
 
                 case "getRssiState":
-                    Log.i(LOG_TAG, "deviceService.getRssiState");
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getRssiState"+mqttDeviceId);
                     zwaveService.startNetworkHealthCheck();
                     break;
 
                 case "getBattery":
-                    Log.i(LOG_TAG, "deviceService.getBattery");
-                    zwaveService.getDeviceBattery(devType,currentNodeId);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getBattery" +mqttDeviceId);
+                    zwaveService.getDeviceBattery(devType,mqttDeviceId);
                     break;
 
                 case "getSensorMultilevel":
-                    Log.i(LOG_TAG, "deviceService.getSensorMultilevel");
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getSensorMultilevel"+mqttDeviceId);
                     try {
-                        zwaveService.getSensorMultiLevel(devType,currentNodeId);
+                        zwaveService.getSensorMultiLevel(devType,mqttDeviceId);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
                     break;
 
                 case "getSupportSwitchType":
-                    Log.i(LOG_TAG, "deviceService.getSupportSwitchType");
-                    zwaveService.getSupportedSwitchType(currentNodeId);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getSupportSwitchType"+mqttDeviceId);
+                    zwaveService.getSupportedSwitchType(mqttDeviceId);
                     break;
 
                 case "startStopSwitchLevelChange":
-                    Log.i(LOG_TAG, "deviceService.startStopSwitchLevelChange");
-                    zwaveService.startStopSwitchLevelChange(currentNodeId,99,2,1,1,50);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("startLvlVal"));
+                    mqttTmp2 = Integer.parseInt(payload.getString("duration"));
+                    mqttTmp3 = Integer.parseInt(payload.getString("pmyChangeDir"));
+                    mqttTmp4 = Integer.parseInt(payload.getString("secChangeDir "));
+                    mqttTmp5 = Integer.parseInt(payload.getString("secStep"));
+
+                    Log.i(LOG_TAG, "deviceService.startStopSwitchLevelChange"+mqttDeviceId + mqttTmp+ mqttTmp2+mqttTmp3+mqttTmp4+mqttTmp5);
+                    zwaveService.startStopSwitchLevelChange(mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3,mqttTmp4,mqttTmp5);
                     break;
 
                 case "getPowerLevel":
-                    Log.i(LOG_TAG, "deviceService.getPowerLevel");
-                    zwaveService.getPowerLevel(currentNodeId);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getPowerLevel"+mqttDeviceId);
+                    zwaveService.getPowerLevel(mqttDeviceId);
                     break;
 
-                case "setSwitchAllOn":
-                    Log.i(LOG_TAG, "deviceService.setSwitchAllOn");
-                    zwaveService.setSwitchAllOn(devType,currentNodeId);
+                case "switchAllOn":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.switchAllOn"+mqttDeviceId);
+                    zwaveService.setSwitchAllOn(devType,mqttDeviceId);
                     break;
 
-                case "setSwitchAllOff":
-                    Log.i(LOG_TAG, "deviceService.setSwitchAllOff");
-                    zwaveService.setSwitchAllOff(devType,currentNodeId);
+                case "switchAllOff":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.switchAllOff"+mqttDeviceId);
+                    zwaveService.setSwitchAllOff(devType,mqttDeviceId);
+                    break;
+
+                case "setSwitchAll":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("value"));
+
+                    Log.i(LOG_TAG, "deviceService.setSwitchAll"+mqttDeviceId);
+                    zwaveService.setSwitchAll(devType,mqttDeviceId,mqttTmp);
+                    break;
+
+                case "getSwitchAll":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+
+                    Log.i(LOG_TAG, "deviceService.GetSwitchAll"+mqttDeviceId);
+                    zwaveService.getSwitchAll(devType,mqttDeviceId);
                     break;
 
                 case "getSensorBinary":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("sensorType"));
                     Log.i(LOG_TAG, "deviceService.getSensorBinary");
-                    //zwaveService.getSensorBasic(currentNodeId,sensorType); no sensorType
+                    zwaveService.getSensorBasic(mqttDeviceId,mqttTmp);
                     break;
 
                 case "getSensorBinarySupportedSensor":
-                    Log.i(LOG_TAG, "deviceService.getSensorBinarySupportedSensor");
-                    zwaveService.GetSensorBinarySupportedSensor(currentNodeId);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getSensorBinarySupportedSensor"+mqttDeviceId);
+                    zwaveService.GetSensorBinarySupportedSensor(mqttDeviceId);
                     break;
 
                 case "getMeterSupported":
-                    Log.i(LOG_TAG, "deviceService.getMeterSupported");
-                    zwaveService.getMeterSupported(currentNodeId);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getMeterSupported"+mqttDeviceId);
+                    zwaveService.getMeterSupported(mqttDeviceId);
                     break;
 
                 case "getSpecificGroup":
-                    Log.i(LOG_TAG, "deviceService.getSpecificGroup");
-                    EndpointId = Integer.parseInt(payload.getString("endpointId"));
-                    zwaveService.getSpecificGroup(currentNodeId,EndpointId);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("endpointId"));
+
+                    Log.i(LOG_TAG, "deviceService.getSpecificGroup"+mqttDeviceId+mqttTmp);
+                    zwaveService.getSpecificGroup(mqttDeviceId,mqttTmp);
                     break;
 
                 case "getNotification":
-                    Log.i(LOG_TAG, "deviceService.getNotification");
-                    //zwaveService.getSensorNotification(); many parameter
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("alarmType"));
+                    mqttTmp2 = Integer.parseInt(payload.getString("notifType"));
+                    mqttTmp3 = Integer.parseInt(payload.getString("status"));
+
+                    Log.i(LOG_TAG, "deviceService.getNotification"+mqttDeviceId+mqttTmp+mqttTmp2+mqttTmp3);
+                    zwaveService.getSensorNotification(mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3);
+                    break;
+
+
+                case "setNotification":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("notificationType"));
+                    mqttTmp2 = Integer.parseInt(payload.getString("status"));
+
+                    Log.i(LOG_TAG, "deviceService.setNotification"+mqttDeviceId+mqttTmp+mqttTmp2);
+                    zwaveService.setNotification(mqttDeviceId,mqttTmp,mqttTmp2);
                     break;
 
                 case "getSupportedNotification":
-                    Log.i(LOG_TAG, "deviceService.getSupportedNotification");
-                    zwaveService.getSupportedNotification(currentNodeId);
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getSupportedNotification"+mqttDeviceId);
+                    zwaveService.getSupportedNotification(mqttDeviceId);
                     break;
 
                 case "getSupportedEventNotification":
-                    Log.i(LOG_TAG, "deviceService.getSupportedEventNotification");
-                    // zwaveService.getSupportedEventNotification(currentNodeId,typeDef); no typeDef
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("notifType"));
+                    Log.i(LOG_TAG, "deviceService.getSupportedEventNotification"+mqttDeviceId+mqttTmp);
+                    zwaveService.getSupportedEventNotification(mqttDeviceId,mqttTmp);
                     break;
 
                 case "getSpecifyDeviceInfo":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
                     Log.i(LOG_TAG, "deviceService.getSpecifyDeviceInfo");
-                    Log.i(LOG_TAG, "currentNodeId: "+currentNodeId + "GINO!!!!!");
-                    zwaveService.getSpecifyDeviceInfo(currentNodeId);
+                    Log.i(LOG_TAG, "mqttDeviceId: "+mqttDeviceId);
+                    zwaveService.getSpecifyDeviceInfo(mqttDeviceId);
                     break;
+
+                case "removeFailDevice":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.removeFailDevice");
+                    Log.i(LOG_TAG, "mqttDeviceId: "+mqttDeviceId);
+                    zwaveService.removeFailedDevice(mqttDeviceId);
+                    break;
+
+                case "checkNodeIsFailed":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.checkNodeIsFailed");
+                    Log.i(LOG_TAG, "mqttDeviceId: "+mqttDeviceId);
+                    zwaveService.checkNodeIsFailed(mqttDeviceId);
+                    break;
+
+                case "setDefault":
+                    Log.i(LOG_TAG, "deviceService.setDefault");
+                    zwaveService.setDefault();
+                    break;
+
+                case "replaceFailDevice":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.replaceFailDevice");
+                    Log.i(LOG_TAG, "mqttDeviceId: "+mqttDeviceId);
+                    zwaveService.replaceFailedDevice(mqttDeviceId);
+                    break;
+
+                case "startLearnMode":
+                    Log.i(LOG_TAG, "deviceService.startLearnMode");
+                    zwaveService.StartLearnMode();
+                    break;
+
+                case "getSceneActuatorConf":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("sceneId"));
+                    Log.i(LOG_TAG, "deviceService.getSceneActuatorConf");
+
+                    zwaveService.getSceneActuatorConf(mqttDeviceId,mqttTmp);
+                    break;
+
+                case "getSupportedCentralScene":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("endpointId"));
+                    Log.i(LOG_TAG, "deviceService.getSupportedCentralScene");
+
+                    zwaveService.getSupportedCentralScene(mqttDeviceId,mqttTmp);
+                    break;
+
+                case "getDoorLockOperation":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getDoorLockOperation");
+
+                    zwaveService.getDoorLockOperation(mqttDeviceId);
+                    break;
+
+                case "setDoorLockOperation":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("mode"));
+                    Log.i(LOG_TAG, "deviceService.setDoorLockOperation");
+
+                    zwaveService.setDoorLockOperation(mqttDeviceId,mqttTmp);
+                    break;
+
+                case "getDoorLockConfiguration":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getDoorLockConfiguration");
+
+                    zwaveService.getDoorLockConfiguration(mqttDeviceId);
+                    break;
+
+                case "setDoorLockConfig":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("type"));
+                    mqttTmp2 = Integer.parseInt(payload.getString("outSta"));
+                    mqttTmp3 = Integer.parseInt(payload.getString("insta"));
+                    mqttTmp4 = Integer.parseInt(payload.getString("tmoutMin"));
+                    mqttTmp5 = Integer.parseInt(payload.getString("tmoutSec"));
+                    Log.i(LOG_TAG, "deviceService.setDoorLockConfig");
+
+                    zwaveService.setDoorLockConfiguration(mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3,mqttTmp4,mqttTmp5);
+                    break;
+
+                case "setBinarySwitchState":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    mqttTmp = Integer.parseInt(payload.getString("state"));
+                    mqttTmp2 = Integer.parseInt(payload.getString("duration"));
+                    Log.i(LOG_TAG, "deviceService.setBinarySwitchState");
+
+                    zwaveService.SetBinarySwitchState(devType,mqttDeviceId,mqttTmp);
+                    break;
+
+                case "getBinarySwitchState":
+                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    Log.i(LOG_TAG, "deviceService.getBinarySwitchState");
+
+                    zwaveService.GetBinarySwitchState(devType,mqttDeviceId);
+                    break;
+
 
                 default:
                     Log.e(LOG_TAG,"no support this function, please make sure this mqtt message "+ function);
@@ -898,6 +1110,7 @@ public class MQTTBroker extends Service {
                 Log.i(LOG_TAG, "local mqtt server is disconnect...");
             }
         }
+        /*
         if (Const.remoteMqttFlag) {
             Log.i(LOG_TAG, "mqttRemoteClient.isConnected() = " + mqttRemoteClient.isConnected());
             if (!DeviceInfo.remoteSubTopiclist.contains(TopicName)) {
@@ -928,6 +1141,7 @@ public class MQTTBroker extends Service {
                  }
             }
         }
+        */
     }
 
     // unsubscribe mqtt topic
@@ -945,6 +1159,7 @@ public class MQTTBroker extends Service {
                     }
                 }
             }
+            /*
             if (Const.remoteMqttFlag) {
                 if (DeviceInfo.remoteSubTopiclist.contains(TopicName)) {
                     if (mqttRemoteClient.isConnected()) {
@@ -956,6 +1171,7 @@ public class MQTTBroker extends Service {
                     }
                 }
             }
+            */
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -963,11 +1179,13 @@ public class MQTTBroker extends Service {
         for (idx = 0; idx < DeviceInfo.localSubTopiclist.size(); idx++) {
             Log.i(LOG_TAG, "localSubTopiclist[" + idx + "] = " + DeviceInfo.localSubTopiclist.get(idx));
         }
+        /*
         if (Const.remoteMqttFlag) {
             for (idx = 0; idx < DeviceInfo.remoteSubTopiclist.size(); idx++) {
                 Log.i(LOG_TAG, "remoteSubTopiclist[" + idx + "] = " + DeviceInfo.remoteSubTopiclist.get(idx));
             }
         }
+        */
     }
 
     // publish message to mqtt server
@@ -992,6 +1210,7 @@ public class MQTTBroker extends Service {
             } else {
                 Log.e(LOG_TAG, "[LocalMqttClient] fail to connect local mqtt server");
             }
+            /*
             if (Const.remoteMqttFlag) {
                 if (mqttRemoteClient.isConnected()) {
                     mqttRemoteClient.publish(publishTopic, message);
@@ -999,6 +1218,7 @@ public class MQTTBroker extends Service {
                     Log.e(LOG_TAG, "[LocalMqttClient] fail to connect local mqtt server");
                 }
             }
+            */
         } catch (MqttException e) {
             System.err.println("MQTT Error Publishing: " + e.getMessage());
             e.printStackTrace();
@@ -1017,7 +1237,7 @@ public class MQTTBroker extends Service {
 
                 Log.i(LOG_TAG, "bind service with ZWaveControlService");
                 zwaveService.register(ZWCtlCB);
-                zwaveService.register(ZWCtlReq);
+                //zwaveService.register(ZWCtlReq);
 
                 new Thread(new Runnable() {
                     @Override
@@ -1043,52 +1263,932 @@ public class MQTTBroker extends Service {
         }
     };
 
+    // AIDL
+    private ServiceConnection ZWserviceReq = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+
+            zwaveService = ((ZwaveControlService.MyBinder) service).getService();
+
+            if (zwaveService != null) {
+
+                Log.d(LOG_TAG, "bind req service with ZWaveControlService");
+                zwaveService.register(ZWCtlReq);
+
+            } else {
+                Log.i(LOG_TAG, "Failed to bind service with ZWaveControlService");
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+        }
+    };
+
 
     // ZwaveControlService CallBack
 
     public ZwaveControlService.zwaveControlReq_CallBack ZWCtlReq = new ZwaveControlService.zwaveControlReq_CallBack() {
         @Override
         public void zwaveControlReqResultCallBack(String className, String result) {
-            Log.d(LOG_TAG,"class : "+ className + " result: "+result);
-            JSONObject obj = new JSONObject();
             JSONObject message = new JSONObject();
 
             if (result.contains("Grant Keys Msg")) {
                 grantKey(result);
-                //sleep();
 
             } else if (result.contains("PIN Requested Msg")) {
-                //sleep();
 
             }
         }
     };
 
+    //receive message to do something
     public ZwaveControlService.zwaveCallBack ZWCtlCB = new ZwaveControlService.zwaveCallBack() {
         @Override
         public void zwaveControlResultCallBack(String className, String result) {
 
-            JSONObject obj = new JSONObject();
             JSONObject message = new JSONObject();
 
             if (className.equals("addDevice") || className.equals("removeDevice")) {
-                addRemoveDevice(className,result,message);
-            } else if (className.equals("getDeviceInfo")) {
-                getDeviceInfo(result,message);
-            } else if (className.equals("removeFailedDevice") ||
-                    className.equals("replaceFailedDevice") || className.equals("stopAddDevice") ||
-                    className.equals("stopRemoveDevice")) {
 
-                mTCPServer.sendMessage(Const.TCPClientPort, result); //TCP format
-                Const.TCPClientPort = 0;
+                addRemoveDevice(className,result,message);
+
+            } else if (className.equals("All Node Info Report")) {
+
+                getDeviceInfo(result,message);
 
             } else if (className.equals("reNameDevice")) {
+
                 reNameDevice(result);
-            } else if (result.contains("Network Role")) {
-                String[] roleTmp = result.split(",");
-                networkRole(roleTmp[3], message);
-                Log.i(LOG_TAG,"Network Role = "+roleTmp[3]);
+
+            } else if (result.contains("Remove Failed Node")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String status = jsonObject.optString("Status");
+
+                    message.put("MessageType", "Remove Failed Node");
+                    message.put("Status", status);
+
+                    Log.d(LOG_TAG,"gino: "+ status);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Replace Failed Node")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String status = jsonObject.optString("Status");
+
+                    message.put("MessageType", "Replace Failed Node");
+                    message.put("Status", status);
+
+                    Log.d(LOG_TAG,"gino: "+ status);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Node Is Failed Check Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String status = jsonObject.optString("Status");
+
+                    message.put("MessageType", "Node Is Failed Check Report");
+                    message.put("Node id", nodeId);
+                    message.put("Status", status);
+
+                    Log.d(LOG_TAG,"gino: "+ nodeId);
+                    Log.d(LOG_TAG,"gino: "+ status);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            }  else if (result.contains("Replace Failed Node")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String status = jsonObject.optString("Status");
+
+                    message.put("MessageType", "Replace Failed Node");
+                    message.put("Status", status);
+
+                    Log.d(LOG_TAG,"gino: "+ status);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            }  else if (result.contains("Controller Reset Status")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String status = jsonObject.optString("Status");
+
+                    message.put("MessageType", "Controller Reset Status");
+                    message.put("Status", status);
+
+                    Log.d(LOG_TAG,"gino: "+ status);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Controller Attribute")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String homeId = jsonObject.optString("Home id");
+                    String nodeId = jsonObject.optString("Node id");
+                    String role = jsonObject.optString("Network Role");
+                    String vendorId = jsonObject.optString("Vendor Id");
+                    String proType = jsonObject.optString("Vendor Product Type");
+                    String libType = jsonObject.optString("Z-wave Library Type");
+                    String protocolVersion = jsonObject.optString("Z-wave Protocol Version");
+                    String appVersion = jsonObject.optString("Application Version");
+
+                    message.put("MessageType", "Controller Attribute");
+                    message.put("Home id", homeId);
+                    message.put("Node id", nodeId);
+                    message.put("Network Role", role);
+                    message.put("Vendor Id",vendorId);
+                    message.put("Vendor Product Type",proType);
+                    message.put("Z-wave Library Type",libType);
+                    message.put("Z-wave Protocol Version",protocolVersion);
+                    message.put("Application Version",appVersion);
+
+                    Log.d(LOG_TAG,"gino: "+ homeId);
+                    Log.d(LOG_TAG,"gino: "+ nodeId);
+                    Log.d(LOG_TAG,"gino: "+ role);
+                    Log.d(LOG_TAG,"gino: "+ vendorId);
+                    Log.d(LOG_TAG,"gino: "+ proType);
+                    Log.d(LOG_TAG,"gino: "+ libType);
+                    Log.d(LOG_TAG,"gino: "+ protocolVersion);
+                    Log.d(LOG_TAG,"gino: "+ appVersion);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("All Node List Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String list = jsonObject.optString("Added Node List");
+
+                    message.put("MessageType", "All Node List Report");
+                    message.put("Added Node List", list);
+
+                    Log.d(LOG_TAG,"gino: "+ list);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            }  else if (result.contains("Specify Node Info")) {
+                /*
+                    JSONObject jsonObject = null;
+                    try {
+                        jsonObject = new JSONObject(result);
+                        String nodeInfo = jsonObject.optString("Detialed Node Info");
+                        String tmp = jsonObject.getString("Detialed Node Info");
+
+                        message.put("MessageType", "Specify Node Info");
+                        message.put("Detialed Node Info", nodeInfo);
+                        message.put("Detialed Node Info 2 ", tmp);
+
+
+                        Log.d(LOG_TAG,"gino: "+ nodeInfo);
+                        Log.d(LOG_TAG,"gino2: "+ tmp);
+
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    publishMessage(Const.PublicTopicName, message.toString());
+                */
+                getDeviceInfo(result,message);
+            } else if (result.contains("Controller Init Status")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String status = jsonObject.optString("Status");
+
+                    message.put("MessageType", "Controller Init Status");
+                    message.put("Status", status);
+
+                    Log.d(LOG_TAG,"gino: "+ status);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Node Battery Value")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String id = jsonObject.optString("EndPoint Id");
+                    String value = jsonObject.optString("Battery Value");
+
+                    message.put("MessageType", "Node Battery Value");
+                    message.put("Node id", nodeId);
+                    message.put("EndPoint Id", id);
+                    message.put("Battery Value", value);
+
+                    Log.d(LOG_TAG,"gino: "+ nodeId);
+                    Log.d(LOG_TAG,"gino: "+ id);
+                    Log.d(LOG_TAG,"gino: "+ value);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Switch Multi-lvl Report Information")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String val = jsonObject.optString("Cur Val");
+
+                    message.put("MessageType", "Switch Multi-lvl Report Information");
+                    message.put("Node id", nodeId);
+                    message.put("Cur Val", val);
+                    message.put("Tgt Val", "Unsupported");
+                    message.put("Durration", "Unsupported");
+
+                    Log.d(LOG_TAG,"gino: "+ nodeId);
+                    Log.d(LOG_TAG,"gino: "+ val);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Power Level Get Information")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String level = jsonObject.optString("Power Level");
+
+                    message.put("MessageType", "Power Level Get Information");
+                    message.put("Node id", nodeId);
+                    message.put("Power Level", level);
+
+                    Log.d(LOG_TAG,"gino: "+ nodeId);
+                    Log.d(LOG_TAG,"gino: "+ level);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Switch All Get Information")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String mode = jsonObject.optString("mode");
+
+                    message.put("MessageType", "Switch All Get Information");
+                    message.put("Node id", nodeId);
+                    message.put("mode", mode);
+
+                    Log.d(LOG_TAG,"gino: "+ nodeId);
+                    Log.d(LOG_TAG,"gino: "+ mode);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Binary Sensor Information")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String type = jsonObject.optString("Event Type");
+                    String state = jsonObject.optString("state");
+
+                    message.put("MessageType", "Binary Sensor Information");
+                    message.put("Node id", nodeId);
+                    message.put("Event Type", type);
+                    message.put("state", state);
+
+                    Log.d(LOG_TAG,"gino: "+ nodeId);
+                    Log.d(LOG_TAG,"gino: "+ type);
+                    Log.d(LOG_TAG,"gino: "+ state);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Binary Sensor Support Get Information")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String type = jsonObject.optString("Supported type");
+
+                    message.put("MessageType", "Binary Sensor Support Get Information");
+                    message.put("Node id", nodeId);
+                    message.put("Supported type", type);
+
+                    Log.d(LOG_TAG,"gino: "+ nodeId);
+                    Log.d(LOG_TAG,"gino: "+ type);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            }  else if (result.contains("Meter Report Information")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String mType = jsonObject.optString("Meter type");
+                    String rType = jsonObject.optString("Rate type");
+                    String mRead = jsonObject.optString("Meter reading");
+                    String mUnit = jsonObject.optString("Meter unit");
+
+                    message.put("MessageType", "Meter Report Information");
+                    message.put("Node id", nodeId);
+                    message.put("Meter type", mType);
+                    message.put("Rate type", rType);
+                    message.put("Meter reading", mRead);
+                    message.put("Meter unit", mUnit);
+
+                    Log.d(LOG_TAG,"gino: "+ nodeId);
+                    Log.d(LOG_TAG,"gino: "+ mType);
+                    Log.d(LOG_TAG,"gino: "+ rType);
+                    Log.d(LOG_TAG,"gino: "+ mRead);
+                    Log.d(LOG_TAG,"gino: "+ mUnit);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Meter Cap Information")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String mType = jsonObject.optString("Meter type");
+                    String reset = jsonObject.optString("Can be reset?");
+                    String unit = jsonObject.optString("Supported unit");
+
+                    message.put("MessageType", "Meter Cap Information");
+                    message.put("Node id", nodeId);
+                    message.put("Meter type", mType);
+                    message.put("Can be reset?", reset);
+                    message.put("Supported unit", unit);
+
+                    Log.d(LOG_TAG,"gino: "+ nodeId);
+                    Log.d(LOG_TAG,"gino: "+ mType);
+                    Log.d(LOG_TAG,"gino: "+ reset);
+                    Log.d(LOG_TAG,"gino: "+ unit);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Wake Up Cap Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String wakeUpSetting = jsonObject.optString("Wake up settings");
+
+                    message.put("MessageType", "Wake Up Cap Report");
+                    message.put("Wake up settings", wakeUpSetting);
+
+                    Log.d(LOG_TAG,"gino: "+ wakeUpSetting);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Door Lock Operation Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String doorLockMode = jsonObject.optString("Door Lock op mode");
+                    String outsideMode = jsonObject.optString("Outside Door mode");
+                    String insideMode = jsonObject.optString("Inside Door mode");
+                    String doorCondition = jsonObject.optString("Door Condition");
+
+                    message.put("MessageType", "Door Lock Operation Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Door Lock op mode", doorLockMode);
+                    message.put("Outside Door mode", outsideMode);
+                    message.put("Inside Door mode", insideMode);
+                    message.put("Door Condition", doorCondition);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Door Lock Configuration Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String doorLockMode = jsonObject.optString("Door Lock op mode");
+                    String outsideMode = jsonObject.optString("Outside Door mode");
+                    String insideMode = jsonObject.optString("Inside Door mode");
+
+                    message.put("MessageType", "Door Lock Configuration Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Door Lock op mode", doorLockMode);
+                    message.put("Outside Door mode", outsideMode);
+                    message.put("Inside Door mode", insideMode);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Switch Color Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String component = jsonObject.optString("component id");
+                    String value = jsonObject.optString("value");
+
+                    message.put("MessageType", "Switch Color Report");
+                    message.put("Node Id", nodeId);
+                    message.put("component id", component);
+                    message.put("value", value);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Supported Color Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String supportColor = jsonObject.optString("Supported Color");
+
+                    message.put("MessageType", "Supported Color Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Supported Color", supportColor);
+
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Group Info Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String groupId = jsonObject.optString("Group id");
+                    String maxSupport = jsonObject.optString("Max Supported endpoints");
+                    String groupMember = jsonObject.optString("Group members");
+
+                    message.put("MessageType", "Group Info Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Group id", groupId);
+                    message.put("Max Supported endpoints", maxSupport);
+                    message.put("Group members",groupMember);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Supported Groupings Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String maxNumber = jsonObject.optString("Max number of groupings");
+
+                    message.put("MessageType", "Supported Groupings Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Max number of groupings", maxNumber);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            }  else if (result.contains("Active Groups Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String currentActive = jsonObject.optString("Current active group");
+
+                    message.put("MessageType", "Active Groups Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Current active group", currentActive);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Notification Get Information")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String status = jsonObject.optString("Notification-status");
+                    String type = jsonObject.optString("Notification-type");
+                    String event = jsonObject.optString("Notification-event");
+
+                    message.put("MessageType", "Notification Get Information");
+                    message.put("Node Id", nodeId);
+                    message.put("Notification-status", status);
+                    message.put("Notification-type", type);
+                    message.put("Notification-event",event);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Notification Supported Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String type = jsonObject.optString("Have alarm type");
+                    String support = jsonObject.optString("supported notification");
+
+                    message.put("MessageType", "Notification Supported Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Have alarm type", type);
+                    message.put("supported notification", support);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Supported Notification Event Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String type = jsonObject.optString("Notification Type");
+                    String event = jsonObject.optString("event");
+
+                    message.put("MessageType", "Supported Notification Event Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Notification Type", type);
+                    message.put("event", event);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Central Scene Supported Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String Scenes = jsonObject.optString("Supported Scenes");
+                    String attributes = jsonObject.optString("Is Same Key Attributes");
+                    String supportKey = jsonObject.optString("Supported Key Attr");
+
+                    message.put("MessageType", "Central Scene Supported Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Supported Scenes", Scenes);
+                    message.put("Is Same Key Attributes", attributes);
+                    message.put("Supported Key Attr", supportKey);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Central Scene Notification")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String attrKey = jsonObject.optString("key attr");
+                    String sceneNumber = jsonObject.optString("Scene number");
+
+                    message.put("MessageType", "Central Scene Notification");
+                    message.put("Node Id", nodeId);
+                    message.put("key attr", attrKey);
+                    message.put("Scene number", sceneNumber);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Firmware Info Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String vendorId = jsonObject.optString("Vendor id");
+                    String firmwareId = jsonObject.optString("Firmware id");
+                    String Checksum = jsonObject.optString("Checksum");
+                    String maxSize = jsonObject.optString("Max fragment size");
+                    String sizeFixed = jsonObject.optString("Size fixed");
+                    String Upgradable = jsonObject.optString("Upgradable");
+                    String otherFirmwareTarger = jsonObject.optString("Other Firmware targer");
+                    String otherFirmwareId = jsonObject.optString("Other firmware id");
+
+                    message.put("MessageType", "Firmware Info Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Vendor id", vendorId);
+                    message.put("Firmware id", firmwareId);
+                    message.put("Checksum", Checksum);
+                    message.put("Max fragment size", maxSize);
+                    message.put("Size fixed", sizeFixed);
+                    message.put("Upgradable", Upgradable);
+                    message.put("Other Firmware targer", otherFirmwareTarger);
+                    message.put("Other firmware id", otherFirmwareId);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Firmware Update Status Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String status = jsonObject.optString("Update status");
+
+                    message.put("MessageType", "Firmware Update Status Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Update status", status);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Firmware Update Completion Status Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String status = jsonObject.optString("Update status");
+
+                    message.put("MessageType", "Firmware Update Completion Status Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Update status", status);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Firmware Update restart Status Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String status = jsonObject.optString("Restart status");
+
+                    message.put("MessageType", "Firmware Update restart Status Report");
+                    message.put("Node Id", nodeId);
+                    message.put("Restart status", status);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Sensor Info Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String precision = jsonObject.optString("type");
+                    String type = jsonObject.optString("precision");
+                    String unit = jsonObject.optString("unit");
+                    String value = jsonObject.optString("value");
+
+                    message.put("MessageType", "Sensor Info Report");
+                    message.put("Node Id", nodeId);
+                    message.put("type", type);
+                    message.put("precision", precision);
+                    message.put("unit",unit);
+                    message.put("value",value);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Command Queue State Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String state = jsonObject.optString("command state");
+
+
+                    message.put("MessageType", "Command Queue State Report");
+                    message.put("Node Id", nodeId);
+                    message.put("command state", state);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Command Queue Info Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String queue = jsonObject.optString("command queue");
+
+                    message.put("MessageType", "Command Queue Info Report");
+                    message.put("Node Id", nodeId);
+                    message.put("command queue", queue);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Network Health Check")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String status = jsonObject.optString("Status");
+
+                    message.put("MessageType", "Network Health Check");
+                    message.put("Status", status);
+
+                    Log.d(LOG_TAG,"gino: "+ status);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Network IMA Info Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String nodeid = jsonObject.optString("Direct nodeid");
+                    String health = jsonObject.optString("Network Health");
+                    String number = jsonObject.optString("RSSI hops number");
+                    String value = jsonObject.optString("RSSI hops value");
+                    String channel = jsonObject.optString("Transmit channel");
+
+                    message.put("MessageType", "Network IMA Info Report");
+                    message.put("Direct nodeid", nodeid);
+                    message.put("Network Health", health);
+                    message.put("RSSI hops number", number);
+                    message.put("RSSI hops value", value);
+                    message.put("Transmit channel", channel);
+
+                    Log.d(LOG_TAG,"gino: "+ nodeid);
+                    Log.d(LOG_TAG,"gino: "+ health);
+                    Log.d(LOG_TAG,"gino: "+ number);
+                    Log.d(LOG_TAG,"gino: "+ value);
+                    Log.d(LOG_TAG,"gino: "+ channel);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Network RSSI Info Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String channel1 = jsonObject.optString("Value of channel 1");
+                    String channel2 = jsonObject.optString("Value of channel 2");
+
+                    message.put("MessageType", "Network RSSI Info Report");
+                    message.put("Value of channel 1", channel1);
+                    message.put("Value of channel 2", channel2);
+
+                    Log.d(LOG_TAG,"gino: "+ channel1);
+                    Log.d(LOG_TAG,"gino: "+ channel1);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (result.contains("Provision List Report")) {
+                if(result.contains("Error")) {
+                    try {
+                        message.put("MessageType", "Provision List Report");
+                        message.put("Error", "No list entry");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    publishMessage(Const.PublicTopicName, message.toString());
+                } else {
+                    JSONObject jsonObject = null;
+                    try {
+                        jsonObject = new JSONObject(result);
+                        String dsk = jsonObject.optString("DSK");
+                        String type = jsonObject.optString("Device type info");
+                        String id = jsonObject.optString("Device id info");
+                        String bootMode = jsonObject.optString("Device Boot Mode");
+                        String state = jsonObject.optString("Device Inclusion state");
+                        String location = jsonObject.optString("Device Location");
+                        String name = jsonObject.optString("Device Name");
+
+                        message.put("MessageType", "Provision List Report");
+                        message.put("DSK", dsk);
+                        message.put("Device type info", type);
+                        message.put("Device id info", id);
+                        message.put("Device Boot Mode", bootMode);
+                        message.put("Device Inclusion state", state);
+                        message.put("Device Location", location);
+                        message.put("Device Name", name);
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    publishMessage(Const.PublicTopicName, message.toString());
+                }
+
+            } else if (result.contains("All Provision List Report")) {
+                if(result.contains("Error")) {
+                    try {
+                        message.put("MessageType", "All Provision List Report");
+                        message.put("Error", "No list entry");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    publishMessage(Const.PublicTopicName, message.toString());
+                }
+
+                else {
+                    JSONObject jsonObject = null;
+                    try {
+                        jsonObject = new JSONObject(result);
+                        String list = jsonObject.optString("Detial provision list");
+
+                        message.put("MessageType", "All Provision List Report");
+                        message.put("Detial provision list", list);
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    publishMessage(Const.PublicTopicName, message.toString());
+                }
+
+
+            } else if (result.contains("Controller DSK Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    String dsk = jsonObject.optString("DSK");
+
+                    message.put("MessageType", "Controller DSK Report");
+                    message.put("DSK", dsk);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
             }
+
             else {
 
                 try {
@@ -1114,17 +2214,6 @@ public class MQTTBroker extends Service {
             }
         }
     };
-
-    private void getAllProvisionListEntry(String result, JSONObject message) {
-        try {
-            message.put("Interface", "getAllProvision2ListEntry");
-            message.put("Result", result + " gino");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        publishMessage(Const.PublicTopicName, message.toString());
-    }
 
     private void reNameDevice(String result) {
         try {
@@ -1189,9 +2278,8 @@ public class MQTTBroker extends Service {
     }
 
     private void addRemoveDevice(String className, String result, JSONObject message) {
-
         mTCPServer.sendMessage(Const.TCPClientPort, result); //TCP format
-        Log.i(LOG_TAG,result);
+        Log.i(LOG_TAG,"gino result :   " +result);
 
         if (result.contains("addDevice:") || result.contains("removeDevice:")) {
             String[] tokens = result.split(":");
@@ -1204,12 +2292,10 @@ public class MQTTBroker extends Service {
                 String tNodeId = tokens[2];
 
                 if (className.equals("addDevice")) {
-
                     try {
                         message.put("Interface", "addDevice");
                         message.put("NodeId", tNodeId);
                         message.put("Result", "true");
-                        //  obj.put("reported", message);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -1240,7 +2326,6 @@ public class MQTTBroker extends Service {
     }
 
     private void grantKey(String result) {
-
         if (result.contains("Grant Keys Msg")) {
             Log.d(LOG_TAG,result);
             JSONObject jsonObject = null;
@@ -1251,38 +2336,7 @@ public class MQTTBroker extends Service {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
-            Timer timer = new Timer(true);
-            timer.schedule(new mTimerTask(), 5000);
-
             Const.TCPClientPort = 0;
-
-        }
-    }
-
-    public Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case 2001:
-                    Log.d(LOG_TAG,"grant: start---------------------");
-                    try {
-                        Thread.sleep(10000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    DeviceInfo.reqKeyFlag = true;
-                    Log.d(LOG_TAG,"grant: end---------------------");
-                    break;
-            }
-        }
-    };
-
-    class mTimerTask extends TimerTask {
-        public void run() {
-            Message message = new Message();
-            message.what = 2001;
-            mHandler.sendMessage(message);
         }
     }
 
@@ -1299,19 +2353,8 @@ public class MQTTBroker extends Service {
         }
 
         mTCPServer.sendMessage(Const.TCPClientPort, "Network Role:"+ networkRole); //TCP format
-        Log.d(LOG_TAG,"Network Role:"+ networkRole + " gino!!!!!!!!!!");
-
         Const.TCPClientPort = 0;
 
-    }
-
-    private void sleep() {
-        Log.i(LOG_TAG,"------------------------sleep---------------------------------");
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 }
 

@@ -36,14 +36,7 @@ public class ZwaveControlHelper {
 
     public static int ZwaveControlReq_CallBack(byte[] result, int len){
         ZwaveControlService.getInstance().zwaveControlReq_CallBack(result,len);
-        android.util.Log.d("ZwaveControlHelper", "ZwaveControlReq_CallBack " + new String(result));
-        while (!DeviceInfo.reqKeyFlag) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        //android.util.Log.d("ZwaveControlHelper", "ZwaveControlReq_CallBack " + new String(result));
         return DeviceInfo.reqKey;
     }
 
@@ -62,7 +55,7 @@ public class ZwaveControlHelper {
     public native static int ZwController_GetDeviceList();
     public native static int ZwController_getSpecifyDeviceInfo(int deviceId);
     public native static int ZwController_RemoveFailedDevice(int deviceId);
-    public native static int ZwController_ReplaceFailedDevice(int deviceId, byte[] dsk, int dsklen);
+    public native static int ZwController_ReplaceFailedDevice(int deviceId);
     public native static int ZwController_SetDefault();
     // NOTE: when controller going to inclusion process, it's can not be stoped
     public native static int ZwController_StopAddDevice();
@@ -135,6 +128,7 @@ public class ZwaveControlHelper {
     ** support CC: COMMAND_CLASS_POWERLEVEL
     **/
     public native static int ZwController_GetPowerLevel(int deviceId);
+    public native static int ZwController_SetPowerLevel(int deviceId, int powerLvl, int timeout);
 
     /**
     ** zwave controller jni interface
@@ -392,5 +386,7 @@ public class ZwaveControlHelper {
     public native static int ZwController_getProvisionListEntry(byte[] dsk, int dsklen);
     public native static int ZwController_getAllProvisionListEntry();
     public native static int ZwController_rmAllProvisionListEntry();
+
+    public native static int ZwController_checkNodeIsFailed(int deviceId);
 
 }

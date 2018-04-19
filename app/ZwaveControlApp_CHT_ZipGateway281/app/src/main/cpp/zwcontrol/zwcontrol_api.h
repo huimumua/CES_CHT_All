@@ -177,7 +177,8 @@ int  zwcontrol_get_node_list(hl_appl_ctx_t *hl_appl);
 int  zwcontrol_get_node_info(hl_appl_ctx_t* hl_appl);
 int  zwcontrol_get_specify_node_info(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_rm_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
-int  zwcontrol_rp_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId, const char* dsk, int dsklen);
+int  zwcontrol_rp_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId);
+int  zwcontrol_check_node_isFailed(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_default_set(hl_appl_ctx_t *hl_appl);
 int  zwcontrol_save_nodeinfo(hl_appl_ctx_t *hl_appl, const char* filepath);
 //Add by jay.k >>start
@@ -227,6 +228,7 @@ int  zwcontrol_meter_reset(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
  **  Command Class Power Level
  */
 int  zwcontrol_powerLevel_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_powerLevel_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint32_t powerLvl, uint32_t timeout);
 
 
 /*
@@ -240,7 +242,7 @@ int  zwcontrol_sensor_multilevel_get(hl_appl_ctx_t *hl_appl, uint32_t nodeId/*, 
  **
  */
 int  zwcontrol_notification_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t notificationType, uint8_t status);
-int  zwcontrol_notification_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t alarmType, uint8_t notificationType, uint8_t state);
+int  zwcontrol_notification_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t alarmType, uint8_t notificationType, uint8_t evt);
 int  zwcontrol_notification_supported_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_notification_supported_event_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t notificationType);
 
@@ -281,6 +283,16 @@ int  zwcontrol_start_stop_switchlevel_change(hl_appl_ctx_t* hl_appl, uint32_t no
  */
 int  zwcontrol_wake_up_interval_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
 int  zwcontrol_wake_up_interval_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint32_t wkup_interval);
+
+
+/*
+ **  Command Class Door Lock
+ */
+int  zwcontrol_door_lock_operation_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_door_lock_operation_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t mode);
+int  zwcontrol_door_lock_config_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId);
+int  zwcontrol_door_lock_config_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t type, uint8_t out_sta,
+                                    uint8_t in_sta, uint8_t tmout_min, uint8_t tmout_sec);
 
 
 /*

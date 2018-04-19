@@ -1,6 +1,7 @@
 package com.askey.firefly.zwave.control.ui;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothClass;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -83,7 +84,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     private int getDeviceInfoFlag = 0;
     private boolean getProvisionListFlag = false;
     private boolean getProvisionNodeFlag = false;
-    private boolean InclusionState = true;
 
 
     @Override
@@ -104,13 +104,14 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         Intent serviceIntent = new Intent(this, ZwaveControlService.class);
         this.bindService(serviceIntent, conn, Context.BIND_AUTO_CREATE);
 
+        new Thread(reqCallBack).start();
+
         new Thread(checkInitStatus).start();
         initBtn();
 
-
     }
 
-    //讀取ApiName.txt內容
+    //read content of ApiName.txt
     private String loadTextFile(InputStream inputStream) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         byte[] bytes = new byte[4096];
@@ -183,7 +184,16 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
     }
 
+    // only execute one time
+    public Runnable reqCallBack = new Runnable() {
+        @Override
+        public void run() {
+            Intent serviceIntent = new Intent(WelcomeActivity.this, ZwaveControlService.class);
+            WelcomeActivity.this.bindService(serviceIntent, req, Context.BIND_AUTO_CREATE);
+        }
+    };
 
+    // only execute one time
     public Runnable checkInitStatus = new Runnable() {
         @Override
         public void run() {
@@ -195,10 +205,11 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 }
             }
             initSensorfunc();
-            initZwave();
+            initZwave();        //maybe can cancel by gino
         }
     };
 
+    // not use !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     private void initZwave() {
         ((Activity) mContext).runOnUiThread(new Runnable() {
             @Override
@@ -206,12 +217,13 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 timerCancel();
                 //Intent intent = new Intent();
                 //intent.setClass(mContext, HomeActivity.class);
-                hideProgressDialog();
+                hideProgressDialog();                               //close progress dialog
                 //mContext.startActivity(intent);
                 //finish();
             }
         });
     }
+
 
     private void showZwaveControlTimeOutDialog(String titleStr) {
         if(alertDialog == null) {
@@ -257,6 +269,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         }
     }
 
+
+    // permanent thread
     public Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -266,7 +280,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     hideProgressDialog();
                     showZwaveControlTimeOutDialog("Zwave OpenController Timeout");
                     break;
-
             }
         }
     };
@@ -279,13 +292,11 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                 if (editDsk.length() != 0 && editDsk.length() == 47) {    // editDsk will 5-digit or full code
                     //Log.i(LOG_TAG, "call zwaveService.addDevice()");
-                    inputDsk = editDsk.getText().toString() + "\0";
-                    byte[] dskNumber = inputDsk.getBytes();
+                    DeviceInfo.reqKey = Integer.valueOf(editDsk.getText().toString());
                     zwaveService.addDevice(DeviceInfo.devType);
                 } else if (editDsk.length() != 0 && editDsk.length() == 5) {
                     //Log.i(LOG_TAG, "call zwaveService.addDevice()");
-                    inputDsk = editDsk.getText().toString() + "\0";
-                    byte[] dskNumber = inputDsk.getBytes();
+                    DeviceInfo.reqKey = Integer.valueOf(editDsk.getText().toString());
                     zwaveService.addDevice(DeviceInfo.devType);
                 } else if (editDsk.length() == 0) {
                     zwaveService.addDevice(DeviceInfo.devType);
@@ -317,6 +328,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     zwaveService.getAllProvisionListEntry();
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_rmAllProvisionListEntry")) {
                     zwaveService.rmAllProvisionListEntry();
+                } else if (spApiList.getSelectedItem().toString().contains("ZwController_getDeviceList")) {
+                    zwaveService.getDeviceList("My Home");
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_battery_get")) {
                     zwaveService.getDeviceBattery(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_sensor_multilevel_get")) {
@@ -472,11 +485,27 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_getSpecifyDeviceInfo")) {
                     zwaveService.getSpecifyDeviceInfo(selectNode);
+                } else if (spApiList.getSelectedItem().toString().contains("ZwController_SetDefault")) {
+                    zwaveService.setDefault();
+                } else if (spApiList.getSelectedItem().toString().contains("ZwController_checkNodeIsFailed")) {
+                    zwaveService.checkNodeIsFailed(selectNode);
+                } else if (spApiList.getSelectedItem().toString().contains("ZwController_RemoveFailedDevice")) {
+                    zwaveService.removeFailedDevice(selectNode);
+                    nodeIdArr.remove(Integer.valueOf(selectNode));
+
+                    ArrayAdapter<Integer> devList = new ArrayAdapter<Integer>(WelcomeActivity.this,
+                            android.R.layout.simple_spinner_dropdown_item,
+                            convertIntegers(nodeIdArr));
+                    spNodeIdList.setAdapter(devList);
+
+
+                } else if (spApiList.getSelectedItem().toString().contains("ZwController_ReplaceFailedDevice")) {
+                    zwaveService.replaceFailedDevice(selectNode);
                 }
                 break;
             case R.id.btnaddProList:
                 if (editDsk.length() != 0 && editDsk.length() == 47) {    // editDsk will 5-digit or full code
-                    InclusionState = true;
+                    DeviceInfo.InclusionState = true;
                     addProvisionList();
                 } else
                     Toast.makeText(this, "格式錯誤 !", Toast.LENGTH_SHORT).show();
@@ -496,7 +525,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 break;
             case R.id.btnPassive:
                 if (selectProvisionList != null) {
-                    InclusionState = false;
+                    DeviceInfo.InclusionState = false;
                     editDsk.setText(selectProvisionList);
                     rmProvisionList();
                     addProvisionList();
@@ -504,37 +533,43 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         }
     }
 
-    //載入provision list
+    //load exist provision list
     private void loadProvisionList(String result) {
-        final String allProvisionList = result;
-        JSONObject jsonObject = null;
-        try {
-            jsonObject = new JSONObject(allProvisionList);
-            String provisinoInfo = jsonObject.optString("Detial provision list");
-            String[] dskNumber = provisinoInfo.split(",");
-            for(int i = 0; i < dskNumber.length; i++) {
-                txAllMsg.setText(result);
-                if (dskNumber[i].contains("DSK")) {
-                    String[] tmpDsk = dskNumber[i].split("\"");
-                    for(int j = 0; j < tmpDsk.length; j++) {
-                        if(j % 4 == 0 && getProvisionListFlag == false) {
-                            Log.d(LOG_TAG, tmpDsk[j + 3]);
-                            provisionListArr.add(tmpDsk[j + 3]); //抓取DSK值
-                            txAllMsg.setText(tmpDsk[j + 3]);
+        if(result.contains("No list entry found"))
+        {
+            Log.d(LOG_TAG,"No list entry found !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        }
+
+        else {
+            JSONObject jsonObject = null;
+            try {
+                jsonObject = new JSONObject(result);
+                String provisinoInfo = jsonObject.optString("Detial provision list");
+                String[] dskNumber = provisinoInfo.split(",");
+                for (int i = 0; i < dskNumber.length; i++) {
+                    //txAllMsg.setText(result);
+                    if (dskNumber[i].contains("DSK")) {
+                        String[] tmpDsk = dskNumber[i].split("\"");
+                        for (int j = 0; j < tmpDsk.length; j++) {
+                            if (j % 4 == 0 && getProvisionListFlag == false) {
+                                Log.d(LOG_TAG, tmpDsk[j + 3]);
+                                provisionListArr.add(tmpDsk[j + 3]); //抓取DSK值
+                                //txAllMsg.setText(tmpDsk[j + 3]);
+                            }
                         }
                     }
                 }
+
+                getProvisionListFlag = true;    //Provision List 載入到 spinner 1次
+
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-
-            getProvisionListFlag = true;    //Provision List 載入到 spinner 1次
-
-        } catch (JSONException e) {
-            e.printStackTrace();
         }
 
     }
 
-    //取得Provision List
+    //get Provision List
     private void getProvisionList() {
         getProvisionNodeFlag = false;
         inputDsk =  selectProvisionList + "\0";
@@ -543,6 +578,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         zwaveService.getProvisionListEntry(DeviceInfo.devType,dskNumber);
     }
 
+    //check provision node whether exist
     private void getProvisionNode(String result) {
         final String provisionInfo = result;
         JSONObject jsonObject = null;
@@ -567,7 +603,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         }
     }
 
-    //移除Provision List
+    //remove Provision List
     private void rmProvisionList() {
         getProvisionNodeFlag = true;
         inputDsk =  selectProvisionList + "\0";
@@ -581,7 +617,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         spProvisionList.setAdapter(provisionList);
     }
 
-    //新增Provision List
+    //insert Provision List
     private void addProvisionList() {
 
         inputDsk = editDsk.getText().toString() + "\0";
@@ -591,7 +627,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             Toast.makeText(this,"already Provision List", Toast.LENGTH_SHORT).show();
         } else {
             provisionListArr.add(editDsk.getText().toString());
-            zwaveService.addProvisionListEntry(DeviceInfo.devType,dskNumber,InclusionState);
+            zwaveService.addProvisionListEntry(DeviceInfo.devType,dskNumber,DeviceInfo.InclusionState);
             Toast.makeText(this, "add Provision List", Toast.LENGTH_SHORT).show();
         }
         ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
@@ -613,7 +649,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
     }
 
-    //限制editDsk輸入字數
+    //input editDsk limitation
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         if(cb1.isChecked()) {
@@ -640,6 +676,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         }
     }
 
+
     private void alertDialogCancel() {
         if(alertDialog!=null){
             alertDialog.dismiss();
@@ -647,6 +684,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         }
     }
 
+    // cancel this timer schedule
     private void timerCancel() {
         if (timer != null) {
             timer.cancel();
@@ -662,9 +700,27 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             zwaveService = ((ZwaveControlService.MyBinder)iBinder).getService();
             //register mCallback
             if (zwaveService != null) {
-                zwaveService.register(mCallback);
-                zwaveService.register(mReqCallBacks);
-                requestControlUSBPermission();
+                zwaveService.register(mCallback);       //add & remove and other info call back
+                //zwaveService.register(mReqCallBacks);   //use other thread for grantKey pinCode csa req call back
+                openController();
+
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            zwaveService = null;
+        }
+    };
+
+    private ServiceConnection req = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            Log.i(LOG_TAG,"req_ServiceConnected....");
+            zwaveService = ((ZwaveControlService.MyBinder)iBinder).getService();
+            //register mCallback
+            if (zwaveService != null) {
+                zwaveService.register(mReqCallBacks);   //use other thread for grantKey pinCode csa req call back
             }
         }
 
@@ -684,129 +740,567 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             unregisterReceiver(usbReceiver);
         try {
             this.unbindService(conn);
+            this.unbindService(req);
         } catch (Exception e) {
             Log.d(LOG_TAG, e.toString());
         }
     }
 
     public ZwaveControlService.zwaveCallBack mCallback;
-    public ZwaveControlService.zwaveControlReq_CallBack mReqCallBacks;
-
-
     {
         mCallback = new ZwaveControlService.zwaveCallBack() {
 
             //監聽關鍵字回報 從ZwaveControlService.jave zwaveCallBack -> zwcontrol_api.c "MessageType"
             @Override
             public void zwaveControlResultCallBack(String className, String result) {
+
                 Log.i(LOG_TAG, "class name = [" + className + "]| result = " + result);
+
                 if (className.equals("addDevice") || className.equals("removeDevice")) {
-                    addRemoveResult(result);
-                } else if (className.equals("DSK")) {
-                    showDsk(result);
-                } else if (className.equals("getDeviceInfo")) {
-                    zwaveService.getAllProvisionListEntry();
-                    if (getDeviceInfoFlag == 1) {
-                        showSecurityStatus(result);
-                    } else if (getDeviceInfoFlag == 2) {
-                        showCommandClass(result);
-                    } else if (getDeviceInfoFlag == 3) {
-                        showNodeInfo(result);
+
+                    addRemoveDevice(result);
+
+                } else if (className.equals("All Node Info Report")) {
+
+                    Log.d(LOG_TAG,result);
+
+                } else if (className.equals("reNameDevice")) {
+
+                    addRemoveDevice(result);
+
+                } else if (result.contains("Remove Failed Node")) {
+
+                    if(result.contains("Success")) {
+
+                        Log.d("MessageType", "Remove Failed Node");
+                        Log.d("Status", "Success");
                     }
-                } else if (className.equals("getSensorMultiLevel") || className.equals("getSensorNotification") ||
-                        className.equals("getLampColor") || className.equals("getBasic") || className.equals("getPowerLevel")) {
-                    for (int i = 0; i < result.length(); i++) {
-                        txAllMsg.setText(result);
+
+                } else if (result.contains("Replace Failed Node")) {
+
+                    if(result.contains("Success")) {
+
+                        Log.d("MessageType", "Replace Failed Node");
+                        Log.d("Status", "Success");
+
+                    } else if (result.contains("Unknown or Failed")) {
+
+                        Log.d("MessageType", "Replace Failed Node");
+                        Log.d("Status", "Unknown or Failed");
                     }
-                } else if (className.equals("All Provision List Report") || className.equals("getAllProvisionListEntry")) {
-                    loadProvisionList(result);
-                } else if (className.equals("Provision List Report")) {
-                    if (getProvisionNodeFlag) {
-                        getProvisionNode(result);
+                } else if (result.contains("Node Is Failed Check Report")) {
+                    String[] tmpSplit = result.split(":");
+                    if(result.contains("Alive")) {
+
+                        Log.d("MessageType", "Node Is Failed Check Report");
+                        Log.d("Node Id", tmpSplit[2]);
+                        Log.d("Status", "Alive");
+
+                    } else if (result.contains("Down(failed)")) {
+
+                        Log.d("MessageType", "Node Is Failed Check Report");
+                        Log.d("Node Id", tmpSplit[2]);
+                        Log.d("Status", "Down(failed)");
+                    }
+
+                }  else if (result.contains("Replace Failed Node")) {
+
+                    if(result.contains("Success")) {
+
+                        Log.d("MessageType", "Replace Failed Node");
+                        Log.d("Status", "Success");
+
+                    } else if (result.contains("Unknown or Failed")) {
+
+                        Log.d("MessageType", "Replace Failed Node");
+                        Log.d("Status", "Unknown or Failed");
+                    }
+
+                }  else if (result.contains("Controller Reset Status")) {
+
+                    if(result.contains("Success")) {
+
+                        Log.d("MessageType", "Controller Reset Status");
+                        Log.d("Status", "Success");
+
+
+                    } else if (result.contains("Failed")) {
+
+                        Log.d("MessageType", "Controller Reset Status");
+                        Log.d("Status", "Failed");
+                    }
+
+                } else if (result.contains("Controller Attribute")) {
+                    String[] tmpSplit = result.split(",");
+                    String homeId = tmpSplit[1];
+                    String nodeId = tmpSplit[2];
+                    String role = tmpSplit[3];
+                    String vendorId = tmpSplit[4];
+                    String proType = tmpSplit[5];
+                    String libType = tmpSplit[6];
+                    String protocolVersion = tmpSplit[7];
+                    String appVersion = tmpSplit[8];
+                    Log.d("MessageType", "Controller Attribute");
+                    Log.d("Home id", homeId);
+                    Log.d("Node id", nodeId);
+                    Log.d("Network Role", role);
+                    Log.d("Vendor Id",vendorId);
+                    Log.d("Vendor Product Type",proType);
+                    Log.d("Z-wave Library Type",libType);
+                    Log.d("Z-wave Protocol Version",protocolVersion);
+                    Log.d("Application Version",appVersion);
+
+                } else if (result.contains("All Node List Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeList = tmpSplit[1];
+                    Log.d("MessageType", "All Node List Report");
+                    Log.d("Added Node List", nodeList);
+
+                }  else if (result.contains("Specify Node Info")) {
+                    //String[] tmpSplit = result.split("Detialed Node Info");
+                    //Log.d("MessageType", "Specify Node Info");
+                    //Log.d("Detialed Node Info", tmpSplit[1]);
+
+                    JSONObject jsonObject = null;
+                    try {
+                        jsonObject = new JSONObject(result);
+                        String nodeInfo = jsonObject.optString("Detialed Node Info");
+                        Log.d(LOG_TAG,"gino: "+ nodeInfo);
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                } else if (result.contains("Controller Init Status")) {
+                    if(result.contains("Success")) {
+                        Log.d("MessageType", "Controller Init Status");
+                        Log.d("Status", "Success");
+                    }
+
+                } else if (result.contains("Node Battery Value")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String endPointId = tmpSplit[2];
+                    String batteryValue = tmpSplit[3];
+
+                    Log.d("MessageType", "Node Battery Value");
+                    Log.d("Node Id", nodeId);
+                    Log.d("EndPoint Id", endPointId);
+                    Log.d("Battery Value", batteryValue);
+
+                } else if (result.contains("Switch Multi-lvl Report Information")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String curValue = tmpSplit[2];
+
+                    Log.d("MessageType", "Switch Multi-lvl Report Information");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Cur Val", curValue);
+                    Log.d("Tgt Val", "Unsupported");
+                    Log.d("Durration", "Unsupported");
+
+                } else if (result.contains("Power Level Get Information")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String powerLevel = tmpSplit[2];
+                    Log.d("MessageType", "Power Level Get Information");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Power Level", powerLevel);
+
+                } else if (result.contains("Switch All Get Information")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String mode = tmpSplit[2];
+
+                    Log.d("MessageType", "Switch All Get Information");
+                    Log.d("Node Id", nodeId);
+                    Log.d("mode", mode);
+
+                } else if (result.contains("Binary Sensor Information")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String eventType = tmpSplit[2];
+                    String state = tmpSplit[3];
+
+                    Log.d("MessageType", "Binary Sensor Information");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Event Type", eventType);
+                    Log.d("state", state);
+
+                } else if (result.contains("Binary Sensor Support Get Information")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String supportType = tmpSplit[2];
+                    Log.d("MessageType", "Binary Sensor Support Get Information");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Supported type", supportType);
+
+
+                }  else if (result.contains("Meter Report Information")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String meterType = tmpSplit[2];
+                    String canReset = tmpSplit[3];
+                    String supportUnit = tmpSplit[4];
+
+                    Log.d("MessageType", "Meter Report Information");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Meter type", meterType);
+                    Log.d("Can be reset?", canReset);
+                    Log.d("Supported unit", supportUnit);
+
+                } else if (result.contains("Meter Cap Information")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String meterType = tmpSplit[2];
+                    String canReset = tmpSplit[3];
+                    String supportUnit = tmpSplit[4];
+
+                    Log.d("MessageType", "Meter Cap Information");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Meter type", meterType);
+                    Log.d("Can be reset?", canReset);
+                    Log.d("Supported unit", supportUnit);
+
+
+
+                } else if (result.contains("Wake Up Cap Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String wakeUpSetting = tmpSplit[1];
+
+                    Log.d("MessageType", "Wake Up Cap Report");
+                    Log.d("Wake up settings", wakeUpSetting);
+
+
+                } else if (result.contains("Door Lock Operation Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String doorLockMode = tmpSplit[2];
+                    String outsideMode = tmpSplit[3];
+                    String insideMode = tmpSplit[4];
+                    String doorCondition = tmpSplit[4];
+
+                    Log.d("MessageType", "Door Lock Operation Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Door Lock op mode", doorLockMode);
+                    Log.d("Outside Door mode", outsideMode);
+                    Log.d("Inside Door mode", insideMode);
+                    Log.d("Door Condition", doorCondition);
+
+
+                } else if (result.contains("Door Lock Configuration Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String doorLockMode = tmpSplit[2];
+                    String outsideMode = tmpSplit[3];
+                    String insideMode = tmpSplit[4];
+
+                    Log.d("MessageType", "Door Lock Configuration Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Door Lock op mode", doorLockMode);
+                    Log.d("Outside Door mode", outsideMode);
+                    Log.d("Inside Door mode", insideMode);
+
+
+                } else if (result.contains("Switch Color Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String component = tmpSplit[2];
+                    String value = tmpSplit[3];
+
+                    Log.d("MessageType", "Switch Color Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("component id", component);
+                    Log.d("value", value);
+
+
+                } else if (result.contains("Supported Color Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String supportColor = tmpSplit[2];
+
+                    Log.d("MessageType", "Supported Color Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Supported Color", supportColor);
+
+
+                } else if (result.contains("Group Info Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String groupId = tmpSplit[2];
+                    String maxSupport = tmpSplit[3];
+                    String groupMember = tmpSplit[4];
+
+                    Log.d("MessageType", "Group Info Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Group id", groupId);
+                    Log.d("Max Supported endpoints", maxSupport);
+                    Log.d("Group members",groupMember);
+
+
+                } else if (result.contains("Supported Groupings Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String maxNumber = tmpSplit[2];
+
+                    Log.d("MessageType", "Supported Groupings Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Max number of groupings", maxNumber);
+
+
+                }  else if (result.contains("Active Groups Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String currentActive = tmpSplit[2];
+
+                    Log.d("MessageType", "Active Groups Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Current active group", currentActive);
+
+
+                } else if (result.contains("Notification Get Information")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String status = tmpSplit[2];
+                    String type = tmpSplit[3];
+                    String event = tmpSplit[4];
+
+                    Log.d("MessageType", "Notification Get Information");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Notification-status", status);
+                    Log.d("Notification-type", type);
+                    Log.d("Notification-event",event);
+
+
+                } else if (result.contains("Notification Supported Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String type = tmpSplit[2];
+                    String support = tmpSplit[3];
+
+                    Log.d("MessageType", "Notification Supported Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Have alarm type", type);
+                    Log.d("supported notification", support);
+
+                } else if (result.contains("Supported Notification Event Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String type = tmpSplit[2];
+                    String event = tmpSplit[3];
+
+                    Log.d("MessageType", "Supported Notification Event Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Notification Type", type);
+                    Log.d("event", event);
+
+
+                } else if (result.contains("Central Scene Supported Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String Scenes = tmpSplit[2];
+                    String attributes = tmpSplit[3];
+                    String supportKey = tmpSplit[4];
+
+                    Log.d("MessageType", "Central Scene Supported Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Supported Scenes", Scenes);
+                    Log.d("Is Same Key Attributes", attributes);
+                    Log.d("Supported Key Attr", supportKey);
+
+
+                } else if (result.contains("Central Scene Notification")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String attrKey = tmpSplit[2];
+                    String sceneNumber = tmpSplit[3];
+
+                    Log.d("MessageType", "Central Scene Notification");
+                    Log.d("Node Id", nodeId);
+                    Log.d("key attr", attrKey);
+                    Log.d("Scene number", sceneNumber);
+
+
+                } else if (result.contains("Firmware Info Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String vendorId = tmpSplit[2];
+                    String firmwareId = tmpSplit[3];
+                    String Checksum = tmpSplit[4];
+                    String maxSize = tmpSplit[5];
+                    String sizeFixed = tmpSplit[6];
+                    String Upgradable = tmpSplit[7];
+                    String otherFirmwareTarger = tmpSplit[8];
+                    String otherFirmwareId = tmpSplit[9];
+
+                    Log.d("MessageType", "Firmware Info Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Vendor id", vendorId);
+                    Log.d("Firmware id", firmwareId);
+                    Log.d("Checksum", Checksum);
+                    Log.d("Max fragment size", maxSize);
+                    Log.d("Size fixed", sizeFixed);
+                    Log.d("Upgradable", Upgradable);
+                    Log.d("Other Firmware targer", otherFirmwareTarger);
+                    Log.d("Other firmware id", otherFirmwareId);
+
+
+                } else if (result.contains("Firmware Update Status Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String status = tmpSplit[2];
+
+                    Log.d("MessageType", "Firmware Update Status Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Update status", status);
+
+
+                } else if (result.contains("Firmware Update Completion Status Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String status = tmpSplit[2];
+
+                    Log.d("MessageType", "Firmware Update Completion Status Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Update status", status);
+
+
+                } else if (result.contains("Firmware Update restart Status Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String status = tmpSplit[2];
+
+                    Log.d("MessageType", "Firmware Update restart Status Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("Restart status", status);
+
+
+                } else if (result.contains("Sensor Info Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String type = tmpSplit[2];
+                    String precision = tmpSplit[3];
+                    String unit = tmpSplit[4];
+                    String value = tmpSplit[5];
+
+                    Log.d("MessageType", "Sensor Info Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("type", type);
+                    Log.d("precision", precision);
+                    Log.d("unit",unit);
+                    Log.d("value",value);
+
+
+                } else if (result.contains("Command Queue State Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String state = tmpSplit[2];
+
+                    Log.d("MessageType", "Command Queue State Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("command state", state);
+
+
+                } else if (result.contains("Command Queue Info Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String queue = tmpSplit[2];
+
+                    Log.d("MessageType", "Command Queue Info Report");
+                    Log.d("Node Id", nodeId);
+                    Log.d("command queue", queue);
+
+
+                } else if (result.contains("Network Health Check")) {
+                    String[] tmpSplit = result.split(",");
+                    String status = tmpSplit[1];
+
+                    Log.d("MessageType", "Network Health Check");
+                    Log.d("Status", status);
+
+
+                } else if (result.contains("Network IMA Info Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String nodeId = tmpSplit[1];
+                    String health = tmpSplit[2];
+                    String number = tmpSplit[3];
+                    String value = tmpSplit[4];
+                    String channel = tmpSplit[5];
+
+                    Log.d("MessageType", "Network IMA Info Report");
+                    Log.d("Direct nodeid", nodeId);
+                    Log.d("Network Health", health);
+                    Log.d("RSSI hops number", number);
+                    Log.d("RSSI hops value", value);
+                    Log.d("Transmit channel", channel);
+
+
+                } else if (result.contains("Network RSSI Info Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String channel1 = tmpSplit[1];
+                    String channel2 = tmpSplit[2];
+
+                    Log.d("MessageType", "Network RSSI Info Report");
+                    Log.d("Value of channel 1", channel1);
+                    Log.d("Value of channel 2", channel2);
+
+
+                } else if (result.contains("Provision List Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String dsk = tmpSplit[1];
+                    String type = tmpSplit[2];
+                    String id = tmpSplit[3];
+                    String bootMode = tmpSplit[4];
+                    String state = tmpSplit[5];
+                    String location = tmpSplit[6];
+                    String name = tmpSplit[7];
+
+                    if(result.contains("Error")) {
+                        Log.d("MessageType", "Provision List Report");
+                        Log.d("Error", "No list entry");
+
                     } else {
-                        for (int i = 0; i < result.length(); i++) {
-                            txAllMsg.setText(result);
-                        }
+                        Log.d("MessageType", "Provision List Report");
+                        Log.d("DSK", dsk);
+                        Log.d("Device type info", type);
+                        Log.d("Device id info", id);
+                        Log.d("Device Boot Mode", bootMode);
+                        Log.d("Device Inclusion state", state);
+                        Log.d("Device Location", location);
+                        Log.d("Device Name", name);
+
                     }
-                } else if (className.equals("addProvisionListEntry")) {
-                    //Log.d(LOG_TAG, DeviceInfo.dskNumber + " gino!!!!!!!!!");
-                    txAllMsg.setText("addProvisionListEntry : " +DeviceInfo.dskNumber);
-                    if (provisionListArr.contains(DeviceInfo.dskNumber)) {
-                        Log.d(LOG_TAG,"already Provision List");
+
+                } else if (result.contains("All Provision List Report")) {
+                    String[] tmpSplit = result.split("Detial provision list");
+                    String detialProvisionList = tmpSplit[1];
+
+                    if(result.contains("Error")) {
+                        Log.d("MessageType", "All Provision List Report");
+                        Log.d("Error", "No list entry found");
+
                     } else {
-                        if( DeviceInfo.dskNumber != null) {
-                            provisionListArr.add(DeviceInfo.dskNumber);
-                            //zwaveService.addProvisionListEntry(DeviceInfo.devType, dskNumber, InclusionState);
-                            Log.d(LOG_TAG, "add Provision List");
-                            DeviceInfo.dskNumber = null;
-                        }
+                        Log.d("MessageType", "All Provision List Report");
+                        Log.d("Detial provision list", detialProvisionList);
+
                     }
-                    ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
-                            android.R.layout.simple_spinner_dropdown_item, converProvisionList(provisionListArr));
-                    spProvisionList.setAdapter(provisionList);
 
-                    spProvisionList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                } else if (result.contains("Controller DSK Report")) {
+                    String[] tmpSplit = result.split(",");
+                    String dsk = tmpSplit[1];
 
-                        @Override
-                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                            selectProvisionList = spProvisionList.getSelectedItem().toString();
-                        }
+                    Log.d("MessageType", "Controller DSK Report");
+                    Log.d("DSK", dsk);
 
-                        @Override
-                        public void onNothingSelected(AdapterView<?> parent) {
-
-                        }
-                    });
-                } else if (className.equals("rmProvisionListEntry")) {
-                    Log.d(LOG_TAG, DeviceInfo.dskNumber + " gino!!!!!!!!!");
-                    if (provisionListArr.contains(DeviceInfo.dskNumber)) {
-                        Log.d(LOG_TAG,"remove Provision List");
-                        txAllMsg.setText("rmProvisionListEntry : "+ DeviceInfo.dskNumber);
-                        provisionListArr.remove(DeviceInfo.dskNumber);
-                    } else {
-                        if( DeviceInfo.dskNumber != null) {
-                            //zwaveService.addProvisionListEntry(DeviceInfo.devType, dskNumber, InclusionState);
-                            Log.d(LOG_TAG, "already remove Provision List");
-                            DeviceInfo.dskNumber = null;
-                        }
-                    }
-                    ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
-                            android.R.layout.simple_spinner_dropdown_item, converProvisionList(provisionListArr));
-                    spProvisionList.setAdapter(provisionList);
-
-                    spProvisionList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-
-                        @Override
-                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                            selectProvisionList = spProvisionList.getSelectedItem().toString();
-                        }
-
-                        @Override
-                        public void onNothingSelected(AdapterView<?> parent) {
-
-                        }
-                    });
-                }  else if (className.equals("rmAllProvisionListEntry")) {
-                    //Log.d(LOG_TAG, DeviceInfo.dskNumber + " gino!!!!!!!!!");
-                    Log.d(LOG_TAG,"rmAllProvisionListEntry");
-                    txAllMsg.setText("rmAllProvisionListEntry");
-                    provisionListArr.clear();
-
-                    ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
-                            android.R.layout.simple_spinner_dropdown_item, converProvisionList(provisionListArr));
-                    spProvisionList.setAdapter(provisionList);
-
-                } else if (className.equals("getDeviceBattery")) {
-                    txAllMsg.setText(result);
-                } else if (className.equals("openController")) {
-                    getOpenControllerInfo(result);
-                } else if (className.equals("Network IMA Info Report")) {
-                    getImaInfo(result);
                 }
             }
 
         };
 
+    }
+
+    public ZwaveControlService.zwaveControlReq_CallBack mReqCallBacks;
+    {
         mReqCallBacks = new ZwaveControlService.zwaveControlReq_CallBack() {
             @Override
             public void zwaveControlReqResultCallBack(String className, String result) {
@@ -814,15 +1308,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                 if (result.contains("Grant Keys Msg")) {
 
-                    //這裡 HOLD 住!!!!!!!
+                    Log.i(LOG_TAG,"holdTime");
 
-                    //new Thread(setGrantKey).start();
-/*
-                    while (!DeviceInfo.grantFlag) {
-                        Log.i(LOG_TAG,"grantFlag");
-                    }
-*/
-                    DeviceInfo.grantFlag = false;
 
                 } else if (result.contains("PIN Requested Msg")) {
                     //DeviceInfo.reqKey = 11394;
@@ -834,33 +1321,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         };
     }
 
-    public Runnable setGrantKey = new Runnable() {
-        @Override
-        public void run() {
-            //showAddDialog();
-            DeviceInfo.reqKey = 131;
-            /*
-            try {
-                while (!DeviceInfo.grantKeyFlag) {
-                    Thread.sleep(100);
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            DeviceInfo.grantFlag = true;
-            */
-
-        }
-    };
-
-
     private void getImaInfo(String result) {
         JSONObject jsonObject = null;
         try {
             jsonObject = new JSONObject(result);
             String ima = jsonObject.optString("RSSI hops value");
-            txAllMsg.setText("rssi: "+ ima);
+            Log.d(LOG_TAG,"rssi: "+ ima);
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -873,14 +1339,13 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         try {
             jsonObject = new JSONObject(result);
             String NetworkRole = jsonObject.optString("Network Role");
-            txAllMsg.setText("Network Role: "+ NetworkRole);
+            Log.d(LOG_TAG,"Network Role: "+ NetworkRole);
 
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
-    //顯示command class
     private void showCommandClass(String result) {
         String[] resultSplit = result.split("Interface Class\":\"");
         for(int i = 0; i < resultSplit.length; i++) {
@@ -889,7 +1354,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         }
     }
 
-    //辦別新增裝置是s0 s2 non-security
+    //authenticate security of device is s0 s2 non-security
     private void showSecurityStatus(String result) {
         String[] resultSplit = result.split(",");
         String securityStatus = "";
@@ -910,13 +1375,13 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         txAllMsg.setText(securityStatus);
     }
 
-    //顯示dongle info
+    //show dongle info
     private void showNodeInfo(String result) {
         String[] resultSplit = result.split("Home id");
         txAllMsg.setText(resultSplit[1]);
     }
 
-    //顯示DSK number
+    //show DSK number
     private void showDsk(String result) {
         final String showDsk = result;
         JSONObject jsonObject = null;
@@ -937,13 +1402,11 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
     }
 
-    //新增/移除裝置處理
-    private void addRemoveResult(String result) {
+    private void addRemoveDevice(String result) {
         final String addRemoveResult = result;
         ((Activity) mContext).runOnUiThread(new Runnable() {
             @Override
             public void run() {
-
                 if (addRemoveResult.contains("MessageType")){
                     JSONObject jsonObject = null;
                     try {
@@ -1014,7 +1477,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         });
     }
 
-    //新增/移除裝置節點到spinner
+    //add & remove node of device to spinner
     private static Integer[] convertIntegers(List<Integer> integers)
     {
         Integer[] ret = new Integer[integers.size()];
@@ -1025,7 +1488,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         return ret;
     }
 
-    //新增/移除裝置節點到spinner
+    //add & remove provision list to spinner
     private static String[] converProvisionList(List<String> dskString)
     {
         String[] ret = new String[dskString.size()];
@@ -1036,38 +1499,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         return ret;
     }
 
-    //開啟USB權限
-    private void requestControlUSBPermission() {
-        openController();
-        /*
-        UsbManager usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
-        final List<UsbSerialDriver> drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager);
 
-        boolean found = false;
-
-        for (final UsbSerialDriver driver : drivers) {
-            if (found) break;
-
-            final List<UsbSerialPort> ports = driver.getPorts();
-
-            for (final UsbSerialPort port : ports) {
-                if(!usbManager.hasPermission(port.getDriver().getDevice())) {
-                    PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
-                    usbManager.requestPermission(port.getDriver().getDevice(), mPendingIntent);
-                    IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
-                    usbReceiver = new usbReceiver();
-                    registerReceiver(usbReceiver, filter);
-                } else {
-                    openController();
-                }
-                found = true;
-                break;
-            }
-        }
-        */
-    }
-
-
+    //can take off this function !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     private class usbReceiver extends BroadcastReceiver {
 
         public void onReceive(Context context, Intent intent) {
@@ -1080,7 +1513,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                             openController();
                         }
                     } else {
-                        Log.d("USB", "permission denied for device " + device);
+                        Log.d(LOG_TAG,"USB"+ "permission denied for device " + device);
                         progressDialog.cancel();
                         finish();
                         System.exit(0);
@@ -1090,7 +1523,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         }
     }
 
-    //開啟z-wave dongle
+    //open z-wave dongle
     private void openController() {
         timer.schedule(new mTimerTask(), 1000 * 120);
         String openResult = zwaveService.openController();
@@ -1207,7 +1640,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             @Override
             public void onClick(View view) {
                 alertDialog.dismiss();
-                finish();
+                //finish();
             }
         });
 

@@ -23,6 +23,7 @@ import com.askey.firefly.zwave.control.dao.ZwaveScheduleManager;
 import com.askey.firefly.zwave.control.jni.ZwaveControlHelper;
 import com.askey.firefly.zwave.control.scheduler.ScheduleJobManager;
 import com.askey.firefly.zwave.control.thirdparty.usbserial.UsbSerial;
+import com.askey.firefly.zwave.control.utils.DeviceInfo;
 import com.askey.firefly.zwave.control.utils.Logg;
 import com.askey.firefly.zwave.control.application.ZwaveProvisionList;
 
@@ -246,8 +247,16 @@ public class ZwaveControlService extends Service {
                 Log.d(LOG_TAG,"PASSIVE mode");
             }
 
-            plList[1].setType(ZwaveProvisionList.PL_INFO_TYPE_BOOT_MODE);
-            plList[1].setBootMode(ZwaveProvisionList.PL_BOOT_MODE_SMART_STRT);
+            if(DeviceInfo.bootMode) {
+                plList[1].setBootMode(ZwaveProvisionList.PL_BOOT_MODE_SMART_STRT);
+                Log.d(LOG_TAG,"BOOT_MODE_SMART_STRT");
+            } else {
+                plList[1].setType(ZwaveProvisionList.PL_INFO_TYPE_BOOT_MODE);
+                Log.d(LOG_TAG,"INFO_TYPE_BOOT_MODE");
+            }
+
+            //plList[1].setType(ZwaveProvisionList.PL_INFO_TYPE_BOOT_MODE);
+            //plList[1].setBootMode(ZwaveProvisionList.PL_BOOT_MODE_SMART_STRT);
 
             plList[2].setType(ZwaveProvisionList.PL_INFO_TYPE_NAME);
             plList[2].stProvisionList.name = "skysoft";
@@ -610,8 +619,7 @@ public class ZwaveControlService extends Service {
     }
 
     public int replaceFailedDevice(int deviceId){
-        byte[] aaa = new byte[0];
-        return ZwaveControlHelper.ZwController_ReplaceFailedDevice(deviceId,aaa,aaa.length);
+        return ZwaveControlHelper.ZwController_ReplaceFailedDevice(deviceId);
     }
 
     public void stopAddDevice(String devType){
@@ -656,6 +664,10 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_SetDefault();
     }
 
+    public void checkNodeIsFailed(int deviceId) {
+        ZwaveControlHelper.ZwController_checkNodeIsFailed(deviceId);
+    }
+
     public int getConfiguration(int deviceId, int paramMode, int paramNumber, int rangeStart, int rangeEnd){
         updateTimestamp(deviceId);
         return ZwaveControlHelper.ZwController_GetConfiguration(deviceId, paramMode, paramNumber, rangeStart, rangeEnd);
@@ -696,6 +708,11 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_GetPowerLevel(deviceId);
     }
 
+    public int setPowerLevel(int deviceId, int powerLvl, int timeout){
+        updateTimestamp(deviceId);
+        return ZwaveControlHelper.ZwController_SetPowerLevel(deviceId,powerLvl,timeout);
+    }
+
     public void setSwitchAllOn(String devType, int deviceId){
         updateTimestamp(deviceId);
         if (devType.equals(zwaveType)) {
@@ -704,6 +721,61 @@ public class ZwaveControlService extends Service {
 
         }
     }
+
+    public void setSwitchAll(String devType, int deviceId, int value){
+        updateTimestamp(deviceId);
+        if (devType.equals(zwaveType)) {
+            ZwaveControlHelper.ZwController_SetSwitchAll(deviceId,value);
+        } else if (devType.equals(btType)) {
+
+        }
+    }
+
+    public void getSwitchAll(String devType, int deviceId){
+        updateTimestamp(deviceId);
+        if (devType.equals(zwaveType)) {
+            ZwaveControlHelper.ZwController_GetSwitchAll(deviceId);
+        } else if (devType.equals(btType)) {
+
+        }
+    }
+
+    public void SetBinarySwitchState(String devType, int deviceId, int state){
+        updateTimestamp(deviceId);
+        if (devType.equals(zwaveType)) {
+            ZwaveControlHelper.ZwController_SetBinarySwitchState(deviceId,state);
+        } else if (devType.equals(btType)) {
+
+        }
+    }
+
+    public void GetBinarySwitchState(String devType, int deviceId){
+        updateTimestamp(deviceId);
+        if (devType.equals(zwaveType)) {
+            ZwaveControlHelper.ZwController_GetBinarySwitchState(deviceId);
+        } else if (devType.equals(btType)) {
+
+        }
+    }
+
+    public void SetSwitchAllOnBroadcast(String devType){
+        //updateTimestamp(deviceId);
+        if (devType.equals(zwaveType)) {
+            ZwaveControlHelper.ZwController_SetSwitchAllOnBroadcast();
+        } else if (devType.equals(btType)) {
+
+        }
+    }
+
+    public void SetSwitchAllOffBroadcast(String devType){
+        //updateTimestamp(deviceId);
+        if (devType.equals(zwaveType)) {
+            ZwaveControlHelper.ZwController_SetSwitchAllOffBroadcast();
+        } else if (devType.equals(btType)) {
+
+        }
+    }
+
 
     public void setSwitchAllOff(String devType, int deviceId){
         updateTimestamp(deviceId);
@@ -781,6 +853,25 @@ public class ZwaveControlService extends Service {
 
     }
 
+    public void getSupportColor(String devType, int deviceId){
+        updateTimestamp(deviceId);
+        if (devType.equals(zwaveType)) {
+            ZwaveControlHelper.ZwController_getSupportedSwitchColor(deviceId);
+        } else if (devType.equals(btType)){
+            //btControlService.
+        }
+    }
+
+    public void startStopColorLevelChange(String devType, int deviceId, int dir, int ignore, int color_id, int start_value){
+        updateTimestamp(deviceId);
+        if (devType.equals(zwaveType)) {
+            ZwaveControlHelper.ZwController_startStopSwitchColorLevelChange(deviceId,dir,ignore,color_id,start_value);
+        } else if (devType.equals(btType)){
+            //btControlService.
+        }
+    }
+
+
     public void getMeter(String devType, int deviceId, int meterUnit){
         updateTimestamp(deviceId);
         if (devType.equals(zwaveType)) {
@@ -797,10 +888,167 @@ public class ZwaveControlService extends Service {
         }
     }
 
-    public int getMeterSupported(int deviceId){
+    public void resetMeter(String devType, int deviceId){
         updateTimestamp(deviceId);
-        int result = ZwaveControlHelper.ZwController_getMeterSupported(deviceId);
-        return result;
+        if (devType.equals(zwaveType)) {
+            Log.i(LOG_TAG,"resetMeter #"+deviceId);
+            ZwaveControlHelper.ZwController_resetMeter(deviceId);
+        } else if (devType.equals(btType)){
+            /*
+            try {
+                btControlService.getPlugPower(deviceId);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            */
+        }
+    }
+
+    public void getMeterSupported(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getMeterSupported(deviceId);
+    }
+
+    public void UpdateNode(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_UpdateNode(deviceId);
+    }
+
+    public void getWakeUpSettings(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getWakeUpSettings(deviceId);
+    }
+
+    public void setWakeUpInterval(int deviceId, int interval){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setWakeUpInterval(deviceId, interval);
+    }
+
+    public void getDoorLockOperation(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getDoorLockOperation(deviceId);
+    }
+
+    public void setDoorLockOperation(int deviceId, int mode){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setDoorLockOperation(deviceId,mode);
+    }
+
+    public void getDoorLockConfiguration(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getDoorLockConfiguration(deviceId);
+    }
+
+    public void setDoorLockConfiguration(int deviceId, int type, int out_sta,
+                                         int in_sta, int tmout_min, int tmout_sec) {
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setDoorLockConfiguration(deviceId,type,out_sta,in_sta,tmout_min,tmout_sec);
+    }
+
+    public void getUserCode(int deviceId, int user_id){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getUserCode(deviceId,user_id);
+    }
+
+    public void setUserCode(int deviceId, int user_id, int status){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setUserCode(deviceId,user_id,status);
+    }
+
+
+    public void getUserCodeNumber(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getUserCodeNumber(deviceId);
+    }
+
+    public void getProtection(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getProtection(deviceId);
+    }
+
+    public void setProtection(int deviceId, int localPortState, int rfPortState){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setProtection(deviceId,localPortState,rfPortState);
+    }
+
+    public void getSupportedProtection(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getSupportedProtection(deviceId);
+    }
+
+    public void getProtectionExcControlNode(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getProtectionExcControlNode(deviceId);
+    }
+
+    public void setProtectionExcControlNode(int deviceId, int control_nodeid){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setProtectionExcControlNode(deviceId,control_nodeid);
+    }
+
+    public void getProtectionTimeout(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getProtectionTimeout(deviceId);
+    }
+
+    public void setProtectionTimeout(int deviceId, int unit, int time){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setProtectionTimeout(deviceId,unit,time);
+    }
+
+    public void getIndicator(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getIndicator(deviceId);
+    }
+
+    public void setIndicator(int deviceId, int value){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setIndicator(deviceId,value);
+    }
+
+    public void getDoorLockLoggingSupportedRecords(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getDoorLockLoggingSupportedRecords(deviceId);
+    }
+
+    public void getDoorLockLoggingRecords(int deviceId, int rec_num){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getDoorLockLoggingRecords(deviceId,rec_num);
+    }
+
+    public void getLanguage(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getLanguage(deviceId);
+    }
+
+    public void setBarrierOperator(int deviceId, int value){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setBarrierOperator(deviceId,value);
+    }
+
+    public void getBarrierOperator(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getBarrierOperator(deviceId);
+    }
+
+    public void setBarrierOperatorSignal(int deviceId, int subSysType, int state){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setBarrierOperatorSignal(deviceId,subSysType,state);
+    }
+
+    public void getBarrierOperatorSignal(int deviceId, int subSysType){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getBarrierOperatorSignal(deviceId,subSysType);
+    }
+
+    public void getSupportedBarrierOperatorSignal(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getSupportedBarrierOperatorSignal(deviceId);
+    }
+
+    public void getBasicTariffInfo(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getBasicTariffInfo(deviceId);
     }
 
     public int getSensorBasic(int deviceId, int sensorType){
@@ -851,6 +1099,22 @@ public class ZwaveControlService extends Service {
             }
         } else if (devType.equals(btType)){
 
+        }
+    }
+    public void setSwitchColor(String devType, int deviceId, int compId, int value){
+        updateTimestamp(deviceId);
+        if (devType.equals(zwaveType)){
+
+            ZwaveControlHelper.ZwController_setSwitchColor(deviceId,compId,value);
+
+        } else if (devType.equals(btType)){
+            /*
+            try {
+                btControlService.setLampRGB(deviceId,r_value,g_value,b_value);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            */
         }
     }
 
@@ -907,6 +1171,22 @@ public class ZwaveControlService extends Service {
         }
     }
 
+    public void getSwitchColor(String devType, int deviceId, int compId){
+        updateTimestamp(deviceId);
+        if (devType.equals(zwaveType)){
+            ZwaveControlHelper.ZwController_getSwitchColor(deviceId,compId);
+
+        } else if (devType.equals(btType)){
+            /*
+            try {
+                btControlService.getLampRGB(deviceId);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            */
+        }
+    }
+
     public int getSensorNotification(int deviceId, int alarm_type, int notif_type, int status){
         updateTimestamp(deviceId);
         Log.i(LOG_TAG,"=====getSensorNotification==deviceId==="+deviceId+"alarm_type="+alarm_type+"notif_type="+notif_type+"status="+status);
@@ -914,8 +1194,80 @@ public class ZwaveControlService extends Service {
         return result;
     }
 
-    public void getGroupInfo(String devType, int deviceId){
+    public void setNotification(int deviceId, int type, int status){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setNotification(deviceId, type, status);
+    }
+
+    public void getSupportedCentralScene(int deviceId, int endpointId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getSupportedCentralScene(deviceId, endpointId);
+    }
+
+    public void getSceneActuatorConf(int deviceId, int scene_id){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getSceneActuatorConf(deviceId, scene_id);
+    }
+
+    public void setSceneActuatorConf(int deviceId, int scene_id, int dim_duration, int override, int level){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_setSceneActuatorConf(deviceId, scene_id,dim_duration,override,level);
+    }
+
+    public void requestFirmwareUpdate(int nodeId, int vendorId, int firmwareId,int firmwareTarget,
+                                      int hwVer, String firmwareFile){
+        //updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_requestFirmwareUpdate(nodeId, vendorId,firmwareId,firmwareTarget,hwVer,firmwareFile);
+    }
+
+    public void getFirmwareUpdateInfo(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getFirmwareUpdateInfo(deviceId);
+    }
+
+    public void multiCmdEncap(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_multiCmdEncap(deviceId);
+    }
+
+    public void getCommandQueueState(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getCommandQueueState(deviceId);
+    }
+
+    public void controlCommandQueue(int deviceId, int state){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_controlCommandQueue(deviceId,state);
+    }
+
+    public void viewCommandQueue(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_viewCommandQueue(deviceId);
+    }
+
+    public void getControllerNetworkRssiInfo(){
+        //updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getControllerNetworkRssiInfo();
+    }
+
+    public void getDeviceNetworkRssiInfo(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_getDeviceNetworkRssiInfo(deviceId);
+    }
+
+    public void cancelAllCommandQueue(int deviceId){
+        updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_cancelAllCommandQueue(deviceId);
+    }
+
+    public void GetDeviceList(){
+        //updateTimestamp(deviceId);
+        ZwaveControlHelper.ZwController_GetDeviceList();
+    }
+
+    public void getGroupInfo(String devType, int deviceId,int groupId ,int endpointId){
         Log.i(LOG_TAG,"=====getGroupInfo==deviceId==="+deviceId);
+
         updateTimestamp(deviceId);
 
         List<Integer> list;
@@ -953,6 +1305,7 @@ public class ZwaveControlService extends Service {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        ZwaveControlHelper.ZwController_getGroupInfo(deviceId,groupId,endpointId);
         zwaveControlResultCallBack("GroupInfo", jo.toString());
     }
 
@@ -961,7 +1314,7 @@ public class ZwaveControlService extends Service {
         Log.i(LOG_TAG,"=====addEndpointsToGroup== deviceId="+deviceId+"| groupId="+groupId+"| endpointId="+endpointId);
 
 
-        ZwaveControlHelper.ZwController_getGroupInfo(deviceId,deviceId,0);
+        ZwaveControlHelper.ZwController_getGroupInfo(deviceId,groupId,endpointId);
 
         int[] nodeifid = new int[arr.length];
         nodeifid[arr.length-1] = arr[arr.length-1];
@@ -971,7 +1324,7 @@ public class ZwaveControlService extends Service {
             Log.i(LOG_TAG,"arr["+idx+"] = "+arr[idx]+" | nodeifid["+idx+"] = "+nodeifid[idx]);
         }
 
-        int result = ZwaveControlHelper.ZwController_addEndpointsToGroup(deviceId,groupId,nodeifid,0);
+        int result = ZwaveControlHelper.ZwController_addEndpointsToGroup(deviceId,groupId,nodeifid,endpointId);
         Log.i(LOG_TAG,"addEndpointsToGroup result = "+result);
 
         JSONObject jsonResult = new JSONObject();
@@ -1005,7 +1358,7 @@ public class ZwaveControlService extends Service {
         updateTimestamp(deviceId);
         Log.i(LOG_TAG, "=====removeEndpointsFromGroup==deviceId=" + deviceId + "| groupId=" + groupId + "| endpointId=" + endpointId);
 
-        ZwaveControlHelper.ZwController_getGroupInfo(deviceId,deviceId,0);
+        ZwaveControlHelper.ZwController_getGroupInfo(deviceId,groupId,endpointId);
 
         int[] nodeifid = new int[arr.length];
         nodeifid[arr.length-1] = arr[arr.length-1];
@@ -1547,6 +1900,15 @@ public class ZwaveControlService extends Service {
                 ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
                 ZwaveControlHelper.ZwController_GetDeviceInfo();
             }
+
+        } else if (messageType.equals("Remove Failed Node")) {
+            zwaveControlResultCallBack("Remove Failed Node", jniResult);
+            if ("Success".equals(status)) {
+                Log.i(LOG_TAG, "=======Node Remove Status=Success=");
+                flag = 3;
+                ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
+                ZwaveControlHelper.ZwController_GetDeviceInfo();
+            }
         } else if (messageType.equals("All Node Info Report")) {
             if (flag == 0) {
                 String jsonResult = getDeviceInfo(jniResult);
@@ -1586,7 +1948,7 @@ public class ZwaveControlService extends Service {
                     e.printStackTrace();
                 }
                 insertDevice(zwaveType,jniResult,flag);
-                zwaveControlResultCallBack("getDeviceInfo", jsonResult);
+                zwaveControlResultCallBack("All Node Info Report", jsonResult);
             } else if (flag == 2) {
                 insertDevice(zwaveType,jniResult,flag);
                 flag = 0;
@@ -1606,8 +1968,9 @@ public class ZwaveControlService extends Service {
                 ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
             }
         */
+
         } else if ("Node Battery Value".equals(messageType)) {
-            zwaveControlResultCallBack("getDeviceBattery", jniResult);
+            zwaveControlResultCallBack("Node Battery Value", jniResult);
         } else if ("Sensor Information".equals(messageType)) {
             zwaveControlResultCallBack("getSensorMultiLevel", jniResult);
             //} else if (messageType.equals("All Node Info Report")) {
@@ -1624,7 +1987,7 @@ public class ZwaveControlService extends Service {
         } else if ("  ".equals(messageType)) {
             zwaveControlResultCallBack("getSupportedSwitchType", jniResult);
         } else if ("Power Level Get Information".equals(messageType)) {
-            zwaveControlResultCallBack("getPowerLevel", jniResult);
+            zwaveControlResultCallBack("Power Level Get Information", jniResult);
         } else if ("Basic Information".equals(messageType)) {
             try {
 
@@ -1650,7 +2013,7 @@ public class ZwaveControlService extends Service {
                 jsonObject = new JSONObject(jniResult);
                 jsonObject.put("Interface","getPower");
                 jsonObject.put("devType",zwaveType);
-                zwaveControlResultCallBack("getMeter", jsonObject.toString());
+                zwaveControlResultCallBack("Meter Report Information", jsonObject.toString());
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -1682,38 +2045,38 @@ public class ZwaveControlService extends Service {
                 jsonObject = new JSONObject(jniResult);
                 jsonObject.put("Interface","getLampColor");
                 jsonObject.put("devType",zwaveType);
-                zwaveControlResultCallBack("getLampColor", jsonObject.toString());
+                zwaveControlResultCallBack("Switch Color Report", jsonObject.toString());
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         } else if (messageType.equals("Sensor Info Report")) {
-            zwaveControlResultCallBack("getSensorMultiLevel", jniResult);
+            zwaveControlResultCallBack("Sensor Info Report", jniResult);
         } else if (messageType.equals("Notification Get Information")) {
-            zwaveControlResultCallBack("getSensorNotification", jniResult);
+            zwaveControlResultCallBack("Notification Get Information", jniResult);
         } else if (messageType.equals("Supported Groupings Report")) {
             try {
                 jsonObject = new JSONObject(jniResult);
                 jsonObject.put("Interface","getMaxSupportedGroups");
                 jsonObject.put("devType",zwaveType);
-                zwaveControlResultCallBack("getMaxSupportedGroups", jsonObject.toString());
+                zwaveControlResultCallBack("Supported Groupings Report", jsonObject.toString());
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         } else if (messageType.equals("Binary Sensor Support Get Information")) {
-            zwaveControlResultCallBack("GetSensorBinarySupportedSensor", jniResult);
+            zwaveControlResultCallBack("Binary Sensor Support Get Information", jniResult);
         } else if (messageType.equals("Group Info Report")) {
 
             try {
                 jsonObject = new JSONObject(jniResult);
                 jsonObject.put("Interface","getGroupInfo");
                 jsonObject.put("devType",zwaveType);
-                zwaveControlResultCallBack("getGroupInfo", jsonObject.toString());
+                zwaveControlResultCallBack("Group Info Report", jsonObject.toString());
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
         } else if (messageType.equals("Notification Supported Report")) {
-            zwaveControlResultCallBack("getSupportedNotification", jniResult);
+            zwaveControlResultCallBack("Notification Supported Report", jniResult);
         } else if (messageType.equals("Controller Network RSSI Report")) {
             zwaveControlResultCallBack("getControllerRssi", jniResult);
         } else if ("DSK Report".equals(messageType)) {
@@ -1769,9 +2132,29 @@ public class ZwaveControlService extends Service {
         } else if ("setSwitchAllOff".equals(messageType)) {
             zwaveControlResultCallBack("setSwitchAllOff", jniResult);
         } else if ("Specify Node Info".equals(messageType)) {
-            zwaveControlResultCallBack("getSpecifyDeviceInfo", jniResult);
-        } else if ("All Provision List Report".equals(messageType)) {
-            zwaveControlResultCallBack("getAllProvisionListEntry", jniResult);
+            zwaveControlResultCallBack("Specify Node Info", jniResult);
+        } else if ("Node Is Failed Check Report".equals(messageType)) {
+            zwaveControlResultCallBack("Node Is Failed Check Report", jniResult);
+        } else if ("Replace Failed Node".equals(messageType)) {
+            zwaveControlResultCallBack("Replace Failed Node", jniResult);
+        } else if ("Controller Init Status".equals(messageType)) {
+            zwaveControlResultCallBack("Controller Init Status", jniResult);
+        } else if ("Controller Attribute".equals(messageType)) {
+            zwaveControlResultCallBack("Controller Attribute", jniResult);
+        } else if ("Controller Reset Status".equals(messageType)) {
+            zwaveControlResultCallBack("Controller Reset Status", jniResult);
+            if ("Success".equals(status)) {
+                Log.i(LOG_TAG, "=======Node setDefault Status=Success=");
+                flag = 3;
+                ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
+                ZwaveControlHelper.ZwController_GetDeviceInfo();
+            }
+        } else if ("Door Lock Operation Report".equals(messageType)) {
+            zwaveControlResultCallBack("Door Lock Operation Report", jniResult);
+        } else if ("Door Lock Configuration Report".equals(messageType)) {
+            zwaveControlResultCallBack("Door Lock Configuration Report", jniResult);
+        } else if ("Controller DSK Report".equals(messageType)) {
+            zwaveControlResultCallBack("Controller DSK Report", jniResult);
         }
     }
 }

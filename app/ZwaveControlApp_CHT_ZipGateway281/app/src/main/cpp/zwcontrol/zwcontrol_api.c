@@ -1313,6 +1313,8 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
     hl_appl_ctx_t    *hl_appl = notify_msg->hl_appl;
     int              result;
 
+    ALOGI("hl_nw_notify_cb op:%u, status:%u", (unsigned)notify_msg->op, notify_msg->sts);
+
     //Check to display progress of get detailed node info
     if (notify_msg->sts & OP_GET_NI_TOTAL_NODE_MASK)
     {
@@ -1325,8 +1327,6 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
               (unsigned)notify_msg->op, cmplt_nodes, total_nodes);
         return;
     }
-
-    ALOGI("hl_nw_notify_cb op:%u, status:%u", (unsigned)notify_msg->op, notify_msg->sts);
 
     switch (notify_msg->op)
     {
@@ -1656,11 +1656,16 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
     }
     else if(op == ZWNET_OP_RESET)
     {
+        cJSON_AddStringToObject(jsonRoot, "MessageType", "Controller Reset Status");
         if(sts == OP_DONE)
         {
-            cJSON_AddStringToObject(jsonRoot, "MessageType", "Controller Reset Status");
             cJSON_AddStringToObject(jsonRoot, "Status", "Success");
         }
+        else
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Failed");
+        }
+
         char *p = cJSON_Print(jsonRoot);
 
         if(p == NULL)
@@ -1691,6 +1696,104 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
         else if(sts == OP_DONE)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "OP Done");
+        }
+        else
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Unknown");
+        }
+
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p == NULL)
+        {
+            cJSON_Delete(jsonRoot);
+            return NULL;
+        }
+
+        cJSON_Delete(jsonRoot);
+
+        return p;
+    }
+    else if(op == ZWNET_OP_RM_FAILED_ID)
+    {
+        cJSON_AddStringToObject(jsonRoot, "MessageType", "Remove Failed Node");
+        if(sts == OP_DONE)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Success");
+        }
+        else if(sts == OP_FAILED)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Failed");
+        }
+        else
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Unknown");
+        }
+
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p == NULL)
+        {
+            cJSON_Delete(jsonRoot);
+            return NULL;
+        }
+
+        cJSON_Delete(jsonRoot);
+
+        return p;
+    }
+    else if(op == ZWNET_OP_RP_NODE)
+    {
+        cJSON_AddStringToObject(jsonRoot, "MessageType", "Replace Failed Node");
+        if(sts == OP_DONE)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Success");
+        }
+        else if(sts == OP_RP_NODE_PROTOCOL_DONE)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Protocol done");
+        }
+        else if(sts == OP_RP_NODE_GET_NODE_INFO)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Getting Node Information");
+        }
+        else if(sts == OP_FAILED)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Failed");
+        }
+        else
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Unknown");
+        }
+
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p == NULL)
+        {
+            cJSON_Delete(jsonRoot);
+            return NULL;
+        }
+
+        cJSON_Delete(jsonRoot);
+
+        return p;
+    }
+    else if(op == ZWNET_OP_INITIATE)
+    {
+        cJSON_AddStringToObject(jsonRoot, "MessageType", "Controller Init Status");
+        if(sts == OP_DONE)
+        {
+            initStatus = 1;
+            cJSON_AddStringToObject(jsonRoot, "Status", "Success");
+        }
+        else if(sts == OP_FAILED)
+        {
+            initStatus = -1;
+            cJSON_AddStringToObject(jsonRoot, "Status", "Failed");
+        }
+        else if(sts == OP_INI_PROTOCOL_DONE)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Init Protocol Done");
         }
         else
         {
@@ -2854,6 +2957,11 @@ static char* hl_zwaveplus_icon_to_device_type(uint16_t  usr_icon)
             return "Repeater";
         }
             break;
+        case ICON_TYPE_GENERIC_DOOR_LOCK_KEYPAD:
+        {
+            return "Door Lock Keypad";
+        }
+        break;
 
         case ICON_TYPE_UNASSIGNED:
         {
@@ -4208,20 +4316,8 @@ int  zwcontrol_rm_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId)
     }
 
     ALOGD("Remove failed node, id %d",nodeId);
-    hl_appl->failed_node_id = nodeId;
-    int32_t   result;
-    zwnoded_p noded;
 
-    //Get the node descriptor
-    plt_mtx_lck(hl_appl->desc_cont_mtx);
-    noded = hl_node_desc_get(hl_appl->desc_cont_hd, hl_appl->failed_node_id);
-    if (!noded)
-    {
-        plt_mtx_ulck(hl_appl->desc_cont_mtx);
-        return ZW_ERR_NODE_NOT_FOUND;
-    }
-
-    result = zwnet_fail(hl_appl->zwnet, hl_appl->failed_node_id, 0, NULL, 0);
+    int result = zwnet_fail(hl_appl->zwnet, nodeId, 0, NULL, 0);
 
     plt_mtx_ulck(hl_appl->desc_cont_mtx);
 
@@ -4233,7 +4329,7 @@ int  zwcontrol_rm_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId)
     return result;
 }
 
-int  zwcontrol_rp_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId, const char* dsk, int dsklen)
+int  zwcontrol_rp_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId)
 {
     if (!hl_appl->init_status){
         ALOGE("Controller not open, please open it and try again");
@@ -4243,18 +4339,8 @@ int  zwcontrol_rp_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId, const cha
     ALOGD("Replace failed node, id %d",nodeId);
     hl_appl->failed_node_id = nodeId;
     int32_t     result;
-    zwnoded_p noded;
     char    dsk_str[200];
     zwnetd_p netdesc;
-
-    //Get the node descriptor
-    plt_mtx_lck(hl_appl->desc_cont_mtx);
-    noded = hl_node_desc_get(hl_appl->desc_cont_hd, hl_appl->failed_node_id);
-    if (!noded)
-    {
-        plt_mtx_ulck(hl_appl->desc_cont_mtx);
-        return ZW_ERR_NODE_NOT_FOUND;
-    }
 
     netdesc = zwnet_get_desc(hl_appl->zwnet);
 
@@ -4272,11 +4358,11 @@ int  zwcontrol_rp_failed_node(hl_appl_ctx_t *hl_appl, uint32_t nodeId, const cha
     {
         hl_appl->sec2_add_prm.dsk = NULL;
 
-        if(dsk != NULL && dsklen != 0)
+        /*if(dsk != NULL && dsklen != 0)
         {
             memcpy(dsk_str, dsk, 200);
             hl_appl->sec2_add_prm.dsk = dsk_str;
-        }
+        }*/
 
         hl_appl->sec2_add_prm.usr_param = hl_appl;
         hl_appl->sec2_add_prm.cb = hl_add_node_s2_cb;
@@ -4433,6 +4519,29 @@ int  zwcontrol_update_node(hl_appl_ctx_t *hl_appl, uint8_t nodeId)
 void cb_get_dsk_fn(void *usr_ctx, char *dsk)
 {
     ALOGI("learn mode callback, cb_get_dsk_fn, dsk: %s",dsk);
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Controller DSK Report");
+    cJSON_AddStringToObject(jsonRoot, "DSK", dsk);
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
 }
 
 int  zwcontrol_start_learn_mode(hl_appl_ctx_t* hl_appl)
@@ -6026,6 +6135,41 @@ int  zwcontrol_powerLevel_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
 }
 
 
+int  zwcontrol_powerLevel_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint32_t powerLvl, uint32_t timeout)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_POWERLEVEL, 0))
+    {
+        return -1;
+    }
+
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    int result = zwif_power_level_set(ifd, powerLvl, timeout);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if(result < 0)
+    {
+        ALOGE("zwcontrol_powerLevel_set with error: %d",result);
+    }
+
+    return result;
+}
+
 /*
  **  Command Class Sensor Multi-Level
  */
@@ -6235,7 +6379,7 @@ static void hl_notification_get_report_cb(zwifd_p ifd, zwalrm_p param, time_t ts
 
     ALOGD("V1 Alarm type:%x", param->type);
     ALOGD("V1 Alarm level:%x", param->level);
-    ALOGD("Unsolicited notification status:%x", param->ex_status);
+    ALOGD("Notification status:%x", param->ex_status);
     ALOGD("Notification type:%X", param->ex_type);
     ALOGD("Notification event:%X", param->ex_event);
 
@@ -6251,17 +6395,29 @@ static void hl_notification_get_report_cb(zwifd_p ifd, zwalrm_p param, time_t ts
     cJSON_AddNumberToObject(jsonRoot, "Alarm-level", param->level);*/
     cJSON_AddNumberToObject(jsonRoot, "Notification-status", param->ex_status);
     cJSON_AddStringToObject(jsonRoot, "Notification-type", notif_type[param->ex_type]);
-    if(param->ex_type == 0x06)
+    if(param->ex_event != 0xFE)
     {
-        cJSON_AddStringToObject(jsonRoot, "Notification-event", access_control_evt[param->ex_event]);
+        if(param->ex_type == 0x06)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Notification-event", access_control_evt[param->ex_event]);
+        }
+        else if (param->ex_type == 0x07)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Notification-event", home_security_evt[param->ex_event]);
+        }
+        else if (param->ex_type == 0x05)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Notification-event", water_alarm_evt[param->ex_event]);
+        }
+        else
+        {
+            ALOGW("This notification type: %d, is not supported to report, please connected tiny_hui, thanks.", param->ex_type);
+        }
     }
-    else if (param->ex_type == 0x07)
+    else
     {
-        cJSON_AddStringToObject(jsonRoot, "Notification-event", home_security_evt[param->ex_event]);
-    }
-    else if (param->ex_type == 0x05)
-    {
-        cJSON_AddStringToObject(jsonRoot, "Notification-event", water_alarm_evt[param->ex_event]);
+        ALOGI("please check the event type you write in");
+        cJSON_AddStringToObject(jsonRoot, "Notification-event", "Unknown event/state");
     }
     /*cJSON_AddNumberToObject(jsonRoot, "Notification-event-length", param->ex_evt_len);
     cJSON_AddNumberToObject(jsonRoot, "Notification-event-param-type", param->ex_evt_type);*/
@@ -6318,7 +6474,7 @@ hl_notification_rep_get - Get the notification
 @param[in]  hl_appl     The high-level api context
 @return  0 on success, negative error number on failure
 */
-int hl_notification_rep_get(hl_appl_ctx_t   *hl_appl, uint8_t alarmType, uint8_t notificationType, uint8_t state)
+int hl_notification_rep_get(hl_appl_ctx_t   *hl_appl, uint8_t alarmType, uint8_t notificationType, uint8_t evt)
 {
     int     result;
     zwifd_p ifd;
@@ -6333,7 +6489,7 @@ int hl_notification_rep_get(hl_appl_ctx_t   *hl_appl, uint8_t alarmType, uint8_t
         return ZW_ERR_INTF_NOT_FOUND;
     }
 
-    result = zwif_notification_get(ifd, (uint8_t) alarmType, (uint8_t) notificationType, (uint8_t) state);
+    result = zwif_notification_get(ifd, (uint8_t) alarmType, (uint8_t) notificationType, (uint8_t) evt);
 
     plt_mtx_ulck(hl_appl->desc_cont_mtx);
 
@@ -6349,7 +6505,7 @@ int hl_notification_rep_get(hl_appl_ctx_t   *hl_appl, uint8_t alarmType, uint8_t
     return result;
 }
 
-int  zwcontrol_notification_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t alarmType, uint8_t notificationType, uint8_t state)
+int  zwcontrol_notification_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t alarmType, uint8_t notificationType, uint8_t evt)
 {
     if(!hl_appl->init_status)
     {
@@ -6363,8 +6519,8 @@ int  zwcontrol_notification_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t
     int result = hl_notification_get_rep_setup(hl_appl);
     if(result == 0)
     {
-        ALOGW("hl_notification_set done, alarmType:%x, notificationType:%x, event:%x", alarmType, notificationType, state);
-        result = hl_notification_rep_get(hl_appl, (uint8_t) alarmType, (uint8_t) notificationType, (uint8_t) state);
+        ALOGW("hl_notification_set done, alarmType:%x, notificationType:%x, event:%x", alarmType, notificationType, evt);
+        result = hl_notification_rep_get(hl_appl, (uint8_t) alarmType, (uint8_t) notificationType, (uint8_t) evt);
     }
     return result;
 }
@@ -7648,6 +7804,374 @@ int  zwcontrol_wake_up_interval_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uin
 }
 
 
+// Command Class Door Lock
+
+/**
+hl_dlck_op_report_cb - Door lock operation status report callback
+@param[in]  ifd     The interface that received the report
+@param[in]  op_sts  Operation status
+@return
+*/
+static void hl_dlck_op_report_cb(zwifd_p ifd, zwdlck_op_p  op_sts, time_t ts)
+{
+    ALOGI("Door lock operation mode:%02X,", op_sts->mode);
+    ALOGI("Outside door handles mode:%02X,", op_sts->out_mode);
+    ALOGI("Inside door handles mode:%02X,", op_sts->in_mode);
+    ALOGI("Door condition:%02X,", op_sts->cond);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Door Lock Operation Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddNumberToObject(jsonRoot, "Door Lock op mode", op_sts->mode);
+    cJSON_AddNumberToObject(jsonRoot, "Outside Door mode", op_sts->out_mode);
+    cJSON_AddNumberToObject(jsonRoot, "Inside Door mode", op_sts->in_mode);
+    cJSON_AddNumberToObject(jsonRoot, "Door Condition", op_sts->cond);
+
+    if (op_sts->tmout_min != 0xFE)
+    {
+        ALOGI("Remaining time in unsecured state:%u:%u,",
+                     op_sts->tmout_min, op_sts->tmout_sec);
+        cJSON_AddNumberToObject(jsonRoot, "Unsecured State Time(min)", op_sts->tmout_min);
+        cJSON_AddNumberToObject(jsonRoot, "Unsecured State Time(sec)", op_sts->tmout_sec);
+    }
+
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_dlck_op_rep_setup - Setup door lock operation status report
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_dlck_op_rep_setup(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_dlck_op_rpt_set(ifd, hl_dlck_op_report_cb);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGI("hl_dlck_op_rep_setup with error:%d", result);
+    }
+
+    return result;
+}
+
+/**
+hl_dlck_op_rep_get - Get the state of the door lock device
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_dlck_op_rep_get(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_dlck_op_get(ifd, ZWIF_GET_BMSK_LIVE);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGI("hl_dlck_op_rep_get with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_door_lock_operation_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_dlck_op_rep_setup(hl_appl);
+    if(result == 0){
+        ALOGI("Door lock operation report func setup done.");
+        result = hl_dlck_op_rep_get(hl_appl);
+    }
+
+    return result;
+}
+
+/**
+hl_dlck_op_set - Set door lock operation
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_dlck_op_set(hl_appl_ctx_t   *hl_appl)
+{
+    int         result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_dlck_op_set(ifd, hl_appl->dlck_mode, NULL, NULL);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGI("hl_dlck_op_set with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_door_lock_operation_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t mode)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK, 0))
+    {
+        return -1;
+    }
+
+    // mode (hex)
+    // (0) Door Unsecured, (1) Door Unsecured with timeout
+    // (10) Door Unsecured for inside Door Handles, 16
+    // (11) Door Unsecured for inside Door Handles with timeout, 17
+    // (20) Door Unsecured for outside Door Handles, 32
+    // (21) Door Unsecured for outside Door Handles with timeout, 33
+    // (FE) Door/Lock State Unknown
+    // (FF) Door Secured
+    hl_appl->dlck_mode = mode;
+
+    int result = hl_dlck_op_set(hl_appl);
+    if(result != 0)
+    {
+        ALOGE("zwcontrol_door_lock_operation_set with error: %d",result);
+    }
+
+    return result;
+}
+
+/**
+hl_dlck_cfg_report_cb - Report callback for door lock configuration
+@param[in]  ifd     interface
+@param[in]  config  configuration
+*/
+static void hl_dlck_cfg_report_cb(zwifd_p ifd, zwdlck_cfg_p  config, time_t ts)
+{
+    ALOGI("Door lock operation type:%s,",
+                 (config->type == ZW_DOOR_OP_CONST)? "constant" : "timed");
+    ALOGI("Outside door handles state:%02X,", config->out_sta);
+    ALOGI("Inside door handles state:%02X,", config->in_sta);
+
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Door Lock Configuration Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", ifd->nodeid);
+    cJSON_AddStringToObject(jsonRoot, "Door Lock op type", (config->type == ZW_DOOR_OP_CONST)? "constant" : "timed");
+    cJSON_AddNumberToObject(jsonRoot, "Outside Door state", config->out_sta);
+    cJSON_AddNumberToObject(jsonRoot, "Inside Door state", config->in_sta);
+
+    if (config->type == ZW_DOOR_OP_TIMED)
+    {
+        ALOGI("Time the lock stays unsecured.:%u:%u,",
+                     config->tmout_min, config->tmout_sec);
+        cJSON_AddNumberToObject(jsonRoot, "Unsecured State Time(min)", config->tmout_min);
+        cJSON_AddNumberToObject(jsonRoot, "Unsecured State Time(sec)", config->tmout_sec);
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+/**
+hl_dlck_cfg_get - Get configuration parameter
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_dlck_cfg_get(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->dst_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_dlck_cfg_get(ifd, hl_dlck_cfg_report_cb, ZWIF_GET_BMSK_LIVE);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGI("hl_dlck_cfg_get with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_door_lock_config_get(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK, 0))
+    {
+        return -1;
+    }
+
+    int result = hl_dlck_cfg_get(hl_appl);
+    if(result < 0)
+    {
+        ALOGI("zwcontrol_door_lock_config_get with error: %d",result);
+    }
+
+    return result;
+}
+
+/**
+hl_dlck_cfg_set - Set the configuration of the door lock device
+@param[in]  hl_appl     The high-level api context
+@return  0 on success, negative error number on failure
+*/
+int32_t hl_dlck_cfg_set(hl_appl_ctx_t   *hl_appl)
+{
+    int     result;
+    zwifd_p ifd;
+
+    //Get the interface descriptor
+    plt_mtx_lck(hl_appl->desc_cont_mtx);
+    ifd = hl_intf_desc_get(hl_appl->desc_cont_hd, hl_appl->rep_desc_id);
+    if (!ifd)
+    {
+        plt_mtx_ulck(hl_appl->desc_cont_mtx);
+        return ZW_ERR_INTF_NOT_FOUND;
+    }
+
+    result = zwif_dlck_cfg_set(ifd, &hl_appl->dlck_config);
+
+    plt_mtx_ulck(hl_appl->desc_cont_mtx);
+
+    if (result < 0)
+    {
+        ALOGE("hl_dlck_cfg_set with error:%d", result);
+    }
+
+    return result;
+}
+
+int  zwcontrol_door_lock_config_set(hl_appl_ctx_t* hl_appl, uint32_t nodeId, uint8_t type, uint8_t out_sta,
+                                    uint8_t in_sta, uint8_t tmout_min, uint8_t tmout_sec)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    if(hl_destid_get(hl_appl, nodeId, COMMAND_CLASS_DOOR_LOCK, 0))
+    {
+        return -1;
+    }
+
+    // "Operation type: (1)Constant (2)Timed
+    hl_appl->dlck_config.type = type;
+    // For door handles states, each bit represents a handle with bit set to 0 for disable; 1 for enable
+    // Outside Door Handles State 0 to f (hex)
+    hl_appl->dlck_config.out_sta = out_sta;
+    // Inside Door Handles State 0 to f (hex)
+    hl_appl->dlck_config.in_sta = in_sta;
+    if (hl_appl->dlck_config.type == ZW_DOOR_OP_TIMED)
+    {
+        // Duration lock stays unsecured in
+        // minutes (1-254)
+        hl_appl->dlck_config.tmout_min = tmout_min;
+        // seconds (1-59)
+        hl_appl->dlck_config.tmout_sec = tmout_sec;
+    }
+
+    int result = hl_dlck_cfg_set(hl_appl);
+    if(result != 0)
+    {
+        ALOGE("zwcontrol_door_lock_config_set with error:%d",result);
+    }
+
+    return result;
+}
+
+
 /*
  **  Command Class Switch Color
  */
@@ -8638,7 +9162,7 @@ int32_t hl_switch_all_set(hl_appl_ctx_t   *hl_appl, uint8_t value)
         return ZW_ERR_INTF_NOT_FOUND;
     }
 
-    //result = zwif_switch_all_set(ifd, (uint8_t)value);
+    result = zwif_switch_all_set(ifd, (uint8_t)value);
 
     plt_mtx_ulck(hl_appl->desc_cont_mtx);
 
@@ -10773,4 +11297,55 @@ int  zwcontrol_rm_all_provision_list_entry(hl_appl_ctx_t* hl_appl)
     }
 
     return result;
+}
+
+static void is_failed_node_cb(appl_layer_ctx_t *appl_ctx, int8_t tx_sts, void *user_prm, uint8_t nodeid, zw_tx_cb_prm_t *param)
+{
+    ALOGI("is_failed_node_cb, nodeId:%d , status:%d",nodeid, tx_sts);
+    cJSON *jsonRoot;
+    jsonRoot = cJSON_CreateObject();
+
+    if(jsonRoot == NULL)
+    {
+        return;
+    }
+
+    cJSON_AddStringToObject(jsonRoot, "MessageType", "Node Is Failed Check Report");
+    cJSON_AddNumberToObject(jsonRoot, "Node id", nodeid);
+    if(tx_sts == TRANSMIT_COMPLETE_OK)
+    {
+        cJSON_AddStringToObject(jsonRoot, "Status", "Alive");
+    }
+    else
+    {
+        cJSON_AddStringToObject(jsonRoot, "Status", "Down(failed)");
+    }
+
+    if(resCallBack)
+    {
+        char *p = cJSON_Print(jsonRoot);
+
+        if(p)
+        {
+            resCallBack(p);
+            free(p);
+        }
+    }
+
+    cJSON_Delete(jsonRoot);
+}
+
+int  zwcontrol_check_node_isFailed(hl_appl_ctx_t* hl_appl, uint32_t nodeId)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    int result = zwnode_probe_by_id(hl_appl->zwnet, nodeId, is_failed_node_cb, NULL, 0);
+
+    if(result != 0)
+    {
+        ALOGE("zwcontrol_check_node_isFailed send with error: %d", result);
+    }
 }

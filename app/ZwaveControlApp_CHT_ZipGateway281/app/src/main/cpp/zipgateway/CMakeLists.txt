@@ -1,13 +1,13 @@
 project(zipgateway)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wparentheses -Wno-array-bounds -D_DEFAULT_SOURCE -fPIE")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wparentheses -Wno-array-bounds -D_DEFAULT_SOURCE -fPIE -fPIC")
 
 add_definitions ( -DZIPGW -DDEBUG_S2_INCL_FSM -DDEBUG_S2_FSM)
 
-set(CMAKE_LD_FLAGS "-fPIE")
+set(CMAKE_LD_FLAGS "-fPIE -fPIC")
 
-set(OPENSSL_LIBRARIES "ssl")
-set(LibCRYPTO_LIBRARIES "crypto")
+set(OPENSSL_LIBRARIES "zssl")
+set(LibCRYPTO_LIBRARIES "zcrypto")
 
 set(CMAKE_SYSTEM_NAME "Linux")
 set(SYSTEM_PLATFORM "Android")
@@ -19,7 +19,7 @@ set(LIBUSB_INCLUDE_DIRS "")
 else()
 add_definitions(-DZIPGATEWAY_DEBUG)
 set(LIBUSB_INCLUDE_DIRS "../libusb/libusb")
-set(LibUSB_LIBRARIES "usb")
+set(LibUSB_LIBRARIES "zusb")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")

@@ -25,9 +25,11 @@ public class DeviceInfo {
     public static String[] allRoomName = {"My Home","Living Room","Bedroom"};
     public static String dskNumber = null;
     public static int reqKey;
-    public static boolean reqKeyFlag = false;
-    public static boolean grantFlag = false;
+    public static boolean reqFlag = false;
     public static String devType = "Zwave";
+    public static boolean bootMode = false;
+    public static boolean InclusionState = true;
+
 
 
 
