@@ -1927,7 +1927,7 @@ static void hl_add_node_s2_cb(void *usr_param, sec2_add_cb_prm_t *cb_param)
             cJSON *jsonRoot;
             jsonRoot = cJSON_CreateObject();
             char str[10] = {0};
-            sprintf(str, "%x", cb_param->cb_prm.req_key.req_keys);
+            sprintf(str, "%d", cb_param->cb_prm.req_key.req_keys);
             cJSON_AddStringToObject(jsonRoot, "Grant Keys Msg", "Request Keys");
             cJSON_AddStringToObject(jsonRoot, "Keys", str);
 
