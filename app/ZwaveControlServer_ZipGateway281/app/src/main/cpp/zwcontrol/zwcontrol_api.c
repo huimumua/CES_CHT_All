@@ -4092,10 +4092,10 @@ static int hl_specify_node_desc_dump(hl_appl_ctx_t *hl_appl, int nodeId, cJSON *
                 //cJSON_AddStringToObject(EpInfo, "Endpoint name", ep->name);
                 //cJSON_AddStringToObject(EpInfo, "Endpoint location", ep->loc);
 
-                /*if (ep->zwplus_info.zwplus_ver)
+                if (ep->zwplus_info.zwplus_ver)
                 {
                     hl_zwaveplus_show(hl_appl, &ep->zwplus_info, EpInfo);
-                }*/
+                }
 
                 cJSON * InterfaceInfoArray =  cJSON_CreateArray();
 
