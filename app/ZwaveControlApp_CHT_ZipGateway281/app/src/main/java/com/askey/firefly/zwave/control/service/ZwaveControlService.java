@@ -186,10 +186,10 @@ public class ZwaveControlService extends Service {
         int result = ZwaveControlHelper.ZwController_StartLearnMode();
     }
 
-    public void addDevice(String devType){
-        if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_AddDevice();
-        } else if (devType.equals(btType)){
+    public int addDevice(String devType){
+        //if (devType.equals(zwaveType)) {
+            return ZwaveControlHelper.ZwController_AddDevice();
+        //} else if (devType.equals(btType)){
             /*
             try {
                 btControlService.getScanDeviceList();
@@ -197,7 +197,7 @@ public class ZwaveControlService extends Service {
                 e.printStackTrace();
             }
             */
-        }
+        //}
     }
 
     public void removeDevice(String devType, int nodeId){
@@ -376,7 +376,7 @@ public class ZwaveControlService extends Service {
     public void rmAllProvisionListEntry(){
         String result = "false";
         int res = ZwaveControlHelper.ZwController_rmAllProvisionListEntry();
-        if (res == 0){
+        if (res >= 0){
             result = "true";
         }
 
@@ -537,7 +537,7 @@ public class ZwaveControlService extends Service {
     }
 
     public void getRooms(){
-        Log.i(LOG_TAG,"getRooms START");
+        //Log.i(LOG_TAG,"getRooms START");
         List <ZwaveDeviceRoom> roomList = roomManager.getRoom();
         JSONObject jo = new JSONObject();
         JSONArray Jarray= new JSONArray();
@@ -673,10 +673,12 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_GetConfiguration(deviceId, paramMode, paramNumber, rangeStart, rangeEnd);
     }
 
-    public void setConfiguration(int deviceId, int paramNumber, int paramSize, int useDefault, int paramValue) throws RemoteException {
+    public int setConfiguration(int deviceId, int paramNumber, int paramSize, int useDefault, int paramValue) throws RemoteException {
         String result = "false";
         updateTimestamp(deviceId);
-        int res = ZwaveControlHelper.ZwController_SetConfiguration(deviceId, paramNumber, paramSize, useDefault, paramValue);
+        return ZwaveControlHelper.ZwController_SetConfiguration(deviceId, paramNumber, paramSize, useDefault, paramValue);
+
+        /*
         if (res==0) {result = "true";}
         JSONObject jsonResult = new JSONObject();
         try {
@@ -689,6 +691,7 @@ public class ZwaveControlService extends Service {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        */
     }
 
     public int getSupportedSwitchType(int deviceId){
@@ -698,9 +701,7 @@ public class ZwaveControlService extends Service {
 
     public int startStopSwitchLevelChange(int deviceId, int startLvlVal, int duration, int pmyChangeDir, int secChangeDir, int secStep){
         updateTimestamp(deviceId);
-        int result = ZwaveControlHelper.ZwController_startStopSwitchLevelChange(deviceId,startLvlVal,duration,pmyChangeDir,secChangeDir,secStep);
-        zwaveControlResultCallBack("startStopSwitchLevelChange",String.valueOf(result));
-        return result;
+        return ZwaveControlHelper.ZwController_startStopSwitchLevelChange(deviceId,startLvlVal,duration,pmyChangeDir,secChangeDir,secStep);
     }
 
     public int getPowerLevel(int deviceId){
@@ -713,43 +714,43 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_SetPowerLevel(deviceId,powerLvl,timeout);
     }
 
-    public void setSwitchAllOn(String devType, int deviceId){
+    public int setSwitchAllOn(String devType, int deviceId){
         updateTimestamp(deviceId);
-        if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_SetSwitchAllOn(deviceId);
-        } else if (devType.equals(btType)) {
+        //if (devType.equals(zwaveType)) {
+            return ZwaveControlHelper.ZwController_SetSwitchAllOn(deviceId);
+        //} else if (devType.equals(btType)) {
 
-        }
+        //}
     }
 
-    public void setSwitchAll(String devType, int deviceId, int value){
+    public int  setSwitchAll(String devType, int deviceId, int value){
         updateTimestamp(deviceId);
-        if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_SetSwitchAll(deviceId,value);
-        } else if (devType.equals(btType)) {
+        //if (devType.equals(zwaveType)) {
+            return ZwaveControlHelper.ZwController_SetSwitchAll(deviceId,value);
+        //} else if (devType.equals(btType)) {
 
-        }
+        //}
     }
 
-    public void getSwitchAll(String devType, int deviceId){
+    public int getSwitchAll(String devType, int deviceId){
         updateTimestamp(deviceId);
-        if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_GetSwitchAll(deviceId);
-        } else if (devType.equals(btType)) {
+        //if (devType.equals(zwaveType)) {
+        return ZwaveControlHelper.ZwController_GetSwitchAll(deviceId);
+        //} else if (devType.equals(btType)) {
 
-        }
+        //}
     }
 
-    public void SetBinarySwitchState(String devType, int deviceId, int state){
+    public int  setBinarySwitchState(String devType, int deviceId, int state){
         updateTimestamp(deviceId);
-        if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_SetBinarySwitchState(deviceId,state);
-        } else if (devType.equals(btType)) {
+        //if (devType.equals(zwaveType)) {
+            return ZwaveControlHelper.ZwController_SetBinarySwitchState(deviceId,state);
+        //} else if (devType.equals(btType)) {
 
-        }
+        //}
     }
 
-    public void GetBinarySwitchState(String devType, int deviceId){
+    public void getBinarySwitchState(String devType, int deviceId){
         updateTimestamp(deviceId);
         if (devType.equals(zwaveType)) {
             ZwaveControlHelper.ZwController_GetBinarySwitchState(deviceId);
@@ -758,7 +759,7 @@ public class ZwaveControlService extends Service {
         }
     }
 
-    public void SetSwitchAllOnBroadcast(String devType){
+    public void setSwitchAllOnBroadcast(String devType){
         //updateTimestamp(deviceId);
         if (devType.equals(zwaveType)) {
             ZwaveControlHelper.ZwController_SetSwitchAllOnBroadcast();
@@ -767,7 +768,7 @@ public class ZwaveControlService extends Service {
         }
     }
 
-    public void SetSwitchAllOffBroadcast(String devType){
+    public void setSwitchAllOffBroadcast(String devType){
         //updateTimestamp(deviceId);
         if (devType.equals(zwaveType)) {
             ZwaveControlHelper.ZwController_SetSwitchAllOffBroadcast();
@@ -777,13 +778,13 @@ public class ZwaveControlService extends Service {
     }
 
 
-    public void setSwitchAllOff(String devType, int deviceId){
+    public int setSwitchAllOff(String devType, int deviceId){
         updateTimestamp(deviceId);
-        if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_SetSwitchAllOff(deviceId);
-        } else if (devType.equals(btType)){
+        //if (devType.equals(zwaveType)) {
+            return ZwaveControlHelper.ZwController_SetSwitchAllOff(deviceId);
+        //} else if (devType.equals(btType)){
             //btControlService.
-        }
+        //}
     }
 
     public void getBasic(String devType, int deviceId){
@@ -872,28 +873,18 @@ public class ZwaveControlService extends Service {
     }
 
 
-    public void getMeter(String devType, int deviceId, int meterUnit){
+    public int getMeter(String devType,int deviceId, int meterUnit) {
         updateTimestamp(deviceId);
-        if (devType.equals(zwaveType)) {
-            Log.i(LOG_TAG,"getMeter #"+deviceId+" , " +meterUnit);
-            ZwaveControlHelper.ZwController_GetMeter(deviceId, meterUnit);
-        } else if (devType.equals(btType)){
-            /*
-            try {
-                btControlService.getPlugPower(deviceId);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-            */
-        }
+        Log.i(LOG_TAG, "getMeter #" + deviceId + " , " + meterUnit);
+        return ZwaveControlHelper.ZwController_GetMeter(deviceId, meterUnit);
     }
 
-    public void resetMeter(String devType, int deviceId){
+    public int resetMeter(String devType, int deviceId){
         updateTimestamp(deviceId);
-        if (devType.equals(zwaveType)) {
+        //if (devType.equals(zwaveType)) {
             Log.i(LOG_TAG,"resetMeter #"+deviceId);
-            ZwaveControlHelper.ZwController_resetMeter(deviceId);
-        } else if (devType.equals(btType)){
+            return ZwaveControlHelper.ZwController_resetMeter(deviceId);
+        //} else if (devType.equals(btType)){
             /*
             try {
                 btControlService.getPlugPower(deviceId);
@@ -901,12 +892,13 @@ public class ZwaveControlService extends Service {
                 e.printStackTrace();
             }
             */
-        }
+        //}
     }
 
-    public void getMeterSupported(int deviceId){
+    public int  getMeterSupported(int deviceId){
         updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getMeterSupported(deviceId);
+        int result = ZwaveControlHelper.ZwController_getMeterSupported(deviceId);
+        return result;
     }
 
     public void UpdateNode(int deviceId){
@@ -929,9 +921,9 @@ public class ZwaveControlService extends Service {
         ZwaveControlHelper.ZwController_getDoorLockOperation(deviceId);
     }
 
-    public void setDoorLockOperation(int deviceId, int mode){
+    public int  setDoorLockOperation(int deviceId, int mode){
         updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_setDoorLockOperation(deviceId,mode);
+        return ZwaveControlHelper.ZwController_setDoorLockOperation(deviceId,mode);
     }
 
     public void getDoorLockConfiguration(int deviceId){
@@ -939,10 +931,10 @@ public class ZwaveControlService extends Service {
         ZwaveControlHelper.ZwController_getDoorLockConfiguration(deviceId);
     }
 
-    public void setDoorLockConfiguration(int deviceId, int type, int out_sta,
+    public int setDoorLockConfiguration(int deviceId, int type, int out_sta,
                                          int in_sta, int tmout_min, int tmout_sec) {
         updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_setDoorLockConfiguration(deviceId,type,out_sta,in_sta,tmout_min,tmout_sec);
+        return ZwaveControlHelper.ZwController_setDoorLockConfiguration(deviceId,type,out_sta,in_sta,tmout_min,tmout_sec);
     }
 
     public void getUserCode(int deviceId, int user_id){
@@ -1190,13 +1182,12 @@ public class ZwaveControlService extends Service {
     public int getSensorNotification(int deviceId, int alarm_type, int notif_type, int status){
         updateTimestamp(deviceId);
         Log.i(LOG_TAG,"=====getSensorNotification==deviceId==="+deviceId+"alarm_type="+alarm_type+"notif_type="+notif_type+"status="+status);
-        int result = ZwaveControlHelper.ZwController_getNotification(deviceId, alarm_type, notif_type, status);
-        return result;
+         return ZwaveControlHelper.ZwController_getNotification(deviceId, alarm_type, notif_type, status);
     }
 
-    public void setNotification(int deviceId, int type, int status){
+    public int setNotification(int deviceId, int type, int status){
         updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_setNotification(deviceId, type, status);
+        return ZwaveControlHelper.ZwController_setNotification(deviceId, type, status);
     }
 
     public void getSupportedCentralScene(int deviceId, int endpointId){
@@ -1325,14 +1316,14 @@ public class ZwaveControlService extends Service {
         }
 
         int result = ZwaveControlHelper.ZwController_addEndpointsToGroup(deviceId,groupId,nodeifid,endpointId);
-        Log.i(LOG_TAG,"addEndpointsToGroup result = "+result);
+        //Log.i(LOG_TAG,"addEndpointsToGroup result = "+result);
 
         JSONObject jsonResult = new JSONObject();
         try {
             jsonResult.put("Interface","addEndpointsToGroup");
             jsonResult.put("devType",devType);
             jsonResult.put("NodeId",new Integer(deviceId));
-            if (result == 0 ) {
+            if (result >= 0 ) {
                 jsonResult.put("result","true");
 
                 for (int idx=0;idx<arr.length-1;idx++){
@@ -1368,6 +1359,7 @@ public class ZwaveControlService extends Service {
         }
 
         int result = ZwaveControlHelper.ZwController_removeEndpointsFromGroup(deviceId, groupId, nodeifid, endpointId);
+
         Log.i(LOG_TAG,"removeEndpointsFromGroup result = "+result);
 
         JSONObject jsonResult = new JSONObject();
@@ -1375,7 +1367,7 @@ public class ZwaveControlService extends Service {
             jsonResult.put("Interface", "removeEndpointsFromGroup");
             jsonResult.put("devType", devType);
             jsonResult.put("NodeId", new Integer(deviceId));
-            if (result == 0 ) {
+            if (result >= 0 ) {
                 jsonResult.put("result","true");
                 for (int idx=0;idx<arr.length-1;idx++){
                     Log.i(LOG_TAG,"#"+idx+" | del groupId="+arr[idx]+" | interfaceId = "+nodeifid[idx]);
@@ -1389,6 +1381,7 @@ public class ZwaveControlService extends Service {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
     }
 
     public int getMaxSupportedGroups(int deviceId,int endpointId){
@@ -1570,40 +1563,33 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.CloseZwController();
     }
 
-    public void editNodeInfo(String brand, int deviceId, String newName, String devType, String category,
+    public int editNodeInfo(String brand, int deviceId, String newName, String devType, String type,
                              String roomName, String isFavorite) {
+        //Log.i(LOG_TAG, "=====zwaveDevice.editNodeInfo====="+type);
 
-        boolean result;
+        int result;
         ZwaveDevice zwaveDevice = zwaveDeviceManager.queryZwaveDevices(deviceId);
 
         if (zwaveDevice != null) {
-            Log.i(LOG_TAG, "=====zwaveDevice.editNodeInfo("+deviceId+")====");
-            Log.i(LOG_TAG, "=====zwaveDevice.editNodeInfo(setCategory)====="+category);
+            //Log.i(LOG_TAG, "=====zwaveDevice.editNodeInfo("+deviceId+")====");
+            //Log.i(LOG_TAG, "=====zwaveDevice.editNodeInfo(setCategory)====="+type);
             java.util.Date date = new java.util.Date();
             zwaveDevice.setBrand(brand);
             zwaveDevice.setName(newName);
             zwaveDevice.setDevType(devType);
             zwaveDevice.setRoomName(roomName);
-            zwaveDevice.setCategory(category);
+            zwaveDevice.setCategory(type);
             zwaveDevice.setFavorite(isFavorite);
             zwaveDevice.setTimestamp(date.getTime());
             zwaveDeviceManager.updateZwaveDevice(zwaveDevice);
             initZwaveDevfunc(deviceId);
-            result = true;
+            result = 1;
+            return result;
         } else {
-            result = false;
+            result = 0;
+            return result;
         }
 
-        JSONObject jsonResult = new JSONObject();
-        try {
-            jsonResult.put("Interface","editNodeInfo");
-            jsonResult.put("devType",devType);
-            jsonResult.put("NodeId",new Integer(deviceId));
-            jsonResult.put("Result",String.valueOf(result));
-            zwaveControlResultCallBack("reNameDevice", "reNameDevice:" + jsonResult);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
     }
 /*
     public int  getControllerRssi(){
@@ -1852,7 +1838,6 @@ public class ZwaveControlService extends Service {
             pinReq = jsonObject.optString("PIN Requested Msg");
 
 
-
         } catch (JSONException e) {
             Log.i(LOG_TAG, "JSONException");
             e.printStackTrace();
@@ -1976,16 +1961,7 @@ public class ZwaveControlService extends Service {
             //} else if (messageType.equals("All Node Info Report")) {
             //    zwaveControlResultCallBack("updateNode", jniResult);
         } else if ("Configuration Get Information".equals(messageType)) {
-            try {
-                jsonObject = new JSONObject(jniResult);
-                jsonObject.put("Interface","getConfigure");
-                jsonObject.put("devType",zwaveType);
-                zwaveControlResultCallBack("getConfiguration", jsonObject.toString());
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        } else if ("  ".equals(messageType)) {
-            zwaveControlResultCallBack("getSupportedSwitchType", jniResult);
+            zwaveControlResultCallBack("Configuration Get Information", jsonObject.toString());
         } else if ("Power Level Get Information".equals(messageType)) {
             zwaveControlResultCallBack("Power Level Get Information", jniResult);
         } else if ("Basic Information".equals(messageType)) {
@@ -2005,15 +1981,6 @@ public class ZwaveControlService extends Service {
                     jsonObject.put("switchStatus","on");
                 }
                 zwaveControlResultCallBack("getBasic", jsonObject.toString());
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        } else if ("Meter report Information".equals(messageType)) {
-            try {
-                jsonObject = new JSONObject(jniResult);
-                jsonObject.put("Interface","getPower");
-                jsonObject.put("devType",zwaveType);
-                zwaveControlResultCallBack("Meter Report Information", jsonObject.toString());
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -2077,6 +2044,12 @@ public class ZwaveControlService extends Service {
 
         } else if (messageType.equals("Notification Supported Report")) {
             zwaveControlResultCallBack("Notification Supported Report", jniResult);
+        } else if (messageType.equals("Node Is Failed Check Report")) {
+            zwaveControlResultCallBack("Node Is Failed Check Report", jniResult);
+        } else if (messageType.equals("Meter Report Information")) {
+            zwaveControlResultCallBack("Meter Report Information", jniResult);
+        } else if (messageType.equals("Specify Node Info")) {
+            zwaveControlResultCallBack("Specify Node Info", jniResult);
         } else if (messageType.equals("Controller Network RSSI Report")) {
             zwaveControlResultCallBack("getControllerRssi", jniResult);
         } else if ("DSK Report".equals(messageType)) {
@@ -2097,7 +2070,7 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("Switch All Get Information", jniResult);
         } else if ("Binary Sensor Information".equals(messageType)) {
             zwaveControlResultCallBack("Binary Sensor Information", jniResult);
-        } else if ("Meter Cap Informationn".equals(messageType)) {
+        } else if ("Meter Cap Information".equals(messageType)) {
             zwaveControlResultCallBack("Meter Cap Information", jniResult);
         } else if ("Wake Up Cap Report".equals(messageType)) {
             zwaveControlResultCallBack("Wake Up Cap Report", jniResult);
@@ -2131,10 +2104,6 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("setSwitchAllOn", jniResult);
         } else if ("setSwitchAllOff".equals(messageType)) {
             zwaveControlResultCallBack("setSwitchAllOff", jniResult);
-        } else if ("Specify Node Info".equals(messageType)) {
-            zwaveControlResultCallBack("Specify Node Info", jniResult);
-        } else if ("Node Is Failed Check Report".equals(messageType)) {
-            zwaveControlResultCallBack("Node Is Failed Check Report", jniResult);
         } else if ("Replace Failed Node".equals(messageType)) {
             zwaveControlResultCallBack("Replace Failed Node", jniResult);
         } else if ("Controller Init Status".equals(messageType)) {
@@ -2155,6 +2124,8 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("Door Lock Configuration Report", jniResult);
         } else if ("Controller DSK Report".equals(messageType)) {
             zwaveControlResultCallBack("Controller DSK Report", jniResult);
+        } else if ("Binary Switch Get Information".equals(messageType)) {
+            zwaveControlResultCallBack("Binary Switch Get Information", jniResult);
         }
     }
 }

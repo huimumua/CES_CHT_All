@@ -188,14 +188,14 @@ public class CDCSerialDevice
             return;
         }
 
+        task.working.set(false);
         setControlCommand(CDC_SET_CONTROL_LINE_STATE, CDC_CONTROL_LINE_OFF, null);
         conn.releaseInterface(iface);
         conn.close();
-        task.working.set(false);
 
         try
         {
-            task.join();
+            task.join(5000);
         }
         catch (InterruptedException e)
         {
@@ -375,6 +375,10 @@ public class CDCSerialDevice
             Log.d(TAG, "Usb Serial Port Reading Task Start...");
             while (working.get()) {
                 UsbRequest request = conn.requestWait();
+                if(!working.get())
+                {
+                    break;
+                }
                 if (request != null && request.getEndpoint().getType() == UsbConstants.USB_ENDPOINT_XFER_BULK
                         && request.getEndpoint().getDirection() == UsbConstants.USB_DIR_IN) {
                     if (buffer.position() > 0) {

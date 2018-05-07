@@ -1,10 +1,15 @@
 package com.askey.firefly.zwave.control.jni;
 
+import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 
+import com.askey.firefly.zwave.control.service.MQTTBroker;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
-import com.askey.firefly.zwave.control.application.ZwaveProvisionList;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
+
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 项目名称：ZwaveControl
@@ -17,6 +22,10 @@ import com.askey.firefly.zwave.control.utils.DeviceInfo;
  */
 public class ZwaveControlHelper {
 
+    public final static String LOG_TAG = "ZwaveControlHelper";
+    static ReadWriteLock rwl = new ReentrantReadWriteLock();
+
+
     static {
         System.loadLibrary("zwcontrol-jni");
 //        initZwave();
@@ -28,17 +37,97 @@ public class ZwaveControlHelper {
     public static void ZwaveControlRes_CallBack(byte[] result, int len)
     {
         ZwaveControlService.getInstance().zwaveCallBack(result,len);
-        //Log.d("ZwaveControlHelper", "ZwaveControlRes_CallBack " + new String(result));
+
+
+/*
+
+        rwl.readLock().lock();  //用读锁锁住
+        try {
+            Log.d(LOG_TAG,"ready to read");
+            Thread.sleep(3000);
+            Log.d(LOG_TAG,"read  done ");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally{
+            rwl.readLock().unlock();
+        }
+
+*/
+/*
+        if(new String(result).contains("Node Add Status")) {
+            try {
+                Log.d(LOG_TAG,"ZwaveControlRes_CallBack !!!!!!!!!!!!!!!!!!");
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+*/
 
 //        ZwaveSendBroadcast.getInstance().zwaveCallBack(result,len);//发广播 add remove
 
     }
 
-    public static int ZwaveControlReq_CallBack(byte[] result, int len){
-        ZwaveControlService.getInstance().zwaveControlReq_CallBack(result,len);
+
+
+
+
+    public static int ZwaveControlReq_CallBack(byte[] result, int len) {
+        ZwaveControlService.getInstance().zwaveControlReq_CallBack(result, len);
         //android.util.Log.d("ZwaveControlHelper", "ZwaveControlReq_CallBack " + new String(result));
-        return DeviceInfo.reqKey;
+
+        return MQTTBroker.jni();
+
     }
+
+
+
+/*
+        android.util.Log.d("ZwaveControlHelper", "ZwaveControlReq_CallBack " + new String(result));
+        String jniResult = new String(result);
+        String messageType = null;
+        JSONObject jsonObject = null;
+
+        String grantKeysMsg = null;
+        String csaMsg = null;
+        String pinReq = null;
+
+        try {
+            jsonObject = new JSONObject(jniResult);
+            grantKeysMsg = jsonObject.optString("Grant Keys Msg");
+            Log.i(LOG_TAG,"  grantKeysMsg:"+grantKeysMsg);
+            pinReq = jsonObject.optString("PIN Requested Msg");
+        } catch (JSONException e) {
+            android.util.Log.i(LOG_TAG, "JSONException");
+            e.printStackTrace();
+        }
+
+        if("Request Keys".equals(grantKeysMsg))
+        {
+            String keys = null;
+            try {
+                keys = jsonObject.getString("Keys");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            int intkey = Integer.parseInt(keys);
+            android.util.Log.i(LOG_TAG," grant keys: "+keys+"   int:"+intkey);
+            return intkey;
+
+        }
+
+        if("Enter 5-digit PIN".equals(pinReq))
+        {
+            android.util.Log.i(LOG_TAG," user input pin code: "+(Integer.toString(12824)));
+
+            return 12824;
+        }
+
+        android.util.Log.w(LOG_TAG," should not go here!!!!");
+        return  0;
+*/
+   // }
 
     public native static int CreateZwController();
     public native static int OpenZwController(String FilePath, String NodeInfoPath, byte[] result);

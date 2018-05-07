@@ -30,6 +30,38 @@ public class DeviceInfo {
     public static boolean bootMode = false;
     public static boolean InclusionState = true;
 
+    public static String className = "";
+    public static String result = "";
+
+    public static String getMqttPayload = "";
+    public static String reqString = "";
+    public static String grantKeyNumber = "";
+
+
+    public static String mqttString = "";
+    public static String mqttString2 = "";
+    public static String mqttString3 = "";
+    public static String mqttString4 = "";
+    public static String mqttString5 = "";
+
+
+    public static ArrayList<Integer> arrList;
+    public static ArrayList<String> addList;
+    public static ArrayList<String> removeList;
+
+
+    public static int mqttDeviceId = 0;
+    public static int mqttValue = 0;
+    public static int mqttTmp = 0;
+    public static int mqttTmp2 = 0;
+    public static int mqttTmp3 = 0;
+    public static int mqttTmp4 = 0;
+    public static int mqttTmp5 = 0;
+    public static int callResult = -1;
+
+    public static String resultToMqttBroker = "";
+
+
 
 
 

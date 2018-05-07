@@ -5,18 +5,16 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.askey.firefly.zwave.control.dao.ZwaveDeviceManager;
 import com.askey.firefly.zwave.control.dao.ZwaveDeviceSceneManager;
+import com.askey.firefly.zwave.control.jni.ZwaveControlHelper;
 import com.askey.firefly.zwave.control.net.TCPServer;
 import com.askey.firefly.zwave.control.net.UDPConnectin;
-import com.askey.firefly.zwave.control.ui.WelcomeActivity;
 import com.askey.firefly.zwave.control.utils.Const;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
 import com.askey.firefly.zwave.control.utils.Utils;
@@ -37,8 +35,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class MQTTBroker extends Service {
 
@@ -55,17 +51,9 @@ public class MQTTBroker extends Service {
     private ZwaveDeviceSceneManager zwSceneManager;
     // for get/set device info from db
     private ZwaveDeviceManager zwDevManager;
-    public ZwaveControlService zwaveService;
 
     private byte[] dskNumber;
-    private int currentNodeId = 0;
-    private int mqttDeviceId = 0;
-    private int mqttValue = 0;
-    private int mqttTmp = 0;
-    private int mqttTmp2 = 0;
-    private int mqttTmp3 = 0;
-    private int mqttTmp4 = 0;
-    private int mqttTmp5 = 0;
+
 
 
     @Override
@@ -98,27 +86,47 @@ public class MQTTBroker extends Service {
         /*  connect to local mqtt server */
         mqttLocalConnect(mqttConnectOptions);
 
+        new Thread(initMqtt).start();
+
+
         /*  launch tcp server and handle the tcp message */
         Log.i(LOG_TAG, "TCPServer = [" + handleTCPMessage() + "]");
-
-        //bind service with ZwaveControlService
-        Intent serviceIntent = new Intent(this, ZwaveControlService.class);
-        this.bindService(serviceIntent, ZWserviceConn, Context.BIND_AUTO_CREATE);
-        //this.bindService(serviceIntent, ZWserviceReq, Context.BIND_AUTO_CREATE);
-
-       new Thread(reqCallBack).start();
 
         // init zwSceneManager and zwDevManager
         zwSceneManager = ZwaveDeviceSceneManager.getInstance(this);
         zwDevManager = ZwaveDeviceManager.getInstance(this);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                receive();
+            }
+
+        }).start();
+
     }
 
-    // only execute one time
-    public Runnable reqCallBack = new Runnable() {
+    public static int jni() {
+        while (!DeviceInfo.reqFlag){
+            try {
+                Thread.sleep(100);
+                //Log.d(LOG_TAG,"!DeviceInfo.reqFlag !!!!!!!!!!!!!!!!!");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        DeviceInfo.reqFlag = false;
+        return DeviceInfo.reqKey;
+    }
+
+
+    public Runnable initMqtt = new Runnable() {
         @Override
         public void run() {
-            Intent serviceIntent = new Intent(MQTTBroker.this, ZwaveControlService.class);
-            MQTTBroker.this.bindService(serviceIntent, ZWserviceReq, Context.BIND_AUTO_CREATE);
+            MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
+            mqttConnectOptions.setAutomaticReconnect(true);
+            mqttConnectOptions.setCleanSession(true);
+            mqttLocalConnect(mqttConnectOptions);
         }
     };
 
@@ -131,13 +139,7 @@ public class MQTTBroker extends Service {
         unsubscribeTopic(Const.PublicTopicName);
 
         TCPServer.close();
-        if (zwaveService != null) {
-            zwaveService.closeController();
-            //zwaveService.unRegisterListener(ZWCtlCB);
-        }
 
-        unbindService(ZWserviceConn);
-        unbindService(ZWserviceReq);
 
         uDPConnecting.stopConn();
         if (mqttServer.getServerStatus()) {
@@ -145,9 +147,8 @@ public class MQTTBroker extends Service {
             mqttServer.stopServer();
         }
 
-        zwaveService.unregister(ZWCtlCB);
-        zwaveService.unregister(ZWCtlReq);
         Log.i(LOG_TAG, "===== MQTTBroker endof onDestroy =====");
+
     }
 
 
@@ -177,12 +178,13 @@ public class MQTTBroker extends Service {
                             String devType = tokens[2];
                             Const.TCPClientPort = clientID;
                             Log.i(LOG_TAG, "deviceService.addDevice(mCallback)");
-                            zwaveService.addDevice(devType);
-
+                            DeviceInfo.getMqttPayload = "addDevice";
                         }
+
+
                     } else if (message.contains("removeDevice")) {
                         if (Const.TCPClientPort != 0) {
-                            Log.i(LOG_TAG,"removeDevice other!");
+                            Log.i(LOG_TAG, "removeDevice other!");
                             mTCPServer.sendMessage(clientID, Const.TCPSTRING + "removeDevice:other");  //TCP format
                         } else {
 
@@ -190,7 +192,7 @@ public class MQTTBroker extends Service {
                             String devType = tokens[2];
                             Const.TCPClientPort = clientID;
                             Log.i(LOG_TAG, "deviceService.removeDevice(mCallback)");
-                            zwaveService.removeDevice(devType, 1);
+                            DeviceInfo.getMqttPayload = "removeDevice";
                         }
                     } else if (message.contains("stopAddDevice")) {
 
@@ -198,51 +200,49 @@ public class MQTTBroker extends Service {
                         Const.TCPClientPort = 0;
                         String[] tokens = message.split(":");
                         String devType = tokens[2];
-                        zwaveService.stopAddDevice(devType);
+                        DeviceInfo.getMqttPayload = "stopAddDevice";
+
                     } else if (message.contains("stopRemoveDevice")) {
 
                         Log.i(LOG_TAG, "deviceService.stopRemoveDevice(mCallback)");
                         Const.TCPClientPort = 0;
                         String[] tokens = message.split(":");
                         String devType = tokens[2];
-                        zwaveService.stopRemoveDevice(devType);
-                    } else if (message.contains("reNameDevice")) {
+                        DeviceInfo.getMqttPayload = "stopRemoveDevice";
 
-                        String[] tokens = message.split(":");
-                        if (tokens.length > 6) {
-                            Const.TCPClientPort = clientID;
-                            String tHomeId = tokens[2];
-                            int tDeviceId = Integer.parseInt(tokens[3]);
-                            String tNewName = tokens[4];
-                            String tDevType = tokens[5];
-                            String tRoomName = tokens[6];
-
-                            Log.i(LOG_TAG, "deviceService.editNodeInfo(mCallback," + tHomeId + "," + tDeviceId + "," + tNewName + "," +
-                                    tDevType + "," + tRoomName + ")");
-                            zwaveService.editNodeInfo(tHomeId, tDeviceId, tNewName, tDevType, tRoomName, "", "");
-
-                        }
-                    } else {
-                        mTCPServer.sendMessage(clientID, Const.TCPSTRING + " Wrong Payload");  //TCP format
                     }
+
                 } else if (message.contains("GrantKeys")) {
                     String[] tmp = message.split(":");
-                    /*
-                    if (tmp[1].equals("87")) {
-                        mTCPServer.sendMessage(clientID, "dsk:1"); //TCP format
+                    if (Integer.valueOf(tmp[1]) == 87) {
+                        DeviceInfo.reqKey = 0x87;
+                    } else if (Integer.valueOf(tmp[1]) == 83) {
+                        DeviceInfo.reqKey = 0x83;
+                    } else if (Integer.valueOf(tmp[1]) == 81) {
+                        DeviceInfo.reqKey = 0x81;
+                    } else if (Integer.valueOf(tmp[1]) == 07 || Integer.valueOf(tmp[1]) == 7) {
+                        DeviceInfo.reqKey = 0x07;
+                    } else if (Integer.valueOf(tmp[1]) == 04 || Integer.valueOf(tmp[1]) == 4) {
+                        DeviceInfo.reqKey = 0x04;
+                    } else if (Integer.valueOf(tmp[1]) == 02 || Integer.valueOf(tmp[1]) == 2) {
+                        DeviceInfo.reqKey = 0x02;
+                    } else if (Integer.valueOf(tmp[1]) == 01 || Integer.valueOf(tmp[1]) == 1) {
+                        DeviceInfo.reqKey = 0x01;
                     }
-                    */
-                    DeviceInfo.reqKey = Integer.valueOf(tmp[1]);
-
+                    Log.i(LOG_TAG, "req grant : "+ Integer.valueOf(tmp[1]));
+                    DeviceInfo.reqFlag = true;
 
                 } else if (message.contains("dsk")) {
                     String[] tmp = message.split(":");
                     DeviceInfo.reqKey = Integer.valueOf(tmp[1]);
-                    mTCPServer.sendMessage(clientID, "CSA:CSA"); //TCP format
+                    Log.i(LOG_TAG, "req dsk : "+ Integer.valueOf(tmp[1]));
+                    DeviceInfo.reqFlag = true;
 
                 } else if (message.contains("CSA")) {
                     String[] tmp = message.split(":");
                     DeviceInfo.reqKey = Integer.valueOf(tmp[1]);
+                    Log.i(LOG_TAG, "req CSA : "+ Integer.valueOf(tmp[1]));
+                    DeviceInfo.reqFlag = true;
 
                 }
             }
@@ -251,7 +251,7 @@ public class MQTTBroker extends Service {
         return mTCPServer.isAlive();
     }
 
-
+/*
     //***** connect to remote mqtt server *****
     private void mqttRemoteConnect(MqttConnectOptions mqttConnectOptions) {
 
@@ -299,7 +299,7 @@ public class MQTTBroker extends Service {
                     mqttMessage = mqttMessage.replaceAll("\n", "");
                     Log.i(LOG_TAG, "Remote MQTT Incoming [" + topic + "] : " + mqttMessage);
 
-                    if (zwaveService != null && mqttMessage.contains("desired")) {
+                    if (mqttMessage.contains("desired")) {
 
                         JSONObject jsonObject = new JSONObject(mqttMessage);
 
@@ -319,7 +319,7 @@ public class MQTTBroker extends Service {
             ex.printStackTrace();
         }
     }
-
+*/
     //***** connect to local mqtt server *****
     private void mqttLocalConnect(MqttConnectOptions mqttConnectOptions) {
 
@@ -367,13 +367,14 @@ public class MQTTBroker extends Service {
                     Log.i(LOG_TAG, " LocalMClient status = " + "[connection was lost]");
                 }
 
+                //receive mqtt payload msg
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
                     String mqttMessage = new String(message.getPayload());
                     mqttMessage = mqttMessage.replaceAll("\n", "");
                     Log.i(LOG_TAG, "Local MQTT Incoming [" + topic + "] : " + mqttMessage);
 
-                    if (zwaveService != null && mqttMessage.contains("desired")) {
+                    if (mqttMessage.contains("desired")) {
 
                         JSONObject jsonObject = new JSONObject(mqttMessage);
 
@@ -394,6 +395,7 @@ public class MQTTBroker extends Service {
         }
     }
 
+    //handle mobile msg
     private void handleMqttIncomingMessage(String TopicName, String mqttMessage) throws JSONException {
         //send aidl message to zwave control app
 
@@ -405,8 +407,6 @@ public class MQTTBroker extends Service {
             if (tokens[1].contains("Zwave")) {
                 devInfo = tokens[1].split("Zwave");
                 devType = "Zwave";
-                currentNodeId = Integer.valueOf(devInfo[1]);
-                Log.d(LOG_TAG,"tNodeid: "+currentNodeId);
             }
 
             else if (tokens[1].contains("BT")) {
@@ -421,178 +421,174 @@ public class MQTTBroker extends Service {
 
         if (mqttMessage.contains("function")) {
             String function = payload.getString("function");
+            Log.i(LOG_TAG, "gino " + function);
 
             switch (function) {
-                case "addDevice":
-                    Log.i(LOG_TAG, "deviceService.removeDeviceFromRoom");
-                    zwaveService.addDevice("Zwave");
-                    break;
-
                 case "removeDeviceFromRoom":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     Log.i(LOG_TAG, "deviceService.removeDeviceFromRoom");
-                    zwaveService.removeDeviceFromRoom(mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "removeDeviceFromRoom";
                     break;
 
                 case "getDeviceList": //public channel
-                    String tRoom = payload.getString("Room");
-                    Log.i(LOG_TAG, "deviceService.getDevices tRoom=" + tRoom);
-                    zwaveService.getDeviceList(tRoom);
+                    DeviceInfo.mqttString = payload.getString("Room");
+                    Log.i(LOG_TAG, "deviceService.getDevices tRoom= " + DeviceInfo.mqttString);
+                    DeviceInfo.getMqttPayload = "getDeviceList";
                     break;
 
                 case "editNodeInfo":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.editNodeInfo payload:" + payload);
+                    Log.d(LOG_TAG, "deviceService.editNodeInfo");
 
-                    String Room = payload.getJSONObject("parameter").getString("Room");
-                    String isFavorite = payload.getJSONObject("parameter").getString("isFavorite");
-                    String name = payload.getJSONObject("parameter").getString("name");
-                    String type = payload.getJSONObject("parameter").getString("type");
+                    //DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("parameter"));
+                    DeviceInfo.mqttString = payload.getJSONObject("parameter").getString("Room");
+                    DeviceInfo.mqttString2 = payload.getJSONObject("parameter").getString("isFavorite");
+                    DeviceInfo.mqttString3 = payload.getJSONObject("parameter").getString("name");
+                    DeviceInfo.mqttString4 = payload.getJSONObject("parameter").getString("type");
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    //Log.d(LOG_TAG, "deviceService.editNodeInfo"+Room+isFavorite+name+type);
 
-                    zwaveService.editNodeInfo("", mqttDeviceId, name, devType, type, Room, isFavorite);
+                    DeviceInfo.getMqttPayload = "editNodeInfo";
                     break;
 
                 case "getRecentDeviceList": //public channel
                     Log.i(LOG_TAG, "deviceService.getRecentDeviceList");
-                    int number = Integer.parseInt(payload.getString("number"));
-                    zwaveService.getRecentDeviceList(number);
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("number"));
+                    DeviceInfo.getMqttPayload = "getRecentDeviceList";
                     break;
 
                 case "addRoom": //public channel
                     Log.i(LOG_TAG, "deviceService.addRoom");
-                    String roomName = payload.getString("RoomName");
-                    zwaveService.addRoom(roomName);
+                    DeviceInfo.mqttString = payload.getString("RoomName");
+                    DeviceInfo.getMqttPayload = "addRoom";
                     break;
 
                 case "getRooms": //public channel
                     Log.i(LOG_TAG, "deviceService.getRooms");
-                    zwaveService.getRooms();
+                    DeviceInfo.getMqttPayload = "getRooms";
                     break;
 
                 case "editRoom": //public channel
                     Log.i(LOG_TAG, "deviceService.editRoom");
-                    String removeRoom = payload.getString("removeRoom");
-                    String toRoom = payload.getString("toRoom");
-                    zwaveService.editRoom(removeRoom, toRoom);
+                    DeviceInfo.mqttString = payload.getString("removeRoom");
+                    DeviceInfo.mqttString2 = payload.getString("toRoom");
+                    DeviceInfo.getMqttPayload = "editRoom";
                     break;
 
                 case "removeRoom": //public channel
                     Log.i(LOG_TAG, "deviceService.removeRoom");
-                    roomName = payload.getString("RoomName");
-                    zwaveService.removeRoom(roomName);
+                    DeviceInfo.mqttString = payload.getString("RoomName");
+                    DeviceInfo.getMqttPayload = "removeRoom";
                     break;
 
                 case "getBasic":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.getBasic"+mqttDeviceId);
-                    zwaveService.getBasic(devType, mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getBasic" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getBasic";
                     break;
 
                 case "setBasic":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttValue = Integer.parseInt(payload.getString("value"));
-                    Log.i(LOG_TAG, "deviceService.setBasic deviceId= " + mqttDeviceId + " value = "+mqttValue);
-                    zwaveService.setBasic(devType, mqttDeviceId, mqttValue);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttValue = Integer.parseInt(payload.getString("value"));
+                    Log.i(LOG_TAG, "deviceService.setBasic nodeId= " + DeviceInfo.mqttDeviceId + " value = " + DeviceInfo.mqttValue);
+                    DeviceInfo.getMqttPayload = "setBasic";
                     break;
 
                 case "getSwitchMultilevel":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.getBrightness"+mqttDeviceId);
-                    zwaveService.getSwitchMultiLevel(devType, mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getBrightness" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getSwitchMultilevel";
                     break;
 
                 case "setSwitchMultilevel":
-                    mqttValue = Integer.parseInt(payload.getString("value"));
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("duration"));
-                    Log.i(LOG_TAG, "deviceService.setSwitchMultilevel deviceId= " + mqttDeviceId + " value = "+mqttValue + "duration "+mqttTmp);
-                    zwaveService.setSwitchMultiLevel(devType, mqttDeviceId, mqttValue, mqttTmp);
+                    DeviceInfo.mqttValue = Integer.parseInt(payload.getString("value"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("duration"));
+                    Log.i(LOG_TAG, "deviceService.setSwitchMultilevel nodeId= " + DeviceInfo.mqttDeviceId + " value = " + DeviceInfo.mqttValue + "duration " + DeviceInfo.mqttTmp);
+                    DeviceInfo.getMqttPayload = "setSwitchMultilevel";
                     break;
 
                 case "getSwitchColor":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("compId"));
-                    Log.i(LOG_TAG, "deviceService.getLampColor"+mqttDeviceId+mqttTmp);
-                    zwaveService.getSwitchColor(devType, mqttDeviceId,mqttTmp);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("compId"));
+                    Log.i(LOG_TAG, "deviceService.getLampColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                    DeviceInfo.getMqttPayload = "getSwitchColor";
                     break;
 
                 case "setSwitchColor":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("colorId"));
-                    mqttTmp2 = Integer.parseInt(payload.getString("colorValue"));
-                    Log.i(LOG_TAG, "deviceService.setSwitchColor"+mqttDeviceId+mqttTmp+mqttTmp2);
-                    zwaveService.setSwitchColor(devType,mqttDeviceId,mqttTmp,mqttTmp2);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("colorId"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("colorValue"));
+                    Log.i(LOG_TAG, "deviceService.setSwitchColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2);
+                    DeviceInfo.getMqttPayload = "setSwitchColor";
                     break;
 
                 case "getSupportedColor":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.getSupportedColor"+mqttDeviceId);
-                    zwaveService.getSupportColor(devType,mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getSupportedColor" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getSupportedColor";
                     break;
 
                 case "startStopColorLevelChange":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("dir"));
-                    mqttTmp2 = Integer.parseInt(payload.getString("ignore"));
-                    mqttTmp3 = Integer.parseInt(payload.getString("colorId"));
-                    mqttTmp4 = Integer.parseInt(payload.getString("startLevel"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("dir"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("ignore"));
+                    DeviceInfo.mqttTmp3 = Integer.parseInt(payload.getString("colorId"));
+                    DeviceInfo.mqttTmp4 = Integer.parseInt(payload.getString("startLevel"));
 
-                    Log.i(LOG_TAG, "deviceService.startStopColorLevelChange"+mqttDeviceId+mqttTmp+mqttTmp2+mqttTmp3+mqttTmp4);
-                    zwaveService.startStopColorLevelChange(devType,mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3,mqttTmp4);
+                    Log.i(LOG_TAG, "deviceService.startStopColorLevelChange" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2 + DeviceInfo.mqttTmp3 + DeviceInfo.mqttTmp4);
+                    DeviceInfo.getMqttPayload = "startStopColorLevelChange";
                     break;
 
 
                 case "getConfiguration":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("paramMode"));
-                    mqttTmp2 = Integer.parseInt(payload.getString("paramNumber"));
-                    mqttTmp3 = Integer.parseInt(payload.getString("rangeStart"));
-                    mqttTmp4 = Integer.parseInt(payload.getString("rangeEnd"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("paramMode"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("paramNumber"));
+                    DeviceInfo.mqttTmp3 = Integer.parseInt(payload.getString("rangeStart"));
+                    DeviceInfo.mqttTmp4 = Integer.parseInt(payload.getString("rangeEnd"));
                     Log.i(LOG_TAG, "deviceService.getConfiguration");
-                    zwaveService.getConfiguration(mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3,mqttTmp4);
+                    DeviceInfo.getMqttPayload = "getConfiguration";
                     break;
 
                 case "setConfiguration":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("paramNumber"));
-                    mqttTmp2 = Integer.parseInt(payload.getString("paramSize"));
-                    mqttTmp3 = Integer.parseInt(payload.getString("useDefault"));
-                    mqttTmp4 = Integer.parseInt(payload.getString("paramValue"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("paramNumber"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("paramSize"));
+                    DeviceInfo.mqttTmp3 = Integer.parseInt(payload.getString("useDefault"));
+                    DeviceInfo.mqttTmp4 = Integer.parseInt(payload.getString("paramValue"));
                     Log.i(LOG_TAG, "deviceService.setConfiguration");
-                    try {
-                        zwaveService.setConfiguration(mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3,mqttTmp4);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
+                    DeviceInfo.getMqttPayload = "setConfiguration";
                     break;
 
                 case "getMeter":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("meterUnit"));
-                    Log.i(LOG_TAG, "deviceService.getPower"+mqttDeviceId+mqttTmp);
-                    zwaveService.getMeter(devType, mqttDeviceId, mqttTmp);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("meterUnit"));
+                    Log.i(LOG_TAG, "deviceService.getMeter" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                    DeviceInfo.getMqttPayload = "getMeter";
                     break;
 
                 case "resetMeter":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.resetMeter"+mqttDeviceId);
-                    zwaveService.resetMeter(devType, mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.resetMeter" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "resetMeter";
                     break;
 
                 case "getGroupInfo":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("groupId"));
-                    mqttTmp2 = Integer.parseInt(payload.getString("endpointId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("groupId"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("endpointId"));
+
                     Log.i(LOG_TAG, "deviceService.getGroupInfo");
 
-                    zwaveService.getGroupInfo(devType, mqttDeviceId,mqttTmp,mqttTmp2);
+                    DeviceInfo.getMqttPayload = "getGroupInfo";
                     break;
 
                 case "addEndpointsToGroup":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("groupId"));
-                    //mqttTmp2 = Integer.parseInt(payload.getString("arr"));
-                    mqttTmp3 = Integer.parseInt(payload.getString("endpointId"));
+                    /*
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("groupId"));
+                    //DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("arr"));
+                    DeviceInfo.mqttTmp3 = Integer.parseInt(payload.getString("endpointId"));
 
                     Log.i(LOG_TAG, "deviceService.addEndpointsToGroup");
 
@@ -603,14 +599,29 @@ public class MQTTBroker extends Service {
                         JSONObject json = ja.getJSONObject(j);
                         arrList.add(Integer.valueOf(json.getString("controlNodeId").toString()));
                     }
-                    zwaveService.addEndpointsToGroup(devType,mqttDeviceId,mqttTmp,Utils.convertIntegers(arrList),mqttTmp3);
+                    DeviceInfo.getMqttPayload = "addEndpointsToGroup";
+                    */
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("groupId"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("endpointId"));
+
+                    DeviceInfo.mqttString = payload.optString("arr");
+                    JSONArray ja = new JSONArray(DeviceInfo.mqttString);
+                    DeviceInfo.arrList = new ArrayList<>();
+                    for (int j = 0; j < ja.length(); j++) {
+                        JSONObject json = ja.getJSONObject(j);
+                        DeviceInfo.arrList.add(Integer.valueOf(json.getString("controlNodeId").toString()));
+                    }
+                    DeviceInfo.getMqttPayload = "addEndpointsToGroup";
                     break;
 
                 case "removeEndpointsFromGroup":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("groupId"));
-                    //mqttTmp2 = Integer.parseInt(payload.getString("arr"));
-                    mqttTmp3 = Integer.parseInt(payload.getString("endpointId"));
+                    /*
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("groupId"));
+                    //DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("arr"));
+                    DeviceInfo.mqttTmp3 = Integer.parseInt(payload.getString("endpointId"));
 
                     Log.i(LOG_TAG, "deviceService.removeEndpointsFromGroup");
 
@@ -622,77 +633,91 @@ public class MQTTBroker extends Service {
                         arrList.add(Integer.valueOf(json.getString("controlNodeId").toString()));
                     }
 
-                    zwaveService.removeEndpointsFromGroup(devType,mqttDeviceId,mqttTmp,Utils.convertIntegers(arrList),mqttTmp3);
+                    DeviceInfo.getMqttPayload = "removeEndpointsFromGroup";
+                    */
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("groupId"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("endpointId"));
+
+                    DeviceInfo.mqttString = payload.optString("arr");
+                    ja = new JSONArray(DeviceInfo.mqttString);
+                    DeviceInfo.arrList = new ArrayList<>();
+                    for (int j = 0; j < ja.length(); j++) {
+                        JSONObject json = ja.getJSONObject(j);
+                        DeviceInfo.arrList.add(Integer.valueOf(json.getString("controlNodeId").toString()));
+                    }
+
+                    DeviceInfo.getMqttPayload = "removeEndpointsFromGroup";
                     break;
 
-                case "getMaxSupportedGroups":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("endpointId"));
+                case "getMaxSupperedGroups":
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("endpointId"));
 
                     Log.i(LOG_TAG, "deviceService.getMaxSupportedGroups");
-                    zwaveService.getMaxSupportedGroups(mqttDeviceId,mqttTmp);
+                    DeviceInfo.getMqttPayload = "getMaxSupperedGroups";
                     break;
 
                 case "setScheduleActive":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    String active = payload.getString("active");
-                    Log.i(LOG_TAG, "deviceService.setScheduleActive "+active);
-                    zwaveService.setScheduleActive(devType,mqttDeviceId,active);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttString = payload.getString("active");
+                    Log.i(LOG_TAG, "deviceService.setScheduleActive " + DeviceInfo.mqttString);
+                    DeviceInfo.getMqttPayload = "setScheduleActive";
                     break;
 
                 case "getScheduleList":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     Log.i(LOG_TAG, "deviceService.getScheduleList");
-                    zwaveService.getScheduleList(devType,mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getScheduleList";
                     break;
 
                 case "removeSchedule":
-                    String Day = payload.getString("dayOfWeek");
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.removeSchedule " +Day);
-                    zwaveService.removeSchedule(devType,mqttDeviceId,Day);
+                    DeviceInfo.mqttString = payload.getString("dayOfWeek");
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.removeSchedule " + DeviceInfo.mqttString);
+                    DeviceInfo.getMqttPayload = "removeSchedule";
                     break;
 
                 case "setSchedule":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Day = payload.getString("dayOfWeek");
-                    active = payload.getString("active");
-                    String variableValue = payload.getString("variableValue");
-                    String startTime = payload.getString("StartTime");
-                    String endTime = payload.getString("EndTime");
-                    Log.i(LOG_TAG, "deviceService.setSchedule " +Day);
-                    zwaveService.setSchedule(devType,mqttDeviceId,Day,startTime,endTime,Integer.valueOf(variableValue),active);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttString = payload.getString("dayOfWeek");
+                    DeviceInfo.mqttString2 = payload.getString("active");
+                    DeviceInfo.mqttString3 = payload.getString("variableValue");
+                    DeviceInfo.mqttString4 = payload.getString("StartTime");
+                    DeviceInfo.mqttString5 = payload.getString("EndTime");
+                    Log.i(LOG_TAG, "deviceService.setSchedule " + DeviceInfo.mqttString);
+                    DeviceInfo.getMqttPayload = "setSchedule";
                     break;
 
                 case "getFavoriteList": //public channel
                     Log.i(LOG_TAG, "deviceService.getFavoriteList");
-                    zwaveService.getFavoriteList();
+                    DeviceInfo.getMqttPayload = "getFavoriteList";
                     break;
 
                 case "editFavoriteList": //public channel
                     Log.i(LOG_TAG, "deviceService.editFavoriteList");
 
-                    String addarr = payload.optString("addFavorite");
-                    ja = new JSONArray(addarr);
-                    ArrayList<String> addList = new ArrayList<>();
-                    for(int idx=0; idx<ja.length(); idx++){
+                    DeviceInfo.mqttString = payload.optString("addFavorite");
+                    ja = new JSONArray(DeviceInfo.mqttString);
+                    DeviceInfo.addList = new ArrayList<>();
+                    for (int idx = 0; idx < ja.length(); idx++) {
                         JSONObject json = ja.getJSONObject(idx);
-                        addList.add(json.getString("nodeId").toString());
+                        DeviceInfo.addList.add(json.getString("nodeId").toString());
                     }
 
-                    String removearr = payload.optString("removeFavorite");
-                    ja = new JSONArray(removearr);
-                    ArrayList<String> removeList = new ArrayList<>();
-                    for(int idx=0; idx<ja.length(); idx++){
+                    DeviceInfo.mqttString2 = payload.optString("removeFavorite");
+                    ja = new JSONArray(DeviceInfo.mqttString2);
+                    DeviceInfo.removeList = new ArrayList<>();
+                    for (int idx = 0; idx < ja.length(); idx++) {
                         JSONObject json = ja.getJSONObject(idx);
-                        removeList.add(json.getString("nodeId").toString());
+                        DeviceInfo.removeList.add(json.getString("nodeId").toString());
                     }
 
-                    zwaveService.editFavoriteList(addList,removeList);
+                    DeviceInfo.getMqttPayload = "editFavoriteList";
                     break;
 
                 case "setSceneAction":
-                    String targetColor,cuuentColor = "";
+                    String targetColor, cuuentColor = "";
                     String sceneName = payload.getString("sceneName");
                     String iconName = payload.getString("iconName");
                     String nodeId = payload.getJSONObject("condition").getString("nodeId");
@@ -704,365 +729,369 @@ public class MQTTBroker extends Service {
                         currentStatus = payload.getJSONObject("condition").getString("currentColor");
                     }
                     String timer = payload.getJSONObject("condition").getString("timer");
-                    Log.i(LOG_TAG, "deviceService.setSceneAction "+sceneName+" | nodeId = "+nodeId);
-                    //zwaveService.setSceneAction();
+                    Log.i(LOG_TAG, "deviceService.setSceneAction " + sceneName + " | nodeId = " + nodeId);
+                    DeviceInfo.getMqttPayload = "setSceneAction";
                     break;
 
                 case "getSceneList": //public channel
                     Log.i(LOG_TAG, "deviceService.getScene");
-                    zwaveService.getScene();
+                    DeviceInfo.getMqttPayload = "getSceneList";
                     break;
 
                 case "removeSceneAction":
-                    sceneName = payload.getString("sceneName");
-                    nodeId = payload.getJSONObject("condition").getString("nodeId");
-                    Log.i(LOG_TAG, "deviceService.removeSceneAction "+sceneName+" | nodeId = "+nodeId);
-                    //zwaveService.removeSceneAction();
+                    DeviceInfo.mqttString = payload.getString("sceneName");
+                    DeviceInfo.mqttString2 = payload.getJSONObject("condition").getString("nodeId");
+                    Log.i(LOG_TAG, "deviceService.removeSceneAction " + DeviceInfo.mqttString + " | nodeId = " + DeviceInfo.mqttString2);
+                    DeviceInfo.getMqttPayload = "removeSceneAction";
                     break;
 
                 case "removeScene":
-                    sceneName = payload.getString("sceneName");
-                    Log.i(LOG_TAG, "deviceService.removeScene " +sceneName);
-                    //zwaveService.removeScene(sceneName);
+                    DeviceInfo.mqttString = payload.getString("sceneName");
+                    Log.i(LOG_TAG, "deviceService.removeScene " + DeviceInfo.mqttString);
+                    DeviceInfo.getMqttPayload = "removeScene";
                     break;
 
                 case "editScene":
-                    sceneName = payload.getString("sceneName");
-                    iconName = payload.getString("iconName");
-                    String newSceneName = payload.getString("newSceneName");
-                    String newIconName = payload.getString("newIconName");
-                    Log.i(LOG_TAG, "deviceService.editScene " +sceneName+" to "+newSceneName+"" +
-                            " |iconName = "+iconName+" to "+newIconName);
-                    //zwaveService.editScene(sceneName);
+                    DeviceInfo.mqttString = payload.getString("sceneName");
+                    DeviceInfo.mqttString2 = payload.getString("iconName");
+                    DeviceInfo.mqttString3 = payload.getString("newSceneName");
+                    DeviceInfo.mqttString4 = payload.getString("newIconName");
+                    Log.i(LOG_TAG, "deviceService.editScene " + DeviceInfo.mqttString + " to " + DeviceInfo.mqttString3 + "" +
+                            " |iconName = " + DeviceInfo.mqttString2 + " to " + DeviceInfo.mqttString4);
+                    DeviceInfo.getMqttPayload = "editScene";
                     break;
 
                 case "executeScene":
-                    String action = payload.getString("action");
-                    sceneName = payload.getString("sceneName");
-                    Log.i(LOG_TAG, "deviceService.removeScene " +sceneName + " action = "+action);
-                    //zwaveService.editScene(sceneName);
+                    DeviceInfo.mqttString = payload.getString("action");
+                    DeviceInfo.mqttString2 = payload.getString("sceneName");
+                    Log.i(LOG_TAG, "deviceService.removeScene " + DeviceInfo.mqttString2 + " action = " + DeviceInfo.mqttString);
+                    DeviceInfo.getMqttPayload = "executeScene";
                     break;
 
                 case "addProvisionListEntry":
                     Log.i(LOG_TAG, "deviceService.addProvisionListEntry");
-                    String bootMode = payload.getString("BootMode");
-                    if(bootMode.contains("01")) {
+                    DeviceInfo.mqttString = payload.getString("BootMode");
+                    if (DeviceInfo.mqttString.contains("01")) {
                         DeviceInfo.bootMode = true;
-                        Log.d(LOG_TAG,"DeviceInfo.bootMode = true");
+                        Log.d(LOG_TAG, "DeviceInfo.bootMode = true");
 
-                    } else if (bootMode.contains("00")) {
+                    } else if (DeviceInfo.mqttString.contains("00")) {
                         DeviceInfo.bootMode = false;
-                        Log.d(LOG_TAG,"DeviceInfo.bootMode = false");
+                        Log.d(LOG_TAG, "DeviceInfo.bootMode = false");
                     }
 
-                    Log.i(LOG_TAG, "BootMode : "+ DeviceInfo.bootMode);
+                    Log.i(LOG_TAG, "BootMode : " + DeviceInfo.bootMode);
 
 
                     DeviceInfo.dskNumber = payload.getString("dsk");
-                    String str = payload.getString("dsk") +'\0';
-                    Log.i(LOG_TAG, str);
-                    dskNumber = str.getBytes();
-                    zwaveService.addProvisionListEntry("Zwave",dskNumber,true);
+                    DeviceInfo.mqttString2 = payload.getString("dsk") + '\0';
+                    Log.i(LOG_TAG, DeviceInfo.mqttString2);
+                    //dskNumber = DeviceInfo.mqttString2.getBytes();
+                    DeviceInfo.getMqttPayload = "addProvisionListEntry";
                     break;
 
                 case "rmProvisionListEntry":
                     Log.i(LOG_TAG, "deviceService.rmProvisionListEntry");
                     DeviceInfo.dskNumber = payload.getString("dsk");
-                    str = payload.getString("dsk") +'\0';
-                    dskNumber = str.getBytes();
-                    zwaveService.rmProvisionListEntry("Zwave",dskNumber);
+                    DeviceInfo.mqttString = payload.getString("dsk") + '\0';
+                    //dskNumber = DeviceInfo.mqttString.getBytes();
+                    DeviceInfo.getMqttPayload = "rmProvisionListEntry";
                     break;
 
                 case "rmAllProvisionListEntry":
                     Log.i(LOG_TAG, "deviceService.rmAllProvisionListEntry");
-                    zwaveService.rmAllProvisionListEntry();
+                    DeviceInfo.getMqttPayload = "rmAllProvisionListEntry";
                     break;
 
                 case "editProvisionListEntry":
                     Log.i(LOG_TAG, "deviceService.editProvisionListEntry");
                     DeviceInfo.dskNumber = payload.getString("originalDsk");
-                    str = payload.getString("originalDsk") +'\0';
-                    Log.i(LOG_TAG, str);
-                    dskNumber = str.getBytes();
-                    zwaveService.rmProvisionListEntry("Zwave",dskNumber);
+                    DeviceInfo.mqttString = payload.getString("originalDsk") + '\0';
+                    Log.i(LOG_TAG, DeviceInfo.mqttString);
+                    dskNumber = DeviceInfo.mqttString.getBytes();
+                    DeviceInfo.getMqttPayload = "rmProvisionListEntry";
                     DeviceInfo.dskNumber = payload.getString("dsk");
-                    str = payload.getString("dsk") +'\0';
-                    Log.i(LOG_TAG, str);
-                    dskNumber = str.getBytes();
-                    mqttTmp = Integer.parseInt(payload.getString("inclusionState"));
-                    mqttTmp2 = Integer.parseInt(payload.getString("boot_mode"));
+                    DeviceInfo.mqttString = payload.getString("dsk") + '\0';
+                    Log.i(LOG_TAG, DeviceInfo.mqttString);
+                    dskNumber = DeviceInfo.mqttString.getBytes();
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("inclusionState"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("boot_mode"));
 
-                    if(mqttTmp == 0 ){
-                        zwaveService.addProvisionListEntry("Zwave",dskNumber,false);
+                    if (DeviceInfo.mqttTmp == 0) {
+                        DeviceInfo.getMqttPayload = "addProvisionListEntry";
+
                     } else {
-                        zwaveService.addProvisionListEntry("Zwave",dskNumber,true);
+                        DeviceInfo.getMqttPayload = "addProvisionListEntry";
+
                     }
 
                     break;
 
                 case "getAllProvisionListEntry":
                     Log.i(LOG_TAG, "deviceService.getAllProvisionListEntry");
-                    zwaveService.getAllProvisionListEntry();
+                    DeviceInfo.getMqttPayload = "getAllProvisionListEntry";
                     break;
 
                 case "getProvisionListEntry":
                     Log.i(LOG_TAG, "deviceService.getProvisionListEntry");
                     DeviceInfo.dskNumber = payload.getString("dsk");
-                    str = payload.getString("dsk") +'\0';
-                    Log.i(LOG_TAG, str);
-                    dskNumber = str.getBytes();
-                    zwaveService.getProvisionListEntry("Zwave",dskNumber);
+                    DeviceInfo.mqttString = payload.getString("dsk") + '\0';
+                    Log.i(LOG_TAG, DeviceInfo.mqttString);
+                    //dskNumber = DeviceInfo.mqttString.getBytes();
+                    DeviceInfo.getMqttPayload = "getProvisionListEntry";
                     break;
 
                 case "getRssiState":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.getRssiState"+mqttDeviceId);
-                    zwaveService.startNetworkHealthCheck();
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getRssiState" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getRssiState";
                     break;
 
                 case "getBattery":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.getBattery" +mqttDeviceId);
-                    zwaveService.getDeviceBattery(devType,mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getBattery" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getBattery";
                     break;
 
                 case "getSensorMultilevel":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.getSensorMultilevel"+mqttDeviceId);
-                    try {
-                        zwaveService.getSensorMultiLevel(devType,mqttDeviceId);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getSensorMultilevel" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getSensorMultilevel";
                     break;
 
                 case "getSupportSwitchType":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.getSupportSwitchType"+mqttDeviceId);
-                    zwaveService.getSupportedSwitchType(mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getSupportSwitchType" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getSupportSwitchType";
                     break;
 
                 case "startStopSwitchLevelChange":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("startLvlVal"));
-                    mqttTmp2 = Integer.parseInt(payload.getString("duration"));
-                    mqttTmp3 = Integer.parseInt(payload.getString("pmyChangeDir"));
-                    mqttTmp4 = Integer.parseInt(payload.getString("secChangeDir "));
-                    mqttTmp5 = Integer.parseInt(payload.getString("secStep"));
+                    Log.i(LOG_TAG, "deviceService.startStopSwitchLevelChange");
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("startLvlVal"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("duration"));
+                    DeviceInfo.mqttTmp3 = Integer.parseInt(payload.getString("pmyChangeDir"));
+                    DeviceInfo.mqttTmp4 = Integer.parseInt(payload.getString("secChangeDir"));
+                    DeviceInfo.mqttTmp5 = Integer.parseInt(payload.getString("secStep"));
 
-                    Log.i(LOG_TAG, "deviceService.startStopSwitchLevelChange"+mqttDeviceId + mqttTmp+ mqttTmp2+mqttTmp3+mqttTmp4+mqttTmp5);
-                    zwaveService.startStopSwitchLevelChange(mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3,mqttTmp4,mqttTmp5);
+                    Log.i(LOG_TAG, "deviceService.startStopSwitchLevelChange" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2 + DeviceInfo.mqttTmp3 + DeviceInfo.mqttTmp4 + DeviceInfo.mqttTmp5);
+                    DeviceInfo.getMqttPayload = "startStopSwitchLevelChange";
+                    break;
+
+                case "setSwitchAllOffBroadcast":
+                    Log.i(LOG_TAG, "deviceService.setSwitchAllOffBroadcast");
+                    DeviceInfo.getMqttPayload = "setSwitchAllOffBroadcast";
                     break;
 
                 case "getPowerLevel":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.getPowerLevel"+mqttDeviceId);
-                    zwaveService.getPowerLevel(mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getPowerLevel" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getPowerLevel";
                     break;
 
                 case "switchAllOn":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.switchAllOn"+mqttDeviceId);
-                    zwaveService.setSwitchAllOn(devType,mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.switchAllOn" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "switchAllOn";
                     break;
 
                 case "switchAllOff":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.switchAllOff"+mqttDeviceId);
-                    zwaveService.setSwitchAllOff(devType,mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.switchAllOff" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "switchAllOff";
                     break;
 
                 case "setSwitchAll":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("value"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("value"));
 
-                    Log.i(LOG_TAG, "deviceService.setSwitchAll"+mqttDeviceId);
-                    zwaveService.setSwitchAll(devType,mqttDeviceId,mqttTmp);
+                    Log.i(LOG_TAG, "deviceService.setSwitchAll" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "setSwitchAll";
                     break;
 
                 case "getSwitchAll":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
 
-                    Log.i(LOG_TAG, "deviceService.GetSwitchAll"+mqttDeviceId);
-                    zwaveService.getSwitchAll(devType,mqttDeviceId);
+                    Log.i(LOG_TAG, "deviceService.GetSwitchAll" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getSwitchAll";
                     break;
 
                 case "getSensorBinary":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("sensorType"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("sensorType"));
                     Log.i(LOG_TAG, "deviceService.getSensorBinary");
-                    zwaveService.getSensorBasic(mqttDeviceId,mqttTmp);
+                    DeviceInfo.getMqttPayload = "getSensorBinary";
                     break;
 
                 case "getSensorBinarySupportedSensor":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.getSensorBinarySupportedSensor"+mqttDeviceId);
-                    zwaveService.GetSensorBinarySupportedSensor(mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getSensorBinarySupportedSensor" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getSensorBinarySupportedSensor";
                     break;
 
                 case "getMeterSupported":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.getMeterSupported"+mqttDeviceId);
-                    zwaveService.getMeterSupported(mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getMeterSupported" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getMeterSupported";
                     break;
 
                 case "getSpecificGroup":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("endpointId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("endpointId"));
 
-                    Log.i(LOG_TAG, "deviceService.getSpecificGroup"+mqttDeviceId+mqttTmp);
-                    zwaveService.getSpecificGroup(mqttDeviceId,mqttTmp);
+                    Log.i(LOG_TAG, "deviceService.getSpecificGroup" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                    DeviceInfo.getMqttPayload = "getSpecificGroup";
                     break;
 
                 case "getNotification":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("alarmType"));
-                    mqttTmp2 = Integer.parseInt(payload.getString("notifType"));
-                    mqttTmp3 = Integer.parseInt(payload.getString("status"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("alarmType"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("notifType"));
+                    DeviceInfo.mqttTmp3 = Integer.parseInt(payload.getString("status"));
 
-                    Log.i(LOG_TAG, "deviceService.getNotification"+mqttDeviceId+mqttTmp+mqttTmp2+mqttTmp3);
-                    zwaveService.getSensorNotification(mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3);
+                    Log.i(LOG_TAG, "deviceService.getNotification" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2 + DeviceInfo.mqttTmp3);
+                    DeviceInfo.getMqttPayload = "getNotification";
                     break;
 
 
                 case "setNotification":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("notificationType"));
-                    mqttTmp2 = Integer.parseInt(payload.getString("status"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("notificationType"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("status"));
 
-                    Log.i(LOG_TAG, "deviceService.setNotification"+mqttDeviceId+mqttTmp+mqttTmp2);
-                    zwaveService.setNotification(mqttDeviceId,mqttTmp,mqttTmp2);
+                    Log.i(LOG_TAG, "deviceService.setNotification" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2);
+                    DeviceInfo.getMqttPayload = "setNotification";
                     break;
 
                 case "getSupportedNotification":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    Log.i(LOG_TAG, "deviceService.getSupportedNotification"+mqttDeviceId);
-                    zwaveService.getSupportedNotification(mqttDeviceId);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getSupportedNotification" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getSupportedNotification";
                     break;
 
                 case "getSupportedEventNotification":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("notifType"));
-                    Log.i(LOG_TAG, "deviceService.getSupportedEventNotification"+mqttDeviceId+mqttTmp);
-                    zwaveService.getSupportedEventNotification(mqttDeviceId,mqttTmp);
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("notifType"));
+                    Log.i(LOG_TAG, "deviceService.getSupportedEventNotification" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                    DeviceInfo.getMqttPayload = "getSupportedEventNotification";
                     break;
 
                 case "getSpecifyDeviceInfo":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     Log.i(LOG_TAG, "deviceService.getSpecifyDeviceInfo");
-                    Log.i(LOG_TAG, "mqttDeviceId: "+mqttDeviceId);
-                    zwaveService.getSpecifyDeviceInfo(mqttDeviceId);
+                    Log.i(LOG_TAG, "nodeId: " + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getSpecifyDeviceInfo";
                     break;
 
                 case "removeFailDevice":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     Log.i(LOG_TAG, "deviceService.removeFailDevice");
-                    Log.i(LOG_TAG, "mqttDeviceId: "+mqttDeviceId);
-                    zwaveService.removeFailedDevice(mqttDeviceId);
+                    Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "removeFailDevice";
                     break;
 
                 case "checkNodeIsFailed":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     Log.i(LOG_TAG, "deviceService.checkNodeIsFailed");
-                    Log.i(LOG_TAG, "mqttDeviceId: "+mqttDeviceId);
-                    zwaveService.checkNodeIsFailed(mqttDeviceId);
+                    Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "checkNodeIsFailed";
                     break;
 
                 case "setDefault":
                     Log.i(LOG_TAG, "deviceService.setDefault");
-                    zwaveService.setDefault();
+                    DeviceInfo.getMqttPayload = "setDefault";
                     break;
 
                 case "replaceFailDevice":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     Log.i(LOG_TAG, "deviceService.replaceFailDevice");
-                    Log.i(LOG_TAG, "mqttDeviceId: "+mqttDeviceId);
-                    zwaveService.replaceFailedDevice(mqttDeviceId);
+                    Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "replaceFailDevice";
                     break;
 
                 case "startLearnMode":
                     Log.i(LOG_TAG, "deviceService.startLearnMode");
-                    zwaveService.StartLearnMode();
+                    DeviceInfo.getMqttPayload = "startLearnMode";
                     break;
 
                 case "getSceneActuatorConf":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("sceneId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("sceneId"));
                     Log.i(LOG_TAG, "deviceService.getSceneActuatorConf");
 
-                    zwaveService.getSceneActuatorConf(mqttDeviceId,mqttTmp);
+                    DeviceInfo.getMqttPayload = "getSceneActuatorConf";
                     break;
 
                 case "getSupportedCentralScene":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("endpointId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("endpointId"));
                     Log.i(LOG_TAG, "deviceService.getSupportedCentralScene");
 
-                    zwaveService.getSupportedCentralScene(mqttDeviceId,mqttTmp);
+                    DeviceInfo.getMqttPayload = "getSupportedCentralScene";
                     break;
 
                 case "getDoorLockOperation":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     Log.i(LOG_TAG, "deviceService.getDoorLockOperation");
 
-                    zwaveService.getDoorLockOperation(mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getDoorLockOperation";
                     break;
 
                 case "setDoorLockOperation":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("mode"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("mode"));
                     Log.i(LOG_TAG, "deviceService.setDoorLockOperation");
 
-                    zwaveService.setDoorLockOperation(mqttDeviceId,mqttTmp);
+                    DeviceInfo.getMqttPayload = "setDoorLockOperation";
                     break;
 
-                case "getDoorLockConfiguration":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                case "getDoorLockConfig":
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     Log.i(LOG_TAG, "deviceService.getDoorLockConfiguration");
 
-                    zwaveService.getDoorLockConfiguration(mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getDoorLockConfig";
                     break;
 
                 case "setDoorLockConfig":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("type"));
-                    mqttTmp2 = Integer.parseInt(payload.getString("outSta"));
-                    mqttTmp3 = Integer.parseInt(payload.getString("insta"));
-                    mqttTmp4 = Integer.parseInt(payload.getString("tmoutMin"));
-                    mqttTmp5 = Integer.parseInt(payload.getString("tmoutSec"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("type"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("outSta"));
+                    DeviceInfo.mqttTmp3 = Integer.parseInt(payload.getString("insta"));
+                    DeviceInfo.mqttTmp4 = Integer.parseInt(payload.getString("tmoutMin"));
+                    DeviceInfo.mqttTmp5 = Integer.parseInt(payload.getString("tmoutSec"));
                     Log.i(LOG_TAG, "deviceService.setDoorLockConfig");
 
-                    zwaveService.setDoorLockConfiguration(mqttDeviceId,mqttTmp,mqttTmp2,mqttTmp3,mqttTmp4,mqttTmp5);
+                    DeviceInfo.getMqttPayload = "setDoorLockConfig";
                     break;
 
                 case "setBinarySwitchState":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
-                    mqttTmp = Integer.parseInt(payload.getString("state"));
-                    mqttTmp2 = Integer.parseInt(payload.getString("duration"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("state"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("duration"));
                     Log.i(LOG_TAG, "deviceService.setBinarySwitchState");
 
-                    zwaveService.SetBinarySwitchState(devType,mqttDeviceId,mqttTmp);
+                    DeviceInfo.getMqttPayload = "setBinarySwitchState";
                     break;
 
                 case "getBinarySwitchState":
-                    mqttDeviceId = Integer.parseInt(payload.getString("deviceId"));
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     Log.i(LOG_TAG, "deviceService.getBinarySwitchState");
 
-                    zwaveService.GetBinarySwitchState(devType,mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getBinarySwitchState";
                     break;
 
 
                 default:
-                    Log.e(LOG_TAG,"no support this function, please make sure this mqtt message "+ function);
+                    Log.e(LOG_TAG, "no support this function, please make sure this mqtt message " + function);
                     break;
 
             }
-        }else{
-            Log.e(LOG_TAG,"wrong mqtt format, please make sure this mqtt message" + mqttMessage);
+        } else {
+            Log.e(LOG_TAG, "wrong mqtt format, please make sure this mqtt message" + mqttMessage);
         }
 
     }
-
+/*
     // Synchronize the subscribe topic of local mqtt server with remote mqtt server
     private void syncSubscribeTopic() {
 
@@ -1078,7 +1107,7 @@ public class MQTTBroker extends Service {
             }
         }
     }
-
+*/
     // subscribe mqtt topic
     private void subscribeToTopic(final String TopicName) {
         //Log.i(LOG_TAG,"mqttLocalClient.isConnected() = "+mqttLocalClient.isConnected());
@@ -1189,17 +1218,17 @@ public class MQTTBroker extends Service {
     }
 
     // publish message to mqtt server
-    private void publishMessage(String publishTopic, String publishMessage){
+    public void publishMessage(String publishTopic, String publishMessage) {
 
         try {
 
-            Log.i(LOG_TAG, "Public LOACAL MESSAGE"+ ":" + publishMessage);
+            Log.i(LOG_TAG, "Public LOACAL MESSAGE" + ":" + publishMessage);
 
-            JSONObject payload=new JSONObject(publishMessage);
-            JSONObject json=new JSONObject();
+            JSONObject payload = new JSONObject(publishMessage);
+            JSONObject json = new JSONObject();
             json.put("reported", payload);
 
-            Log.i(LOG_TAG, "Public LOACAL MESSAGE"+ ":" + json.toString());
+            Log.i(LOG_TAG, "Public LOACAL MESSAGE" + ":" + json.toString());
             MqttMessage message = new MqttMessage();
             message.setPayload(json.toString().getBytes());
             Log.i(LOG_TAG, publishTopic + ":" + publishMessage);
@@ -1222,141 +1251,68 @@ public class MQTTBroker extends Service {
         } catch (MqttException e) {
             System.err.println("MQTT Error Publishing: " + e.getMessage());
             e.printStackTrace();
-        }  catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
-    // AIDL
-    private ServiceConnection ZWserviceConn = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
 
-            zwaveService = ((ZwaveControlService.MyBinder) service).getService();
-            if (zwaveService != null) {
-
-                Log.i(LOG_TAG, "bind service with ZWaveControlService");
-                zwaveService.register(ZWCtlCB);
-                //zwaveService.register(ZWCtlReq);
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        while (!DeviceInfo.isMQTTInitFinish || !DeviceInfo.isOpenControllerFinish) {
-                            try {
-                                Thread.sleep(100);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        zwaveService.getDeviceInfo();
-
-                    }
-                }).start();
-            } else {
-                Log.i(LOG_TAG, "Failed to bind service with ZWaveControlService");
-            }
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-        }
-    };
-
-    // AIDL
-    private ServiceConnection ZWserviceReq = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-
-            zwaveService = ((ZwaveControlService.MyBinder) service).getService();
-
-            if (zwaveService != null) {
-
-                Log.d(LOG_TAG, "bind req service with ZWaveControlService");
-                zwaveService.register(ZWCtlReq);
-
-            } else {
-                Log.i(LOG_TAG, "Failed to bind service with ZWaveControlService");
-            }
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-        }
-    };
-
-
-    // ZwaveControlService CallBack
-
-    public ZwaveControlService.zwaveControlReq_CallBack ZWCtlReq = new ZwaveControlService.zwaveControlReq_CallBack() {
-        @Override
-        public void zwaveControlReqResultCallBack(String className, String result) {
-            JSONObject message = new JSONObject();
-
-            if (result.contains("Grant Keys Msg")) {
-                grantKey(result);
-
-            } else if (result.contains("PIN Requested Msg")) {
-
-            }
-        }
-    };
-
+    //callback
     //receive message to do something
-    public ZwaveControlService.zwaveCallBack ZWCtlCB = new ZwaveControlService.zwaveCallBack() {
-        @Override
-        public void zwaveControlResultCallBack(String className, String result) {
-
+    public void receive() {
+        boolean circle = false;
+        while (!circle) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             JSONObject message = new JSONObject();
+            //Log.i(LOG_TAG, "class name = [" + DeviceInfo.className + "]| result = " + DeviceInfo.result);
 
-            if (className.equals("addDevice") || className.equals("removeDevice")) {
+            if (DeviceInfo.className.equals("addDevice") || DeviceInfo.className.equals("removeDevice")) {
+                addRemoveDevice(message);
+            } else if (DeviceInfo.className.equals("All Node Info Report")) {
+                getDeviceInfo(message);
+            } else if (DeviceInfo.result.contains("Remove Failed Node")) {
 
-                addRemoveDevice(className,result,message);
-
-            } else if (className.equals("All Node Info Report")) {
-
-                getDeviceInfo(result,message);
-
-            } else if (className.equals("reNameDevice")) {
-
-                reNameDevice(result);
-
-            } else if (result.contains("Remove Failed Node")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String status = jsonObject.optString("Status");
 
                     message.put("MessageType", "Remove Failed Node");
                     message.put("Status", status);
 
-                    Log.d(LOG_TAG,"gino: "+ status);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Replace Failed Node")) {
+            } else if (DeviceInfo.result.contains("Replace Failed Node")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String status = jsonObject.optString("Status");
 
                     message.put("MessageType", "Replace Failed Node");
                     message.put("Status", status);
 
-                    Log.d(LOG_TAG,"gino: "+ status);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Node Is Failed Check Report")) {
+            } else if (DeviceInfo.result.contains("Node Is Failed Check Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String status = jsonObject.optString("Status");
 
@@ -1364,143 +1320,155 @@ public class MQTTBroker extends Service {
                     message.put("Node id", nodeId);
                     message.put("Status", status);
 
-                    Log.d(LOG_TAG,"gino: "+ nodeId);
-                    Log.d(LOG_TAG,"gino: "+ status);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            }  else if (result.contains("Replace Failed Node")) {
+            } else if (DeviceInfo.result.contains("Replace Failed Node")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String status = jsonObject.optString("Status");
 
                     message.put("MessageType", "Replace Failed Node");
                     message.put("Status", status);
 
-                    Log.d(LOG_TAG,"gino: "+ status);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            }  else if (result.contains("Controller Reset Status")) {
+            } else if (DeviceInfo.result.contains("Controller Reset Status")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String status = jsonObject.optString("Status");
 
                     message.put("MessageType", "Controller Reset Status");
                     message.put("Status", status);
 
-                    Log.d(LOG_TAG,"gino: "+ status);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Controller Attribute")) {
+            } else if (DeviceInfo.result.contains("Controller Attribute")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
-                    String homeId = jsonObject.optString("Home id");
-                    String nodeId = jsonObject.optString("Node id");
+                    jsonObject = new JSONObject(DeviceInfo.result);
+                    String homeId = jsonObject.optString("Home Id");
+                    String nodeId = jsonObject.optString("Node Id");
                     String role = jsonObject.optString("Network Role");
                     String vendorId = jsonObject.optString("Vendor Id");
                     String proType = jsonObject.optString("Vendor Product Type");
                     String libType = jsonObject.optString("Z-wave Library Type");
+                    String proId = jsonObject.optString("Product Id");
                     String protocolVersion = jsonObject.optString("Z-wave Protocol Version");
                     String appVersion = jsonObject.optString("Application Version");
 
                     message.put("MessageType", "Controller Attribute");
-                    message.put("Home id", homeId);
-                    message.put("Node id", nodeId);
+                    message.put("Home Id", homeId);
+                    message.put("Node Id", nodeId);
                     message.put("Network Role", role);
-                    message.put("Vendor Id",vendorId);
-                    message.put("Vendor Product Type",proType);
-                    message.put("Z-wave Library Type",libType);
-                    message.put("Z-wave Protocol Version",protocolVersion);
-                    message.put("Application Version",appVersion);
-
-                    Log.d(LOG_TAG,"gino: "+ homeId);
-                    Log.d(LOG_TAG,"gino: "+ nodeId);
-                    Log.d(LOG_TAG,"gino: "+ role);
-                    Log.d(LOG_TAG,"gino: "+ vendorId);
-                    Log.d(LOG_TAG,"gino: "+ proType);
-                    Log.d(LOG_TAG,"gino: "+ libType);
-                    Log.d(LOG_TAG,"gino: "+ protocolVersion);
-                    Log.d(LOG_TAG,"gino: "+ appVersion);
+                    message.put("Vendor Id", vendorId);
+                    message.put("Vendor Product Type", proType);
+                    message.put("Z-wave Library Type", libType);
+                    message.put("Product Id", proId);
+                    message.put("Z-wave Protocol Version", protocolVersion);
+                    message.put("Application Version", appVersion);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("All Node List Report")) {
+            } else if (DeviceInfo.result.contains("All Node List Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String list = jsonObject.optString("Added Node List");
 
                     message.put("MessageType", "All Node List Report");
                     message.put("Added Node List", list);
 
-                    Log.d(LOG_TAG,"gino: "+ list);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.result.contains("Specify Node Info")) {
+
+                specifyNodeInfo(DeviceInfo.result);
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+                /*
+                ArrayList<String> tmpLine = Utils.searchString(result, "Node id");
+
+                String tmp = "";
+                for (int idx = 0; idx < tmpLine.size(); idx++) {
+
+                    tmp = tmp + tmpLine.get(idx) + ",";
+
+                }
+
+                String[] supportColor = tmp.split("\t");
+
+
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(result);
+                    //String Info = jsonObject.optString("Detialed Node Info");
+
+                    message.put("MessageType", "Specify Node Info");
+                    message.put("Detialed Node Info", supportColor[0]);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
-
-            }  else if (result.contains("Specify Node Info")) {
-                /*
-                    JSONObject jsonObject = null;
-                    try {
-                        jsonObject = new JSONObject(result);
-                        String nodeInfo = jsonObject.optString("Detialed Node Info");
-                        String tmp = jsonObject.getString("Detialed Node Info");
-
-                        message.put("MessageType", "Specify Node Info");
-                        message.put("Detialed Node Info", nodeInfo);
-                        message.put("Detialed Node Info 2 ", tmp);
-
-
-                        Log.d(LOG_TAG,"gino: "+ nodeInfo);
-                        Log.d(LOG_TAG,"gino2: "+ tmp);
-
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-
-                    publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
                 */
-                getDeviceInfo(result,message);
-            } else if (result.contains("Controller Init Status")) {
+
+            } else if (DeviceInfo.result.contains("Controller Init Status")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String status = jsonObject.optString("Status");
 
                     message.put("MessageType", "Controller Init Status");
                     message.put("Status", status);
 
-                    Log.d(LOG_TAG,"gino: "+ status);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Node Battery Value")) {
+            } else if (DeviceInfo.result.contains("Node Battery Value")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String id = jsonObject.optString("EndPoint Id");
                     String value = jsonObject.optString("Battery Value");
@@ -1510,19 +1478,19 @@ public class MQTTBroker extends Service {
                     message.put("EndPoint Id", id);
                     message.put("Battery Value", value);
 
-                    Log.d(LOG_TAG,"gino: "+ nodeId);
-                    Log.d(LOG_TAG,"gino: "+ id);
-                    Log.d(LOG_TAG,"gino: "+ value);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Switch Multi-lvl Report Information")) {
+            } else if (DeviceInfo.result.contains("Switch Multi-lvl Report Information")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String val = jsonObject.optString("Cur Val");
 
@@ -1532,18 +1500,19 @@ public class MQTTBroker extends Service {
                     message.put("Tgt Val", "Unsupported");
                     message.put("Durration", "Unsupported");
 
-                    Log.d(LOG_TAG,"gino: "+ nodeId);
-                    Log.d(LOG_TAG,"gino: "+ val);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Power Level Get Information")) {
+            } else if (DeviceInfo.result.contains("Power Level Get Information")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String level = jsonObject.optString("Power Level");
 
@@ -1551,18 +1520,18 @@ public class MQTTBroker extends Service {
                     message.put("Node id", nodeId);
                     message.put("Power Level", level);
 
-                    Log.d(LOG_TAG,"gino: "+ nodeId);
-                    Log.d(LOG_TAG,"gino: "+ level);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Switch All Get Information")) {
+            } else if (DeviceInfo.result.contains("Switch All Get Information")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String mode = jsonObject.optString("mode");
 
@@ -1570,18 +1539,19 @@ public class MQTTBroker extends Service {
                     message.put("Node id", nodeId);
                     message.put("mode", mode);
 
-                    Log.d(LOG_TAG,"gino: "+ nodeId);
-                    Log.d(LOG_TAG,"gino: "+ mode);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Binary Sensor Information")) {
+            } else if (DeviceInfo.result.contains("Binary Sensor Information")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String type = jsonObject.optString("Event Type");
                     String state = jsonObject.optString("state");
@@ -1591,19 +1561,19 @@ public class MQTTBroker extends Service {
                     message.put("Event Type", type);
                     message.put("state", state);
 
-                    Log.d(LOG_TAG,"gino: "+ nodeId);
-                    Log.d(LOG_TAG,"gino: "+ type);
-                    Log.d(LOG_TAG,"gino: "+ state);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Binary Sensor Support Get Information")) {
+            } else if (DeviceInfo.result.contains("Binary Sensor Support Get Information")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String type = jsonObject.optString("Supported type");
 
@@ -1611,18 +1581,20 @@ public class MQTTBroker extends Service {
                     message.put("Node id", nodeId);
                     message.put("Supported type", type);
 
-                    Log.d(LOG_TAG,"gino: "+ nodeId);
-                    Log.d(LOG_TAG,"gino: "+ type);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            }  else if (result.contains("Meter Report Information")) {
+            } else if (DeviceInfo.result.contains("Meter Report Information")) {
+
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String mType = jsonObject.optString("Meter type");
                     String rType = jsonObject.optString("Rate type");
@@ -1636,62 +1608,89 @@ public class MQTTBroker extends Service {
                     message.put("Meter reading", mRead);
                     message.put("Meter unit", mUnit);
 
-                    Log.d(LOG_TAG,"gino: "+ nodeId);
-                    Log.d(LOG_TAG,"gino: "+ mType);
-                    Log.d(LOG_TAG,"gino: "+ rType);
-                    Log.d(LOG_TAG,"gino: "+ mRead);
-                    Log.d(LOG_TAG,"gino: "+ mUnit);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Meter Cap Information")) {
+            } else if (DeviceInfo.result.contains("Meter Cap Information")) {
+                ArrayList<String> tmpLine = Utils.searchString(DeviceInfo.result, "unit");
+
+                String tmp = "";
+                for (int idx = 0; idx < tmpLine.size(); idx++) {
+                    tmp = tmp + tmpLine.get(idx) + ",";
+
+                }
+                String[] supportUnit = tmp.split("\t");
+
+
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String mType = jsonObject.optString("Meter type");
                     String reset = jsonObject.optString("Can be reset?");
-                    String unit = jsonObject.optString("Supported unit");
+                    //String unit = jsonObject.optString("Supported unit");
 
                     message.put("MessageType", "Meter Cap Information");
                     message.put("Node id", nodeId);
                     message.put("Meter type", mType);
                     message.put("Can be reset?", reset);
-                    message.put("Supported unit", unit);
-
-                    Log.d(LOG_TAG,"gino: "+ nodeId);
-                    Log.d(LOG_TAG,"gino: "+ mType);
-                    Log.d(LOG_TAG,"gino: "+ reset);
-                    Log.d(LOG_TAG,"gino: "+ unit);
+                    message.put("Supported unit", supportUnit[0]);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Wake Up Cap Report")) {
+                //getMeterInfo(result);
+
+            } else if (DeviceInfo.result.contains("Binary Switch Get Information")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String val = jsonObject.optString("Cur Val");
+
+                    message.put("MessageType", "Binary Switch Get Information");
+                    message.put("Node id", nodeId);
+                    message.put("Cur Val", val);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.result.contains("Wake Up Cap Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String wakeUpSetting = jsonObject.optString("Wake up settings");
 
                     message.put("MessageType", "Wake Up Cap Report");
                     message.put("Wake up settings", wakeUpSetting);
 
-                    Log.d(LOG_TAG,"gino: "+ wakeUpSetting);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Door Lock Operation Report")) {
+            } else if (DeviceInfo.result.contains("Door Lock Operation Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String doorLockMode = jsonObject.optString("Door Lock op mode");
                     String outsideMode = jsonObject.optString("Outside Door mode");
@@ -1709,31 +1708,37 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Door Lock Configuration Report")) {
+            } else if (DeviceInfo.result.contains("Door Lock Configuration Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
-                    String doorLockMode = jsonObject.optString("Door Lock op mode");
-                    String outsideMode = jsonObject.optString("Outside Door mode");
-                    String insideMode = jsonObject.optString("Inside Door mode");
+                    String type = jsonObject.optString("Door Lock op type");
+                    String state = jsonObject.optString("Outside Door state");
+                    String insideState = jsonObject.optString("Inside Door state");
 
                     message.put("MessageType", "Door Lock Configuration Report");
                     message.put("Node Id", nodeId);
-                    message.put("Door Lock op mode", doorLockMode);
-                    message.put("Outside Door mode", outsideMode);
-                    message.put("Inside Door mode", insideMode);
+                    message.put("Door Lock op type", type);
+                    message.put("Outside Door state", state);
+                    message.put("Inside Door state", insideState);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Switch Color Report")) {
+            } else if (DeviceInfo.result.contains("Switch Color Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String component = jsonObject.optString("component id");
                     String value = jsonObject.optString("value");
@@ -1747,28 +1752,47 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Supported Color Report")) {
+            } else if (DeviceInfo.result.contains("Supported Color Report")) {
+                ArrayList<String> tmpLine = Utils.searchString(DeviceInfo.result, "color");
+
+                String tmp = "";
+                for (int idx = 0; idx < tmpLine.size(); idx++) {
+
+                    tmp = tmp + tmpLine.get(idx) + ",";
+
+                }
+
+                String[] supportColor = tmp.split("\t");
+
                 JSONObject jsonObject = null;
+
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
-                    String supportColor = jsonObject.optString("Supported Color");
+                    //String supportColor = jsonObject.optString("Supported Color");
 
                     message.put("MessageType", "Supported Color Report");
                     message.put("Node Id", nodeId);
-                    message.put("Supported Color", supportColor);
+                    message.put("Supported Color", supportColor[0]);
 
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                publishMessage(Const.PublicTopicName, message.toString());
 
-            } else if (result.contains("Group Info Report")) {
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.result.contains("Group Info Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String groupId = jsonObject.optString("Group id");
                     String maxSupport = jsonObject.optString("Max Supported endpoints");
@@ -1778,17 +1802,46 @@ public class MQTTBroker extends Service {
                     message.put("Node Id", nodeId);
                     message.put("Group id", groupId);
                     message.put("Max Supported endpoints", maxSupport);
-                    message.put("Group members",groupMember);
+                    message.put("Group members", groupMember);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Supported Groupings Report")) {
+            } else if (DeviceInfo.result.contains("Configuration Get Information")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
+                    String nodeId = jsonObject.optString("Node id");
+                    String number = jsonObject.optString("Parameter number");
+                    String value = jsonObject.optString("Parameter value");
+                    String interFace = jsonObject.optString("Interface");
+                    String devType = jsonObject.optString("devType");
+
+                    message.put("MessageType", "Configuration Get Information");
+                    message.put("Node Id", nodeId);
+                    message.put("Parameter number", number);
+                    message.put("Parameter value", value);
+                    message.put("Interface", interFace);
+                    message.put("devType", devType);
+
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.result.contains("Supported Groupings Report")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String maxNumber = jsonObject.optString("Max number of groupings");
 
@@ -1800,11 +1853,14 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            }  else if (result.contains("Active Groups Report")) {
+            } else if (DeviceInfo.result.contains("Active Groups Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String currentActive = jsonObject.optString("Current active group");
 
@@ -1816,11 +1872,14 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Notification Get Information")) {
+            } else if (DeviceInfo.result.contains("Notification Get Information")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String status = jsonObject.optString("Notification-status");
                     String type = jsonObject.optString("Notification-type");
@@ -1830,17 +1889,20 @@ public class MQTTBroker extends Service {
                     message.put("Node Id", nodeId);
                     message.put("Notification-status", status);
                     message.put("Notification-type", type);
-                    message.put("Notification-event",event);
+                    message.put("Notification-event", event);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Notification Supported Report")) {
+            } else if (DeviceInfo.result.contains("Notification Supported Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String type = jsonObject.optString("Have alarm type");
                     String support = jsonObject.optString("supported notification");
@@ -1854,11 +1916,14 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Supported Notification Event Report")) {
+            } else if (DeviceInfo.result.contains("Supported Notification Event Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String type = jsonObject.optString("Notification Type");
                     String event = jsonObject.optString("event");
@@ -1872,11 +1937,14 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Central Scene Supported Report")) {
+            } else if (DeviceInfo.result.contains("Central Scene Supported Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String Scenes = jsonObject.optString("Supported Scenes");
                     String attributes = jsonObject.optString("Is Same Key Attributes");
@@ -1892,11 +1960,14 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Central Scene Notification")) {
+            } else if (DeviceInfo.result.contains("Central Scene Notification")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String attrKey = jsonObject.optString("key attr");
                     String sceneNumber = jsonObject.optString("Scene number");
@@ -1910,11 +1981,14 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Firmware Info Report")) {
+            } else if (DeviceInfo.result.contains("Firmware Info Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String vendorId = jsonObject.optString("Vendor id");
                     String firmwareId = jsonObject.optString("Firmware id");
@@ -1940,11 +2014,14 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Firmware Update Status Report")) {
+            } else if (DeviceInfo.result.contains("Firmware Update Status Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String status = jsonObject.optString("Update status");
 
@@ -1956,11 +2033,14 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Firmware Update Completion Status Report")) {
+            } else if (DeviceInfo.result.contains("Firmware Update Completion Status Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String status = jsonObject.optString("Update status");
 
@@ -1972,11 +2052,14 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Firmware Update restart Status Report")) {
+            } else if (DeviceInfo.result.contains("Firmware Update restart Status Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String status = jsonObject.optString("Restart status");
 
@@ -1988,11 +2071,14 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Sensor Info Report")) {
+            } else if (DeviceInfo.result.contains("Sensor Info Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String precision = jsonObject.optString("type");
                     String type = jsonObject.optString("precision");
@@ -2003,18 +2089,21 @@ public class MQTTBroker extends Service {
                     message.put("Node Id", nodeId);
                     message.put("type", type);
                     message.put("precision", precision);
-                    message.put("unit",unit);
-                    message.put("value",value);
+                    message.put("unit", unit);
+                    message.put("value", value);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Command Queue State Report")) {
+            } else if (DeviceInfo.result.contains("Command Queue State Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String state = jsonObject.optString("command state");
 
@@ -2027,11 +2116,14 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Command Queue Info Report")) {
+            } else if (DeviceInfo.result.contains("Command Queue Info Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeId = jsonObject.optString("Node id");
                     String queue = jsonObject.optString("command queue");
 
@@ -2043,27 +2135,31 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Network Health Check")) {
+            } else if (DeviceInfo.result.contains("Network Health Check")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String status = jsonObject.optString("Status");
 
                     message.put("MessageType", "Network Health Check");
                     message.put("Status", status);
 
-                    Log.d(LOG_TAG,"gino: "+ status);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Network IMA Info Report")) {
+            } else if (DeviceInfo.result.contains("Network IMA Info Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String nodeid = jsonObject.optString("Direct nodeid");
                     String health = jsonObject.optString("Network Health");
                     String number = jsonObject.optString("RSSI hops number");
@@ -2077,22 +2173,19 @@ public class MQTTBroker extends Service {
                     message.put("RSSI hops value", value);
                     message.put("Transmit channel", channel);
 
-                    Log.d(LOG_TAG,"gino: "+ nodeid);
-                    Log.d(LOG_TAG,"gino: "+ health);
-                    Log.d(LOG_TAG,"gino: "+ number);
-                    Log.d(LOG_TAG,"gino: "+ value);
-                    Log.d(LOG_TAG,"gino: "+ channel);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Network RSSI Info Report")) {
+            } else if (DeviceInfo.result.contains("Network RSSI Info Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String channel1 = jsonObject.optString("Value of channel 1");
                     String channel2 = jsonObject.optString("Value of channel 2");
 
@@ -2100,54 +2193,34 @@ public class MQTTBroker extends Service {
                     message.put("Value of channel 1", channel1);
                     message.put("Value of channel 2", channel2);
 
-                    Log.d(LOG_TAG,"gino: "+ channel1);
-                    Log.d(LOG_TAG,"gino: "+ channel1);
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            } else if (result.contains("Provision List Report")) {
-                if(result.contains("Error")) {
+            } else if (DeviceInfo.result.contains("Provision List Report")) {
+                if (DeviceInfo.result.contains("Error")) {
                     try {
-                        message.put("MessageType", "Provision List Report");
+                        message.put("MessageType", "All Provision List Report");
                         message.put("Error", "No list entry");
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                     publishMessage(Const.PublicTopicName, message.toString());
+                    DeviceInfo.className = "";
+                    DeviceInfo.result = "";
+                    DeviceInfo.resultToMqttBroker = "";
+
                 } else {
-                    JSONObject jsonObject = null;
-                    try {
-                        jsonObject = new JSONObject(result);
-                        String dsk = jsonObject.optString("DSK");
-                        String type = jsonObject.optString("Device type info");
-                        String id = jsonObject.optString("Device id info");
-                        String bootMode = jsonObject.optString("Device Boot Mode");
-                        String state = jsonObject.optString("Device Inclusion state");
-                        String location = jsonObject.optString("Device Location");
-                        String name = jsonObject.optString("Device Name");
-
-                        message.put("MessageType", "Provision List Report");
-                        message.put("DSK", dsk);
-                        message.put("Device type info", type);
-                        message.put("Device id info", id);
-                        message.put("Device Boot Mode", bootMode);
-                        message.put("Device Inclusion state", state);
-                        message.put("Device Location", location);
-                        message.put("Device Name", name);
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-
-                    publishMessage(Const.PublicTopicName, message.toString());
+                    allProvisionListReport(DeviceInfo.result);
                 }
 
-            } else if (result.contains("All Provision List Report")) {
-                if(result.contains("Error")) {
+            } else if (DeviceInfo.result.contains("All Provision List Report")) {
+                if (DeviceInfo.result.contains("Error")) {
                     try {
                         message.put("MessageType", "All Provision List Report");
                         message.put("Error", "No list entry");
@@ -2155,28 +2228,18 @@ public class MQTTBroker extends Service {
                         e.printStackTrace();
                     }
                     publishMessage(Const.PublicTopicName, message.toString());
+                    DeviceInfo.className = "";
+                    DeviceInfo.result = "";
+                    DeviceInfo.resultToMqttBroker = "";
+
+                } else {
+                    allProvisionListReport(DeviceInfo.result);
                 }
 
-                else {
-                    JSONObject jsonObject = null;
-                    try {
-                        jsonObject = new JSONObject(result);
-                        String list = jsonObject.optString("Detial provision list");
-
-                        message.put("MessageType", "All Provision List Report");
-                        message.put("Detial provision list", list);
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                    publishMessage(Const.PublicTopicName, message.toString());
-                }
-
-
-            } else if (result.contains("Controller DSK Report")) {
+            } else if (DeviceInfo.result.contains("Controller DSK Report")) {
                 JSONObject jsonObject = null;
                 try {
-                    jsonObject = new JSONObject(result);
+                    jsonObject = new JSONObject(DeviceInfo.result);
                     String dsk = jsonObject.optString("DSK");
 
                     message.put("MessageType", "Controller DSK Report");
@@ -2186,67 +2249,428 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
-            }
-
-            else {
-
+            } else if (DeviceInfo.reqString.equals("Grant")) {
+                mTCPServer.sendMessage(Const.TCPClientPort, "GrantKeys:" + DeviceInfo.grantKeyNumber); //TCP format
+                DeviceInfo.reqString = "";
+            } else if (DeviceInfo.reqString.equals("PIN")) {
+                mTCPServer.sendMessage(Const.TCPClientPort, "dsk:"); //TCP format
+                DeviceInfo.reqString = "";
+            } else if (DeviceInfo.reqString.equals("Au")) {
+                mTCPServer.sendMessage(Const.TCPClientPort, "CSA"); //TCP format
+                DeviceInfo.reqString = "";
+            } else if (DeviceInfo.resultToMqttBroker.equals("editNodeInfoTrue")) {
                 try {
-                    Log.i(LOG_TAG,"result = "+result);
-                    message = new JSONObject(result);
-                    if (result.contains("NodeId")) {
+                    message.put("Interface", "editNodeInfo");
+                    message.put("NodeId", DeviceInfo.mqttDeviceId);
+                    message.put("Result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("editNodeInfoFail")) {
+                try {
+                    message.put("Interface", "editNodeInfo");
+                    message.put("NodeId", DeviceInfo.mqttDeviceId);
+                    message.put("Result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setConfigurationTrue")) {
+                try {
+                    message.put("MessageType", "setConfiguration");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setConfigurationFail")) {
+                try {
+                    message.put("MessageType", "setConfiguration");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("getMeterTrue")) {
+                try {
+                    message.put("MessageType", "getMeter");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("getMeterFail")) {
+                try {
+                    message.put("MessageType", "getMeter");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("resetMeterTrue")) {
+                try {
+                    message.put("MessageType", "resetMeter");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("resetMeterFail")) {
+                try {
+                    message.put("MessageType", "resetMeter");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("startStopSwitchLevelChangeTrue")) {
+                try {
+                    message.put("MessageType", "startStopSwitchLevelChange");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("startStopSwitchLevelChangeFail")) {
+                try {
+                    message.put("MessageType", "startStopSwitchLevelChange");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("switchAllOnTrue")) {
+                try {
+                    message.put("MessageType", "switchAllOn");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("switchAllOnFail")) {
+                try {
+                    message.put("MessageType", "switchAllOn");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("switchAllOffTrue")) {
+                try {
+                    message.put("MessageType", "switchAllOff");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("switchAllOffFail")) {
+                try {
+                    message.put("MessageType", "switchAllOff");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setSwitchAllTrue")) {
+                try {
+                    message.put("MessageType", "setSwitchAll");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setSwitchAllFail")) {
+                try {
+                    message.put("MessageType", "setSwitchAll");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("getSwitchAllTrue")) {
+                try {
+                    message.put("MessageType", "getSwitchAll");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("getSwitchAllFail")) {
+                try {
+                    message.put("MessageType", "getSwitchAll");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setNotificationTrue")) {
+                try {
+                    message.put("MessageType", "setNotification");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setNotificationFail")) {
+                try {
+                    message.put("MessageType", "setNotification");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setDoorLockOperationTrue")) {
+                try {
+                    message.put("MessageType", "setDoorLockOperation");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setDoorLockOperationFail")) {
+                try {
+                    message.put("MessageType", "setDoorLockOperation");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setDoorLockConfigTrue")) {
+                try {
+                    message.put("MessageType", "setDoorLockConfig");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setDoorLockConfigFail")) {
+                try {
+                    message.put("MessageType", "setDoorLockConfig");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setBinarySwitchStateTrue")) {
+                try {
+                    message.put("MessageType", "setBinarySwitchState");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setBinarySwitchStateFail")) {
+                try {
+                    message.put("MessageType", "setBinarySwitchState");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("getMeterSupportedTrue")) {
+                try {
+                    message.put("MessageType", "getMeterSupported");
+                    message.put("result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("getMeterSupportedFail")) {
+                try {
+                    message.put("MessageType", "getMeterSupported");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.className.equals("getRooms")) {
+                for(int i=0; i < 2; i++) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    publishMessage(Const.PublicTopicName, DeviceInfo.result);
+                }
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+            }
+            /*
+            else {
+                try {
+                    //Log.i(LOG_TAG, "result = " + DeviceInfo.result);
+                    message = new JSONObject(DeviceInfo.result);
+                    if (DeviceInfo.result.contains("NodeId")) {
                         String devType = message.getString("devType");
                         String NodeId = message.getString("NodeId");
-                        publishMessage(Const.PublicTopicName + devType + NodeId, result);
-                    }
-                    else if (result.contains("devType") && result.contains("Node id")){
+                        publishMessage(Const.PublicTopicName + devType + NodeId, DeviceInfo.result);
+                        DeviceInfo.className = "";
+                        DeviceInfo.result = "";
+                        DeviceInfo.resultToMqttBroker = "";
+
+                    } else if (DeviceInfo.result.contains("devType") && DeviceInfo.result.contains("Node id")) {
                         String devType = message.getString("devType");
                         String NodeId = message.getString("Node id");
-                        publishMessage(Const.PublicTopicName + devType + NodeId, result);
-                    } else {
+                        publishMessage(Const.PublicTopicName + devType + NodeId, DeviceInfo.result);
+                        DeviceInfo.className = "";
+                        DeviceInfo.result = "";
+                        DeviceInfo.resultToMqttBroker = "";
 
-                        publishMessage(Const.PublicTopicName, result);
+                    } else {
+                        publishMessage(Const.PublicTopicName, DeviceInfo.result);
+                        DeviceInfo.className = "";
+                        DeviceInfo.result = "";
+                        DeviceInfo.resultToMqttBroker = "";
+
                     }
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
+            */
         }
     };
 
-    private void reNameDevice(String result) {
-        try {
-            result = result.substring(13);
-            JSONObject message = new JSONObject(result);
-            String devType = message.getString("devType");
-            String NodeId = message.getString("NodeId");
-            Log.i(LOG_TAG, "devType=" + devType + " NodeId=" + NodeId);
-
-            publishMessage(Const.PublicTopicName + devType + NodeId, result);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void getDeviceInfo(String result, JSONObject message) {
+    private void getDeviceInfo(JSONObject message) {
         Log.i(LOG_TAG, "getDeviceInfo");
-        ArrayList<String> tmpLine = Utils.searchString(result, "Node id");
+        ArrayList<String> tmpLine = Utils.searchString(DeviceInfo.result, "Node id");
 
         for (int idx = 1; idx < tmpLine.size(); idx++) {
             Log.i(LOG_TAG, "Node id (" + idx + ") = " + tmpLine.get(idx));
             subscribeToTopic(Const.PublicTopicName + "Zwave" + tmpLine.get(idx));
         }
         //publish result to MQTT public topic
-        publishMessage(Const.PublicTopicName, result);
+        publishMessage(Const.PublicTopicName, DeviceInfo.result);
+        DeviceInfo.className = "";
+        DeviceInfo.result = "";
+        DeviceInfo.resultToMqttBroker = "";
         Log.i(LOG_TAG, "node cnt = " + DeviceInfo.localSubTopiclist.size());
         if (!DeviceInfo.isZwaveInitFinish) {
             Log.i(LOG_TAG, " ===== isZwaveInitFinish  = true ====");
             DeviceInfo.isZwaveInitFinish = true;
         }
 
-        String[] resultSplit = result.split(",");
-        for(int i = 10; i < resultSplit.length; i++) { //i =10 no display security Status of Controller
+        String[] resultSplit = DeviceInfo.result.split(",");
+        for (int i = 10; i < resultSplit.length; i++) { //i =10 no display security Status of Controller
             if (resultSplit[i].contains("Node security inclusion status")) {
                 if (resultSplit[i].contains("S2")) {
                     try {
@@ -2272,26 +2696,55 @@ public class MQTTBroker extends Service {
                     }
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
 
             }
         }
     }
 
-    private void addRemoveDevice(String className, String result, JSONObject message) {
-        mTCPServer.sendMessage(Const.TCPClientPort, result); //TCP format
-        Log.i(LOG_TAG,"gino result :   " +result);
+    private void specifyNodeInfo(String result) {
+        Log.i(LOG_TAG, "getSpecifyDeviceInfo");
+        ArrayList<String> tmpLine = Utils.searchString(result, "Node id");
 
-        if (result.contains("addDevice:") || result.contains("removeDevice:")) {
-            String[] tokens = result.split(":");
+        for (int idx = 0; idx < tmpLine.size(); idx++) {
+            Log.i(LOG_TAG, "Node id (" + idx + ") = " + tmpLine.get(idx));
+            //subscribeToTopic(Const.PublicTopicName + "Zwave" + tmpLine.get(idx));
+        }
+        //publish result to MQTT public topic
+        publishMessage(Const.PublicTopicName, result);
+
+    }
+
+    private void allProvisionListReport(String result) {
+        Log.i(LOG_TAG, "allProvisionListReport");
+        ArrayList<String> tmpLine = Utils.searchString(result, "DSK");
+
+        for (int idx = 0; idx < tmpLine.size(); idx++) {
+            Log.i(LOG_TAG, "Node id (" + idx + ") = " + tmpLine.get(idx));
+            //subscribeToTopic(Const.PublicTopicName + "Zwave" + tmpLine.get(idx));
+        }
+        //publish result to MQTT public topic
+        publishMessage(Const.PublicTopicName, result);
+
+    }
+
+    private void addRemoveDevice(JSONObject message) {
+        //Log.i(LOG_TAG, "gino result :   " + DeviceInfo.result);
+
+        mTCPServer.sendMessage(Const.TCPClientPort, DeviceInfo.result); //TCP format
+
+        if (DeviceInfo.result.contains("addDevice:") || DeviceInfo.result.contains("removeDevice:")) {
+            String[] tokens = DeviceInfo.result.split(":");
             if (tokens.length < 3) {
-                Log.i(LOG_TAG, "AIDLResult " + className + " : wrong format " + result);
-            }
-            else
-            {
+                Log.i(LOG_TAG, "AIDLResult " + DeviceInfo.className + " : wrong format " + DeviceInfo.result);
+            } else {
                 String devType = tokens[1];
                 String tNodeId = tokens[2];
 
-                if (className.equals("addDevice")) {
+                if (DeviceInfo.className.equals("addDevice")) {
+                    Log.i(LOG_TAG, "Interface  NodeId  Result");
                     try {
                         message.put("Interface", "addDevice");
                         message.put("NodeId", tNodeId);
@@ -2299,16 +2752,19 @@ public class MQTTBroker extends Service {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-
-                    subscribeToTopic(Const.PublicTopicName  + tNodeId);
+                    Log.i(LOG_TAG, "subscribeToTopic !!!!!!!!!!!!!!");
+                    subscribeToTopic(Const.PublicTopicName + devType + tNodeId);
                     publishMessage(Const.PublicTopicName, message.toString());
+                    DeviceInfo.className = "";
+                    DeviceInfo.result = "";
+                    DeviceInfo.resultToMqttBroker = "";
                 } else {
                     try {
                         message.put("Interface", "removeDevice");
                         message.put("NodeId", tNodeId);
-                        if (tNodeId.equals("fail")){
+                        if (tNodeId.equals("fail")) {
                             message.put("Result", "fail");
-                        }else {
+                        } else {
                             unsubscribeTopic(Const.PublicTopicName + devType + tNodeId);
                             message.put("Result", "true");
                         }
@@ -2316,46 +2772,16 @@ public class MQTTBroker extends Service {
                         e.printStackTrace();
                     }
                     publishMessage(Const.PublicTopicName, message.toString());
+                    DeviceInfo.className = "";
+                    DeviceInfo.result = "";
+                    DeviceInfo.resultToMqttBroker = "";
                 }
 
                 Const.TCPClientPort = 0;
             }
         }
-
-
     }
 
-    private void grantKey(String result) {
-        if (result.contains("Grant Keys Msg")) {
-            Log.d(LOG_TAG,result);
-            JSONObject jsonObject = null;
-            try {
-                jsonObject = new JSONObject(result);
-                String keyValue = jsonObject.optString("Keys");
-                mTCPServer.sendMessage(Const.TCPClientPort, "GrantKeys:"+keyValue); //TCP format
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            Const.TCPClientPort = 0;
-        }
-    }
-
-    private void networkRole(String result, JSONObject message) {
-
-        String networkRole = "";
-
-        if(result.contains("Primary")) {
-            networkRole = "Primary role";
-        } else if(result.contains("SIS")) {
-            networkRole = "SIS role";
-        } else if(result.contains("Include")) {
-            networkRole = "Include role";
-        }
-
-        mTCPServer.sendMessage(Const.TCPClientPort, "Network Role:"+ networkRole); //TCP format
-        Const.TCPClientPort = 0;
-
-    }
 }
 
 

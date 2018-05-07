@@ -41,7 +41,9 @@ import com.askey.firefly.zwave.control.service.MQTTBroker;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
 import com.askey.firefly.zwave.control.utils.Const;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
+import com.askey.firefly.zwave.control.utils.Utils;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -95,33 +97,20 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
         showProgressDialog(mContext, "Initializing，Open Zwave Controller...");
 
-        Intent MqttIntent = new Intent(WelcomeActivity.this, MQTTBroker.class);
-        startService(MqttIntent);
+        new Thread(initMqtt).start();
 
         zwDevManager = ZwaveDeviceManager.getInstance(this);
 
         // bind service
         Intent serviceIntent = new Intent(this, ZwaveControlService.class);
         this.bindService(serviceIntent, conn, Context.BIND_AUTO_CREATE);
-
-        new Thread(reqCallBack).start();
+        this.bindService(serviceIntent, req, Context.BIND_AUTO_CREATE);
 
         new Thread(checkInitStatus).start();
+        new Thread(activityZwaveControlService).start();
+
         initBtn();
-
     }
-
-    //read content of ApiName.txt
-    private String loadTextFile(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        byte[] bytes = new byte[4096];
-        int len = 0;
-        while ((len = inputStream.read(bytes)) > 0) {
-            byteArrayOutputStream.write(bytes, 0, len);
-        }
-        return new String(byteArrayOutputStream.toByteArray(), "UTF8");
-    }
-
 
     private void initBtn() {
         Log.i(LOG_TAG, "initBtn");
@@ -184,20 +173,34 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
     }
 
-    // only execute one time
-    public Runnable reqCallBack = new Runnable() {
+    //read content of ApiName.txt
+    private String loadTextFile(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byte[] bytes = new byte[4096];
+        int len = 0;
+        while ((len = inputStream.read(bytes)) > 0) {
+            byteArrayOutputStream.write(bytes, 0, len);
+        }
+        return new String(byteArrayOutputStream.toByteArray(), "UTF8");
+    }
+
+
+    private Runnable initMqtt = new Runnable() {
         @Override
         public void run() {
-            Intent serviceIntent = new Intent(WelcomeActivity.this, ZwaveControlService.class);
-            WelcomeActivity.this.bindService(serviceIntent, req, Context.BIND_AUTO_CREATE);
+            Intent MqttIntent = new Intent(WelcomeActivity.this, MQTTBroker.class);
+            startService(MqttIntent);
         }
     };
 
     // only execute one time
-    public Runnable checkInitStatus = new Runnable() {
+    private Runnable checkInitStatus = new Runnable() {
         @Override
         public void run() {
-            while (!DeviceInfo.isZwaveInitFinish || !DeviceInfo.isMQTTInitFinish) {
+
+            while (!DeviceInfo.isMQTTInitFinish) {
+                //Log.i(LOG_TAG, "isZwaveInitFinish & isMQTTInitFinish true");
+
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
@@ -205,11 +208,70 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 }
             }
             initSensorfunc();
-            initZwave();        //maybe can cancel by gino
+            initZwave();
         }
     };
 
-    // not use !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //init sensor 類別裝置,當sensor裝置改變狀態會自動回報
+    private void initSensorfunc() {
+
+        List<ZwaveDevice> list = zwDevManager.queryZwaveDeviceList();
+
+        for (int idx = 1; idx < list.size(); idx++) {
+
+            int nodeId = list.get(idx).getNodeId();
+            String devType = list.get(idx).getDevType();
+
+            Log.i(LOG_TAG,"#"+nodeId+" | devType = "+devType);
+
+            if (devType.equals("SENSOR")) {
+                String devNodeInfo = list.get(idx).getNodeInfo();
+
+                if (devNodeInfo.contains("COMMAND_CLASS_BATTERY")) {
+                    Log.i(LOG_TAG, "BATTERY");
+                    zwaveService.getDeviceBattery(Const.zwaveType,nodeId);
+                }
+
+                if (devNodeInfo.contains("COMMAND_CLASS_NOTIFICATION")) {
+                    try {
+                        JSONObject jsonObject = new JSONObject(devNodeInfo);
+                        if (jsonObject.getString("Product id").equals("001F")) {
+                            //Water
+                            zwaveService.getSensorNotification(nodeId, 0x00, 0x05, 0x00);
+                        } else if (jsonObject.getString("Product id").equals("000C")) {
+                            //Motion
+                            zwaveService.getSensorNotification(nodeId, 0x00, 0x07, 0x00);
+                            //Door/Window
+                            zwaveService.getSensorNotification(nodeId, 0x00, 0x06, 0x00);
+                        } else if (jsonObject.getString("Product id").equals("0036")) {
+                            //Door/Window
+                            zwaveService.getSensorNotification(nodeId, 0x00, 0x06, 0x00);
+                        } else if (jsonObject.getString("Product id").equals("001E")) {
+                            //SMOKE
+                            zwaveService.getSensorNotification(nodeId, 0x00, 0x01, 0x00);
+                        } else if (jsonObject.getString("Product id").equals("0050")) {
+                            //Motion
+                            zwaveService.getSensorNotification(nodeId, 0x00, 0x07, 0x00);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (devNodeInfo.contains("COMMAND_CLASS_SENSOR_MULTILEVEL")) {
+                    try {
+                        zwaveService.getSensorMultiLevel(Const.zwaveType,nodeId);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+                zwaveService.getMeterSupported(nodeId);
+                zwaveService.GetSensorBinarySupportedSensor(nodeId);
+
+            }
+        }
+
+    }
+
     private void initZwave() {
         ((Activity) mContext).runOnUiThread(new Runnable() {
             @Override
@@ -224,6 +286,611 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         });
     }
 
+    private Runnable activityZwaveControlService = new Runnable() {
+        @Override
+        public void run() {
+            boolean circle = false;
+            while (!circle) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                switch (DeviceInfo.getMqttPayload) {
+
+                    case "addDevice":
+                        Log.i(LOG_TAG, "deviceService.addDevice");
+                        zwaveService.addDevice(DeviceInfo.devType);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeDevice":
+                        Log.i(LOG_TAG, "deviceService.removeDevice");
+                        zwaveService.removeDevice(DeviceInfo.devType, 1);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "stopAddDevice":
+                        Log.i(LOG_TAG, "deviceService.stopAddDevice");
+                        zwaveService.stopAddDevice(DeviceInfo.devType);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "stopRemoveDevice":
+                        Log.i(LOG_TAG, "deviceService.stopRemoveDevice");
+                        zwaveService.stopRemoveDevice(DeviceInfo.devType);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeDeviceFromRoom":
+                        Log.i(LOG_TAG, "deviceService.removeDeviceFromRoom");
+                        zwaveService.removeDeviceFromRoom(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getDeviceList": //public channel
+                        Log.i(LOG_TAG, "deviceService.getDevices tRoom= " + DeviceInfo.mqttString);
+                        zwaveService.getDeviceList(DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "editNodeInfo":
+                        Log.d(LOG_TAG, "deviceService.editNodeInfo");
+                        DeviceInfo.callResult = zwaveService.editNodeInfo("", DeviceInfo.mqttDeviceId, DeviceInfo.mqttString3, DeviceInfo.devType, DeviceInfo.mqttString4, DeviceInfo.mqttString, DeviceInfo.mqttString2);
+                        Log.d(LOG_TAG, "deviceService.editNodeInfo : " + DeviceInfo.callResult);
+                        if (DeviceInfo.callResult == 1) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            DeviceInfo.resultToMqttBroker = "editNodeInfoTrue";
+                        } else {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo Fail");
+                            DeviceInfo.resultToMqttBroker = "editNodeInfoFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getRecentDeviceList": //public channel
+                        Log.i(LOG_TAG, "deviceService.getRecentDeviceList");
+                        zwaveService.getRecentDeviceList(DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "addRoom": //public channel
+                        Log.i(LOG_TAG, "deviceService.addRoom");
+                        zwaveService.addRoom(DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getRooms": //public channel
+                        Log.i(LOG_TAG, "deviceService.getRooms");
+                        //zwaveService.getRooms();
+                        zwaveService.getRooms();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "editRoom": //public channel
+                        Log.i(LOG_TAG, "deviceService.editRoom");
+                        zwaveService.editRoom(DeviceInfo.mqttString, DeviceInfo.mqttString2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeRoom": //public channel
+                        Log.i(LOG_TAG, "deviceService.removeRoom");
+                        zwaveService.removeRoom(DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getBasic":
+                        Log.i(LOG_TAG, "deviceService.getBasic" + DeviceInfo.mqttDeviceId);
+                        zwaveService.getBasic(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setBasic":
+                        Log.i(LOG_TAG, "deviceService.setBasic nodeId= " + DeviceInfo.mqttDeviceId + " value = " + DeviceInfo.mqttValue);
+                        zwaveService.setBasic(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttValue);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSwitchMultilevel":
+                        Log.i(LOG_TAG, "deviceService.getBrightness" + DeviceInfo.mqttDeviceId);
+                        zwaveService.getSwitchMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setSwitchMultilevel":
+                        Log.i(LOG_TAG, "deviceService.setSwitchMultilevel nodeId= " + DeviceInfo.mqttDeviceId + " value = " + DeviceInfo.mqttValue + "duration " + DeviceInfo.mqttTmp);
+                        zwaveService.setSwitchMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttValue, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSwitchColor":
+                        Log.i(LOG_TAG, "deviceService.getLampColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                        zwaveService.getSwitchColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setSwitchColor":
+                        Log.i(LOG_TAG, "deviceService.setSwitchColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2);
+                        zwaveService.setSwitchColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSupportedColor":
+                        Log.i(LOG_TAG, "deviceService.getSupportedColor" + DeviceInfo.mqttDeviceId);
+                        zwaveService.getSupportColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "startStopColorLevelChange":
+                        Log.i(LOG_TAG, "deviceService.startStopColorLevelChange" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2 + DeviceInfo.mqttTmp3 + DeviceInfo.mqttTmp4);
+                        zwaveService.startStopColorLevelChange(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3, DeviceInfo.mqttTmp4);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+
+                    case "getConfiguration":
+                        Log.i(LOG_TAG, "deviceService.getConfiguration");
+                        zwaveService.getConfiguration(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3, DeviceInfo.mqttTmp4);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setConfiguration":
+                        Log.i(LOG_TAG, "deviceService.setConfiguration");
+                        try {
+                            DeviceInfo.callResult = zwaveService.setConfiguration(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3, DeviceInfo.mqttTmp4);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setConfigurationTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setConfigurationFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getMeter":
+                        Log.i(LOG_TAG, "deviceService.getMeter" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                        DeviceInfo.callResult = zwaveService.getMeter(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "getMeterTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "getMeterFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "resetMeter":
+                        Log.i(LOG_TAG, "deviceService.resetMeter" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = zwaveService.resetMeter(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "resetMeterTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "resetMeterFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getGroupInfo":
+                        Log.i(LOG_TAG, "deviceService.getGroupInfo");
+                        zwaveService.getGroupInfo(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "addEndpointsToGroup":
+                        zwaveService.addEndpointsToGroup(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, Utils.convertIntegers(DeviceInfo.arrList), DeviceInfo.mqttTmp2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeEndpointsFromGroup":
+                        zwaveService.removeEndpointsFromGroup(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, Utils.convertIntegers(DeviceInfo.arrList), DeviceInfo.mqttTmp2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getMaxSupperedGroups":
+                        Log.i(LOG_TAG, "deviceService.getMaxSupportedGroups");
+                        zwaveService.getMaxSupportedGroups(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setScheduleActive":
+                        Log.i(LOG_TAG, "deviceService.setScheduleActive " + DeviceInfo.mqttString);
+                        zwaveService.setScheduleActive(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getScheduleList":
+                        Log.i(LOG_TAG, "deviceService.getScheduleList");
+                        zwaveService.getScheduleList(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeSchedule":
+                        Log.i(LOG_TAG, "deviceService.removeSchedule " + DeviceInfo.mqttString);
+                        zwaveService.removeSchedule(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setSchedule":
+                        Log.i(LOG_TAG, "deviceService.setSchedule " + DeviceInfo.mqttString);
+                        zwaveService.setSchedule(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttString, DeviceInfo.mqttString4, DeviceInfo.mqttString5, Integer.valueOf(DeviceInfo.mqttString3), DeviceInfo.mqttString2);
+                        break;
+
+                    case "getFavoriteList": //public channel
+                        Log.i(LOG_TAG, "deviceService.getFavoriteList");
+                        zwaveService.getFavoriteList();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "editFavoriteList": //public channel
+                        Log.i(LOG_TAG, "deviceService.editFavoriteList");
+                        zwaveService.editFavoriteList(DeviceInfo.addList, DeviceInfo.removeList);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setSceneAction":
+                        Log.i(LOG_TAG, "deviceService.setSceneAction ");
+                        //zwaveService.setSceneAction();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSceneList": //public channel
+                        Log.i(LOG_TAG, "deviceService.getScene");
+                        zwaveService.getScene();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeSceneAction":
+                        Log.i(LOG_TAG, "deviceService.removeSceneAction " + DeviceInfo.mqttString + " | nodeId = " + DeviceInfo.mqttString2);
+                        //zwaveService.removeSceneAction();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeScene":
+                        Log.i(LOG_TAG, "deviceService.removeScene " + DeviceInfo.mqttString);
+                        //zwaveService.removeScene(DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "editScene":
+                        Log.i(LOG_TAG, "deviceService.editScene " + DeviceInfo.mqttString + " to " + DeviceInfo.mqttString3 + "" +
+                                " |iconName = " + DeviceInfo.mqttString2 + " to " + DeviceInfo.mqttString4);
+                        //zwaveService.editScene(DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "executeScene":
+                        Log.i(LOG_TAG, "deviceService.removeScene " + DeviceInfo.mqttString2 + " action = " + DeviceInfo.mqttString);
+                        //zwaveService.editScene(sceneName);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "addProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.addProvisionListEntry");
+                        if (DeviceInfo.mqttString.contains("01")) {
+                            DeviceInfo.bootMode = true;
+                            Log.d(LOG_TAG, "DeviceInfo.bootMode = true");
+
+                        } else if (DeviceInfo.mqttString.contains("00")) {
+                            DeviceInfo.bootMode = false;
+                            Log.d(LOG_TAG, "DeviceInfo.bootMode = false");
+                        }
+                        zwaveService.addProvisionListEntry("Zwave", DeviceInfo.mqttString2.getBytes(), DeviceInfo.bootMode);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "rmProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.rmProvisionListEntry");
+                        //dskNumber = DeviceInfo.mqttString.getBytes();
+                        zwaveService.rmProvisionListEntry("Zwave", DeviceInfo.mqttString.getBytes());
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "rmAllProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.rmAllProvisionListEntry");
+                        zwaveService.rmAllProvisionListEntry();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "editProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.editProvisionListEntry");
+                        zwaveService.rmProvisionListEntry("Zwave", DeviceInfo.mqttString.getBytes());
+                        if (DeviceInfo.mqttTmp == 0) {
+                            zwaveService.addProvisionListEntry("Zwave", DeviceInfo.mqttString.getBytes(), false);
+                        } else {
+                            zwaveService.addProvisionListEntry("Zwave", DeviceInfo.mqttString.getBytes(), true);
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getAllProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.getAllProvisionListEntry");
+                        zwaveService.getAllProvisionListEntry();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.getProvisionListEntry");
+                        //dskNumber = DeviceInfo.mqttString.getBytes();
+                        zwaveService.getProvisionListEntry("Zwave", DeviceInfo.mqttString.getBytes());
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getRssiState":
+                        Log.i(LOG_TAG, "deviceService.getRssiState" + DeviceInfo.mqttDeviceId);
+                        zwaveService.startNetworkHealthCheck();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getBattery":
+                        Log.i(LOG_TAG, "deviceService.getBattery" + DeviceInfo.mqttDeviceId);
+                        zwaveService.getDeviceBattery(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSensorMultilevel":
+                        Log.i(LOG_TAG, "deviceService.getSensorMultilevel" + DeviceInfo.mqttDeviceId);
+                        try {
+                            zwaveService.getSensorMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSupportSwitchType":
+                        Log.i(LOG_TAG, "deviceService.getSupportSwitchType" + DeviceInfo.mqttDeviceId);
+                        zwaveService.getSupportedSwitchType(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "startStopSwitchLevelChange":
+                        Log.i(LOG_TAG, "deviceService.startStopSwitchLevelChange");
+                        DeviceInfo.callResult = zwaveService.startStopSwitchLevelChange(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3, DeviceInfo.mqttTmp4, DeviceInfo.mqttTmp5);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "startStopSwitchLevelChangeTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "startStopSwitchLevelChangeFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setSwitchAllOffBroadcast":
+                        Log.i(LOG_TAG, "deviceService.setSwitchAllOffBroadcast");
+                        zwaveService.setSwitchAllOffBroadcast(DeviceInfo.devType);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getPowerLevel":
+                        Log.i(LOG_TAG, "deviceService.getPowerLevel" + DeviceInfo.mqttDeviceId);
+                        zwaveService.getPowerLevel(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "switchAllOn":
+                        Log.i(LOG_TAG, "deviceService.switchAllOn" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = zwaveService.setSwitchAllOn(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "switchAllOnTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "switchAllOnFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "switchAllOff":
+                        Log.i(LOG_TAG, "deviceService.switchAllOff" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = zwaveService.setSwitchAllOff(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "switchAllOffTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "switchAllOffFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setSwitchAll":
+                        Log.i(LOG_TAG, "deviceService.setSwitchAll" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = zwaveService.setSwitchAll(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setSwitchAllTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setSwitchAllFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSwitchAll":
+                        Log.i(LOG_TAG, "deviceService.GetSwitchAll" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = zwaveService.getSwitchAll(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "getSwitchAllTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "getSwitchAllFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSensorBinary":
+                        Log.i(LOG_TAG, "deviceService.getSensorBinary");
+                        zwaveService.getSensorBasic(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSensorBinarySupportedSensor":
+                        Log.i(LOG_TAG, "deviceService.getSensorBinarySupportedSensor" + DeviceInfo.mqttDeviceId);
+                        zwaveService.GetSensorBinarySupportedSensor(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getMeterSupported":
+                        Log.i(LOG_TAG, "deviceService.getMeterSupported" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = zwaveService.getMeterSupported(DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "getMeterSupportedTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "getMeterSupportedFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSpecificGroup":
+                        Log.i(LOG_TAG, "deviceService.getSpecificGroup" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                        zwaveService.getSpecificGroup(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getNotification":
+                        Log.i(LOG_TAG, "deviceService.getNotification" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2 + DeviceInfo.mqttTmp3);
+                        zwaveService.getSensorNotification(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+
+                    case "setNotification":
+                        Log.i(LOG_TAG, "deviceService.setNotification" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2);
+                        DeviceInfo.callResult = zwaveService.setNotification(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setNotificationTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setNotificationFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSupportedNotification":
+                        Log.i(LOG_TAG, "deviceService.getSupportedNotification" + DeviceInfo.mqttDeviceId);
+                        zwaveService.getSupportedNotification(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSupportedEventNotification":
+                        Log.i(LOG_TAG, "deviceService.getSupportedEventNotification" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                        zwaveService.getSupportedEventNotification(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSpecifyDeviceInfo":
+                        Log.i(LOG_TAG, "deviceService.getSpecifyDeviceInfo");
+                        Log.i(LOG_TAG, "nodeId: " + DeviceInfo.mqttDeviceId);
+                        zwaveService.getSpecifyDeviceInfo(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeFailDevice":
+                        Log.i(LOG_TAG, "deviceService.removeFailDevice");
+                        Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
+                        zwaveService.removeFailedDevice(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "checkNodeIsFailed":
+                        Log.i(LOG_TAG, "deviceService.checkNodeIsFailed");
+                        Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
+                        zwaveService.checkNodeIsFailed(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setDefault":
+                        Log.i(LOG_TAG, "deviceService.setDefault");
+                        zwaveService.setDefault();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "replaceFailDevice":
+                        Log.i(LOG_TAG, "deviceService.replaceFailDevice");
+                        Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
+                        zwaveService.replaceFailedDevice(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "startLearnMode":
+                        Log.i(LOG_TAG, "deviceService.startLearnMode");
+                        zwaveService.StartLearnMode();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSceneActuatorConf":
+                        Log.i(LOG_TAG, "deviceService.getSceneActuatorConf");
+                        zwaveService.getSceneActuatorConf(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSupportedCentralScene":
+                        Log.i(LOG_TAG, "deviceService.getSupportedCentralScene");
+                        zwaveService.getSupportedCentralScene(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getDoorLockOperation":
+                        Log.i(LOG_TAG, "deviceService.getDoorLockOperation");
+                        zwaveService.getDoorLockOperation(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setDoorLockOperation":
+                        Log.i(LOG_TAG, "deviceService.setDoorLockOperation");
+                        DeviceInfo.callResult = zwaveService.setDoorLockOperation(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setDoorLockOperationTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setDoorLockOperationFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getDoorLockConfig":
+                        Log.i(LOG_TAG, "deviceService.getDoorLockConfiguration");
+                        zwaveService.getDoorLockConfiguration(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setDoorLockConfig":
+                        Log.i(LOG_TAG, "deviceService.setDoorLockConfig");
+
+                        DeviceInfo.callResult = zwaveService.setDoorLockConfiguration(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3, DeviceInfo.mqttTmp4, DeviceInfo.mqttTmp5);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setDoorLockConfigTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setDoorLockConfigFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setBinarySwitchState":
+                        Log.i(LOG_TAG, "deviceService.setBinarySwitchState");
+                        DeviceInfo.callResult = zwaveService.setBinarySwitchState(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setBinarySwitchStateTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setBinarySwitchStateFail";
+                        }
+                        DeviceInfo.callResult = -1;
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getBinarySwitchState":
+                        Log.i(LOG_TAG, "deviceService.getBinarySwitchState");
+                        zwaveService.getBinarySwitchState(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+                }
+            }
+        }
+    };
 
     private void showZwaveControlTimeOutDialog(String titleStr) {
         if(alertDialog == null) {
@@ -294,6 +961,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     //Log.i(LOG_TAG, "call zwaveService.addDevice()");
                     DeviceInfo.reqKey = Integer.valueOf(editDsk.getText().toString());
                     zwaveService.addDevice(DeviceInfo.devType);
+
                 } else if (editDsk.length() != 0 && editDsk.length() == 5) {
                     //Log.i(LOG_TAG, "call zwaveService.addDevice()");
                     DeviceInfo.reqKey = Integer.valueOf(editDsk.getText().toString());
@@ -320,6 +988,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 break;
 
             case R.id.btnButton:
+                zwaveService.startStopSwitchLevelChange(selectNode,1,1,1,1,1);
                 if (spApiList.getSelectedItem().toString().contains("ZwController_startNetworkHealthCheck")) {
                     zwaveService.startNetworkHealthCheck();
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_getProvisionListEntry")) {
@@ -703,7 +1372,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 zwaveService.register(mCallback);       //add & remove and other info call back
                 //zwaveService.register(mReqCallBacks);   //use other thread for grantKey pinCode csa req call back
                 openController();
-
             }
         }
 
@@ -746,15 +1414,20 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         }
     }
 
+    //callback
     public ZwaveControlService.zwaveCallBack mCallback;
     {
         mCallback = new ZwaveControlService.zwaveCallBack() {
 
             //監聽關鍵字回報 從ZwaveControlService.jave zwaveCallBack -> zwcontrol_api.c "MessageType"
+
             @Override
             public void zwaveControlResultCallBack(String className, String result) {
 
-                Log.i(LOG_TAG, "class name = [" + className + "]| result = " + result);
+                DeviceInfo.className = className;
+                DeviceInfo.result = result;
+
+                Log.i(LOG_TAG, "class name = [" + DeviceInfo.className + "]| result = " + DeviceInfo.result);
 
                 if (className.equals("addDevice") || className.equals("removeDevice")) {
 
@@ -767,536 +1440,9 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (className.equals("reNameDevice")) {
 
                     addRemoveDevice(result);
-
-                } else if (result.contains("Remove Failed Node")) {
-
-                    if(result.contains("Success")) {
-
-                        Log.d("MessageType", "Remove Failed Node");
-                        Log.d("Status", "Success");
-                    }
-
-                } else if (result.contains("Replace Failed Node")) {
-
-                    if(result.contains("Success")) {
-
-                        Log.d("MessageType", "Replace Failed Node");
-                        Log.d("Status", "Success");
-
-                    } else if (result.contains("Unknown or Failed")) {
-
-                        Log.d("MessageType", "Replace Failed Node");
-                        Log.d("Status", "Unknown or Failed");
-                    }
-                } else if (result.contains("Node Is Failed Check Report")) {
-                    String[] tmpSplit = result.split(":");
-                    if(result.contains("Alive")) {
-
-                        Log.d("MessageType", "Node Is Failed Check Report");
-                        Log.d("Node Id", tmpSplit[2]);
-                        Log.d("Status", "Alive");
-
-                    } else if (result.contains("Down(failed)")) {
-
-                        Log.d("MessageType", "Node Is Failed Check Report");
-                        Log.d("Node Id", tmpSplit[2]);
-                        Log.d("Status", "Down(failed)");
-                    }
-
-                }  else if (result.contains("Replace Failed Node")) {
-
-                    if(result.contains("Success")) {
-
-                        Log.d("MessageType", "Replace Failed Node");
-                        Log.d("Status", "Success");
-
-                    } else if (result.contains("Unknown or Failed")) {
-
-                        Log.d("MessageType", "Replace Failed Node");
-                        Log.d("Status", "Unknown or Failed");
-                    }
-
-                }  else if (result.contains("Controller Reset Status")) {
-
-                    if(result.contains("Success")) {
-
-                        Log.d("MessageType", "Controller Reset Status");
-                        Log.d("Status", "Success");
-
-
-                    } else if (result.contains("Failed")) {
-
-                        Log.d("MessageType", "Controller Reset Status");
-                        Log.d("Status", "Failed");
-                    }
-
-                } else if (result.contains("Controller Attribute")) {
-                    String[] tmpSplit = result.split(",");
-                    String homeId = tmpSplit[1];
-                    String nodeId = tmpSplit[2];
-                    String role = tmpSplit[3];
-                    String vendorId = tmpSplit[4];
-                    String proType = tmpSplit[5];
-                    String libType = tmpSplit[6];
-                    String protocolVersion = tmpSplit[7];
-                    String appVersion = tmpSplit[8];
-                    Log.d("MessageType", "Controller Attribute");
-                    Log.d("Home id", homeId);
-                    Log.d("Node id", nodeId);
-                    Log.d("Network Role", role);
-                    Log.d("Vendor Id",vendorId);
-                    Log.d("Vendor Product Type",proType);
-                    Log.d("Z-wave Library Type",libType);
-                    Log.d("Z-wave Protocol Version",protocolVersion);
-                    Log.d("Application Version",appVersion);
-
-                } else if (result.contains("All Node List Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeList = tmpSplit[1];
-                    Log.d("MessageType", "All Node List Report");
-                    Log.d("Added Node List", nodeList);
-
-                }  else if (result.contains("Specify Node Info")) {
-                    //String[] tmpSplit = result.split("Detialed Node Info");
-                    //Log.d("MessageType", "Specify Node Info");
-                    //Log.d("Detialed Node Info", tmpSplit[1]);
-
-                    JSONObject jsonObject = null;
-                    try {
-                        jsonObject = new JSONObject(result);
-                        String nodeInfo = jsonObject.optString("Detialed Node Info");
-                        Log.d(LOG_TAG,"gino: "+ nodeInfo);
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-
-                } else if (result.contains("Controller Init Status")) {
-                    if(result.contains("Success")) {
-                        Log.d("MessageType", "Controller Init Status");
-                        Log.d("Status", "Success");
-                    }
-
-                } else if (result.contains("Node Battery Value")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String endPointId = tmpSplit[2];
-                    String batteryValue = tmpSplit[3];
-
-                    Log.d("MessageType", "Node Battery Value");
-                    Log.d("Node Id", nodeId);
-                    Log.d("EndPoint Id", endPointId);
-                    Log.d("Battery Value", batteryValue);
-
-                } else if (result.contains("Switch Multi-lvl Report Information")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String curValue = tmpSplit[2];
-
-                    Log.d("MessageType", "Switch Multi-lvl Report Information");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Cur Val", curValue);
-                    Log.d("Tgt Val", "Unsupported");
-                    Log.d("Durration", "Unsupported");
-
-                } else if (result.contains("Power Level Get Information")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String powerLevel = tmpSplit[2];
-                    Log.d("MessageType", "Power Level Get Information");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Power Level", powerLevel);
-
-                } else if (result.contains("Switch All Get Information")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String mode = tmpSplit[2];
-
-                    Log.d("MessageType", "Switch All Get Information");
-                    Log.d("Node Id", nodeId);
-                    Log.d("mode", mode);
-
-                } else if (result.contains("Binary Sensor Information")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String eventType = tmpSplit[2];
-                    String state = tmpSplit[3];
-
-                    Log.d("MessageType", "Binary Sensor Information");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Event Type", eventType);
-                    Log.d("state", state);
-
-                } else if (result.contains("Binary Sensor Support Get Information")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String supportType = tmpSplit[2];
-                    Log.d("MessageType", "Binary Sensor Support Get Information");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Supported type", supportType);
-
-
-                }  else if (result.contains("Meter Report Information")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String meterType = tmpSplit[2];
-                    String canReset = tmpSplit[3];
-                    String supportUnit = tmpSplit[4];
-
-                    Log.d("MessageType", "Meter Report Information");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Meter type", meterType);
-                    Log.d("Can be reset?", canReset);
-                    Log.d("Supported unit", supportUnit);
-
-                } else if (result.contains("Meter Cap Information")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String meterType = tmpSplit[2];
-                    String canReset = tmpSplit[3];
-                    String supportUnit = tmpSplit[4];
-
-                    Log.d("MessageType", "Meter Cap Information");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Meter type", meterType);
-                    Log.d("Can be reset?", canReset);
-                    Log.d("Supported unit", supportUnit);
-
-
-
-                } else if (result.contains("Wake Up Cap Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String wakeUpSetting = tmpSplit[1];
-
-                    Log.d("MessageType", "Wake Up Cap Report");
-                    Log.d("Wake up settings", wakeUpSetting);
-
-
-                } else if (result.contains("Door Lock Operation Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String doorLockMode = tmpSplit[2];
-                    String outsideMode = tmpSplit[3];
-                    String insideMode = tmpSplit[4];
-                    String doorCondition = tmpSplit[4];
-
-                    Log.d("MessageType", "Door Lock Operation Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Door Lock op mode", doorLockMode);
-                    Log.d("Outside Door mode", outsideMode);
-                    Log.d("Inside Door mode", insideMode);
-                    Log.d("Door Condition", doorCondition);
-
-
-                } else if (result.contains("Door Lock Configuration Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String doorLockMode = tmpSplit[2];
-                    String outsideMode = tmpSplit[3];
-                    String insideMode = tmpSplit[4];
-
-                    Log.d("MessageType", "Door Lock Configuration Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Door Lock op mode", doorLockMode);
-                    Log.d("Outside Door mode", outsideMode);
-                    Log.d("Inside Door mode", insideMode);
-
-
-                } else if (result.contains("Switch Color Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String component = tmpSplit[2];
-                    String value = tmpSplit[3];
-
-                    Log.d("MessageType", "Switch Color Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("component id", component);
-                    Log.d("value", value);
-
-
-                } else if (result.contains("Supported Color Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String supportColor = tmpSplit[2];
-
-                    Log.d("MessageType", "Supported Color Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Supported Color", supportColor);
-
-
-                } else if (result.contains("Group Info Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String groupId = tmpSplit[2];
-                    String maxSupport = tmpSplit[3];
-                    String groupMember = tmpSplit[4];
-
-                    Log.d("MessageType", "Group Info Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Group id", groupId);
-                    Log.d("Max Supported endpoints", maxSupport);
-                    Log.d("Group members",groupMember);
-
-
-                } else if (result.contains("Supported Groupings Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String maxNumber = tmpSplit[2];
-
-                    Log.d("MessageType", "Supported Groupings Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Max number of groupings", maxNumber);
-
-
-                }  else if (result.contains("Active Groups Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String currentActive = tmpSplit[2];
-
-                    Log.d("MessageType", "Active Groups Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Current active group", currentActive);
-
-
-                } else if (result.contains("Notification Get Information")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String status = tmpSplit[2];
-                    String type = tmpSplit[3];
-                    String event = tmpSplit[4];
-
-                    Log.d("MessageType", "Notification Get Information");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Notification-status", status);
-                    Log.d("Notification-type", type);
-                    Log.d("Notification-event",event);
-
-
-                } else if (result.contains("Notification Supported Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String type = tmpSplit[2];
-                    String support = tmpSplit[3];
-
-                    Log.d("MessageType", "Notification Supported Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Have alarm type", type);
-                    Log.d("supported notification", support);
-
-                } else if (result.contains("Supported Notification Event Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String type = tmpSplit[2];
-                    String event = tmpSplit[3];
-
-                    Log.d("MessageType", "Supported Notification Event Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Notification Type", type);
-                    Log.d("event", event);
-
-
-                } else if (result.contains("Central Scene Supported Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String Scenes = tmpSplit[2];
-                    String attributes = tmpSplit[3];
-                    String supportKey = tmpSplit[4];
-
-                    Log.d("MessageType", "Central Scene Supported Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Supported Scenes", Scenes);
-                    Log.d("Is Same Key Attributes", attributes);
-                    Log.d("Supported Key Attr", supportKey);
-
-
-                } else if (result.contains("Central Scene Notification")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String attrKey = tmpSplit[2];
-                    String sceneNumber = tmpSplit[3];
-
-                    Log.d("MessageType", "Central Scene Notification");
-                    Log.d("Node Id", nodeId);
-                    Log.d("key attr", attrKey);
-                    Log.d("Scene number", sceneNumber);
-
-
-                } else if (result.contains("Firmware Info Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String vendorId = tmpSplit[2];
-                    String firmwareId = tmpSplit[3];
-                    String Checksum = tmpSplit[4];
-                    String maxSize = tmpSplit[5];
-                    String sizeFixed = tmpSplit[6];
-                    String Upgradable = tmpSplit[7];
-                    String otherFirmwareTarger = tmpSplit[8];
-                    String otherFirmwareId = tmpSplit[9];
-
-                    Log.d("MessageType", "Firmware Info Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Vendor id", vendorId);
-                    Log.d("Firmware id", firmwareId);
-                    Log.d("Checksum", Checksum);
-                    Log.d("Max fragment size", maxSize);
-                    Log.d("Size fixed", sizeFixed);
-                    Log.d("Upgradable", Upgradable);
-                    Log.d("Other Firmware targer", otherFirmwareTarger);
-                    Log.d("Other firmware id", otherFirmwareId);
-
-
-                } else if (result.contains("Firmware Update Status Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String status = tmpSplit[2];
-
-                    Log.d("MessageType", "Firmware Update Status Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Update status", status);
-
-
-                } else if (result.contains("Firmware Update Completion Status Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String status = tmpSplit[2];
-
-                    Log.d("MessageType", "Firmware Update Completion Status Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Update status", status);
-
-
-                } else if (result.contains("Firmware Update restart Status Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String status = tmpSplit[2];
-
-                    Log.d("MessageType", "Firmware Update restart Status Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("Restart status", status);
-
-
-                } else if (result.contains("Sensor Info Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String type = tmpSplit[2];
-                    String precision = tmpSplit[3];
-                    String unit = tmpSplit[4];
-                    String value = tmpSplit[5];
-
-                    Log.d("MessageType", "Sensor Info Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("type", type);
-                    Log.d("precision", precision);
-                    Log.d("unit",unit);
-                    Log.d("value",value);
-
-
-                } else if (result.contains("Command Queue State Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String state = tmpSplit[2];
-
-                    Log.d("MessageType", "Command Queue State Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("command state", state);
-
-
-                } else if (result.contains("Command Queue Info Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String queue = tmpSplit[2];
-
-                    Log.d("MessageType", "Command Queue Info Report");
-                    Log.d("Node Id", nodeId);
-                    Log.d("command queue", queue);
-
-
-                } else if (result.contains("Network Health Check")) {
-                    String[] tmpSplit = result.split(",");
-                    String status = tmpSplit[1];
-
-                    Log.d("MessageType", "Network Health Check");
-                    Log.d("Status", status);
-
-
-                } else if (result.contains("Network IMA Info Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String nodeId = tmpSplit[1];
-                    String health = tmpSplit[2];
-                    String number = tmpSplit[3];
-                    String value = tmpSplit[4];
-                    String channel = tmpSplit[5];
-
-                    Log.d("MessageType", "Network IMA Info Report");
-                    Log.d("Direct nodeid", nodeId);
-                    Log.d("Network Health", health);
-                    Log.d("RSSI hops number", number);
-                    Log.d("RSSI hops value", value);
-                    Log.d("Transmit channel", channel);
-
-
-                } else if (result.contains("Network RSSI Info Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String channel1 = tmpSplit[1];
-                    String channel2 = tmpSplit[2];
-
-                    Log.d("MessageType", "Network RSSI Info Report");
-                    Log.d("Value of channel 1", channel1);
-                    Log.d("Value of channel 2", channel2);
-
-
-                } else if (result.contains("Provision List Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String dsk = tmpSplit[1];
-                    String type = tmpSplit[2];
-                    String id = tmpSplit[3];
-                    String bootMode = tmpSplit[4];
-                    String state = tmpSplit[5];
-                    String location = tmpSplit[6];
-                    String name = tmpSplit[7];
-
-                    if(result.contains("Error")) {
-                        Log.d("MessageType", "Provision List Report");
-                        Log.d("Error", "No list entry");
-
-                    } else {
-                        Log.d("MessageType", "Provision List Report");
-                        Log.d("DSK", dsk);
-                        Log.d("Device type info", type);
-                        Log.d("Device id info", id);
-                        Log.d("Device Boot Mode", bootMode);
-                        Log.d("Device Inclusion state", state);
-                        Log.d("Device Location", location);
-                        Log.d("Device Name", name);
-
-                    }
-
-                } else if (result.contains("All Provision List Report")) {
-                    String[] tmpSplit = result.split("Detial provision list");
-                    String detialProvisionList = tmpSplit[1];
-
-                    if(result.contains("Error")) {
-                        Log.d("MessageType", "All Provision List Report");
-                        Log.d("Error", "No list entry found");
-
-                    } else {
-                        Log.d("MessageType", "All Provision List Report");
-                        Log.d("Detial provision list", detialProvisionList);
-
-                    }
-
-                } else if (result.contains("Controller DSK Report")) {
-                    String[] tmpSplit = result.split(",");
-                    String dsk = tmpSplit[1];
-
-                    Log.d("MessageType", "Controller DSK Report");
-                    Log.d("DSK", dsk);
-
                 }
             }
-
         };
-
     }
 
     public ZwaveControlService.zwaveControlReq_CallBack mReqCallBacks;
@@ -1307,15 +1453,15 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 Log.i(LOG_TAG, "class name = [" + className + "]| result = " + result);
 
                 if (result.contains("Grant Keys Msg")) {
-
-                    Log.i(LOG_TAG,"holdTime");
-
-
+                    String[] grantTmp = result.split(":");
+                    Log.d(LOG_TAG,"Grant Keys number : " +grantTmp[2]);
+                    DeviceInfo.grantKeyNumber = grantTmp[2];
+                    DeviceInfo.reqString = "Grant";
                 } else if (result.contains("PIN Requested Msg")) {
                     //DeviceInfo.reqKey = 11394;
-
+                    DeviceInfo.reqString = "PIN";
                 } else if (result.contains("Client Side Au Msg")) {
-                    //DeviceInfo.reqKey = 0;
+                    DeviceInfo.reqString = "Au";
                 }
             }
         };
@@ -1415,8 +1561,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         String status = jsonObject.optString("Status");
                         if ("Node Add Status".equals(messageType)) {
                             if ("Success".equals(status)) {
+                                try {
+                                    Thread.sleep(500);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
                                 txAllMsg.setText("Success");
-                                zwaveService.getDeviceInfo();   //有delay所以做兩次
                                 zwaveService.getDeviceInfo();
                             } else if("Learn Ready".equals(status)){
                                 txAllMsg.setText("Please press the trigger button of the device");
@@ -1426,6 +1576,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
+
                     }
 
                 }else{
@@ -1530,122 +1681,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         if (openResult.contains(":0")){
             DeviceInfo.isOpenControllerFinish = true;
         }
-    }
-
-    //init sensor 類別裝置,當sensor裝置改變狀態會自動回報
-    private void initSensorfunc() {
-
-        List<ZwaveDevice> list = zwDevManager.queryZwaveDeviceList();
-
-        for (int idx = 1; idx < list.size(); idx++) {
-
-            int nodeId = list.get(idx).getNodeId();
-            String devType = list.get(idx).getDevType();
-
-            Log.i(LOG_TAG,"#"+nodeId+" | devType = "+devType);
-
-            if (devType.equals("SENSOR")) {
-                String devNodeInfo = list.get(idx).getNodeInfo();
-
-                if (devNodeInfo.contains("COMMAND_CLASS_BATTERY")) {
-                    Log.i(LOG_TAG, "BATTERY");
-                    zwaveService.getDeviceBattery(Const.zwaveType,nodeId);
-                }
-
-                if (devNodeInfo.contains("COMMAND_CLASS_NOTIFICATION")) {
-                    try {
-                        JSONObject jsonObject = new JSONObject(devNodeInfo);
-                        if (jsonObject.getString("Product id").equals("001F")) {
-                            //Water
-                            zwaveService.getSensorNotification(nodeId, 0x00, 0x05, 0x00);
-                        } else if (jsonObject.getString("Product id").equals("000C")) {
-                            //Motion
-                            zwaveService.getSensorNotification(nodeId, 0x00, 0x07, 0x00);
-                            //Door/Window
-                            zwaveService.getSensorNotification(nodeId, 0x00, 0x06, 0x00);
-                        } else if (jsonObject.getString("Product id").equals("0036")) {
-                            //Door/Window
-                            zwaveService.getSensorNotification(nodeId, 0x00, 0x06, 0x00);
-                        } else if (jsonObject.getString("Product id").equals("001E")) {
-                            //SMOKE
-                            zwaveService.getSensorNotification(nodeId, 0x00, 0x01, 0x00);
-                        } else if (jsonObject.getString("Product id").equals("0050")) {
-                            //Motion
-                            zwaveService.getSensorNotification(nodeId, 0x00, 0x07, 0x00);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                if (devNodeInfo.contains("COMMAND_CLASS_SENSOR_MULTILEVEL")) {
-                    try {
-                        zwaveService.getSensorMultiLevel(Const.zwaveType,nodeId);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-                zwaveService.getMeterSupported(nodeId);
-                zwaveService.GetSensorBinarySupportedSensor(nodeId);
-
-            }
-        }
-
-    }
-
-    private void showAddDialog() {
-
-        final android.app.AlertDialog.Builder addDialog = new android.app.AlertDialog.Builder(WelcomeActivity.this);
-        LayoutInflater layoutInflater = LayoutInflater.from(WelcomeActivity.this);
-        View view = layoutInflater.inflate(R.layout.dialog_add_layout, null);
-        addDialog.setView(view);
-
-        final android.app.AlertDialog alertDialog = addDialog.create();
-        alertDialog.show();
-        TextView title = (TextView) view.findViewById(R.id.title);
-        title.setText("Add Device Success");
-
-        // type spinner
-        final EditText message = (EditText) view.findViewById(R.id.message);
-        final Spinner spDevType = (Spinner) view.findViewById(R.id.spDevType);
-        Button positiveButton = (Button) view.findViewById(R.id.positiveButton);
-        Button negativeButton = (Button) view.findViewById(R.id.negativeButton);
-
-        ArrayAdapter<String> devTypeList = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item,
-                DeviceInfo.deviceType);
-
-        spDevType.setAdapter(devTypeList);
-
-        // room spinner
-
-        final Spinner spRoom = (Spinner) view.findViewById(R.id.spAllRoom);
-
-        ArrayAdapter<String> roomList = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item,
-                DeviceInfo.allRoomName);
-
-        spRoom.setAdapter(roomList);
-
-        //message.setText(nodeId);
-        positiveButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                alertDialog.dismiss();
-                backToHomeActivity();
-            }
-        });
-
-        negativeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                alertDialog.dismiss();
-                //finish();
-            }
-        });
-
-        alertDialog.show();
-
     }
 
 }
