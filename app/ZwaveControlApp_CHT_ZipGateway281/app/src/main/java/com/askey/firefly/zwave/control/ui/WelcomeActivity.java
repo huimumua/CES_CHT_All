@@ -39,6 +39,7 @@ import com.askey.firefly.zwave.control.dao.ZwaveDevice;
 import com.askey.firefly.zwave.control.dao.ZwaveDeviceManager;
 import com.askey.firefly.zwave.control.service.MQTTBroker;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
+import com.askey.firefly.zwave.control.thirdparty.usbserial.UsbSerial;
 import com.askey.firefly.zwave.control.utils.Const;
 import com.askey.firefly.zwave.control.utils.DeviceInfo;
 import com.askey.firefly.zwave.control.utils.Utils;
@@ -92,6 +93,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     protected void onCreate(@Nullable Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
+        new UsbSerial(this);
         setContentView(R.layout.activity_welcome);
         mContext = this;
 
@@ -329,8 +331,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         break;
 
                     case "getDeviceList": //public channel
-                        Log.i(LOG_TAG, "deviceService.getDevices tRoom= " + DeviceInfo.mqttString);
-                        zwaveService.getDeviceList(DeviceInfo.mqttString);
+                        Log.i(LOG_TAG, "deviceService.getDevices tRoom= " + DeviceInfo.room);
+                        zwaveService.getDeviceList(DeviceInfo.room);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -363,7 +365,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "getRooms": //public channel
                         Log.i(LOG_TAG, "deviceService.getRooms");
-                        //zwaveService.getRooms();
                         zwaveService.getRooms();
                         DeviceInfo.getMqttPayload = "";
                         break;
@@ -804,8 +805,15 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "setDefault":
                         Log.i(LOG_TAG, "deviceService.setDefault");
-                        zwaveService.setDefault();
+                        DeviceInfo.callResult = zwaveService.setDefault();
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setDefaultTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setDefaultFail";
+                        }
+                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
+                        DeviceInfo.resultToMqttBroker = "";
                         break;
 
                     case "replaceFailDevice":
@@ -998,7 +1006,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_rmAllProvisionListEntry")) {
                     zwaveService.rmAllProvisionListEntry();
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_getDeviceList")) {
-                    zwaveService.getDeviceList("My Home");
+                    zwaveService.getDeviceList(DeviceInfo.room);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_battery_get")) {
                     zwaveService.getDeviceBattery(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_sensor_multilevel_get")) {
@@ -1453,9 +1461,41 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 Log.i(LOG_TAG, "class name = [" + className + "]| result = " + result);
 
                 if (result.contains("Grant Keys Msg")) {
+
+
                     String[] grantTmp = result.split(":");
-                    Log.d(LOG_TAG,"Grant Keys number : " +grantTmp[2]);
-                    DeviceInfo.grantKeyNumber = grantTmp[2];
+                    //Log.d(LOG_TAG,"Grant Keys number : " +grantTmp[2]);
+                    if(grantTmp[2].contains("135")) {
+                        DeviceInfo.grantKeyNumber = "135";
+                    } else if (grantTmp[2].contains("134")) {
+                        DeviceInfo.grantKeyNumber = "134";
+                    } else if (grantTmp[2].contains("133")) {
+                        DeviceInfo.grantKeyNumber = "133";
+                    } else if (grantTmp[2].contains("132")) {
+                        DeviceInfo.grantKeyNumber = "132";
+                    } else if (grantTmp[2].contains("131")) {
+                        DeviceInfo.grantKeyNumber = "131";
+                    } else if (grantTmp[2].contains("130")) {
+                        DeviceInfo.grantKeyNumber = "130";
+                    } else if (grantTmp[2].contains("129")) {
+                        DeviceInfo.grantKeyNumber = "129";
+                    } else if (grantTmp[2].contains("128")) {
+                        DeviceInfo.grantKeyNumber = "128";
+                    } else if (grantTmp[2].contains("7")) {
+                        DeviceInfo.grantKeyNumber = "7";
+                    } else if (grantTmp[2].contains("6")) {
+                        DeviceInfo.grantKeyNumber = "6";
+                    } else if (grantTmp[2].contains("5")) {
+                        DeviceInfo.grantKeyNumber = "5";
+                    } else if (grantTmp[2].contains("4")) {
+                        DeviceInfo.grantKeyNumber = "4";
+                    } else if (grantTmp[2].contains("3")) {
+                        DeviceInfo.grantKeyNumber = "3";
+                    } else if (grantTmp[2].contains("2")) {
+                        DeviceInfo.grantKeyNumber = "2";
+                    } else if (grantTmp[2].contains("1")) {
+                        DeviceInfo.grantKeyNumber = "1";
+                    }
                     DeviceInfo.reqString = "Grant";
                 } else if (result.contains("PIN Requested Msg")) {
                     //DeviceInfo.reqKey = 11394;
@@ -1593,7 +1633,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     } else {
                         String tHomeId = tokens[1];
                         String tNodeId = tokens[2];
-
                         Log.i(LOG_TAG,addRemoveMode+" HomeId = "+tHomeId+" | NodeId = "+tNodeId);
                         txAllMsg.setText(addRemoveMode+" Success " + " | NodeId = "+tNodeId);
 
@@ -1601,8 +1640,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         if (addRemoveMode.equals("addDevice")) {
                             nodeIdArr.add(Integer.valueOf(tNodeId));
                         } else{
-                            nodeIdArr.remove(Integer.valueOf(tNodeId));
-                            txAllMsg.setText("");
+                            if(tNodeId.equals("fail")) {
+                                txAllMsg.setText("remove fail");
+                            } else {
+                                nodeIdArr.remove(Integer.valueOf(tNodeId));
+                                txAllMsg.setText("");
+                            }
                         }
 
                         ArrayAdapter<Integer> devList = new ArrayAdapter<Integer>(WelcomeActivity.this,
@@ -1676,7 +1719,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
     //open z-wave dongle
     private void openController() {
-        timer.schedule(new mTimerTask(), 1000 * 120);
+        //timer.schedule(new mTimerTask(), 1000 * 120);
         String openResult = zwaveService.openController();
         if (openResult.contains(":0")){
             DeviceInfo.isOpenControllerFinish = true;

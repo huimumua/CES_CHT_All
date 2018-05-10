@@ -54,6 +54,8 @@ public class MQTTBroker extends Service {
 
     private byte[] dskNumber;
 
+    private boolean setDefaultFlag = false;
+
 
 
     @Override
@@ -216,14 +218,30 @@ public class MQTTBroker extends Service {
                     String[] tmp = message.split(":");
                     if (Integer.valueOf(tmp[1]) == 87) {
                         DeviceInfo.reqKey = 0x87;
+                    } else if (Integer.valueOf(tmp[1]) == 86) {
+                        DeviceInfo.reqKey = 0x86;
+                    } else if (Integer.valueOf(tmp[1]) == 85) {
+                        DeviceInfo.reqKey = 0x85;
+                    } else if (Integer.valueOf(tmp[1]) == 84) {
+                        DeviceInfo.reqKey = 0x84;
                     } else if (Integer.valueOf(tmp[1]) == 83) {
                         DeviceInfo.reqKey = 0x83;
+                    } else if (Integer.valueOf(tmp[1]) == 82) {
+                        DeviceInfo.reqKey = 0x82;
                     } else if (Integer.valueOf(tmp[1]) == 81) {
                         DeviceInfo.reqKey = 0x81;
+                    } else if (Integer.valueOf(tmp[1]) == 80) {
+                        DeviceInfo.reqKey = 0x80;
                     } else if (Integer.valueOf(tmp[1]) == 07 || Integer.valueOf(tmp[1]) == 7) {
                         DeviceInfo.reqKey = 0x07;
+                    } else if (Integer.valueOf(tmp[1]) == 07 || Integer.valueOf(tmp[1]) == 6) {
+                        DeviceInfo.reqKey = 0x06;
+                    } else if (Integer.valueOf(tmp[1]) == 07 || Integer.valueOf(tmp[1]) == 5) {
+                        DeviceInfo.reqKey = 0x05;
                     } else if (Integer.valueOf(tmp[1]) == 04 || Integer.valueOf(tmp[1]) == 4) {
                         DeviceInfo.reqKey = 0x04;
+                    } else if (Integer.valueOf(tmp[1]) == 02 || Integer.valueOf(tmp[1]) == 3) {
+                        DeviceInfo.reqKey = 0x03;
                     } else if (Integer.valueOf(tmp[1]) == 02 || Integer.valueOf(tmp[1]) == 2) {
                         DeviceInfo.reqKey = 0x02;
                     } else if (Integer.valueOf(tmp[1]) == 01 || Integer.valueOf(tmp[1]) == 1) {
@@ -431,8 +449,8 @@ public class MQTTBroker extends Service {
                     break;
 
                 case "getDeviceList": //public channel
-                    DeviceInfo.mqttString = payload.getString("Room");
-                    Log.i(LOG_TAG, "deviceService.getDevices tRoom= " + DeviceInfo.mqttString);
+                    DeviceInfo.room = payload.getString("Room");
+                    Log.i(LOG_TAG, "deviceService.getDevices tRoom= " + DeviceInfo.room);
                     DeviceInfo.getMqttPayload = "getDeviceList";
                     break;
 
@@ -1272,8 +1290,13 @@ public class MQTTBroker extends Service {
 
             if (DeviceInfo.className.equals("addDevice") || DeviceInfo.className.equals("removeDevice")) {
                 addRemoveDevice(message);
+                DeviceInfo.className = "";
+
+
             } else if (DeviceInfo.className.equals("All Node Info Report")) {
                 getDeviceInfo(message);
+                DeviceInfo.className = "";
+
             } else if (DeviceInfo.result.contains("Remove Failed Node")) {
 
                 JSONObject jsonObject = null;
@@ -1415,9 +1438,6 @@ public class MQTTBroker extends Service {
             } else if (DeviceInfo.result.contains("Specify Node Info")) {
 
                 specifyNodeInfo(DeviceInfo.result);
-                DeviceInfo.className = "";
-                DeviceInfo.result = "";
-                DeviceInfo.resultToMqttBroker = "";
                 /*
                 ArrayList<String> tmpLine = Utils.searchString(result, "Node id");
 
@@ -1838,6 +1858,25 @@ public class MQTTBroker extends Service {
                 DeviceInfo.result = "";
                 DeviceInfo.resultToMqttBroker = "";
 
+            }  else if (DeviceInfo.className.contains("getDeviceList")) {
+                getDeviceList(DeviceInfo.result);
+                /*
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(DeviceInfo.result);
+                    String deviceList = jsonObject.optString("deviceList");
+
+                    message.put("Interface", "getDeviceList");
+                    message.put("deviceList", deviceList);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+                */
             } else if (DeviceInfo.result.contains("Supported Groupings Report")) {
                 JSONObject jsonObject = null;
                 try {
@@ -2217,6 +2256,9 @@ public class MQTTBroker extends Service {
 
                 } else {
                     allProvisionListReport(DeviceInfo.result);
+                    DeviceInfo.className = "";
+                    DeviceInfo.result = "";
+                    DeviceInfo.resultToMqttBroker = "";
                 }
 
             } else if (DeviceInfo.result.contains("All Provision List Report")) {
@@ -2234,6 +2276,9 @@ public class MQTTBroker extends Service {
 
                 } else {
                     allProvisionListReport(DeviceInfo.result);
+                    DeviceInfo.className = "";
+                    DeviceInfo.result = "";
+                    DeviceInfo.resultToMqttBroker = "";
                 }
 
             } else if (DeviceInfo.result.contains("Controller DSK Report")) {
@@ -2254,14 +2299,18 @@ public class MQTTBroker extends Service {
                 DeviceInfo.resultToMqttBroker = "";
 
             } else if (DeviceInfo.reqString.equals("Grant")) {
+                Log.d(LOG_TAG,DeviceInfo.grantKeyNumber);
                 mTCPServer.sendMessage(Const.TCPClientPort, "GrantKeys:" + DeviceInfo.grantKeyNumber); //TCP format
                 DeviceInfo.reqString = "";
             } else if (DeviceInfo.reqString.equals("PIN")) {
                 mTCPServer.sendMessage(Const.TCPClientPort, "dsk:"); //TCP format
                 DeviceInfo.reqString = "";
             } else if (DeviceInfo.reqString.equals("Au")) {
-                mTCPServer.sendMessage(Const.TCPClientPort, "CSA"); //TCP format
+                mTCPServer.sendMessage(Const.TCPClientPort, "CSA:CSA"); //TCP format
                 DeviceInfo.reqString = "";
+            } else if (DeviceInfo.className.equals("DSK")) {
+                mTCPServer.sendMessage(Const.TCPClientPort, "CSA:CSA"); //TCP format
+                DeviceInfo.className = "";
             } else if (DeviceInfo.resultToMqttBroker.equals("editNodeInfoTrue")) {
                 try {
                     message.put("Interface", "editNodeInfo");
@@ -2600,53 +2649,66 @@ public class MQTTBroker extends Service {
                 DeviceInfo.result = "";
                 DeviceInfo.resultToMqttBroker = "";
 
-            } else if (DeviceInfo.className.equals("getRooms")) {
-                for(int i=0; i < 2; i++) {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    publishMessage(Const.PublicTopicName, DeviceInfo.result);
-                }
-                DeviceInfo.className = "";
-                DeviceInfo.result = "";
-                DeviceInfo.resultToMqttBroker = "";
-            }
-            /*
-            else {
+            } else if (DeviceInfo.resultToMqttBroker.equals("setDefaultTrue")) {
                 try {
-                    //Log.i(LOG_TAG, "result = " + DeviceInfo.result);
-                    message = new JSONObject(DeviceInfo.result);
-                    if (DeviceInfo.result.contains("NodeId")) {
-                        String devType = message.getString("devType");
-                        String NodeId = message.getString("NodeId");
-                        publishMessage(Const.PublicTopicName + devType + NodeId, DeviceInfo.result);
-                        DeviceInfo.className = "";
-                        DeviceInfo.result = "";
-                        DeviceInfo.resultToMqttBroker = "";
-
-                    } else if (DeviceInfo.result.contains("devType") && DeviceInfo.result.contains("Node id")) {
-                        String devType = message.getString("devType");
-                        String NodeId = message.getString("Node id");
-                        publishMessage(Const.PublicTopicName + devType + NodeId, DeviceInfo.result);
-                        DeviceInfo.className = "";
-                        DeviceInfo.result = "";
-                        DeviceInfo.resultToMqttBroker = "";
-
-                    } else {
-                        publishMessage(Const.PublicTopicName, DeviceInfo.result);
-                        DeviceInfo.className = "";
-                        DeviceInfo.result = "";
-                        DeviceInfo.resultToMqttBroker = "";
-
-                    }
-
+                    message.put("MessageType", "setDefault");
+                    message.put("result", "true");
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+                setDefaultFlag = true;
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.resultToMqttBroker.equals("setDefaultFail")) {
+                try {
+                    message.put("MessageType", "setDefault");
+                    message.put("result", "false");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+
+            } else if (DeviceInfo.className.equals("openController")) {
+                DeviceInfo.className = "";
+                DeviceInfo.result = "";
+                DeviceInfo.resultToMqttBroker = "";
+            } else {
+               if(DeviceInfo.className != "") {
+                   try {
+                       //Log.i(LOG_TAG, "result = " + DeviceInfo.result);
+                       message = new JSONObject(DeviceInfo.result);
+                       if (DeviceInfo.result.contains("NodeId")) {
+                           //String devType = message.getString("devType");
+                           String NodeId = message.getString("NodeId");
+                           publishMessage(Const.PublicTopicName + NodeId, DeviceInfo.result);
+                           DeviceInfo.className = "";
+                           DeviceInfo.result = "";
+
+                       } else if (DeviceInfo.result.contains("Node id")) {
+                           //String devType = message.getString("devType");
+                           String NodeId = message.getString("Node id");
+                           publishMessage(Const.PublicTopicName + NodeId, DeviceInfo.result);
+                           DeviceInfo.className = "";
+                           DeviceInfo.result = "";
+
+                       } else {
+                           publishMessage(Const.PublicTopicName, DeviceInfo.result);
+                           DeviceInfo.className = "";
+                           DeviceInfo.result = "";
+                       }
+
+                   } catch (JSONException e) {
+                       e.printStackTrace();
+                   }
+               }
             }
-            */
+
         }
     };
 
@@ -2660,9 +2722,6 @@ public class MQTTBroker extends Service {
         }
         //publish result to MQTT public topic
         publishMessage(Const.PublicTopicName, DeviceInfo.result);
-        DeviceInfo.className = "";
-        DeviceInfo.result = "";
-        DeviceInfo.resultToMqttBroker = "";
         Log.i(LOG_TAG, "node cnt = " + DeviceInfo.localSubTopiclist.size());
         if (!DeviceInfo.isZwaveInitFinish) {
             Log.i(LOG_TAG, " ===== isZwaveInitFinish  = true ====");
@@ -2696,12 +2755,25 @@ public class MQTTBroker extends Service {
                     }
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
-                DeviceInfo.className = "";
-                DeviceInfo.result = "";
-                DeviceInfo.resultToMqttBroker = "";
 
             }
         }
+    }
+
+    private void getDeviceList(String result) {
+        Log.i(LOG_TAG, "getDeviceList");
+        ArrayList<String> tmpLine = Utils.searchString(result, "deviceList");
+
+        for (int idx = 0; idx < tmpLine.size(); idx++) {
+            Log.i(LOG_TAG, "Node id (" + idx + ") = " + tmpLine.get(idx));
+            //subscribeToTopic(Const.PublicTopicName + "Zwave" + tmpLine.get(idx));
+        }
+        //publish result to MQTT public topic
+        publishMessage(Const.PublicTopicName, result);
+        DeviceInfo.className = "";
+        DeviceInfo.result = "";
+        DeviceInfo.resultToMqttBroker = "";
+
     }
 
     private void specifyNodeInfo(String result) {
@@ -2714,6 +2786,9 @@ public class MQTTBroker extends Service {
         }
         //publish result to MQTT public topic
         publishMessage(Const.PublicTopicName, result);
+        DeviceInfo.className = "";
+        DeviceInfo.result = "";
+        DeviceInfo.resultToMqttBroker = "";
 
     }
 
@@ -2727,56 +2802,68 @@ public class MQTTBroker extends Service {
         }
         //publish result to MQTT public topic
         publishMessage(Const.PublicTopicName, result);
+        DeviceInfo.className = "";
+        DeviceInfo.result = "";
+        DeviceInfo.resultToMqttBroker = "";
 
     }
 
     private void addRemoveDevice(JSONObject message) {
         //Log.i(LOG_TAG, "gino result :   " + DeviceInfo.result);
-
         mTCPServer.sendMessage(Const.TCPClientPort, DeviceInfo.result); //TCP format
+
+        if(DeviceInfo.result.contains("Failed")) {
+            Log.d(LOG_TAG,"DeviceInfo.result.contains(\"Failed\")");
+            DeviceInfo.result = "";
+            DeviceInfo.className = "";
+        }
+
 
         if (DeviceInfo.result.contains("addDevice:") || DeviceInfo.result.contains("removeDevice:")) {
             String[] tokens = DeviceInfo.result.split(":");
             if (tokens.length < 3) {
                 Log.i(LOG_TAG, "AIDLResult " + DeviceInfo.className + " : wrong format " + DeviceInfo.result);
             } else {
+                Log.d(LOG_TAG,"------------------- addDevice & removeDevice tokens.length > 3 -------------------");
+
                 String devType = tokens[1];
                 String tNodeId = tokens[2];
 
-                if (DeviceInfo.className.equals("addDevice")) {
-                    Log.i(LOG_TAG, "Interface  NodeId  Result");
+                if (DeviceInfo.className.contains("addDevice")) {
+                    Log.i(LOG_TAG, "-------------------Interface  NodeId  Result-------------------");
                     try {
                         message.put("Interface", "addDevice");
                         message.put("NodeId", tNodeId);
-                        message.put("Result", "true");
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                    Log.i(LOG_TAG, "subscribeToTopic !!!!!!!!!!!!!!");
-                    subscribeToTopic(Const.PublicTopicName + devType + tNodeId);
-                    publishMessage(Const.PublicTopicName, message.toString());
-                    DeviceInfo.className = "";
-                    DeviceInfo.result = "";
-                    DeviceInfo.resultToMqttBroker = "";
-                } else {
-                    try {
-                        message.put("Interface", "removeDevice");
-                        message.put("NodeId", tNodeId);
                         if (tNodeId.equals("fail")) {
+                            Log.i(LOG_TAG, "-------------------Interface  NodeId  Result fail-------------------");
                             message.put("Result", "fail");
                         } else {
-                            unsubscribeTopic(Const.PublicTopicName + devType + tNodeId);
+                            subscribeToTopic(Const.PublicTopicName + devType + tNodeId);
+                            Log.i(LOG_TAG, "-------------------Interface  NodeId  Result true-------------------");
                             message.put("Result", "true");
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                     publishMessage(Const.PublicTopicName, message.toString());
-                    DeviceInfo.className = "";
-                    DeviceInfo.result = "";
-                    DeviceInfo.resultToMqttBroker = "";
+                } else {
+                    if(!setDefaultFlag) {
+                        try {
+                            message.put("Interface", "removeDevice");
+                            message.put("NodeId", tNodeId);
+                            if (tNodeId.equals("fail")) {
+                                message.put("Result", "fail");
+                            } else {
+                                unsubscribeTopic(Const.PublicTopicName + devType + tNodeId);
+                                message.put("Result", "true");
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        publishMessage(Const.PublicTopicName, message.toString());
+                    }
+                    setDefaultFlag = false;
                 }
-
                 Const.TCPClientPort = 0;
             }
         }
