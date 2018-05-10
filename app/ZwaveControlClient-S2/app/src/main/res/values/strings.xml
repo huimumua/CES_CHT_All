@@ -244,6 +244,7 @@
     <!--remove device-->
     <string name="delete_device_title">You\'re about to delete </string>
     <string name="delete_explain">\ \ The device will be permanently \n removed from your QBee Home. </string>
+    <string name="delete_smart_start">Delete Smart Start</string>
     <string name="proceed">Proceed</string>
 
     <!-- TODO: Remove or change this placeholder text -->
@@ -381,9 +382,10 @@
     <string name="delete_room_notify">The room\'s devices will be assigned to the room of your choosing</string>
     <string name="ethernet">Ethernet</string>
     <string name="lte">4G/LTE</string>
-    <string name="scenes">Scenes</string>
+    <string name="provision">Provision</string>
     <string name="add_your_first_scene">Add your first Scene</string>
     <string name="scene_notify">With scenes, you control multiple devices at the same time.</string>
+    <string name="provisioning_list">Provisioning List</string>
 
     <string name="please_wait_a_moment">Please wait a moment...</string>
     <string name="step_1">Step 1</string>
@@ -410,11 +412,27 @@
     <string name="no_network_message">No network,Please check</string>
     <string name="extender_no_contrl">Extender has no control operation</string>
     <string name="remove_device">Remove</string>
-    <string name="reset_device">Reset</string>
+    <string name="learn_mode">Learn Mode</string>
+    <string name="network_check">Network Check</string>
+    <string name="reset_device">reset</string>
     <string name="skip">Skip</string>
     <string name="add">ADD</string>
     <string name="delete">DELETE</string>
     <string name="smart_start">Smart start</string>
+    <string name="safety_tips">The device may control these classess</string>
+    <string name="safety_tips_s0">S0 Unauthenticated</string>
+    <string name="safety_tips_s2_0">S2 Unauthenticated</string>
+    <string name="safety_tips_s2_1">S2 Authenticated</string>
+    <string name="safety_tips_s2_2">S2 Access Control</string>
+    <string name="automaticlly">The device will inclusion into network automaticlly.</string>
+    <string name="user_manully">The device will inclusion into network by user manully.</string>
+    <string name="csa_text">Device requested for client-side authentication (CSA)</string>
+    <string name="device_not_removed">The device has not been removed</string>
+    <string name="yes_or_no">YES/NO</string>
+    <string name="home_id">Home id: %s</string>
+    <string name="node_id">Node id: %s</string>
+    <string name="security_status">Security status: %s</string>
+    <string name="device_type_s">Device type: %s</string>
 
     <!--account activity-->
     <string name="activity_account_title">My QBee Account</string>

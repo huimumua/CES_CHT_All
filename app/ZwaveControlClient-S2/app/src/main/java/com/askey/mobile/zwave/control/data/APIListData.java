@@ -72,6 +72,10 @@ public class APIListData {
     public static ArrayList<String> getBatteryAPIList() {
         ArrayList<String> data_list = new ArrayList<String>();
         data_list.add("zwcontrol_battery_get");
+        return data_list;
+    }
+    public static ArrayList<String> getSensorMultiLevelAPIList() {
+        ArrayList<String> data_list = new ArrayList<String>();
         data_list.add("zwcontrol_sensor_multilevel_get");
         return data_list;
     }
@@ -105,14 +109,18 @@ public class APIListData {
         return data_list;
     }
 
+    public static ArrayList<String> getSwitchBinaryAPIList() {
+        ArrayList<String> data_list = new ArrayList<String>();
+        data_list.add("zwcontrol_switch_binary_set");
+        data_list.add("zwcontrol_switch_binary_get");
+        return data_list;
+    }
     public static ArrayList<String> getSwitchAllAPIList() {
         ArrayList<String> data_list = new ArrayList<String>();
         data_list.add("zwcontrol_switch_all_on");
         data_list.add("zwcontrol_switch_all_off");
         data_list.add("zwcontrol_switch_all_set");
         data_list.add("zwcontrol_switch_all_get");
-        data_list.add("zwcontrol_switch_all_on_broadcast");
-        data_list.add("zwcontrol_switch_all_off_broadcast");
         return data_list;
     }
 

@@ -26,7 +26,7 @@ android {
     lintOptions {
         abortOnError false
     }
-    buildToolsVersion '26.0.2'
+    buildToolsVersion '27.0.3'
 }
 
 repositories {
@@ -50,7 +50,7 @@ android.libraryVariants.all { variant ->
         source = variant.javaCompile.source
         ext.androidJar =
                 "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
-        classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
+        //classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
         options.links("http://docs.oracle.com/javase/7/docs/api/");
         options.links("http://d.android.com/reference/");
         exclude '**/BuildConfig.java'
@@ -132,5 +132,6 @@ assemble.doLast {
 }
 
 clean.doFirst {
+    classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
     delete 'libs'
 }

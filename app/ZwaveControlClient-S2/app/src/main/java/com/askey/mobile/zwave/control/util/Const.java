@@ -20,6 +20,10 @@ public class Const {
 
     public static final int TCP_PORT = 48080;
     public static final long TCP_TIMER_TIMEOUT = 1000*90;
+    public static boolean RESET_PROVISION = false;
+    public static boolean RESET_ROOMS = false;
+    public static boolean RESET_FAVORITE = false;
+    public static String NETWORK_ROLE = "network_role";
     public static String remoteServerIP = "211.75.141.112";
 
     public static String SERVER_URI_TAG = "SERVER_URI";

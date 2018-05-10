@@ -3,10 +3,13 @@ package com.askey.mobile.zwave.control.home.activity.addDevice;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Paint;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.TextWatcher;
+import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -14,6 +17,8 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.askey.mobile.zwave.control.R;
@@ -21,15 +26,9 @@ import com.askey.mobile.zwave.control.base.BaseActivity;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
-import com.askey.mobile.zwave.control.deviceContr.net.SocketTransceiver;
-import com.askey.mobile.zwave.control.deviceContr.net.TCPReceive;
-import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.qrcode.CaptureActivity;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
-import com.askey.mobile.zwave.control.welcome.ui.GuideActivity;
-import com.askey.mobile.zwave.control.welcome.ui.NotificationActivity;
-import com.fasterxml.jackson.databind.ser.Serializers;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONException;
@@ -42,11 +41,17 @@ import org.json.JSONObject;
 public class AddSmartStartActivity extends BaseActivity implements View.OnClickListener {
     private static final String TAG = "AddSmartStartActivity";
     private EditText showQRCode;
+    //private AppCompatEditText showQRCode;
     private ImageButton scanQr;
-    private Button addDevice;
-    //private CheckBox pin,dsk,no_dsk;
+    private Button addSmartStartButton;
     private RadioGroup radioGroup;
-    private RadioButton pin, dsk, no_dsk;
+    private RadioButton securityRadioBtn, smartStartRadioBtn;
+    private RelativeLayout underline;
+    private RelativeLayout editQrCodeLayout, editDskLayout;//edit_layout
+    private TextView addModeHintTextView;
+
+    private static final String SMART_START = "01";
+    private static final String SECURITY_S2 = "00";
 
     private String brand = "";
     private String deviceType = "";
@@ -54,23 +59,27 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
 
     private String dskCode = "";
     private String qrCode = "";
+    private String bootMode; //传给api：addProvisionListEntry的参数，bootMode = "1" 表示选择smart start, bootMode = "0" 表示选择 S2;
+    private Context mContext;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
         setContentView(R.layout.activity_smart_start);
         initView();
-
-
-        //TcpClient.getInstance().rigister(tcpReceive);
-        MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
+    protected void onStart() {
+        super.onStart();
+        MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
+        this.mContext = super.mContext;
+        Log.i(TAG, "========onStart: ");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
         unrigister();
     }
 
@@ -78,46 +87,61 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
         brand = getIntent().getStringExtra("brand");
         deviceType = getIntent().getStringExtra("deviceType");
 
-        showQRCode = (EditText) findViewById(R.id.show_qr_code);
-        //showQRCode.getPaint().setFlags(Paint.UNDERLINE_TEXT_FLAG);
+        radioGroup = (RadioGroup) findViewById(R.id.radio_group);
+        smartStartRadioBtn = (RadioButton) findViewById(R.id.smart_start_radio_button);
+        securityRadioBtn = (RadioButton) findViewById(R.id.s2_radio_button);
 
+        showQRCode = (EditText) findViewById(R.id.show_qr_code);
         scanQr = (ImageButton) findViewById(R.id.scan_qr_code);
         scanQr.setOnClickListener(this);
-        addDevice = (Button) findViewById(R.id.smart_start_add);
-        addDevice.setOnClickListener(this);
 
-        radioGroup = (RadioGroup) findViewById(R.id.radio_group);
-        radioGroup.setOnCheckedChangeListener(new MyradioBtnListener());
-        pin = (RadioButton) findViewById(R.id.pin);
-        dsk = (RadioButton) findViewById(R.id.dsk);
-        no_dsk = (RadioButton) findViewById(R.id.no_dsk);
+        addModeHintTextView = (TextView) findViewById(R.id.add_mode_text);//提示用户按按钮
 
-        if (pin.isChecked()) {
-            showQRCode.setEnabled(true);
-        } else {
-            showQRCode.setEnabled(false);
-        }
-    }
+        addSmartStartButton = (Button) findViewById(R.id.button_smart_start);
+        addSmartStartButton.setOnClickListener(this);
 
-    class MyradioBtnListener implements RadioGroup.OnCheckedChangeListener {
-        @Override
-        public void onCheckedChanged(RadioGroup group, int checkedId) {
-            switch (checkedId) {
-                case R.id.pin:
-                    showQRCode.setEnabled(true);
-                    //showQRCode.setFocusable(true);
-                    Log.i(TAG, "========onCheckedChanged:R.id.pin ");
-                    break;
-                case R.id.dsk:
-                    showQRCode.setEnabled(false);
-                    Log.i(TAG, "========onCheckedChanged:R.id.dsk ");
-                    //showQRCode.setFocusable(false);
-                    break;
-                case R.id.no_dsk:
-                    Log.i(TAG, "========onCheckedChanged:R.id.no_dsk ");
-                    break;
+        underline = (RelativeLayout) findViewById(R.id.qr_code_underline);
+
+        //输入框内容改变的监听
+        showQRCode.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
             }
-        }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                Log.i(TAG, "~~~~~~~~onTextChanged:" + start + " before :" + before + " count " + count);
+                if (count == 47 || start == 46) {
+                    underline.setVisibility(View.VISIBLE);
+                } else {
+                    underline.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
+        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                switch (checkedId){
+                    case R.id.smart_start_radio_button:
+                        Log.i(TAG, "`````````````111smart_start_radio_button");
+                        addModeHintTextView.setText(getResources().getString(R.string.automaticlly));
+                        bootMode = SMART_START;
+                        break;
+                    case R.id.s2_radio_button:
+                        Log.i(TAG, "``````````````s2_radio_button");
+                        addModeHintTextView.setText(getResources().getString(R.string.user_manully));
+                        bootMode = SECURITY_S2;
+                        break;
+                }
+            }
+        });
     }
 
     @Override
@@ -126,37 +150,25 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
             case R.id.scan_qr_code:
                 Intent smartStartintent = new Intent(AddSmartStartActivity.this, CaptureActivity.class);
                 //startActivityForResult打开activity是为了配合onActivityResult返回数据，requestCode：1是区分标识
-                startActivityForResult(smartStartintent, 1);
+                startActivityForResult(smartStartintent, 71);
                 break;
-            case R.id.smart_start_add:
+            case R.id.button_smart_start:
+                //test
                 String editText = showQRCode.getText().toString();
-                if (pin.isChecked()) {
-                    dskCode = editText;
-                    qrCode = "";
-                }
                 if (editText.length() == 47) {
                     showWaitingDialog();
                     //调用mqtt接口，带参数
-                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList(dskCode, "47", qrCode));
+                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList(dskCode, "47", qrCode, bootMode));
                 } else {
                     if (editText == null || editText.length() < 1) {
                         Toast.makeText(mContext, "Please enter a qr code.", Toast.LENGTH_LONG).show();
                     } else {
                         Toast.makeText(mContext, "Error in qr code.", Toast.LENGTH_LONG).show();
                     }
+                    //test
+                   // MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList("25789-25540-39294-49868-11151-46938-45489-46475", "47", ""));
                 }
-                Log.i(TAG, "onClick: smart_start_add" + dskCode);
-                break;
         }
-    }
-
-    private void installSuccessIntent() {
-        Intent installintent = new Intent(AddSmartStartActivity.this, InstallSuccessActivity.class);
-        //intent如果不传数据， 在InstallSuccessActivity中的网络接口会报错
-        installintent.putExtra("brand", brand);
-        installintent.putExtra("deviceType", deviceType);
-        installintent.putExtra("nodeId", nodeId);
-        startActivity(installintent);
     }
 
     /**
@@ -167,7 +179,9 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
      * @param qrData qr扫描到的字符串
      */
     private void subQrData(String qrData) {
-        //String str = "00000111112222233333aaaaa";
+
+        String version = qrData.substring(2, 4); // version根据文档，Index2~3表示设备版本，00 表示仅支持Security s2,01 表示smart start
+
         String data = qrData.substring(12, 52); //根据文档，截取data中从12位开始至52位的字符，共40个字符。
         String data1 = data.substring(0, 5);//取字符串前5位
         String data2 = data.substring(5, 10);
@@ -187,7 +201,23 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
         Log.i(TAG, "subQrData: " + DSKData);
         dskCode = DSKData;
         this.qrCode = qrData;
-        showQRCode.setText(DSKData);
+
+        SpannableString ss = new SpannableString(DSKData);
+        //设置DSK前5个字符的字体颜色红色高亮。接口：setSpan(color, 字符启始位,字符结束位,前后包含);setSpan(Object what, int start, int end, int flags);
+        ss.setSpan(new ForegroundColorSpan(Color.parseColor("#ff0000")), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        showQRCode.setText(ss);
+
+        Log.i(TAG, "~~~~~~~~~~~~~~~~~~bootMode: "+version);
+        addModeHintTextView.setVisibility(View.VISIBLE);
+        if(SMART_START.equals(version) ){
+            radioGroup.setVisibility(View.VISIBLE);//选择 smart start / s2
+            addModeHintTextView.setText(getResources().getString(R.string.automaticlly));
+            bootMode = SMART_START;
+        } else {
+            radioGroup.setVisibility(View.GONE);//选择 smart start / s2
+            addModeHintTextView.setText(getResources().getString(R.string.user_manully));
+            bootMode = SECURITY_S2;
+        }
     }
 
     /**
@@ -203,7 +233,7 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
         if (data != null) {
             String qrData = data.getExtras().getString("QR_CODE_DATA");
             Log.i(TAG, "=========onActivityResult: " + qrData);
-            if (qrData != null && qrData.length() > 40) {
+            if (qrData != null && qrData.length() > 52) {
                 subQrData(qrData);
             }
         }
@@ -219,10 +249,10 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
             if (result.contains("desired")) {
                 return;
             }
-
             ((Activity) mContext).runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    stopWaitDialog();
                     try {
                         JSONObject jsonObject = new JSONObject(result);
                         String reported = jsonObject.optString("reported");
@@ -231,12 +261,14 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
                         String result = reportedObject.optString("Result");
                         Log.i(TAG, "minterface : " + mInterface);
                         Log.i(TAG, "====result : " + result);
-                        if(result.equals("true")){
-                            installSuccessIntent();
-                        }else{
-                            Toast.makeText(mContext,"Add device failed",Toast.LENGTH_LONG).show();
+                        if (result.equals("true")) {
+                            Intent intent = new Intent();
+                            intent.putExtra("ADD_SMART_START_RESULT", result);
+                            setResult(2, intent); //将result返回到ScenesFragment，然后再finish
+                            finish();
+                        } else {
+                            Toast.makeText(mContext, "Add device failed", Toast.LENGTH_LONG).show();
                         }
-                        stopWaitDialog();
                     } catch (JSONException e) {
                         e.printStackTrace();
                         Logg.i(TAG, "errorJson------>" + result);
@@ -252,4 +284,5 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
             MQTTManagement.getSingInstance().unrigister(mMqttMessageArrived);
         }
     }
+
 }

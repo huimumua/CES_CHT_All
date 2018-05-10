@@ -1,5 +1,7 @@
 package com.askey.mobile.zwave.control.deviceContr.net;
 
+import com.askey.mobile.zwave.control.interf.NetworkRole;
+import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
 
 import java.net.InetAddress;

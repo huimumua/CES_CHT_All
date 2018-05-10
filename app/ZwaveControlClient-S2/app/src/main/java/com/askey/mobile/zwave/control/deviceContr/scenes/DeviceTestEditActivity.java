@@ -9,8 +9,10 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.askey.mobile.zwave.control.R;
+import com.askey.mobile.zwave.control.base.BaseActivity;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
@@ -23,12 +25,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class DeviceTestEditActivity extends AppCompatActivity implements View.OnClickListener,AdapterView.OnItemSelectedListener{
+public class DeviceTestEditActivity extends BaseActivity implements View.OnClickListener,AdapterView.OnItemSelectedListener{
     private final String TAG = DeviceTestEditActivity.class.getSimpleName();
     private Button back,ok;
     private EditText dsk,networkInclusionState;
     private Spinner deviceBootMode,deviceInclusionState;
     private ProvisionInfo provisionInfo;
+    private String DSKStr;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +52,7 @@ public class DeviceTestEditActivity extends AppCompatActivity implements View.On
         deviceBootMode.setOnItemSelectedListener(this);
         deviceInclusionState.setOnItemSelectedListener(this);
 
+        MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
         init();
     }
 
@@ -62,39 +66,49 @@ public class DeviceTestEditActivity extends AppCompatActivity implements View.On
             if (result.contains("desired")) {
                 return;
             }
+            stopWaitDialog();
             mqttMessageResult(result);
 
         }
     };
 
-    private void editProvision() {
-        Log.d(TAG, "======editProvision=======");
-        MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
-    }
 
-    private void mqttMessageResult(String mqttResult) {
+    private void mqttMessageResult(final String mqttResult) {
 
+        ((Activity) mContext).runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    JSONObject jsonObject = new JSONObject(mqttResult);
+                    String reported = jsonObject.optString("reported");
+                    JSONObject reportedObject = new JSONObject(reported);
+                    String mInterface = reportedObject.optString("Interface");
+                    String result = reportedObject.optString("Result");
 
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     private void init() {
         dsk.setText(provisionInfo.getDsk());
+        DSKStr = provisionInfo.getDsk();
         String bootModeText = provisionInfo.getDeviceBootMode();
-        if (bootModeText.equals("PL_BOOT_MODE_S2")) {
-            deviceBootMode.setSelection(0);
-        } else if (bootModeText.equals("PL_BOOT_MODE_SMART_STRT")) {
-            deviceBootMode.setSelection(1);
-        } else if (bootModeText.equals("PL_INCL_STS_PENDING")) {
-            deviceBootMode.setSelection(2);
-        }
+//        if (bootModeText.equals("PL_BOOT_MODE_S2")) {
+//            deviceBootMode.setSelection(0);
+//        } else if (bootModeText.equals("PL_BOOT_MODE_SMART_STRT")) {
+//            deviceBootMode.setSelection(1);
+//        }
         String inclusionStateText = provisionInfo.getDeviceInclusionState();
-        if (inclusionStateText.equals("PL_INCL_STS_PENDING")) {
-            deviceInclusionState.setSelection(0);
-        } else if (inclusionStateText.equals("PL_INCL_STS_PASSIVE")) {
-            deviceInclusionState.setSelection(1);
-        } else if (inclusionStateText.equals("PL_INCL_STS_IGNORED")) {
-            deviceInclusionState.setSelection(2);
-        }
+//        if (inclusionStateText.equals("PL_INCL_STS_PENDING")) {
+//            deviceInclusionState.setSelection(0);
+//        } else if (inclusionStateText.equals("PL_INCL_STS_PASSIVE")) {
+//            deviceInclusionState.setSelection(1);
+//        } else if (inclusionStateText.equals("PL_INCL_STS_IGNORED")) {
+//            deviceInclusionState.setSelection(2);
+//        }
 
     }
 
@@ -105,10 +119,24 @@ public class DeviceTestEditActivity extends AppCompatActivity implements View.On
                 finish();
                 break;
             case R.id.btn_ok:
-                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.editProvisionListEntry(dsk.getText().toString(),
-                        deviceInclusionState.getSelectedItem().toString(),
-                        deviceBootMode.getSelectedItem().toString()));
-                finish();
+                showWaitingDialog();
+                String dskStr = dsk.getText().toString();
+                String deviceInclusionStateStr = deviceInclusionState.getSelectedItem().toString();
+                if (deviceInclusionStateStr.equals("PL_INCL_STS_PENDING")) {
+                    deviceInclusionStateStr=String.valueOf(0);
+                } else if (deviceInclusionStateStr.equals("PL_INCL_STS_PASSIVE")) {
+                    deviceInclusionStateStr=String.valueOf(1);
+                } else if (deviceInclusionStateStr.equals("PL_INCL_STS_IGNORED")) {
+                    deviceInclusionStateStr=String.valueOf(2);
+                }
+                String deviceBootModeStr = deviceBootMode.getSelectedItem().toString();
+                if (deviceBootModeStr.equals("PL_BOOT_MODE_S2")) {
+                    deviceBootModeStr=String.valueOf(0);
+                } else if (deviceBootModeStr.equals("PL_BOOT_MODE_SMART_STRT")) {
+                    deviceBootModeStr=String.valueOf(1);
+                }
+                String comm = LocalMqttData.editProvisionListEntry(DSKStr,dskStr, deviceInclusionStateStr, deviceBootModeStr);
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic,comm );
                 break;
         }
     }
@@ -121,5 +149,17 @@ public class DeviceTestEditActivity extends AppCompatActivity implements View.On
     @Override
     public void onNothingSelected(AdapterView<?> adapterView) {
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unrigister();
+    }
+
+    private void unrigister() {
+        if (mMqttMessageArrived != null) {
+            MQTTManagement.getSingInstance().unrigister(mMqttMessageArrived);
+        }
     }
 }

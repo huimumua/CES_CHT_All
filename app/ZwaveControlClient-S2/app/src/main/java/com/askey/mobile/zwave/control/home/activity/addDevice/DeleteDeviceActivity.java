@@ -21,6 +21,7 @@ import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.deviceContr.net.SocketTransceiver;
 import com.askey.mobile.zwave.control.deviceContr.net.TCPReceive;
 import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
+import com.askey.mobile.zwave.control.interf.DeleteDeviceListener;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
 import com.askey.mobile.zwave.control.util.ToastShow;
@@ -40,6 +41,7 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
     private String nodeId;
     private String roomName;
     private Timer timer;
+    private DeleteDevice deleteCallback;
     private Handler handler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
@@ -56,6 +58,7 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
             }
         }
     };
+
     private void timerCancel() {
         if(timer!=null){
             timer.cancel();
@@ -124,6 +127,7 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
 
         nodeId = getIntent().getStringExtra("deviceId");
         roomName = getIntent().getStringExtra("roomName");
+
     }
 
     public void showFailedAddZaveDialog(final String titleStr) {
@@ -186,10 +190,8 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
                             if(result.equals("true")){
                                 timerCancel();
                                 //删除成功则返回主页，否则提示删除失败，返回设备管理界面
-                                if (null != deleteDeviceListener) {
                                     Log.d("DeleteDeviceActivity","suc");
-                                    deleteDeviceListener.deleteSuccess(roomName);
-                                }
+                                    DeleteDevice.deleteSuccess(roomName);
                                 Const.setIsDataChange(true);
                                 startActivity(new Intent(mContext, DeleteDeviceSuccessActivity.class));
                                 finish();
@@ -203,6 +205,7 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
                                 });
                             }
                         }
+
                     } catch (JSONException e) {
                         e.printStackTrace();
                         Logg.i(LOG_TAG,"errorJson------>"+result);
@@ -290,13 +293,6 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
         }
     }
 
-    public static interface DeleteDeviceListener{
-        void deleteSuccess(String roomName);
-    }
-
-    public static void setDeleteDeviceListener(DeleteDeviceListener listener){
-        deleteDeviceListener = listener;
-    }
 
     @Override
     public void onClick(View v) {
@@ -313,8 +309,7 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
 
                 if (TcpClient.getInstance().isConnected()) {
                     Logg.i("DeleteDeviceActivity", "=removeDevice=" + "mobile_zwave:removeDevice:Zwave:"+ nodeId);
-                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:removeDevice:Zwave:"+ nodeId);
-
+                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:removeDevice:Zwave:" + nodeId);
                     timer = new Timer(true);
                     timer.schedule(new RemoteTimerTask(),Const.TCP_TIMER_TIMEOUT);
                 }

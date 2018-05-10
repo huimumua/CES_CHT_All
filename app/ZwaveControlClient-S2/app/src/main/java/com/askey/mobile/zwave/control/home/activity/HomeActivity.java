@@ -66,11 +66,9 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     private HomeAdapter myAdapter;
     private ImageView edit, voice, head_cion;
 
-    private String[] titles = new String[]{"Favorites", "Rooms","Provisioning List"};
+    private String[] titles = new String[]{"Rooms","Smart Start"};
 
-    private int[] icon = new int[]{
-            R.drawable.tab_favorite_bg, R.drawable.tab_rooms_bg,R.drawable.tab_scenes_bg
-    };
+    private int[] icon = new int[]{ R.drawable.tab_rooms_bg, R.drawable.tab_scenes_bg };
     private int currentIndex;
     public static String shadowTopic = "";
     private static final String BACK_IMG_SRC = "backgroundImg";
@@ -93,7 +91,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
 
 //        checkForUpdates();
 
-        TcpClient.getInstance().rigister(tcpReceive);
+        //TcpClient.getInstance().rigister(tcpReceive);
         //MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
     }
 
@@ -120,9 +118,8 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
         FavoritesFragment favoritesFragment = FavoritesFragment.newInstance();
         RoomsFragment roomsFragment = RoomsFragment.newInstance();
         ScenesFragment scenesFragment = ScenesFragment.newInstance();
-        fragments = new Fragment[]{
-                favoritesFragment, roomsFragment, scenesFragment
-        };
+        fragments = new Fragment[]{roomsFragment, scenesFragment }; //fragment的集合
+
         head_cion.setOnClickListener(this);
         bottom_tab.addOnTabSelectedListener(this);
         sliding_menu.setNavigationItemSelectedListener(this);
@@ -135,7 +132,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
                 .add(R.id.container, fragments[0])
                 .show(fragments[0])
                 .commit();
-        ((FavoritesFragment) fragments[0]).register();
+        ((RoomsFragment) fragments[0]).register();
         currentIndex = 0;
     }
 
@@ -156,6 +153,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         drawer_layout.closeDrawer(Gravity.START);
+        Intent intent;
         switch (item.getItemId()) {
             case R.id.item_add:
 //                changeIndexFragment(item, 0);
@@ -164,7 +162,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
                 return true;
 
             case R.id.item_remouve:
-                Intent intent = new Intent(this, DeleteDeviceActivity.class);
+                intent = new Intent(this, DeleteDeviceActivity.class);
                 intent.putExtra("deviceId", "1");
                 intent.putExtra("roomName", " ");
                 startActivity(intent);
@@ -175,8 +173,26 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
                 Log.i("~~~~~~~~~~~~", "onNavigationItemSelected: 2 ");
                 String nodeId = "0";
                 //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.getBrigtness(nodeId));
-                //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,LocalMqttData.getSwitchStatus(nodeId));
-                TcpClient.getInstance().getTransceiver().send("mobile_zwave:resetDevice:Zwave:" + nodeId);
+                //TcpClient.getInstance().getTransceiver().send("mobile_zwave:resetDevice:Zwave:" + nodeId);
+                //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,LocalMqttData.setDefault());
+                intent = new Intent(this, ResetActivity.class);
+                startActivity(intent);
+                return true;
+            case R.id.item_learn_mode:
+                Log.i("~~~~~~~~~~~~", "onNavigationItemSelected: 3 ");
+                //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.getBrigtness(nodeId));
+                //TcpClient.getInstance().getTransceiver().send("mobile_zwave:resetDevice:Zwave:" + nodeId);
+                //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,LocalMqttData.setDefault());
+                intent = new Intent(this, LearnModeActivity.class);
+                startActivity(intent);
+                return true;
+            case R.id.item_network_check:
+                Log.i("~~~~~~~~~~~~", "onNavigationItemSelected: 3 ");
+                //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.getBrigtness(nodeId));
+                //TcpClient.getInstance().getTransceiver().send("mobile_zwave:resetDevice:Zwave:" + nodeId);
+                //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId,LocalMqttData.setDefault());
+                intent = new Intent(this, NetworkHealthCheckActivity.class);
+                startActivity(intent);
                 return true;
         }
         return false;
@@ -189,15 +205,15 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
 
     private void switchFragment(int position) {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        switch (currentIndex) {
+        switch (currentIndex) { //注销监听
+            //case 0:
+            //    ((FavoritesFragment) fragments[0]).unRegister();
+            //    break;
             case 0:
-                ((FavoritesFragment) fragments[0]).unRegister();
+                ((RoomsFragment) fragments[0]).unRegister();
                 break;
             case 1:
-                ((RoomsFragment) fragments[1]).unRegister();
-                break;
-            case 2:
-                ((ScenesFragment) fragments[2]).unRegister();
+                ((ScenesFragment) fragments[1]).unRegister();
                 break;
         }
         transaction.hide(fragments[currentIndex]);
@@ -206,15 +222,15 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
 //            transaction.replace(R.id.container,fragments[position]);
         }
         transaction.show(fragments[position]).commit();
-        switch (position) {
+        switch (position) { //启动监听
+            //case 0:
+            //    ((FavoritesFragment) fragments[0]).register();
+            //   break;
             case 0:
-                ((FavoritesFragment) fragments[0]).register();
+                ((RoomsFragment) fragments[0]).register();
                 break;
             case 1:
-                ((RoomsFragment) fragments[1]).register();
-                break;
-            case 2:
-                ((ScenesFragment) fragments[2]).register();
+                ((ScenesFragment) fragments[1]).register();
                 break;
         }
         currentIndex = position;

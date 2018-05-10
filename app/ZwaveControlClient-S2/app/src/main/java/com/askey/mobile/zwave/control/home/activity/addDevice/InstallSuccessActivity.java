@@ -64,6 +64,7 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
 
         String nodeTopic = Const.subscriptionTopic +"Zwave"+ nodeId;
+//        String nodeTopic = Const.subscriptionTopic;
         // 订阅新设备的topic为 sn + nodeId
         MQTTManagement.getSingInstance().subscribeToTopic(nodeTopic,null);
 
@@ -106,7 +107,7 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
                                 Intent intent = new Intent();
                                 intent.setClass(mContext,HomeActivity.class);
                                 startActivity(intent);
-                                Const.setIsDataChange(true);
+                               // Const.setIsDataChange(true);
                                 finish();
                             }else{
                                 ((Activity) mContext).runOnUiThread(new Runnable() {
@@ -233,6 +234,7 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
                 Logg.i(LOG_TAG,"=====roomName====="+roomName);
 //                TcpClient.getInstance().getTransceiver().send("mobile_zwave:reNameDevice:"+":"+nodeId+":"+displsyName+":"+deviceType+":"+roomName+":"+isFavorite);
                 MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.editNodeInfo(nodeId,roomName,isFavorite+"",displsyName,deviceType));
+//                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.editNodeInfo(nodeId,roomName,isFavorite+"",displsyName,deviceType));
 
                 break;
 

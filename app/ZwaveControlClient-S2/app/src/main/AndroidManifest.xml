@@ -455,22 +455,56 @@
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.DeviceDialog"
             android:windowSoftInputMode="adjustResize" />
-        <activity android:name=".deviceContr.scenes.DeviceTestEditActivity"
-            android:theme="@style/AppTheme.DeviceDialog">
-        </activity>
+        <activity
+            android:name=".deviceContr.scenes.DeviceTestEditActivity"
+            android:theme="@style/AppTheme.DeviceDialog"></activity>
         <activity
             android:name=".home.activity.addDevice.AddSmartStartActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize"
-            android:theme="@style/AppTheme.DeviceDialog" />
-        <activity android:name=".qrcode.CaptureActivity"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addDevice.GrantKeyActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addDevice.CsaActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".home.activity.addDevice.DskActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".qrcode.CaptureActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
-        <activity android:name=".deviceContr.scenes.APITestActivity"
-            android:theme="@style/AppTheme.DeviceDialog">
-        </activity>
+        <activity
+            android:name=".deviceContr.scenes.APITestActivity"
+            android:theme="@style/AppTheme.DeviceDialog"></activity>
+        <activity
+            android:name=".home.activity.addDevice.RemoveFailActivity"
+            android:theme="@style/AppTheme.DeviceDialog"></activity>
+        <activity
+            android:name=".home.activity.addDevice.ReplaceFailActivity"
+            android:theme="@style/AppTheme.DeviceDialog"></activity>
+        <activity android:name=".home.activity.ResetActivity"
+            android:theme="@style/AppTheme.DeviceDialog"
+            ></activity>
+        <activity android:name=".home.activity.LearnModeActivity"
+            android:theme="@style/AppTheme.DeviceDialog"
+            ></activity>
+        <activity android:name=".home.activity.NetworkHealthCheckActivity"
+            android:theme="@style/AppTheme.DeviceDialog"
+            ></activity>
     </application>
 
 </manifest>

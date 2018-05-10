@@ -27,6 +27,8 @@ import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDeviceActivity;
+import com.askey.mobile.zwave.control.home.activity.addDevice.RemoveFailActivity;
+import com.askey.mobile.zwave.control.home.activity.addDevice.ReplaceFailActivity;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.CustomProgressDialog;
 import com.askey.mobile.zwave.control.util.Logg;
@@ -303,6 +305,40 @@ public class BaseFragment extends Fragment {
             public void onClick(View view) {
                 Intent intent = new Intent(context, DeleteDeviceActivity.class);
                 intent.putExtra("deviceId", nodeId);
+                intent.putExtra("roomName", name);
+                startActivity(intent);
+                alertDialog.dismiss();
+            }
+        });
+    }
+
+    protected void showFailDeleteDeviceDialog(final Context context, final String name, final String nodeId) {
+        final AlertDialog.Builder alertDialogBuilder=new AlertDialog.Builder(context);
+        final AlertDialog alertDialog = alertDialogBuilder.show();
+        alertDialog.setCancelable(true);
+        View view = LayoutInflater.from(context).inflate(R.layout.dialog_delete_device, null);
+        ImageView icon = (ImageView) view.findViewById(R.id.iv_icon);
+        icon.setImageResource(R.drawable.vector_drawable_ic_92);
+        alertDialog.setContentView(view);
+        Button removeFail = (Button) view.findViewById(R.id.btn_cancel);
+        Button replaceFail = (Button) view.findViewById(R.id.btn_proceed);
+        removeFail.setText("removeFail");
+        replaceFail.setText("replaceFail");
+        removeFail.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(context, RemoveFailActivity.class);
+                intent.putExtra("nodeId", nodeId);
+                intent.putExtra("roomName", name);
+                startActivity(intent);
+                alertDialog.dismiss();
+            }
+        });
+        replaceFail.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(context, ReplaceFailActivity.class);
+                intent.putExtra("nodeId", nodeId);
                 intent.putExtra("roomName", name);
                 startActivity(intent);
                 alertDialog.dismiss();

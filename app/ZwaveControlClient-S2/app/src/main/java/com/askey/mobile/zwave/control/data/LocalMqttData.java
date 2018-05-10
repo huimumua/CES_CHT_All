@@ -63,6 +63,19 @@ public class LocalMqttData {
         return result;
     }
 
+    public static String addDevice() {
+        String result = "";
+        JSONObject fuction = new JSONObject();
+        try {
+            fuction.put("function", "addDevice");
+            result = getPublicJson(fuction).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Log.d("json", result);
+        return result;
+    }
+
     public static String setSceneAction(String sceneName,
                                         String iconName,
                                         String nodeId,
@@ -155,7 +168,7 @@ public class LocalMqttData {
         JSONObject id = new JSONObject();
         try {
             id.put("function", "removeDeviceFromRoom");
-            id.put("deviceId", deviceId);
+            id.put("nodeId", deviceId);
             result = getPublicJson(id).toString();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -203,6 +216,7 @@ public class LocalMqttData {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        Log.i("aaaaaaaaa", result);
         return result;
     }
 
@@ -230,7 +244,7 @@ public class LocalMqttData {
             parameter.put("type", deviceType);
             id.put("function", "editNodeInfo");
             id.put("parameter", parameter);
-            id.put("deviceId", deviceId);
+            id.put("nodeId", deviceId);
 //            desired.put("desired",id);
             result = getPublicJson(id).toString();
         } catch (JSONException e) {
@@ -365,11 +379,13 @@ public class LocalMqttData {
         }
         return result;
     }
-    public static String editProvisionListEntry(String dsk,String inclusionState,String boot_mode) {
+    public static String editProvisionListEntry(String oldDsk ,String dsk,String inclusionState,String boot_mode) {
         String result = "";
         JSONObject function = new JSONObject();
         try {
             function.put("function", "editProvisionListEntry");
+            function.put("originalDsk", oldDsk);
+            function.put("dsk", dsk);
             function.put("inclusionState", inclusionState);
             function.put("boot_mode", boot_mode);
             result = getPublicJson(function).toString();
@@ -378,11 +394,11 @@ public class LocalMqttData {
         }
         return result;
     }
-    public static String getDeviceInfo(String nodeId) {//为了获得cmdlist
+    public static String getSpecifyDeviceInfo(String nodeId) {//为了获得cmdlist
         String result = "";
         JSONObject function = new JSONObject();
         try {
-            function.put("function", "editProvisionListEntry");
+            function.put("function", "getSpecifyDeviceInfo");//没反应
             function.put("nodeId", nodeId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
@@ -391,6 +407,44 @@ public class LocalMqttData {
         return result;
     }
 
+    public static String removeFailDevice(String nodeId) {//为了获得cmdlist
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "removeFailDevice");//没反应
+            function.put("nodeId", nodeId);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String replaceFailDevice(String nodeId) {//为了获得cmdlist
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "replaceFailDevice");//没反应
+            function.put("nodeId", nodeId);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String checkNodeIsFailed(String nodeId) {//为了获得cmdlist
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "checkNodeIsFailed");//没反应
+            function.put("nodeId", nodeId);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
 
     /*
         {
@@ -493,7 +547,7 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "getBrightness");
-            function.put("deviceId", deviceId);
+            function.put("nodeId", deviceId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -515,7 +569,7 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "setBrightness");
-            function.put("deviceId", deviceId);
+            function.put("nodeId", deviceId);
             function.put("value", value);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
@@ -536,7 +590,7 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "getLampColor");
-            function.put("deviceId", deviceId);
+            function.put("nodeId", deviceId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -556,7 +610,7 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "setLampColor");
-            function.put("deviceId", deviceId);
+            function.put("nodeId", deviceId);
             function.put("lampcolor", lampcolor);
 //            function.put("colorId", colorId);
 //            function.put("colorValue", colorValue);
@@ -584,7 +638,7 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "setLampcolor");
-            function.put("deviceId", deviceId);
+            function.put("nodeId", deviceId);
             function.put("lampcolor", lampcolor);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
@@ -605,7 +659,7 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "getPower");
-            function.put("deviceId", deviceId);
+            function.put("nodeId", deviceId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -628,8 +682,8 @@ public class LocalMqttData {
         try {
             function.put("function", "getGroupInfo");
             function.put("nodeId", deviceId);
-            function.put("endpointId", endpointId);
-            function.put("maxGroupId", groupId);
+            function.put("groupId", endpointId);
+            function.put("endpointId", groupId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -658,7 +712,7 @@ public class LocalMqttData {
                 tmpObj = new JSONObject();
                 tmpObj.put("controlNodeId", nodeInterFaceList.get(i));
                 jsonArray.put(tmpObj);
-                tmpObj = null;
+                //tmpObj = null;
             }
             String personInfos = jsonArray.toString(); // 将JSONArray转换得到String
             function.put("function", "addEndpointsToGroup");
@@ -1062,7 +1116,7 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "getSensorMultiLevel");
-            function.put("deviceId", deviceId);
+            function.put("nodeId", deviceId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -1070,7 +1124,152 @@ public class LocalMqttData {
         return result;
     }
 
-    public static String addProvisionList(String dsk, String length,String qrCode) {
+    public static String rmProvisionListEntry(String port, String dsk) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", port);
+            function.put("dsk", dsk);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String getProvisionListEntry(String port, String dsk) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", port);
+            function.put("dsk", dsk);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String setMqttDataJson(String api) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", api);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String setMqttDataJson(String api, String dsk) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", api);
+            function.put("nodeId", dsk);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String setMqttDataJson(String api, String dsk, String key, String value) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", api);
+            function.put("nodeId", dsk);
+            function.put(key, value);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String setMqttDataJson(String api, String dsk,
+                                         String key0, String value0,
+                                         String key1, String value1) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", api);
+            function.put("nodeId", dsk);
+            function.put(key0, value0);
+            function.put(key1, value1);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String setMqttDataJson(String api, String dsk,
+                                         String key0, String value0,
+                                         String key1, String value1,
+                                         String key2, String value2) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", api);
+            function.put("nodeId", dsk);
+            function.put(key0, value0);
+            function.put(key1, value1);
+            function.put(key2, value2);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String setMqttDataJson(String api, String dsk,
+                                         String key0, String value0,
+                                         String key1, String value1,
+                                         String key2, String value2,
+                                         String key3, String value3,
+                                         String key4, String value4) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", api);
+            function.put("nodeId", dsk);
+            function.put(key0, value0);
+            function.put(key1, value1);
+            function.put(key2, value2);
+            function.put(key3, value3);
+            function.put(key4, value4);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String setMqttDataJson(String api, String dsk,
+                                         String key0, String value0,
+                                         String key1, String value1,
+                                         String key2, String value2,
+                                         String key3, String value3) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", api);
+            function.put("nodeId", dsk);
+            function.put(key0, value0);
+            function.put(key1, value1);
+            function.put(key2, value2);
+            function.put(key3, value3);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String addProvisionList(String dsk, String length, String qrCode, String bootMode) {
         String result = "";
         JSONObject function = new JSONObject();
         try {
@@ -1078,6 +1277,30 @@ public class LocalMqttData {
             function.put("dsk", dsk);
             function.put("dsklen", length);
             function.put("QrCode", qrCode);
+            function.put("BootMode", bootMode);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String setDefault() {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "setDefault");
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+    public static String startLearnMode() {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "startLearnMode");
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();

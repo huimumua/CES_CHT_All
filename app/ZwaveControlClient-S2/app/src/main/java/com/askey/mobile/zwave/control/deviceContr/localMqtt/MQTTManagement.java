@@ -1,6 +1,7 @@
 package com.askey.mobile.zwave.control.deviceContr.localMqtt;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.askey.mobile.zwave.control.application.ZwaveClientApplication;
 import com.askey.mobile.zwave.control.util.Const;

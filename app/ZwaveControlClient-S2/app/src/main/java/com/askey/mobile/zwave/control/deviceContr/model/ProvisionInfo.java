@@ -58,6 +58,7 @@ public class ProvisionInfo implements Parcelable{
 
     private String deviceBootMode;
     private String deviceInclusionState;
+    private String networkInclusionState;
     private String deviceName;
     private String deviceLocation;
 
@@ -69,8 +70,10 @@ public class ProvisionInfo implements Parcelable{
             provisionInfo.dsk = in.readString();
             provisionInfo.deviceBootMode = in.readString();
             provisionInfo.deviceInclusionState = in.readString();
+            provisionInfo.networkInclusionState = in.readString();
             provisionInfo.deviceName = in.readString();
             provisionInfo.deviceLocation = in.readString();
+            provisionInfo.nodeId = in.readString();
             return provisionInfo;
         }
 
@@ -90,11 +93,21 @@ public class ProvisionInfo implements Parcelable{
         parcel.writeString(dsk);
         parcel.writeString(deviceBootMode);
         parcel.writeString(deviceInclusionState);
+        parcel.writeString(networkInclusionState);
         parcel.writeString(deviceName);
         parcel.writeString(deviceLocation);
+        parcel.writeString(nodeId);
     }
 
-        public String getGenericCls() {
+    public String getNetworkInclusionState() {
+        return networkInclusionState;
+    }
+
+    public void setNetworkInclusionState(String networkInclusionState) {
+        this.networkInclusionState = networkInclusionState;
+    }
+
+    public String getGenericCls() {
             return genericCls;
         }
 

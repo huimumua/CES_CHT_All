@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/device_width"
+    android:layout_height="@dimen/device_heigh"
+    android:background="@android:color/white"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/csa_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp"
+        android:text="@string/safety_tips"
+        android:textSize="14sp"
+        android:textColor="@color/text_color" />
+
+    <LinearLayout
+        android:id="@+id/radio_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/csa_title"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:orientation="vertical">
+
+        <CheckBox
+            android:id="@+id/safe_s0"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/safety_tips_s0" />
+
+        <CheckBox
+            android:id="@+id/safe_s2_0"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/safety_tips_s2_0" />
+
+        <CheckBox
+            android:id="@+id/safe_s2_1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/safety_tips_s2_1"
+            android:visibility="visible"/>
+
+        <CheckBox
+            android:id="@+id/safe_s2_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/safety_tips_s2_2"
+            android:visibility="visible"/>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/safe_confirm"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="50dp"
+        android:text="@string/ok"
+        android:textAllCaps="false" />
+</RelativeLayout>

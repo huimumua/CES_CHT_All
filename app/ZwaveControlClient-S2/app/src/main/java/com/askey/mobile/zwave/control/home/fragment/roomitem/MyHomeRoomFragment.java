@@ -28,8 +28,11 @@ import com.askey.mobile.zwave.control.deviceContr.rooms.ui.DimmerActivity;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.PlugActivity;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.SensorActivity;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.WallMoteLivingActivity;
+import com.askey.mobile.zwave.control.deviceContr.scenes.DeviceTestActivity;
+import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDevice;
 import com.askey.mobile.zwave.control.home.activity.addDevice.SelectBrandActivity;
 import com.askey.mobile.zwave.control.home.adapter.DeviceAdapter;
+import com.askey.mobile.zwave.control.interf.DeleteDeviceListener;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
 import com.askey.mobile.zwave.control.util.ToastShow;
@@ -62,6 +65,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
     private boolean isFirstLoad = true;
     private boolean isVisibleToUser;
     private boolean isFirst2onResume = true;
+    private String clickNodeId;
 
     public MyHomeRoomFragment() {
         // Required empty public constructor
@@ -90,6 +94,15 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
             Log.d(LOG_TAG, "正常加载,fragment可见");
             //这里仅仅是注册，发送消息在onResum里面
             MQTTManagement.getSingInstance().rigister(mqttMessageArrived);
+//            if (Const.RESET_ROOMS) {
+//               // MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand(roomName));
+//                if (deviceInfoList.size() > 0) {
+//                    deviceInfoList.clear();
+//                }
+//                adapter.notifyDataSetChanged();
+//                Const.RESET_ROOMS = false;
+//            }
+
         } else {
             Log.d(LOG_TAG, "正常加载,fragment不可见");
             unrigister();
@@ -158,24 +171,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
                 return;
             }
             stopWaitDialog();
-            if (mqttResult.contains(roomName)) {
-                Logg.i(LOG_TAG, "=mqttMessageArrived=>=message=" + mqttResult);
-//                deviceInfoList.clear();
-//                deviceInfoList = LocalJsonParsing. getDeviceList(mqttResult);
-//                ((Activity) getContext()).runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        adapter.notifyDataSetChanged();
-//                    }
-//                });
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        isHaveDevice(true);//修改UI
-                    }
-                });
-                getDeviceList(mqttResult);
-            }
+            getDeviceList(mqttResult);
             sensorChange();
         }
     };
@@ -216,46 +212,84 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
             jsonObject = new JSONObject(mqttResult);
             String reported = jsonObject.optString("reported");
             JSONObject reportedObject = new JSONObject(reported);
-            String Interface = reportedObject.optString("Interface");
-            if (Interface.equals("getDeviceList")) {
-                String DeviceList = reportedObject.optString("deviceList");
-                JSONArray columnInfo = new JSONArray(DeviceList);
-                int size = columnInfo.length();
-                if (size > 0) {
-                    deviceInfoList.clear();
-                    for (int i = 0; i < size; i++) {
-                        JSONObject info = columnInfo.getJSONObject(i);
-                        String nodeId = info.getString("nodeId");
-                        String brand = info.getString("brand");
-                        String devType = info.getString("deviceType");
-                        String category = info.getString("category");
-                        String Room = info.getString("Room");
-                        String isFavorite = info.getString("isFavorite");
-                        String name = info.getString("name");
+            String messageType = reportedObject.optString("MessageType");
+//            if (mqttResult.contains(roomName)) {
+//                Logg.i(LOG_TAG, "=mqttMessageArrived=>=message=" + mqttResult);
+////                deviceInfoList.clear();
+////                deviceInfoList = LocalJsonParsing. getDeviceList(mqttResult);
+////                ((Activity) getContext()).runOnUiThread(new Runnable() {
+////                    @Override
+////                    public void run() {
+////                        adapter.notifyDataSetChanged();
+////                    }
+////                });
+//                getActivity().runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        isHaveDevice(true);//修改UI
+//                    }
+//                });
+
+                String Interface = reportedObject.optString("Interface");
+                if (Interface.equals("getDeviceList")) {
+                    String DeviceList = reportedObject.optString("deviceList");
+                    JSONArray columnInfo = new JSONArray(DeviceList);
+                    int size = columnInfo.length();
+//                    if (size > 0) {
+                        deviceInfoList.clear();
+                        for (int i = 0; i < size; i++) {
+                            JSONObject info = columnInfo.getJSONObject(i);
+                            String nodeId = info.getString("nodeId");
+                            String brand = info.getString("brand");
+                            String devType = info.getString("deviceType");
+                            String category = info.getString("category");
+                            String Room = info.getString("Room");
+                            String isFavorite = info.getString("isFavorite");
+                            String name = info.getString("name");
 //                        String nodeInfo = info.getString("nodeInfo");
 //                        Logg.i(LOG_TAG, "==getDeviceResult=JSONArray===nodeInfo==" + nodeInfo);
-                        DeviceInfo deviceInfo = new DeviceInfo();
-                        deviceInfo.setDeviceId(nodeId);
-                        deviceInfo.setDisplayName(name);
-                        deviceInfo.setDeviceType(category);
-                        deviceInfo.setRooms(Room);
-                        deviceInfo.setIsFavorite(isFavorite);
+                            DeviceInfo deviceInfo = new DeviceInfo();
+                            deviceInfo.setDeviceId(nodeId);
+                            deviceInfo.setDisplayName(name);
+                            deviceInfo.setDeviceType(category);
+                            deviceInfo.setRooms(Room);
+                            deviceInfo.setIsFavorite(isFavorite);
 //                        deviceInfo.setNodeInfo(nodeInfo);
-                        deviceInfoList.add(deviceInfo);
+                            deviceInfoList.add(deviceInfo);
 //                        if(devType.equals("PLUG") || devType.equals("BULB")){
 //                            String nodeTopic = Const.subscriptionTopic + "Zwave" + nodeId;
 //                            MQTTManagement.getSingInstance().publishMessage(nodeTopic, LocalMqttData.getSwitchStatus(nodeId));
 //                        }
-                        if ("SENSOR".equals(category)) {
-                            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.getSensorMultiLevel(nodeId));
-                        }
+                            if ("SENSOR".equals(category)) {
+                                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.getSensorMultiLevel(nodeId));
+                            }
 
-                    }
+                        }
+//                    }
+                    ((Activity) getContext()).runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            adapter.notifyDataSetChanged();
+                            if (deviceInfoList.size() > 0) {
+                                isHaveDevice(true);//修改UI
+                            } else {
+                               isHaveDevice(false);//修改UI
+                            }
+                            Log.i(LOG_TAG, "deviceInfoList=" + deviceInfoList.size());
+                        }
+                    });
                 }
-                ((Activity) getContext()).runOnUiThread(new Runnable() {
+//            }
+            if ("Node Is Failed Check Report".equals(messageType)) {
+                final String status = reportedObject.optString("Status");
+                getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        adapter.notifyDataSetChanged();
+                        if ("Alive".equals(status)) {
+                            showDeleteDeviceDialog(getActivity(), roomName, clickNodeId);
+                        } else {
+                            showFailDeleteDeviceDialog(getActivity(), roomName, clickNodeId);
+                        }
                     }
                 });
             }
@@ -309,7 +343,13 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
 
     @Override
     public void onItemClick(View view, DeviceInfo deviceInfo) {
-        Intent intent = null;
+
+        Intent intent = new Intent(getActivity(), DeviceTestActivity.class);
+        intent.putExtra("nodeId", deviceInfo.getDeviceId());
+        intent.putExtra("deviceName", deviceInfo.getDisplayName());
+        startActivity(intent);
+
+/*        Intent intent = null;
         if ("BULB".equals(deviceInfo.getDeviceType())) {
             intent = new Intent(getActivity(), BulbActivity.class);
         } else if ("PLUG".equals(deviceInfo.getDeviceType())) {
@@ -333,7 +373,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
         intent.putExtra("room", deviceInfo.getRooms());
         intent.putExtra("shadowTopic", deviceInfo.getTopic());
         intent.putExtra("displayName", deviceInfo.getDisplayName());
-        startActivity(intent);
+        startActivity(intent);*/
 
 //        String nodeId = deviceInfo.getDeviceId();
 //        if (mOnOff.isChecked()) {
@@ -383,7 +423,8 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
     public void deleteItemClick(final int position) {
         DeviceInfo info = deviceInfoList.get(position);
         //deviceId就是nodeId
-        showDeleteDeviceDialog(getActivity(), roomName, info.getDeviceId());
+        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.checkNodeIsFailed(info.getDeviceId()));
+        clickNodeId = info.getDeviceId();
         clickPosition = position;
     }
 
@@ -456,9 +497,26 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
             当fragment可见时才发送命令，为了防止其他界面弹窗导致全部fragment走生命周期，使消息接收错乱，这里仅仅允许此fragment第一次初始化的时候
             在onResume里面发送请求命令
          */
+        Log.i(LOG_TAG, "==========onResume==========");
+       MQTTManagement.getSingInstance().rigister(mqttMessageArrived);
         if (isVisibleToUser && isFirst2onResume) {
             showWaitingDialog();
             isFirst2onResume = false;
+            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand(roomName));
+        }
+
+        if (Const.RESET_ROOMS) {
+            // MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand(roomName));
+            if (deviceInfoList.size() > 0) {
+                deviceInfoList.clear();
+            }
+            adapter.notifyDataSetChanged();
+            Const.RESET_ROOMS = false;
+        }
+
+        if (Const.getIsDataChange()) {
+            Const.setIsDataChange(false);
+            showWaitingDialog();
             MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand(roomName));
         }
     }
@@ -479,6 +537,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Logg.i(LOG_TAG, "===onDestroy=====");
         unrigister();
     }
 
@@ -521,4 +580,5 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
     public List<DeviceInfo> getDeviceList() {
         return deviceInfoList;
     }
+
 }

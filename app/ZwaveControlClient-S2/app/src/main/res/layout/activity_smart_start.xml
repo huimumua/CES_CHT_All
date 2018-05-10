@@ -2,130 +2,93 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="@dimen/device_width"
     android:layout_height="@dimen/device_heigh"
-    android:background="@android:color/white"
-    android:orientation="vertical">
+    android:background="@android:color/white">
 
     <TextView
         android:id="@+id/add_type"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="50dp"
+        android:layout_centerHorizontal="true"
         android:layout_marginTop="50dp"
-        android:text="ADD TYPE"
-        android:textColor="@color/text_color" />
+        android:text="ADD SMART START"
+        android:textColor="@color/text_color"
+        android:textSize="20sp" />
 
-    <RadioGroup
-        android:id="@+id/radio_group"
+    <RelativeLayout
+        android:id="@+id/edit_qrcode_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/add_type"
-        android:layout_below="@+id/add_type">
-
-
-        <RadioButton
-            android:id="@+id/pin"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="PIN" />
-
-        <RadioButton
-            android:id="@+id/dsk"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="DSK" />
-
-        <RadioButton
-            android:id="@+id/no_dsk"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="NO DSK" />
-    </RadioGroup>
-
-    <LinearLayout
-        android:id="@+id/type_option_layout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/add_type"
         android:layout_below="@+id/add_type"
-        android:layout_marginTop="10dp"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-
-            <CheckBox
-                android:id="@+id/check_box_pin"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="PIN" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-
-            <CheckBox
-                android:id="@+id/check_box_dsk"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="DSK" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-
-            <CheckBox
-                android:id="@+id/check_box_nodsk"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="NO DSK" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/edit_layout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/radio_group"
         android:layout_centerInParent="true"
-        android:layout_marginTop="20dp">
-
-        <EditText
-            android:id="@+id/show_qr_code"
-            android:layout_width="150dp"
-            android:layout_height="wrap_content"
-            android:focusable="true" />
+        android:layout_marginTop="50dp"
+        android:orientation="vertical">
 
         <ImageButton
             android:id="@+id/scan_qr_code"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_toRightOf="@+id/show_qr_code"
             android:background="@drawable/qr_button" />
-    </LinearLayout>
 
-    <Button
-        android:id="@+id/smart_start_add"
+        <EditText
+            android:id="@+id/show_qr_code"
+            android:layout_width="220dp"
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            android:textSize="20sp" />
+
+        <RelativeLayout
+            android:id="@+id/qr_code_underline"
+            android:layout_width="58dp"
+            android:layout_height="2dp"
+            android:layout_alignLeft="@+id/show_qr_code"
+            android:layout_marginLeft="7dp"
+            android:layout_marginTop="35dp"
+            android:background="#ff0000"
+            android:visibility="gone"></RelativeLayout>
+    </RelativeLayout>
+
+    <RadioGroup
+        android:id="@+id/radio_group"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/edit_layout"
+        android:layout_below="@+id/edit_qrcode_layout"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="45dp"
+        android:visibility="gone">
+
+        <RadioButton
+            android:id="@+id/smart_start_radio_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/smart_start" />
+
+        <RadioButton
+            android:id="@+id/s2_radio_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Security S2" />
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/add_mode_text"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/edit_qrcode_layout"
+        android:layout_centerHorizontal="true"
+        android:text="@string/automaticlly"
+        android:textColor="@color/red"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/button_smart_start"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
         android:layout_centerInParent="true"
-        android:layout_marginTop="50dp"
-        android:text="Add Device"
-        android:textAllCaps="false" />
+        android:layout_marginBottom="50dp"
+        android:text="Add" />
 </RelativeLayout>

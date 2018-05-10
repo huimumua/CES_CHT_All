@@ -50,7 +50,8 @@ import java.util.List;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class FavoritesFragment extends BaseFragment implements View.OnClickListener, FavoriteAdapter.OnItemClickListener, RecentlyAdapter.OnItemClickListener
+public class FavoritesFragment extends BaseFragment
+        implements View.OnClickListener, FavoriteAdapter.OnItemClickListener, RecentlyAdapter.OnItemClickListener
         , FavoriteEditActivity.EditFavoriteListener {
     public static String TAG = "FavoritesFragment";
     private ImageView menu, edit, voice;
@@ -83,7 +84,7 @@ public class FavoritesFragment extends BaseFragment implements View.OnClickListe
         initView(view);
         initData();
 
-        showWaitingDialog();
+       // showWaitingDialog();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -92,7 +93,7 @@ public class FavoritesFragment extends BaseFragment implements View.OnClickListe
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand("ALL"));
+               // MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand("ALL"));
 
             }
         }).start();
@@ -226,7 +227,7 @@ public class FavoritesFragment extends BaseFragment implements View.OnClickListe
 
     private void getRecentDeviceListComm() {
         //获取最近使用设备
-        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getRecentDeviceList());
+        //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getRecentDeviceList());
     }
 
     private void initView(View view) {
@@ -442,7 +443,7 @@ public class FavoritesFragment extends BaseFragment implements View.OnClickListe
             if (Const.getIsDataChange()) {
                 Const.setIsDataChange(false);
                 showWaitingDialog();
-                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand("ALL"));
+               // MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand("ALL"));
             }
     }
 

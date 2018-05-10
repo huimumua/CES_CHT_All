@@ -38,7 +38,8 @@ public class ApiArrayAdapter extends BaseAdapter {
     public int getCount() {
         // don't display last item. It is used as hint.
         int count = dataList.size();
-        return count > 0 ? count - 1 : count;
+//        return count > 0 ? count - 1 : count;
+        return count ;
     }
 
     @Override

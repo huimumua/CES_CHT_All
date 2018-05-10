@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/device_width"
+    android:layout_height="@dimen/device_heigh"
+    android:background="@android:color/white"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/csa_title"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp"
+        android:text="@string/csa_text"
+        android:textColor="@color/text_color" />
+
+    <CheckBox
+        android:id="@+id/csa_select"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/csa_title"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp"
+        android:checked="true"
+        android:text="@string/yes_or_no" />
+
+    <Button
+        android:id="@+id/csa_confirm"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="50dp"
+        android:text="@string/ok"
+        android:textAllCaps="false" />
+</RelativeLayout>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_gravity="center"
     android:gravity="center"
@@ -16,12 +16,12 @@
         android:background="@drawable/device_info_item"
         >
 
-        <ImageView
+        <TextView
+            android:id="@+id/boot_mode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_scene_item"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="10dp"
+            android:textSize="10sp"
             />
 
         <TextView
@@ -30,15 +30,30 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="dsk"
+            android:textSize="10sp"
             />
         <TextView
-            android:id="@+id/scene_name"
+            android:id="@+id/inclusion_state"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="scenes"
+            android:textSize="10sp"
+            />
+        <TextView
+            android:id="@+id/network_state"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="10sp"
             />
 
     </LinearLayout>
 
-</LinearLayout>
+    <ImageView
+        android:id="@+id/delete_smart_start"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:src="@drawable/ic_close"
+        android:layout_alignRight="@+id/linear"/>
+
+</RelativeLayout>

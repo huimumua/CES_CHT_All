@@ -27,5 +27,21 @@
             android:icon="@drawable/ic_acount"
             android:title="@string/reset_device" />
     </group>
+    <group
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_learn_mode"
+            android:checked="false"
+            android:icon="@drawable/ic_acount"
+            android:title="@string/learn_mode" />
+    </group>
+    <group
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_network_check"
+            android:checked="false"
+            android:icon="@drawable/ic_acount"
+            android:title="@string/network_check" />
+    </group>
 
 </menu>

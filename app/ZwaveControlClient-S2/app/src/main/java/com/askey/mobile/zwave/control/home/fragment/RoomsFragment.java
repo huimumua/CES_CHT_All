@@ -25,6 +25,7 @@ import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
 import com.askey.mobile.zwave.control.deviceContr.model.RoomInfo;
 import com.askey.mobile.zwave.control.home.activity.HomeActivity;
 import com.askey.mobile.zwave.control.home.activity.TakePictureActivity;
+import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDevice;
 import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDeviceActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.InstallSuccessActivity;
 import com.askey.mobile.zwave.control.home.activity.addRoom.AddRoomActivity;
@@ -32,6 +33,7 @@ import com.askey.mobile.zwave.control.home.adapter.DeviceAdapter;
 import com.askey.mobile.zwave.control.home.adapter.RoomsAdapter;
 import com.askey.mobile.zwave.control.home.fragment.roomitem.ItemRoomFragment;
 import com.askey.mobile.zwave.control.home.fragment.roomitem.MyHomeRoomFragment;
+import com.askey.mobile.zwave.control.interf.DeleteDeviceListener;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
 import com.askey.mobile.zwave.control.widget.MyViewPager;
@@ -48,7 +50,7 @@ import java.util.List;
  * A simple {@link Fragment} subclass.
  */
 public class RoomsFragment extends BaseFragment implements View.OnClickListener, InstallSuccessActivity.AddDeviceSuccessListener
-        , ViewPager.OnPageChangeListener, AddRoomActivity.ModifyRoomListener, DeleteDeviceActivity.DeleteDeviceListener {
+        , ViewPager.OnPageChangeListener, AddRoomActivity.ModifyRoomListener, DeleteDeviceListener {
     public static String LOG_TAG = "RoomsFragment";
     private MyViewPager roomPager;
     private List<Fragment> fragmentList;
@@ -133,7 +135,7 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
         voice.setOnClickListener(this);
         InstallSuccessActivity.setAddDeviceListener(this);
         AddRoomActivity.setModifyRoomListener(this);
-        DeleteDeviceActivity.setDeleteDeviceListener(this);
+        DeleteDevice.setDeleteDeviceListener(this);
         o = adapter.instantiateItem(roomPager, roomPager.getCurrentItem());
     }
 

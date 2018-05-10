@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -36,7 +37,7 @@ import java.util.TimerTask;
 public class InstallDeviceActivity extends BaseActivity implements View.OnClickListener {
     public static String LOG_TAG = "InstallDeviceActivity";
     private ImageView step_iv;
-    private TextView step_title, step_notify,addStstus;
+    private TextView step_title, step_notify, addStstus;
     private ImageView step_anim;
     private ProgressBar progressBar;
     private String brand = "";
@@ -51,10 +52,10 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
             switch (msg.what) {
                 case Const.TCP_TIMEOUT:
                     stopWaitDialog();
-                    Logg.i(LOG_TAG," TCP_TIMEOUT == add device time out");
+                    Logg.i(LOG_TAG, " TCP_TIMEOUT == add device time out");
                     timerCancel();
                     if (TcpClient.getInstance().isConnected()) {
-                        Logg.i(LOG_TAG,"TcpClient -> send -> mobile_zwave:stopAddDevice:Zwave");
+                        Logg.i(LOG_TAG, "TcpClient -> send -> mobile_zwave:stopAddDevice:Zwave");
                         TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
                     }
                     if (!InstallDeviceActivity.this.isFinishing()) {
@@ -67,9 +68,9 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
 
 
     private void timerCancel() {
-        if(timer!=null){
+        if (timer != null) {
             timer.cancel();
-            timer=null;
+            timer = null;
         }
     }
 
@@ -95,13 +96,13 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
         TcpClient.getInstance().rigister(tcpReceive);
 
-        Logg.i(LOG_TAG,"onCreate- > ---- ");
+        Logg.i(LOG_TAG, "onCreate- > ---- ");
         //预留的接口mqtt
         if (TcpClient.getInstance().isConnected()) {
-            Logg.i(LOG_TAG,"TcpClient - > isConnected ");
+            Logg.i(LOG_TAG, "TcpClient - > isConnected ");
             TcpClient.getInstance().getTransceiver().send("mobile_zwave:addDevice:Zwave");
             timer = new Timer(true);
-            timer.schedule(new InstallDeviceActivity.RemoteTimerTask(),Const.TCP_TIMER_TIMEOUT ); //延时1000ms后执行，1000ms执行一次
+            timer.schedule(new InstallDeviceActivity.RemoteTimerTask(), Const.TCP_TIMER_TIMEOUT); //延时1000ms后执行，1000ms执行一次
         }
 
 
@@ -112,8 +113,8 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
         @Override
         public void mqttMessageArrived(String topic, MqttMessage message) {
             final String result = new String(message.getPayload());
-            Logg.i(LOG_TAG,"=mqttMessageArrived=>=topic="+topic);
-            Logg.i(LOG_TAG,"=mqttMessageArrived=>=message="+result);
+            Logg.i(LOG_TAG, "=mqttMessageArrived=>=topic=" + topic);
+            Logg.i(LOG_TAG, "=mqttMessageArrived=>=message=" + result);
             ((Activity) mContext).runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -122,22 +123,23 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                         String reported = jsonObject.optString("reported");
                         JSONObject reportedObject = new JSONObject(reported);
                         String Interface = reportedObject.optString("Interface");
-                        if(Interface.equals("addDevice")){
+                        if (Interface.equals("addDevice")) {
                             String result = reportedObject.optString("Result");
                             String NodeId = reportedObject.optString("NodeId");
-                            if(result.equals("true")){
+                            if (result.equals("true")) {
                                 Intent intent = new Intent();
-                                intent.setClass(mContext,InstallSuccessActivity.class);
-                                intent.putExtra("brand",brand);
-                                intent.putExtra("deviceType",deviceType);
-                                intent.putExtra("nodeId",NodeId);
+                                intent.setClass(mContext, InstallSuccessActivity.class);
+                                intent.putExtra("brand", brand);
+                                intent.putExtra("deviceType", deviceType);
+                                intent.putExtra("nodeId", NodeId);
+                                Log.i("InstallDeviceActivity", "nodeId = " + NodeId);
                                 startActivity(intent);
                                 finish();
-                            }else{
+                            } else {
                                 ((Activity) mContext).runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        Toast.makeText(mContext,"Add Device Fail ! ",Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(mContext, "Add Device Fail ! ", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             }
@@ -150,6 +152,21 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
         }
     };
 
+    /**
+     * add device新增流程
+     * 发送addDeivce后等侍tcp返回
+     * <p>
+     * 返回是否输入DSK。   数据格式 dsk:dsk
+     * 输入dsk后上传   数据格式 dsk:12345
+     * <p>
+     * 返回是否有Grant key 数据格式 GrantKeys:value
+     * 先择Grant key后上传格式：Grant Keys:87
+     * <p>
+     * 返回是否有CSA 数据格式 CSA:CSA
+     * 选择CSA后,数据格式  CSA:1 （1为YES，0为NO）
+     * <p>
+     * 如果以上三种（DSK、GrantKey、CSA）都不支持，addDevice()直接返回result:true/false
+     */
     TCPReceive tcpReceive = new TCPReceive() {
         @Override
         public void onConnect(SocketTransceiver transceiver) {
@@ -174,16 +191,38 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
 
     };
 
-    //mqtt调用返回结果
     private void addDeviceResult(final String result) {
         try {
-            Logg.i(LOG_TAG,"=====result=="+result);
-            if(result.contains("mobile_zwave:addDevice:Zwave")){
+            Logg.i(LOG_TAG, "=====result==" + result);
+
+            //格式dsk:dsk  GrantKeys:value CSA:CSA  截取 ：前面的字符
+            String msgType = result.substring(0, result.lastIndexOf(":"));
+            Log.i(LOG_TAG, "=======msgType==" + msgType);
+            if (msgType.equals("dsk")) {
+                //DSK输入框显示，step_iv按钮隐藏
+                Intent intent = new Intent(mContext, DskActivity.class);
+                startActivity(intent);
+            } else if (msgType.equals("GrantKeys")) {
+                //消息格式Grant Keys:value ,截取 ：后面的字符串
+                String keys = result.substring(result.indexOf(":") + 1);
+                if (keys.equals("0")) {
+                    //提示用户请求超时
+                    Toast.makeText(mContext, "Network request timeout !", Toast.LENGTH_LONG).show();
+                } else {
+                    //将keys传到SecurityLevelActivity
+                    Intent intent = new Intent(mContext, GrantKeyActivity.class);
+                    intent.putExtra("SAFE_LEVEL", keys);
+                    startActivity(intent);
+                }
+            } else if (msgType.equals("CSA")) {
+                Intent intent = new Intent(mContext, CsaActivity.class);
+                startActivity(intent);
+            } else if (result.contains("mobile_zwave:addDevice:Zwave")) {//接口发送的时候自已的反馈
                 return;
-            }else if(result.contains("firefly_zwave:addDevice:other")){
+            } else if (result.contains("firefly_zwave:addDevice:other")) {//服务端返回的：有其他接口正在调用，没有处理完成
                 timerCancel();
                 final String addResult = mContext.getResources().getString(R.string.add_device_result);
-                ToastShow.showToastOnUiThread(mContext,addResult);
+                ToastShow.showToastOnUiThread(mContext, addResult);
                 if (TcpClient.getInstance().isConnected()) {
                     TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
                 }
@@ -194,12 +233,11 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                     }
                 });
 //                finish();
-            }else if(result.contains("addDevice:Zwave:")){
+            } else if (result.contains("addDevice:Zwave:")) {
 
-            }
-            else{
+            } else { //会返回添加过程的一些状态
                 final JSONObject jsonObject = new JSONObject(result);
-//            final String nodeId = jsonObject.optString("NodeID");
+                //final String nodeId = jsonObject.optString("NodeID");
                 ((Activity) mContext).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -210,31 +248,32 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                         }
                         if ("Node Add Status".equals(messageType)) {
                             if ("Success".equals(status)) {
-                                Toast.makeText(mContext,"add Success",Toast.LENGTH_SHORT).show();
-                                Logg.i(LOG_TAG,"=====result=="+"Success");
+                                Toast.makeText(mContext, "add Success", Toast.LENGTH_SHORT).show();
+                                Logg.i(LOG_TAG, "=====result==" + "Success");
                                 addStstus.setText("Success, Please wait a moment to rename");
                                 progressBar.setIndeterminate(false);
                             } else if ("Failed".equals(status)) {
-                                Logg.i(LOG_TAG,"=====result=="+"Fail");
+                                Logg.i(LOG_TAG, "=====result==" + "Fail");
                                 showAddFailDialog();
                                 progressBar.setIndeterminate(false);
-                            } else if("Learn Ready".equals(status)){
+                            } else if ("Learn Ready".equals(status)) {
                                 addStstus.setText("Please press the trigger button of the device");
                                 //10S后 超时后 调用StopAddDevice();
 //                                timerCancel();
-                            } else if("Timeout".equals(status)){
+                            } else if ("Timeout".equals(status)) {
                                 TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
                                 showFailedAddZaveDialog(getResources().getString(R.string.fail_add_notify));
-                            } else{
+                            } else {
                                 addStstus.setText(status);
                             }
                         }
                     }
                 });
             }
+
         } catch (JSONException e) {
             e.printStackTrace();
-            Logg.i(LOG_TAG,"errorJson------>"+result);
+            Logg.i(LOG_TAG, "errorJson------>" + result);
         }
 
     }
@@ -304,7 +343,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                     Logg.i(LOG_TAG, "TcpClient - > isConnected ");
                     TcpClient.getInstance().getTransceiver().send("mobile_zwave:addDevice:Zwave");
                     timer = new Timer(true);
-                    timer.schedule(new InstallDeviceActivity.RemoteTimerTask(),Const.TCP_TIMER_TIMEOUT); //延时1000ms后执行，1000ms执行一次
+                    timer.schedule(new InstallDeviceActivity.RemoteTimerTask(), Const.TCP_TIMER_TIMEOUT); //延时1000ms后执行，1000ms执行一次
                     alertDialog.dismiss();
                 }
             }
@@ -354,39 +393,33 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.step_iv:
-                if( !nodeId.equals("")){
+                if (!nodeId.equals("")) {
                     Intent intent = new Intent();
-                    intent.setClass(this,InstallSuccessActivity.class);
-                    intent.putExtra("brand",brand);
-                    intent.putExtra("deviceType",deviceType);
-                    intent.putExtra("nodeId",nodeId);
+                    intent.setClass(this, InstallSuccessActivity.class);
+                    intent.putExtra("brand", brand);
+                    intent.putExtra("deviceType", deviceType);
+                    intent.putExtra("nodeId", nodeId);
                     startActivity(intent);
                     finish();
-                }else{
-                    Toast.makeText(mContext,"Please wait a moment...",Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(mContext, "Please wait a moment...", Toast.LENGTH_SHORT).show();
                 }
                 break;
         }
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        Logg.i(LOG_TAG,"===onStop=====");
-        unrigister();
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
-        Logg.i(LOG_TAG,"===onDestroy=====");
+        unrigister();
+        Logg.i(LOG_TAG, "===onDestroy=====");
     }
 
     private void unrigister() {
-        if(tcpReceive!=null){
+        if (tcpReceive != null) {
             TcpClient.getInstance().unrigister(tcpReceive);
         }
-        if(mMqttMessageArrived!=null){
+        if (mMqttMessageArrived != null) {
             MQTTManagement.getSingInstance().unrigister(mMqttMessageArrived);
         }
     }
@@ -402,12 +435,12 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK)) {
             if (TcpClient.getInstance().isConnected()) {
-                Logg.i(LOG_TAG,"TcpClient -> send -> mobile_zwave:stopAddDevice:Zwave");
+                Logg.i(LOG_TAG, "TcpClient -> send -> mobile_zwave:stopAddDevice:Zwave");
                 TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
             }
             finish();
             return false;
-        }else {
+        } else {
             return super.onKeyDown(keyCode, event);
         }
     }
@@ -415,12 +448,11 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (MotionEvent.ACTION_OUTSIDE == event.getAction()) {
-            Logg.i(LOG_TAG,"onTouchEvent=====");
+            Logg.i(LOG_TAG, "onTouchEvent=====");
             return true;
         }
         return true;
     }
-
 
 
 }

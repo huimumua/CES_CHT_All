@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/device_width"
+    android:layout_height="@dimen/device_heigh"
+    android:background="@android:color/white"
+    android:orientation="vertical"
+    tools:context=".home.activity.ResetActivity">
+
+    <TextView
+        android:id="@+id/learn_mode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="start learn mode..."
+        android:layout_gravity="center"
+        />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Controller Attribute:"
+        android:layout_gravity="center"
+        android:layout_marginTop="@dimen/activity_horizontal_margin"
+        />
+    <TextView
+        android:id="@+id/controller_attribute"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="@dimen/activity_horizontal_margin"
+        />
+    <TextView
+        android:id="@+id/tv_dsk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DSK:"
+        android:layout_gravity="center"
+        android:layout_marginTop="@dimen/activity_horizontal_margin"
+        android:textColor="@android:color/holo_red_light"
+        android:visibility="invisible"
+        />
+    <TextView
+        android:id="@+id/dsk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="@dimen/activity_horizontal_margin"
+        android:textColor="@android:color/holo_red_light"
+        />
+</LinearLayout>
