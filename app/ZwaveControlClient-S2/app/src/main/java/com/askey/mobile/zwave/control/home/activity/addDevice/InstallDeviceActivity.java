@@ -11,6 +11,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -39,6 +40,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
     private ImageView step_iv;
     private TextView step_title, step_notify, addStstus;
     private ImageView step_anim;
+    private Button finishButton;
     private ProgressBar progressBar;
     private String brand = "";
     private String deviceType = "";
@@ -59,7 +61,13 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                         TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
                     }
                     if (!InstallDeviceActivity.this.isFinishing()) {
-                        showFailedAddZaveDialog(getResources().getString(R.string.fail_add_notify));
+                        ((InstallDeviceActivity) mContext).runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                showFailedAddZaveDialog(mContext.getResources().getString(R.string.fail_add_notify));
+                            }
+                        });
+                        //finish();
                     }
                     break;
             }
@@ -101,13 +109,32 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
         if (TcpClient.getInstance().isConnected()) {
             Logg.i(LOG_TAG, "TcpClient - > isConnected ");
             TcpClient.getInstance().getTransceiver().send("mobile_zwave:addDevice:Zwave");
-            timer = new Timer(true);
-            timer.schedule(new InstallDeviceActivity.RemoteTimerTask(), Const.TCP_TIMER_TIMEOUT); //延时1000ms后执行，1000ms执行一次
+            tcpTimeoutThread.start();
+
         }
 
 
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        tcpTimeoutThread.interrupt(); //停止线程
+        try {
+            tcpTimeoutThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    Thread tcpTimeoutThread = new Thread(new Runnable() {
+        @Override
+        public void run() {
+            timer = new Timer(true);
+            timer.schedule(new InstallDeviceActivity.RemoteTimerTask(), Const.TCP_TIMER_TIMEOUT); //延时1000ms后执行，1000ms执行一次
+        }
+    });
 
     MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
         @Override
@@ -135,14 +162,11 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                                 Log.i("InstallDeviceActivity", "nodeId = " + NodeId);
                                 startActivity(intent);
                                 finish();
-                            } else {
-                                ((Activity) mContext).runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(mContext, "Add Device Fail ! ", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
                             }
+                            // MQTT返回Result : fail时处理，因为TCP处理了fail，所以这里暂时不处理
+//                            else if(result.equals("fail")) {
+//                                showAddFailDialog();
+//                            }
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -243,28 +267,43 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                     public void run() {
                         String messageType = jsonObject.optString("MessageType");
                         String status = "";
+                        String isAdded = "";
                         if (result.contains("Status")) {
                             status = jsonObject.optString("Status");
                         }
+                        if(result.contains("NewAdded")){
+                            isAdded = jsonObject.optString("NewAdded");
+                        }
+
                         if ("Node Add Status".equals(messageType)) {
-                            if ("Success".equals(status)) {
+
+                            if("No".equals(isAdded)){
+                                addStstus.setText(getResources().getString(R.string.node_added)); //This node has already been included
+                                //progressBar.setIndeterminate(false);//参数为true时，进度条采用不明确显示进度的‘模糊模式’
+                                progressBar.setVisibility(View.GONE);
+                                step_iv.setVisibility(View.GONE);
+                                finishButton.setVisibility(View.VISIBLE);
+
+                                //停止TCP超时的timer。不然90s后会报错
+                                timerCancel();
+                                Logg.i(LOG_TAG, "This node has already been included");
+
+                            } else if ("Success".equals(status) && "Yes".equals(isAdded)) {
                                 Toast.makeText(mContext, "add Success", Toast.LENGTH_SHORT).show();
                                 Logg.i(LOG_TAG, "=====result==" + "Success");
-                                addStstus.setText("Success, Please wait a moment to rename");
+                                addStstus.setText(getResources().getString(R.string.add_device_success));//Success, Please wait a moment to rename
                                 progressBar.setIndeterminate(false);
                             } else if ("Failed".equals(status)) {
                                 Logg.i(LOG_TAG, "=====result==" + "Fail");
                                 showAddFailDialog();
                                 progressBar.setIndeterminate(false);
                             } else if ("Learn Ready".equals(status)) {
-                                addStstus.setText("Please press the trigger button of the device");
+                                addStstus.setText(getResources().getString(R.string.add_device_learn_ready));//Please press the trigger button of the device
                                 //10S后 超时后 调用StopAddDevice();
 //                                timerCancel();
                             } else if ("Timeout".equals(status)) {
                                 TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
                                 showFailedAddZaveDialog(getResources().getString(R.string.fail_add_notify));
-                            } else {
-                                addStstus.setText(status);
                             }
                         }
                     }
@@ -366,6 +405,8 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
     private void initView() {
         step_iv = (ImageView) findViewById(R.id.step_iv);
         step_iv.setOnClickListener(this);
+        finishButton = (Button) findViewById(R.id.button_finish);
+        finishButton.setOnClickListener(this);
         step_title = (TextView) findViewById(R.id.step_title);
         step_notify = (TextView) findViewById(R.id.step_notify);
         step_anim = (ImageView) findViewById(R.id.step_anim);
@@ -404,6 +445,9 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                 } else {
                     Toast.makeText(mContext, "Please wait a moment...", Toast.LENGTH_SHORT).show();
                 }
+                break;
+            case R.id.button_finish:
+                finish();
                 break;
         }
     }

@@ -24,5 +24,16 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:padding="15dp"
+            android:textSize="20sp"
+            android:textColor="@color/red"
             android:text="please press device button" />
+
+        <Button
+            android:id="@+id/remove_confirm_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/activity_cable_title_top_40dp"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/ok"
+            android:visibility="gone"/>
 </LinearLayout>

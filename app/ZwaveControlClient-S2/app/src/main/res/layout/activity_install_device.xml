@@ -41,8 +41,9 @@
                 android:id="@+id/add_status"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="15dp"
+                android:padding="18dp"
                 android:gravity="center"
+                android:textColor="@color/color_primaryDark"
                 android:text="Please wait a moment..."
                 />
 
@@ -62,5 +63,13 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:src="@drawable/vector_drawable_ic_next_solid" />
+
+    <Button
+        android:id="@+id/button_finish"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:visibility="gone"
+        android:text="@string/done"/>
 
 </LinearLayout>

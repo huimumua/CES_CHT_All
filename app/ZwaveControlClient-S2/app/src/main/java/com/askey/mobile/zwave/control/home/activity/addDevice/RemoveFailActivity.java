@@ -3,6 +3,8 @@ package com.askey.mobile.zwave.control.home.activity.addDevice;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
@@ -28,6 +30,7 @@ public class RemoveFailActivity extends BaseActivity {
     private static DeleteDeviceListener deleteDeviceListener;
     TextView title;
     TextView status;
+    Button removeConfirmBtn;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -36,6 +39,13 @@ public class RemoveFailActivity extends BaseActivity {
         title = (TextView) findViewById(R.id.title);
         status = (TextView) findViewById(R.id.status);
         title.setText("removeFailDevice");
+        removeConfirmBtn = (Button) findViewById(R.id.remove_confirm_btn);
+        removeConfirmBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
 
         MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.removeFailDevice(getIntent().getStringExtra("nodeId")));
@@ -67,6 +77,13 @@ public class RemoveFailActivity extends BaseActivity {
                                 finish();
                             }
                         }
+                        //remove失败返回的消息 {"reported":{"Interface":"removeDevice","NodeId":"fail","Result":"fail"}}
+                        String result = reportedObject.optString("Result");
+                        if(result.equals("fail")){
+                            status.setText("Remove failed,Please confirm whether the device exists.");
+                            removeConfirmBtn.setVisibility(View.VISIBLE);
+                        }
+
                     } catch (JSONException e) {
                         e.printStackTrace();
                         Logg.i(LOG_TAG, "errorJson------>" + mqttResult);

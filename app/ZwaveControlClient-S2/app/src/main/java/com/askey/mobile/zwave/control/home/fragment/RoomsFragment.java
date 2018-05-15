@@ -463,13 +463,15 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
                         int size = jsonArray.length();
                         if (size > 0) {
                             roomInfoList.clear();
-                            for (int i = 0; i < size; i++) {
+                            //正常代码应该是(int i = 0; i < size; i++)，由于用于过认证，因此不显示其他房间
+                            for (int i = 0; i < 1; i++) {
                                 JSONObject info = jsonArray.getJSONObject(i);
                                 String name = info.optString("name");
                                 RoomInfo roomInfo = new RoomInfo();
                                 roomInfo.setRoomName(name);
                                 roomInfo.setRoomId(1);
-                                roomInfoList.add(roomInfo);
+                                Log.i(LOG_TAG, "-----------getRooms");
+                                roomInfoList.add(roomInfo); //添加room列表的地方
                             }
                         }
                         MQTTManagement.getSingInstance().clearMessageArrived();
@@ -507,11 +509,11 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
                                 RoomInfo roomInfo = new RoomInfo();
                                 roomInfo.setRoomName(name);
                                 roomInfo.setRoomId(1);
-                                roomInfoList.add(roomInfo);
+                                //roomInfoList.add(roomInfo);
                             }
                         }
                         stopWaitDialog();
-                        initFragment();
+                        //initFragment();
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }

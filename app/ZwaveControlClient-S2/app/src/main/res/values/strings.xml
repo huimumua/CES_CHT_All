@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">QBee Home</string>
     <string name="title_alert">Pairing time out</string>
+    <string name="add_device_failed">Add device failed</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="two_click_exit">Click twice then exit</string>
@@ -301,6 +302,9 @@
     <string name="list_instead">Select from list instead.</string>
     <string name="add_device">Add Device</string>
     <string name="no_devices">No devices found.Scan again or select from list</string>
+    <string name="node_added">This node has already been included</string>
+    <string name="add_device_success">Success, Please wait a moment to rename</string>
+    <string name="add_device_learn_ready">Please press the trigger button of the device</string>
     <string name="select_from_list1">Select from list</string>
     <string name="scan_again">Scan again</string>
     <string name="device_found">Device(s) found. Tap on icon to install</string>
