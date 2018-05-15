@@ -420,7 +420,7 @@ public class ZwaveControlService extends Service {
 
         //list = zwaveDeviceManager.getRoomDevicesList(Room);
 
-        Log.i(LOG_TAG, "LIST SIZE = " + list.size());
+        Log.i(LOG_TAG, "get room "+Room+ " | LIST SIZE = " + list.size());
 
         JSONObject jo = new JSONObject();
         JSONArray Jarray= new JSONArray();
@@ -609,6 +609,7 @@ public class ZwaveControlService extends Service {
     }
 
     public int getDeviceInfo(){
+        Log.d(LOG_TAG,"into getDeviceInfo");
         return ZwaveControlHelper.ZwController_GetDeviceInfo();
     }
 
@@ -1761,7 +1762,7 @@ public class ZwaveControlService extends Service {
                 zwaveDevice.setName(nodeInfoTemp.getNodeId());
                 zwaveDevice.setDevType("");
                 zwaveDevice.setCategory("unknown");
-                zwaveDevice.setRoomName("");
+                zwaveDevice.setRoomName("My Home");
                 zwaveDevice.setFavorite("0");
                 zwaveDevice.setInterfaceId(setEndpointInterfaceId(gson.toJson(nodeInfoTemp).toString()));
                 zwaveDeviceManager.insertZwaveDevice(zwaveDevice);
@@ -1877,7 +1878,6 @@ public class ZwaveControlService extends Service {
                 flag = 2;
                 Log.i(LOG_TAG, "=======Node Add Status=Success=");
                 ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
-                getDeviceList(DeviceInfo.room);
                 ZwaveControlHelper.ZwController_GetDeviceInfo();
             }
         } else if ("Node Remove Status".equals(messageType)) {
@@ -1886,7 +1886,6 @@ public class ZwaveControlService extends Service {
                 Log.i(LOG_TAG, "=======Node Remove Status=Success=");
                 flag = 3;
                 ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
-                getDeviceList(DeviceInfo.room);
                 ZwaveControlHelper.ZwController_GetDeviceInfo();
             }
 
@@ -1896,11 +1895,9 @@ public class ZwaveControlService extends Service {
                 Log.i(LOG_TAG, "=======Node Remove Status=Success=");
                 flag = 3;
                 ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
-                getDeviceList(DeviceInfo.room);
                 ZwaveControlHelper.ZwController_GetDeviceInfo();
             }
         } else if (messageType.equals("All Node Info Report")) {
-            Log.i(LOG_TAG,"All Node Info Report flag = "+flag);
             if (flag == 0) {
                 String jsonResult = getDeviceInfo(jniResult);
 
@@ -1941,14 +1938,11 @@ public class ZwaveControlService extends Service {
                 insertDevice(zwaveType,jniResult,flag);
                 zwaveControlResultCallBack("All Node Info Report", jsonResult);
             } else if (flag == 2) {
-
                 insertDevice(zwaveType,jniResult,flag);
-                getDeviceList(DeviceInfo.room);
                 flag = 0;
             } else if (flag == 3) {
                 flag = 0;
                 deleteDevice(zwaveType,jniResult);
-                getDeviceList(DeviceInfo.room);
             }
         /*
         } else if (messageType.equals("All Node Info Report")) {
@@ -2125,7 +2119,7 @@ public class ZwaveControlService extends Service {
                 Log.i(LOG_TAG, "=======Node setDefault Status=Success=");
                 flag = 3;
                 ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
-                ZwaveControlHelper.ZwController_GetDeviceInfo();
+                //ZwaveControlHelper.ZwController_GetDeviceInfo();
             }
         } else if ("Door Lock Operation Report".equals(messageType)) {
             zwaveControlResultCallBack("Door Lock Operation Report", jniResult);

@@ -1215,6 +1215,8 @@ int zwnet_node_info_update(zwnet_p nw, appl_node_info_t *node_info, sec2_node_in
     node = zwnode_find(&nw->ctl, node_info->node_id);
     if (node)
     {
+        ALOGI("This node has already added into network, now update node info.");
+        node->isNew = 0;
         node->listen = node_info->listen;//update listening flag as old node information in persistent storage doesn't store this variable
 
         //Existing node found, check whether there is any changes
@@ -1329,6 +1331,8 @@ int zwnet_node_info_update(zwnet_p nw, appl_node_info_t *node_info, sec2_node_in
         }
         return ZW_ERR_MEMORY;
     }
+
+    node->isNew = 1;
 
     //Init non-zero value
     node->wkup_intv = -1;
@@ -9829,7 +9833,7 @@ zwnet_node_rm_cb - Remove node from network callback function
 */
 static void zwnet_node_rm_cb(appl_layer_ctx_t *appl_ctx, uint8_t sts, uint8_t rm_node_id)
 {
-    const char *status_msg[] = { "OK", "Failed", "unknown"};
+    const char *status_msg[] = { "OK", "Learn Ready", "Failed", "unknown"};
 
     int         status;
     zwnet_p     nw = (zwnet_p)appl_ctx->data;
@@ -9839,16 +9843,18 @@ static void zwnet_node_rm_cb(appl_layer_ctx_t *appl_ctx, uint8_t sts, uint8_t rm
         case REMOVE_NODE_STATUS_DONE:
             status = 0;
             break;
-
-        case REMOVE_NODE_STATUS_FAILED:
+        case REMOVE_NODE_STATUS_LEARN_READY:
             status = 1;
+            break;
+        case REMOVE_NODE_STATUS_FAILED:
+            status = 2;
             break;
 
         default:
-            status = 2;
+            status = 3;
     }
 
-    debug_zwapi_msg(&nw->plt_ctx, "zwnet_node_rm_cb: status:%u (%s)", sts, status_msg[status]);
+    ALOGI("zwnet_node_rm_cb: status:%u (%s)", sts, status_msg[status]);
 
     if (sts == REMOVE_NODE_STATUS_DONE)
     {
@@ -9876,11 +9882,14 @@ static void zwnet_node_rm_cb(appl_layer_ctx_t *appl_ctx, uint8_t sts, uint8_t rm
     //Cancel operation without sending REMOVE_NODE_STOP
 
     //Reset operation to "no operation"
-    nw->curr_op = ZWNET_OP_NONE;
+    //nw->curr_op = ZWNET_OP_NONE;
 
     //Callback to notify status
     if (sts == REMOVE_NODE_STATUS_DONE)
     {
+        //Reset operation to "no operation"
+        nw->curr_op = ZWNET_OP_NONE;
+
         zwnet_sts_t info = {0};
 
         info.type = ZWNET_STS_INFO_NODE_ID;
@@ -9888,8 +9897,13 @@ static void zwnet_node_rm_cb(appl_layer_ctx_t *appl_ctx, uint8_t sts, uint8_t rm
 
         zwnet_notify(nw, ZWNET_OP_RM_NODE, OP_DONE, &info);
     }
+    else if(sts == REMOVE_NODE_STATUS_LEARN_READY)
+    {
+        zwnet_notify(nw, ZWNET_OP_RM_NODE, REMOVE_NODE_STATUS_LEARN_READY, NULL);
+    }
     else
     {
+        nw->curr_op = ZWNET_OP_NONE;
         zwnet_notify(nw, ZWNET_OP_RM_NODE, OP_FAILED, NULL);
     }
 
@@ -10149,7 +10163,7 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
     #define NODE_ADD_STATUS_SECURITY_FAILED      9
 */
     const char *status_msg[] = { "OK", "Failed", "Added but insecure",
-                                 "unknown"};
+                                 "Learn Ready", "unknown"};
 
     zwnet_p             nw = (zwnet_p)appl_ctx->data;
     zwnode_p            node;
@@ -10173,15 +10187,19 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
             status = 2;
             break;
 
-        default:
+        case ADD_NODE_STATUS_LEARN_READY:
             status = 3;
+            break;
+
+        default:
+            status = 4;
     }
 
     int security_incl_status = 0;
     int has_s0_cls = 0;
     has_s2_cls = 0;
 
-    debug_zwapi_msg(&nw->plt_ctx, "add_node_nw_cb: status:%u (%s)", add_ni->status, status_msg[status]);
+    ALOGI("add_node_nw_cb: status:%u (%s)", add_ni->status, status_msg[status]);
 
     if (add_ni_s2->sec2_valid)
     {
@@ -10289,6 +10307,10 @@ static void zwnet_add_node_cb(appl_layer_ctx_t *appl_ctx, appl_node_info_sec2_t 
             zwnet_notify(nw, (unsigned)nw->curr_op /*ZWNET_OP_ADD_NODE*/, OP_FAILED, NULL);
         }
         plt_mtx_ulck(nw->mtx);
+    }
+    else if(add_ni->status == ADD_NODE_STATUS_LEARN_READY)
+    {
+        zwnet_notify(nw, (unsigned)nw->curr_op /*ZWNET_OP_ADD_NODE*/, OP_ADD_NODE_LEARN_READY, NULL);
     }
     else
     {

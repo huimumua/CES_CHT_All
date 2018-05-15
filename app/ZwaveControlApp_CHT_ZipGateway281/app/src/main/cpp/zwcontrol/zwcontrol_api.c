@@ -1544,7 +1544,7 @@ static void dummy_post_msg(void *msg)
     free(msg);
 }
 
-static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
+static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts, hl_appl_ctx_t * hl_appl)
 {
     cJSON *jsonRoot;
     jsonRoot = cJSON_CreateObject();
@@ -1562,6 +1562,10 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Failed");
         }
+        else if(sts == OP_ADD_NODE_LEARN_READY)
+        {
+            cJSON_AddStringToObject(jsonRoot, "Status", "Learn Ready");
+        }
         else if(sts == OP_ADD_NODE_PROTOCOL_DONE)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Protocol Done");
@@ -1576,6 +1580,16 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
         }
         else if(sts == OP_DONE)
         {
+            //tiny
+            zwnode_p node = zwnode_find(&hl_appl->zwnet->ctl, hl_appl->node_add_desc.nodeid);
+            if(node && node->isNew)
+            {
+                cJSON_AddStringToObject(jsonRoot, "NewAdded", "Yes");
+            }
+            else
+            {
+                cJSON_AddStringToObject(jsonRoot, "NewAdded", "No");
+            }
             cJSON_AddStringToObject(jsonRoot, "Status", "Success");
         }
 
@@ -1599,7 +1613,7 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Failed");
         }
-        /*else if(sts == OP_RM_NODE_REMOVING)
+        else if(sts == OP_RM_NODE_REMOVING)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Removing");
         }
@@ -1610,7 +1624,7 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts)
         else if(sts == OP_RM_NODE_FOUND)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Node Found");
-        }*/
+        }
         else if(sts == OP_DONE)
         {
             cJSON_AddStringToObject(jsonRoot, "Status", "Success");
@@ -1832,7 +1846,7 @@ static void hl_nw_notify_cb(void *user, uint8_t op, uint16_t sts, zwnet_sts_t *i
         //PostMessage(ghWnd, MSG_ZWAPI_NOTIFY, 0, (LPARAM )nw_notify);
         dummy_post_msg(nw_notify);
 
-        char *str = hl_nw_create_op_msg(op, sts);
+        char *str = hl_nw_create_op_msg(op, sts, nw_notify->hl_appl);
 
         if(str != NULL)
         {
@@ -2340,7 +2354,7 @@ static int hl_add_node(hl_appl_ctx_t *hl_appl)
 
     if (netdesc->ctl_cap & ZWNET_CTLR_CAP_S2)
     {
-        ALOGD("Controller supports security 2.\n");
+        ALOGD("Controller supports security 2 inclusion.\n");
         hl_appl->sec2_add_node = 1;
     }
     else
@@ -2382,7 +2396,7 @@ static int hl_add_node(hl_appl_ctx_t *hl_appl)
                 hl_appl->sec2_cb_enter |= SEC2_ENTER_DSK;
             }
 
-            hl_appl->sec2_cb_exit = 0;
+            /*hl_appl->sec2_cb_exit = 0;
 
             ALOGD("Waiting for Requested keys and/or DSK callback ...\n");
 
@@ -2393,7 +2407,7 @@ static int hl_add_node(hl_appl_ctx_t *hl_appl)
                 if (hl_appl->sec2_cb_exit == 1)
                     break;
                 plt_sleep(100);
-            }
+            }*/
         }
     }
 
@@ -2557,16 +2571,9 @@ int zwcontrol_add_node(hl_appl_ctx_t *hl_appl)
 
     result = hl_add_node(hl_appl);
 
-    if(hl_appl->sec2_add_node)
+    if(result != 0)
     {
-        if(result == 0)
-        {
-            ALOGI("Added node success.");
-        }
-        else
-        {
-            ALOGE("Add node with error:%d\n", result);
-        }
+        ALOGE("zwcontrol_add_node with error: %d",result);
     }
 
     return result;

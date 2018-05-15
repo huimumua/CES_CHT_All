@@ -1,11 +1,14 @@
 package com.askey.firefly.zwave.control.ui;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothClass;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.AssetManager;
 import android.hardware.usb.UsbDevice;
@@ -52,7 +55,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -84,7 +89,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     private String inputDsk;
     private int selectNode;
     private String selectProvisionList;
-    private int getDeviceInfoFlag = 0;
     private boolean getProvisionListFlag = false;
     private boolean getProvisionNodeFlag = false;
 
@@ -97,9 +101,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         setContentView(R.layout.activity_welcome);
         mContext = this;
 
-        showProgressDialog(mContext, "Initializing，Open Zwave Controller...");
+        Intent MqttIntent = new Intent(WelcomeActivity.this, MQTTBroker.class);
+        if (!isServiceRunning(mContext,MQTTBroker.class)){
+            startService(MqttIntent);
+        }
 
-        new Thread(initMqtt).start();
+        showProgressDialog(mContext, "Initializing，Open Zwave Controller...");
 
         zwDevManager = ZwaveDeviceManager.getInstance(this);
 
@@ -200,17 +207,30 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         @Override
         public void run() {
 
-            while (!DeviceInfo.isMQTTInitFinish) {
-                //Log.i(LOG_TAG, "isZwaveInitFinish & isMQTTInitFinish true");
+            while (!DeviceInfo.isMQTTInitFinish && !DeviceInfo.isOpenControllerFinish && !DeviceInfo.isZwaveInitFinish) {
 
                 try {
-                    Thread.sleep(100);
+                    Log.i(LOG_TAG, "isOpenControllerFinish & isMQTTInitFinish true");
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
+
             initSensorfunc();
+
+            while (!DeviceInfo.isZwaveInitFinish) {
+
+                try {
+                    Log.i(LOG_TAG, "isZwaveInitFinish true");
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
             initZwave();
+
         }
     };
 
@@ -287,6 +307,21 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             }
         });
     }
+
+    public static boolean isServiceRunning(Context context,Class<?> serviceClass){
+        final ActivityManager activityManager = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
+        final List<ActivityManager.RunningServiceInfo> services = activityManager.getRunningServices(Integer.MAX_VALUE);
+
+        for (ActivityManager.RunningServiceInfo runningServiceInfo : services) {
+            Log.d(LOG_TAG, String.format("Service:%s", runningServiceInfo.service.getClassName()));
+            if (runningServiceInfo.service.getClassName().equals(serviceClass.getName())){
+                Log.i(LOG_TAG,serviceClass.getName()+" is already running");
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     private Runnable activityZwaveControlService = new Runnable() {
         @Override
@@ -572,14 +607,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "addProvisionListEntry":
                         Log.i(LOG_TAG, "deviceService.addProvisionListEntry");
-                        if (DeviceInfo.mqttString.contains("01")) {
-                            DeviceInfo.bootMode = true;
-                            Log.d(LOG_TAG, "DeviceInfo.bootMode = true");
-
-                        } else if (DeviceInfo.mqttString.contains("00")) {
-                            DeviceInfo.bootMode = false;
-                            Log.d(LOG_TAG, "DeviceInfo.bootMode = false");
-                        }
                         zwaveService.addProvisionListEntry("Zwave", DeviceInfo.mqttString2.getBytes(), DeviceInfo.bootMode);
                         DeviceInfo.getMqttPayload = "";
                         break;
@@ -895,6 +922,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         zwaveService.getBinarySwitchState(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
                         DeviceInfo.getMqttPayload = "";
                         break;
+
+                    case "getDeviceInfo":
+                        Log.i(LOG_TAG, "deviceService.getDeviceInfo");
+                        zwaveService.getDeviceInfo();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
                 }
             }
         }
@@ -983,7 +1016,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 byte[] dskNumber = inputDsk.getBytes();
                 zwaveService.addDevice(DeviceInfo.devType, dskNumber);
                 */
-                getDeviceInfoFlag = 1;
                 break;
 
             case R.id.btnRemove:
@@ -996,7 +1028,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 break;
 
             case R.id.btnButton:
-                zwaveService.startStopSwitchLevelChange(selectNode,1,1,1,1,1);
                 if (spApiList.getSelectedItem().toString().contains("ZwController_startNetworkHealthCheck")) {
                     zwaveService.startNetworkHealthCheck();
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_getProvisionListEntry")) {
@@ -1006,7 +1037,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_rmAllProvisionListEntry")) {
                     zwaveService.rmAllProvisionListEntry();
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_getDeviceList")) {
-                    zwaveService.getDeviceList(DeviceInfo.room);
+                    zwaveService.getDeviceList("ALL");
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_battery_get")) {
                     zwaveService.getDeviceBattery(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_sensor_multilevel_get")) {
@@ -1016,10 +1047,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         e.printStackTrace();
                     }
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_Command_Class_get")) {
-                    getDeviceInfoFlag = 2;
                     zwaveService.getDeviceInfo();
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_Device_get")) {
-                    getDeviceInfoFlag = 3;
                     zwaveService.getDeviceInfo();
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_basic_get")) {
                     zwaveService.getBasic(DeviceInfo.devType, selectNode);
@@ -1379,7 +1408,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             if (zwaveService != null) {
                 zwaveService.register(mCallback);       //add & remove and other info call back
                 //zwaveService.register(mReqCallBacks);   //use other thread for grantKey pinCode csa req call back
-                openController();
+                requestControlUSBPermission();
             }
         }
 
@@ -1607,7 +1636,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                                     e.printStackTrace();
                                 }
                                 txAllMsg.setText("Success");
-                                zwaveService.getDeviceInfo();
+                                //zwaveService.getDeviceInfo();
                             } else if("Learn Ready".equals(status)){
                                 txAllMsg.setText("Please press the trigger button of the device");
                             }else{
@@ -1693,6 +1722,41 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         return ret;
     }
 
+    private void requestControlUSBPermission() {
+
+        UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        HashMap<String, UsbDevice> usbDevices = manager.getDeviceList();
+
+        UsbDevice dev = null;
+        int vid = 0;
+        int pid = 0;
+
+        for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
+            dev = entry.getValue();
+            vid = dev.getVendorId();
+            pid = dev.getProductId();
+            Log.d(LOG_TAG, "Usb Device Vid = "+ Integer.toHexString(vid) +",Pid = "+ Integer.toHexString(pid));
+            if ((vid == 0x0658) && (pid == 0x0200)) {
+                Log.d(LOG_TAG, "Usb Device Is CDC Device...");
+                if (manager.hasPermission(dev)) {
+                    Log.d(LOG_TAG, "Usb Permission Ok....");
+                    openController();
+                    break;
+                } else {
+                    Log.e(LOG_TAG, "Usb Permission Na,Try To Request Permission....");
+                    PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+                    manager.requestPermission(dev, mPendingIntent);
+                    IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+                    usbReceiver = new usbReceiver();
+                    registerReceiver(usbReceiver, filter);
+                }
+            }else{
+                dev = null;
+                Log.d(LOG_TAG, "Usb Device Is Not CDC Device...");
+            }
+        }
+
+    }
 
     //can take off this function !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     private class usbReceiver extends BroadcastReceiver {
@@ -1721,9 +1785,11 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     private void openController() {
         //timer.schedule(new mTimerTask(), 1000 * 120);
         String openResult = zwaveService.openController();
+        /*
         if (openResult.contains(":0")){
             DeviceInfo.isOpenControllerFinish = true;
         }
+        */
     }
 
 }

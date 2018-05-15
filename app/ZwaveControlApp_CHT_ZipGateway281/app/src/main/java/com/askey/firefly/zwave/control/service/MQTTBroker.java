@@ -58,6 +58,7 @@ public class MQTTBroker extends Service {
 
 
 
+
     @Override
     public void onCreate() {
 
@@ -1295,6 +1296,7 @@ public class MQTTBroker extends Service {
 
             } else if (DeviceInfo.className.equals("All Node Info Report")) {
                 getDeviceInfo(message);
+                DeviceInfo.getMqttPayload = "getDeviceList";
                 DeviceInfo.className = "";
 
             } else if (DeviceInfo.result.contains("Remove Failed Node")) {
@@ -1381,6 +1383,8 @@ public class MQTTBroker extends Service {
                     e.printStackTrace();
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.getMqttPayload = "getDeviceInfo";
+                setDefaultFlag = true;
                 DeviceInfo.className = "";
                 DeviceInfo.result = "";
                 DeviceInfo.resultToMqttBroker = "";
@@ -2656,7 +2660,6 @@ public class MQTTBroker extends Service {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                setDefaultFlag = true;
                 publishMessage(Const.PublicTopicName, message.toString());
                 DeviceInfo.className = "";
                 DeviceInfo.result = "";
@@ -2675,6 +2678,9 @@ public class MQTTBroker extends Service {
                 DeviceInfo.resultToMqttBroker = "";
 
             } else if (DeviceInfo.className.equals("openController")) {
+                DeviceInfo.getMqttPayload = "getDeviceInfo";
+                DeviceInfo.isOpenControllerFinish = true;
+                Log.i(LOG_TAG, " === isOpenControllerFinish = true ===");
                 DeviceInfo.className = "";
                 DeviceInfo.result = "";
                 DeviceInfo.resultToMqttBroker = "";
@@ -2761,7 +2767,7 @@ public class MQTTBroker extends Service {
     }
 
     private void getDeviceList(String result) {
-        Log.i(LOG_TAG, "getDeviceList");
+        Log.i(LOG_TAG, "into getDeviceList");
         ArrayList<String> tmpLine = Utils.searchString(result, "deviceList");
 
         for (int idx = 0; idx < tmpLine.size(); idx++) {
@@ -2811,62 +2817,82 @@ public class MQTTBroker extends Service {
     private void addRemoveDevice(JSONObject message) {
         //Log.i(LOG_TAG, "gino result :   " + DeviceInfo.result);
         mTCPServer.sendMessage(Const.TCPClientPort, DeviceInfo.result); //TCP format
-
+        Log.i(LOG_TAG, "into addRemoveDevice");
+/*
         if(DeviceInfo.result.contains("Failed")) {
-            Log.d(LOG_TAG,"DeviceInfo.result.contains(\"Failed\")");
+            Log.i(LOG_TAG, "addRemoveDevice Failed");
             DeviceInfo.result = "";
             DeviceInfo.className = "";
         }
-
+*/
 
         if (DeviceInfo.result.contains("addDevice:") || DeviceInfo.result.contains("removeDevice:")) {
             String[] tokens = DeviceInfo.result.split(":");
             if (tokens.length < 3) {
-                Log.i(LOG_TAG, "AIDLResult " + DeviceInfo.className + " : wrong format " + DeviceInfo.result);
+                Log.i(LOG_TAG, "addRemoveDevice length < 3");
             } else {
-                Log.d(LOG_TAG,"------------------- addDevice & removeDevice tokens.length > 3 -------------------");
-
+                Log.i(LOG_TAG, "addRemoveDevice length > 3");
                 String devType = tokens[1];
                 String tNodeId = tokens[2];
 
                 if (DeviceInfo.className.contains("addDevice")) {
-                    Log.i(LOG_TAG, "-------------------Interface  NodeId  Result-------------------");
+                    Log.i(LOG_TAG, "Interface  NodeId  Result");
                     try {
                         message.put("Interface", "addDevice");
                         message.put("NodeId", tNodeId);
                         if (tNodeId.equals("fail")) {
-                            Log.i(LOG_TAG, "-------------------Interface  NodeId  Result fail-------------------");
+                            Log.i(LOG_TAG, "addRemoveDevice Result fail");
                             message.put("Result", "fail");
                         } else {
                             subscribeToTopic(Const.PublicTopicName + devType + tNodeId);
-                            Log.i(LOG_TAG, "-------------------Interface  NodeId  Result true-------------------");
+                            Log.i(LOG_TAG, "addRemoveDevice Result true");
                             message.put("Result", "true");
+                            DeviceInfo.getMqttPayload = "getDeviceList";
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                     publishMessage(Const.PublicTopicName, message.toString());
+                    DeviceInfo.className = "";
                 } else {
+                    Log.i(LOG_TAG, "Interface  NodeId  Result");
                     if(!setDefaultFlag) {
                         try {
                             message.put("Interface", "removeDevice");
                             message.put("NodeId", tNodeId);
                             if (tNodeId.equals("fail")) {
+                                Log.i(LOG_TAG, "addRemoveDevice Result fail");
                                 message.put("Result", "fail");
                             } else {
                                 unsubscribeTopic(Const.PublicTopicName + devType + tNodeId);
+                                Log.i(LOG_TAG, "addRemoveDevice Result true");
                                 message.put("Result", "true");
+                                DeviceInfo.getMqttPayload = "getDeviceList";
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
                         publishMessage(Const.PublicTopicName, message.toString());
+                        DeviceInfo.className = "";
+                    } else {
+                        setDefaultFlag = false;
+                        DeviceInfo.getMqttPayload = "getDeviceList";
                     }
-                    setDefaultFlag = false;
                 }
                 Const.TCPClientPort = 0;
             }
         }
+        /*
+        else if (DeviceInfo.result.contains("NewAdded")) {
+                String[] tmpAdd = DeviceInfo.result.split(",");
+            if(tmpAdd[1].contains("No")) {
+                Log.d(LOG_TAG, "second add device = " + tmpAdd[0] + "," + "\n" + "\t" + "\"Status\":" +
+                        "\t" + "\"Failed\"");
+                mTCPServer.sendMessage(Const.TCPClientPort, tmpAdd[0] + "," + "\n" + "\t" + "\"Status\":" +
+                        "\t" + "\"Failed\""); //TCP format
+            }
+        }
+        */
     }
 
 }

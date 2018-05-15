@@ -33,25 +33,7 @@ public class UsbSerial {
 
     public int Open()
     {
-        int ret;
-        int de_cnt = 10;
-        while(de_cnt > 0){
-            try{
-                ret = CDCSerialDevice.Open(mContext);
-                if(ret == 0){
-                    return 0;
-                }else if(ret == -1) {
-                    return -1;
-                }
-                sleep(3000);
-            }catch (InterruptedException e){
-                Log.e(TAG, "Open Unknown Error....");
-                return -1;
-            }
-            de_cnt--;
-        }
-        Log.e(TAG, "Open CDC Device Timeout....");
-        return -1;
+        return CDCSerialDevice.Open(mContext);
     }
 
     public void Close()
