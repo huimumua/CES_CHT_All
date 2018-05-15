@@ -188,21 +188,14 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
                             String result = reportedObject.optString("Result");
                             String NodeId = reportedObject.optString("NodeId");
                             if(result.equals("true")){
-                                timerCancel();
+
                                 //删除成功则返回主页，否则提示删除失败，返回设备管理界面
-                                    Log.d("DeleteDeviceActivity","suc");
-                                    DeleteDevice.deleteSuccess(roomName);
-                                Const.setIsDataChange(true);
-                                startActivity(new Intent(mContext, DeleteDeviceSuccessActivity.class));
-                                finish();
-                            }else{
+                                    Log.d("DeleteDeviceActivity","Result:ture");
+                                deleteSuccess();
+                            } else if (result.equals("fail")) {
                                 timerCancel();
-                                ((Activity) mContext).runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(mContext,"Remove Device Fail ! ",Toast.LENGTH_SHORT).show();
-                                    }
-                                });
+                                Toast.makeText(mContext,"Remove Device Failed ! ",Toast.LENGTH_LONG).show();
+                                finish();
                             }
                         }
 
@@ -214,6 +207,14 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
             });
         }
     };
+
+    private void deleteSuccess(){
+        timerCancel();
+        DeleteDevice.deleteSuccess(roomName);
+        Const.setIsDataChange(true);
+        startActivity(new Intent(mContext, DeleteDeviceSuccessActivity.class));
+        finish();
+    }
 
     TCPReceive tcpReceive = new TCPReceive() {
         @Override
@@ -241,7 +242,7 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
     };
 
     private void removeDeviceResult(final String result) {
-        Logg.i(LOG_TAG,"=====removeDeviceResult===="+result);
+        Logg.i(LOG_TAG,"=====TCP:removeDeviceResult===="+result);
         if(result.contains("mobile_zwave:removeDevice:Zwave")){
             return;
         }else if(result.contains("firefly_zwaver:removeDevice:other")){
@@ -265,12 +266,14 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
                     try {
                         final JSONObject jsonObject = new JSONObject(result);
                         String messageType = jsonObject.optString("MessageType");
+
+                        // "MessageType": "Node Remove Status",
+                        //"Status": "Learn Ready"
                         if (messageType.equals("Node Remove Status")) {
                             String status = jsonObject.optString("Status");
                             Log.d("DeleteDeviceActivity",status);
                             if ("Success".equals(status)) {
-                                Log.d("DeleteDeviceActivity","suc_0");
-                                timerCancel();
+                                Log.d("DeleteDeviceActivity","Node Remove Status : Success");
 //                                //删除成功则返回主页，否则提示删除失败，返回设备管理界面
 //                                if (null != deleteDeviceListener) {
 //                                    Log.d("DeleteDeviceActivity","suc");
@@ -280,8 +283,16 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
 //                                    Const.setIsDataChange(true);
 //                                    finish();
 //                                }
+                                //deleteSuccess();
+                            } else if("Learn Ready".equals(status)){
+                                //提示用户按按钮
+                                step_notify1.setText("Please press the trigger button of the device");
+                            } else if("Failed".equals(status)){
+                                timerCancel();
+                                Toast.makeText(mContext,"Remove Device Failed ! ",Toast.LENGTH_LONG).show();
+                                finish();
                             } else {
-                                Toast.makeText(mContext, status, Toast.LENGTH_SHORT).show();
+                                step_notify1.setText(status);
                             }
                         }
                     } catch (JSONException e) {
@@ -301,7 +312,7 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
             case R.id.step_iv:
                 step_title.setText("Removing");
                 step_notify.setText("");
-                step_notify1.setText("Removing your Smart Switch");
+                step_notify1.setText(getResources().getString(R.string.please_wait_a_moment));
 
                 step_anim.setImageResource(R.drawable.ic_loading);
                 step_iv.setImageResource(R.drawable.ic_next_solid1108);

@@ -12,20 +12,37 @@
         android:id="@+id/reset"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="reset..."
         android:layout_gravity="center"
-        />
+        android:layout_marginTop="@dimen/device_bulb_icon_top_20dp"
+        android:text="@string/reset_device"
+        android:textColor="@color/text_color"
+        android:textSize="@dimen/activity_cable_title_top_40dp" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="network role:"
         android:layout_gravity="center"
         android:layout_marginTop="@dimen/activity_horizontal_margin"
-        />
+        android:text="@string/in_operation"
+        android:textColor="@color/text_color"
+        android:textSize="@dimen/activity_account_title_25sp" />
+
     <TextView
-        android:id="@+id/network_role"
+        android:id="@+id/reset_result"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        />
+        android:textSize="@dimen/activity_account_title_25sp"
+        android:textColor="@color/red"
+        android:layout_marginTop="@dimen/device_set_icon_top_10dp" />
+
+    <Button
+        android:id="@+id/reset_done"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="80dp"
+        android:text="@string/done"
+        android:background="@color/red"
+        android:visibility="gone"
+        android:layout_gravity="center_horizontal"/>
 </LinearLayout>

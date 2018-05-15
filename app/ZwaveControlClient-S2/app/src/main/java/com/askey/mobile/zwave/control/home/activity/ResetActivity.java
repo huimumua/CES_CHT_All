@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,14 +25,22 @@ import org.json.JSONObject;
 
 public class ResetActivity extends AppCompatActivity {
     private static final String LOG_TAG = ResetActivity.class.getSimpleName();
-    private TextView reset,networkRole;
+    private TextView reset,resetResult;
+    private Button doneButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_reset);
         reset = (TextView) findViewById(R.id.reset);
-        networkRole = (TextView) findViewById(R.id.network_role);
+        resetResult = (TextView) findViewById(R.id.reset_result);
+        doneButton = (Button) findViewById(R.id.reset_done);
+        doneButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
 
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
         MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.setDefault());
@@ -71,6 +81,10 @@ public class ResetActivity extends AppCompatActivity {
 //                                    String tmp = result.split(":")[1];
 //
 //                                }
+                                finish();
+                            }else {
+                                resetResult.setText(getResources().getString(R.string.reset_failed));
+                                doneButton.setVisibility(View.VISIBLE);
                             }
 
                         } else if (messageType.equals("Controller Attribute")){
@@ -79,7 +93,7 @@ public class ResetActivity extends AppCompatActivity {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    networkRole.setText(tmp);
+                                    resetResult.setText(tmp);
                                 }
                             });
                         } else if (messageType.equals("setDefault")){ //reset的返回结果
@@ -90,7 +104,7 @@ public class ResetActivity extends AppCompatActivity {
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        networkRole.setText("Reset failed!");
+                                        resetResult.setText("Reset failed!");
                                     }
                                 });
                             }
