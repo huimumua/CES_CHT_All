@@ -84,6 +84,7 @@
         android:text="Room"
         android:textSize="14sp"
         android:layout_marginTop="20dp"
+        android:visibility="gone"
         android:layout_gravity="center_horizontal"
         />
     <RelativeLayout
@@ -94,6 +95,7 @@
         android:layout_margin="5dp"
         android:background="@drawable/stroke_rectangle"
         android:orientation="horizontal"
+        android:visibility="gone"
         android:padding="5dp">
         <!--<Spinner-->
         <!--android:id="@+id/spinner"-->
@@ -123,6 +125,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:padding="10dp"
+        android:visibility="gone"
         android:text="@string/add_to_favorites" />
 
     <CheckBox
@@ -130,14 +133,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:buttonTint="@android:color/holo_red_dark"
-        android:layout_gravity="center" />
+        android:layout_gravity="center"
+        android:visibility="gone"/>
 
     <Button
         android:id="@+id/done"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_margin="10dp"
+        android:layout_margin="70dp"
         style="@style/redbutton"
         android:text="Done" />
 </LinearLayout>
