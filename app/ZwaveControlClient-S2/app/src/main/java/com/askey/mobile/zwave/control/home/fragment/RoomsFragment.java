@@ -105,7 +105,6 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
         deltet = (Button) view.findViewById(R.id.delete);
         menu = (ImageView) view.findViewById(R.id.menu_btn);
         edit = (ImageView) view.findViewById(R.id.edit);
-        edit.setVisibility(View.GONE);
         voice = (ImageView) view.findViewById(R.id.voice);
         voice.setVisibility(View.INVISIBLE);
 
