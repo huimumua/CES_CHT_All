@@ -22,7 +22,7 @@
             android:textColor="@android:color/black"
             android:gravity="center"
             android:padding="15dp"
-            android:text="Pairing" />
+            android:text="@string/adding" />
 
         <TextView
             android:id="@+id/step_notify"

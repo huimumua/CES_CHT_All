@@ -423,6 +423,7 @@
     <string name="reset_failed">Reset device failed!</string>
     <string name="skip">Skip</string>
     <string name="add">ADD</string>
+    <string name="adding">Adding</string>
     <string name="delete">DELETE</string>
     <string name="smart_start">Smart start</string>
     <string name="safety_tips">The device may control these classess</string>

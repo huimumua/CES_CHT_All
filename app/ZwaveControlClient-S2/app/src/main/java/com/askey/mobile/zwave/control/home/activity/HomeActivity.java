@@ -66,7 +66,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     private HomeAdapter myAdapter;
     private ImageView edit, voice, head_cion;
 
-    private String[] titles = new String[]{"Rooms","Smart Start"};
+    private String[] titles = new String[]{"My Home","Smart Start"};
 
     private int[] icon = new int[]{ R.drawable.tab_rooms_bg, R.drawable.tab_scenes_bg };
     private int currentIndex;
