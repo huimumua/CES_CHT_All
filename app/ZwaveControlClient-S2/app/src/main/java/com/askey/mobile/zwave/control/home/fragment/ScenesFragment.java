@@ -123,6 +123,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
     private void initView(View view) {
         menu = (ImageView) view.findViewById(R.id.menu_btn);
         menu.setOnClickListener(this);
+        menu.setVisibility(View.GONE);
 
         voice = (ImageView) view.findViewById(R.id.voice);
         voice.setVisibility(View.GONE);
