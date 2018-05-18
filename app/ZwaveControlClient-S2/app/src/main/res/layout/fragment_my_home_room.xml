@@ -33,7 +33,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:text="@string/room_name"
+                        android:text="@string/my_device"
                         android:textColor="@color/white"
                         android:textSize="30sp" />
 
@@ -44,6 +44,7 @@
                         android:gravity="center"
                         android:text="@string/swicth_a_device"
                         android:textColor="@color/white"
+                        android:visibility="gone"
                         android:textSize="14sp" />
 
                     <TextView
@@ -51,6 +52,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
+                        android:visibility="gone"
                         android:text="@string/device_options"
                         android:textColor="@color/white"
                         android:textSize="14sp" />
@@ -105,13 +107,6 @@
                 android:layout_weight="1"
                 android:orientation="vertical"
                 android:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="@string/add_first_device"
-                    android:textColor="@android:color/background_light" />
 
                 <ImageView
                     android:id="@+id/add_first_device"

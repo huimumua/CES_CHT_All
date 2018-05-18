@@ -88,9 +88,9 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
         Logg.i(LOG_TAG, "===onCreateView=====");
         View view = inflater.inflate(R.layout.fragment_rooms, container, false);
         initView(view);
-//        getRoomList();
-        requestRoomsList();
-//        initFragment();
+//        requestRoomsList();
+        getRoomList();
+        initFragment();
         return view;
     }
 
@@ -105,6 +105,7 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
         deltet = (Button) view.findViewById(R.id.delete);
         menu = (ImageView) view.findViewById(R.id.menu_btn);
         edit = (ImageView) view.findViewById(R.id.edit);
+        edit.setVisibility(View.GONE);
         voice = (ImageView) view.findViewById(R.id.voice);
         voice.setVisibility(View.INVISIBLE);
 
@@ -463,16 +464,19 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
                         int size = jsonArray.length();
                         if (size > 0) {
                             roomInfoList.clear();
-                            //正常代码应该是(int i = 0; i < size; i++)，由于用于过认证，因此不显示其他房间
-                            for (int i = 0; i < 1; i++) {
+                            RoomInfo roomInfo = new RoomInfo();
+                            roomInfo.setRoomName(getResources().getString(R.string.my_device));
+                            roomInfo.setRoomId(1);
+                            roomInfoList.add(roomInfo); //添加room列表的地方
+                            Log.i(LOG_TAG, "-----------getRooms");
+                            /*for (int i = 0; i < 1; i++) {
                                 JSONObject info = jsonArray.getJSONObject(i);
                                 String name = info.optString("name");
                                 RoomInfo roomInfo = new RoomInfo();
                                 roomInfo.setRoomName(name);
                                 roomInfo.setRoomId(1);
-                                Log.i(LOG_TAG, "-----------getRooms");
                                 roomInfoList.add(roomInfo); //添加room列表的地方
-                            }
+                            }*/
                         }
                         MQTTManagement.getSingInstance().clearMessageArrived();
                         stopWaitDialog();
@@ -562,7 +566,7 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
         }
     }
 
-    public static void getRoomList() {
+    private void getRoomList() {
 
         roomInfoList = new ArrayList<>();
 
@@ -571,7 +575,7 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
         info.setRoomName("My Home");
         roomInfoList.add(info);
 
-        RoomInfo info1 = new RoomInfo();
+/*        RoomInfo info1 = new RoomInfo();
         info1.setRoomId(2);
         info1.setRoomName("Living Room");
         roomInfoList.add(info1);
@@ -580,7 +584,7 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
         info2.setRoomId(3);
         info2.setRoomName("Kitchen Room");
 //        info2.setRoomName("Bedroom");
-        roomInfoList.add(info2);
+        roomInfoList.add(info2);*/
     }
 
     private void requestRoomsList() {

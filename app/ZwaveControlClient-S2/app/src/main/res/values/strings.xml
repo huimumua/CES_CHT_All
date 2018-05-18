@@ -273,6 +273,7 @@
 
     <string name="scan_results">Scan results</string>
     <string name="room_name">My Home</string>
+    <string name="my_device">My Devices</string>
     <string name="swicth_a_device">Tap to swicth a device</string>
     <string name="device_options">Tap and hold to access device options</string>
 

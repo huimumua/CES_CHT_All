@@ -131,7 +131,6 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
         roomId = bundle.getInt(ROOM_ID);
 
         room_name = (TextView) view.findViewById(R.id.room_name);
-        room_name.setText(roomName);
         edt_name = (EditText) view.findViewById(R.id.edt_name);
         edt_name.setText(roomName);
         notify_layout = (LinearLayout) view.findViewById(R.id.notify_layout);
