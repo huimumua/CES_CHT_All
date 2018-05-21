@@ -170,10 +170,11 @@ public class MQTTBroker extends Service {
             @Override
             //TCPServer class (at while)
             public void messageReceived(int clientID, String message) {
-
+                Const.TCPClientPort = clientID;
                 Log.i(LOG_TAG, "TCP received , client ID = " + clientID + " |  message : " + message);
                 if (message.contains("mobile_zwave")) {
                     if (message.contains("addDevice")) {
+                        /*
                         if (Const.TCPClientPort != 0) {
                             mTCPServer.sendMessage(clientID, Const.TCPSTRING + "addDevice:other"); //TCP format
                         } else {
@@ -183,9 +184,15 @@ public class MQTTBroker extends Service {
                             Log.i(LOG_TAG, "deviceService.addDevice(mCallback)");
                             DeviceInfo.getMqttPayload = "addDevice";
                         }
-
+                        */
+                        String[] tokens = message.split(":");
+                        String devType = tokens[2];
+                        //Const.TCPClientPort = clientID;
+                        Log.i(LOG_TAG, "deviceService.addDevice(mCallback)");
+                        DeviceInfo.getMqttPayload = "addDevice";
 
                     } else if (message.contains("removeDevice")) {
+                        /*
                         if (Const.TCPClientPort != 0) {
                             Log.i(LOG_TAG, "removeDevice other!");
                             mTCPServer.sendMessage(clientID, Const.TCPSTRING + "removeDevice:other");  //TCP format
@@ -197,22 +204,34 @@ public class MQTTBroker extends Service {
                             Log.i(LOG_TAG, "deviceService.removeDevice(mCallback)");
                             DeviceInfo.getMqttPayload = "removeDevice";
                         }
+                        */
+                        String[] tokens = message.split(":");
+                        String devType = tokens[2];
+                        //Const.TCPClientPort = clientID;
+                        Log.i(LOG_TAG, "deviceService.removeDevice(mCallback)");
+                        DeviceInfo.getMqttPayload = "removeDevice";
+
                     } else if (message.contains("stopAddDevice")) {
 
                         Log.i(LOG_TAG, "deviceService.stopAddDevice(mCallback)");
-                        Const.TCPClientPort = 0;
+                        //Const.TCPClientPort = 0;
                         String[] tokens = message.split(":");
                         String devType = tokens[2];
                         DeviceInfo.getMqttPayload = "stopAddDevice";
 
                     } else if (message.contains("stopRemoveDevice")) {
-
+                        //Const.TCPClientPort = clientID;
                         Log.i(LOG_TAG, "deviceService.stopRemoveDevice(mCallback)");
-                        Const.TCPClientPort = 0;
+                        //Const.TCPClientPort = 0;
                         String[] tokens = message.split(":");
                         String devType = tokens[2];
                         DeviceInfo.getMqttPayload = "stopRemoveDevice";
-
+                        /* 手動移除失敗主動發送TCP
+                        Log.d(LOG_TAG, "stopRemoveDevice = " + "\n" + "\t" +"\"MessageType\":" + "\t" + "\"Node Remove Status\"," + "\n" + "\t" + "\"Status\":" +
+                                "\t" + "\"Failed\"");
+                        mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Node Remove Status\"," + "\n" + "\t" + "\"Status\":" +
+                                "\t" + "\"Failed\""); //TCP format
+                        */
                     }
 
                 } else if (message.contains("GrantKeys")) {
@@ -391,7 +410,7 @@ public class MQTTBroker extends Service {
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
                     String mqttMessage = new String(message.getPayload());
                     mqttMessage = mqttMessage.replaceAll("\n", "");
-                    Log.i(LOG_TAG, "Local MQTT Incoming [" + topic + "] : " + mqttMessage);
+                    //Log.i(LOG_TAG, "Local MQTT Incoming [" + topic + "] : " + mqttMessage);
 
                     if (mqttMessage.contains("desired")) {
 
@@ -417,10 +436,12 @@ public class MQTTBroker extends Service {
     //handle mobile msg
     private void handleMqttIncomingMessage(String TopicName, String mqttMessage) throws JSONException {
         //send aidl message to zwave control app
+        Log.i(LOG_TAG, "MQTT receive Message , publishTopic : "+ TopicName + " Message : " + mqttMessage);
 
         String[] tokens = TopicName.split(Const.PublicTopicName);
         String[] devInfo = new String[2];
         String devType = "Zwave";
+
  /*
         if (!TopicName.equals(Const.PublicTopicName)) {
             if (tokens[1].contains("Zwave")) {
@@ -1241,16 +1262,16 @@ public class MQTTBroker extends Service {
 
         try {
 
-            Log.i(LOG_TAG, "Public LOACAL MESSAGE" + ":" + publishMessage);
+            //Log.i(LOG_TAG, "Public LOACAL MESSAGE" + ":" + publishMessage);
 
             JSONObject payload = new JSONObject(publishMessage);
             JSONObject json = new JSONObject();
             json.put("reported", payload);
 
-            Log.i(LOG_TAG, "Public LOACAL MESSAGE" + ":" + json.toString());
+            //Log.i(LOG_TAG, "Public LOACAL MESSAGE" + ":" + json.toString());
             MqttMessage message = new MqttMessage();
             message.setPayload(json.toString().getBytes());
-            Log.i(LOG_TAG, publishTopic + ":" + publishMessage);
+            Log.i(LOG_TAG, "MQTT send Message , publishTopic : "+ publishTopic + " Message : " + publishMessage);
 
 
             if (mqttLocalClient.isConnected()) {
@@ -1378,7 +1399,10 @@ public class MQTTBroker extends Service {
 
                     message.put("MessageType", "Controller Reset Status");
                     message.put("Status", status);
-
+                    if(status.equals("Failed")) {
+                        mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t" + "\"MessageType\":" + "\t" + "\"Controller Reset Status\"," + "\n" + "\t" + "\"Status\":" +
+                                "\t" + DeviceInfo.callResult); //TCP format
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -2684,6 +2708,32 @@ public class MQTTBroker extends Service {
                 DeviceInfo.className = "";
                 DeviceInfo.result = "";
                 DeviceInfo.resultToMqttBroker = "";
+            } else if (DeviceInfo.resultToMqttBroker.contains("dongleBusy")) {
+                String[] tmp = DeviceInfo.resultToMqttBroker.split(":");
+                Log.d(LOG_TAG,"-17 !!!!!!!!!!!!!" + tmp[1]);
+                if(tmp[1].equals("addDevice")) {
+                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Node Add Status\"," + "\n" + "\t" + "\"Status\":" +
+                            "\t" + tmp[2]); //TCP format
+                } else if(tmp[1].equals("removeDevice")) {
+                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Node Remove Status\"," + "\n" + "\t" + "\"Status\":" +
+                            "\t" + tmp[2]); //TCP format
+                } else if(tmp[1].equals("stopAddDevice")) {
+                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Node StopAdd Status\"," + "\n" + "\t" + "\"Status\":" +
+                            "\t" + tmp[2]); //TCP format
+                } else if(tmp[1].equals("stopRemoveDevice")) {
+                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Node StopRemove Status\"," + "\n" + "\t" + "\"Status\":" +
+                            "\t" + tmp[2]); //TCP format
+                } else if(tmp[1].equals("getRssiState")) {
+                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Network Health Check\"," + "\n" + "\t" + "\"Status\":" +
+                            "\t" + tmp[2]); //TCP format
+                } else if(tmp[1].equals("removeFailDevice")) {
+                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Remove Failed Node\"," + "\n" + "\t" + "\"Status\":" +
+                            "\t" + tmp[2]); //TCP format
+                } else if(tmp[1].equals("replaceFailDevice")) {
+                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Replace Failed Node\"," + "\n" + "\t" + "\"Status\":" +
+                            "\t" + tmp[2]); //TCP format
+                }
+                DeviceInfo.resultToMqttBroker = "";
             } else {
                if(DeviceInfo.className != "") {
                    try {
@@ -2815,6 +2865,10 @@ public class MQTTBroker extends Service {
     }
 
     private void addRemoveDevice(JSONObject message) {
+        String[] tokens = DeviceInfo.result.split(":");
+        String devType = tokens[1];
+        String tNodeId = tokens[2];
+
         //Log.i(LOG_TAG, "gino result :   " + DeviceInfo.result);
         mTCPServer.sendMessage(Const.TCPClientPort, DeviceInfo.result); //TCP format
         Log.i(LOG_TAG, "into addRemoveDevice");
@@ -2827,16 +2881,15 @@ public class MQTTBroker extends Service {
 */
 
         if (DeviceInfo.result.contains("addDevice:") || DeviceInfo.result.contains("removeDevice:")) {
-            String[] tokens = DeviceInfo.result.split(":");
+
             if (tokens.length < 3) {
                 Log.i(LOG_TAG, "addRemoveDevice length < 3");
             } else {
                 Log.i(LOG_TAG, "addRemoveDevice length > 3");
-                String devType = tokens[1];
-                String tNodeId = tokens[2];
+
 
                 if (DeviceInfo.className.contains("addDevice")) {
-                    Log.i(LOG_TAG, "Interface  NodeId  Result");
+                    Log.i(LOG_TAG, "addDevice:  Result");
                     try {
                         message.put("Interface", "addDevice");
                         message.put("NodeId", tNodeId);
@@ -2855,7 +2908,7 @@ public class MQTTBroker extends Service {
                     publishMessage(Const.PublicTopicName, message.toString());
                     DeviceInfo.className = "";
                 } else {
-                    Log.i(LOG_TAG, "Interface  NodeId  Result");
+                    Log.i(LOG_TAG, "removeDevice:  Result");
                     if(!setDefaultFlag) {
                         try {
                             message.put("Interface", "removeDevice");
@@ -2879,7 +2932,43 @@ public class MQTTBroker extends Service {
                         DeviceInfo.getMqttPayload = "getDeviceList";
                     }
                 }
-                Const.TCPClientPort = 0;
+                //Const.TCPClientPort = 0;
+            }
+        }
+        //不再DB裡面刪除或添加,回傳mqtt payload
+        else if (DeviceInfo.className.equals("removeDevice")) {
+            Log.i(LOG_TAG, "removeDevice  Result");
+            if(DeviceInfo.result.contains("Success")) {
+                try {
+                    message.put("Interface", "removeDevice");
+                    message.put("Result", "true");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+                DeviceInfo.getMqttPayload = "getDeviceList";
+            } else if (DeviceInfo.result.contains("Failed")) {
+                try {
+                    message.put("Interface", "removeDevice");
+                    message.put("Result", "fail");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+            }
+        }
+
+        //add fail send mqtt payload
+        else if (DeviceInfo.className.equals("addDevice")) {
+            Log.i(LOG_TAG, "addDevice  Result");
+            if (DeviceInfo.result.contains("Failed")) {
+                try {
+                    message.put("Interface", "addDevice");
+                    message.put("Result", "fail");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
             }
         }
         /*

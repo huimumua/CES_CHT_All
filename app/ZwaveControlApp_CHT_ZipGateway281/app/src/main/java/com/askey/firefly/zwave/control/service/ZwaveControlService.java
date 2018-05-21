@@ -200,11 +200,11 @@ public class ZwaveControlService extends Service {
         //}
     }
 
-    public void removeDevice(String devType, int nodeId){
-        Log.i(LOG_TAG,"removeDevice devType = "+devType+" | nodeId = "+nodeId);
-        if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_RemoveDevice();
-        } else if (devType.equals(btType)){
+    public int removeDevice(String devType, int nodeId){
+        //Log.i(LOG_TAG,"removeDevice devType = "+devType+" | nodeId = "+nodeId);
+        //if (devType.equals(zwaveType)) {
+           return ZwaveControlHelper.ZwController_RemoveDevice();
+        //} else if (devType.equals(btType)){
             /*
             try {
                 btControlService.deleteDevice(nodeId);
@@ -212,7 +212,7 @@ public class ZwaveControlService extends Service {
                 e.printStackTrace();
             }
             */
-        }
+        //}
     }
 
     public void addProvisionListEntry (String devType, byte[] dskNumber,boolean InclusionState) {
@@ -398,8 +398,8 @@ public class ZwaveControlService extends Service {
         ZwaveControlHelper.ZwController_getDeviceNetworkRssiInfo(noid);
     }
 */
-    public void startNetworkHealthCheck () {
-        ZwaveControlHelper.ZwController_startNetworkHealthCheck();
+    public int startNetworkHealthCheck () {
+        return ZwaveControlHelper.ZwController_startNetworkHealthCheck();
     }
 
     public void removeDeviceFromRoom(int deviceId){
@@ -625,16 +625,16 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_ReplaceFailedDevice(deviceId);
     }
 
-    public void stopAddDevice(String devType){
-        if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_StopAddDevice();
-        }
+    public int stopAddDevice(String devType){
+        //if (devType.equals(zwaveType)) {
+          return ZwaveControlHelper.ZwController_StopAddDevice();
+        //}
     }
 
-    public void stopRemoveDevice(String devType){
-        if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_StopRemoveDevice();
-        }
+    public int stopRemoveDevice(String devType){
+        //if (devType.equals(zwaveType)) {
+          return  ZwaveControlHelper.ZwController_StopRemoveDevice();
+        //}
     }
 
     public void getDeviceBattery(String devType, int deviceId){
@@ -1585,7 +1585,7 @@ public class ZwaveControlService extends Service {
             zwaveDevice.setFavorite(isFavorite);
             zwaveDevice.setTimestamp(date.getTime());
             zwaveDeviceManager.updateZwaveDevice(zwaveDevice);
-            initZwaveDevfunc(deviceId);
+            //initZwaveDevfunc(deviceId);
             result = 1;
             return result;
         } else {
@@ -1703,11 +1703,6 @@ public class ZwaveControlService extends Service {
                     zwaveControlResultCallBack("removeDevice", removeResult);
                 }
             }
-        }
-        if (removeResult == null){
-            removeResult = "removeDevice:"+devType+ ":" + "fail";
-            Log.e(LOG_TAG, "This zwaveDevice does not exist in DB");
-            zwaveControlResultCallBack("removeDevice", removeResult);
         }
     }
 

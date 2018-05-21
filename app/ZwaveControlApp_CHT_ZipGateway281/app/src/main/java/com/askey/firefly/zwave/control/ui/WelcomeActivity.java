@@ -337,25 +337,45 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "addDevice":
                         Log.i(LOG_TAG, "deviceService.addDevice");
-                        zwaveService.addDevice(DeviceInfo.devType);
+                        DeviceInfo.callResult = zwaveService.addDevice(DeviceInfo.devType);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            Log.i(LOG_TAG, "addDevice : -17 !!!!!!!!!!!!!" + DeviceInfo.callResult);
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:addDevice:"+DeviceInfo.callResult;
+                        }
                         DeviceInfo.getMqttPayload = "";
                         break;
 
                     case "removeDevice":
                         Log.i(LOG_TAG, "deviceService.removeDevice");
-                        zwaveService.removeDevice(DeviceInfo.devType, 1);
+                        DeviceInfo.callResult = zwaveService.removeDevice(DeviceInfo.devType, 1);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            Log.i(LOG_TAG, "removeDevice : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:removeDevice:"+DeviceInfo.callResult;
+                        }
                         DeviceInfo.getMqttPayload = "";
                         break;
 
                     case "stopAddDevice":
                         Log.i(LOG_TAG, "deviceService.stopAddDevice");
-                        zwaveService.stopAddDevice(DeviceInfo.devType);
+                        DeviceInfo.callResult = zwaveService.stopAddDevice(DeviceInfo.devType);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            Log.i(LOG_TAG, "stopAddDevice : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:stopAddDevice:"+DeviceInfo.callResult;
+                        }
                         DeviceInfo.getMqttPayload = "";
                         break;
 
                     case "stopRemoveDevice":
                         Log.i(LOG_TAG, "deviceService.stopRemoveDevice");
-                        zwaveService.stopRemoveDevice(DeviceInfo.devType);
+                        DeviceInfo.callResult = zwaveService.stopRemoveDevice(DeviceInfo.devType);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            Log.i(LOG_TAG, "stopRemoveDevice : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:stopRemoveDevice:"+DeviceInfo.callResult;
+                        }
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -382,7 +402,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                             //Log.d(LOG_TAG, "deviceService.editNodeInfo Fail");
                             DeviceInfo.resultToMqttBroker = "editNodeInfoFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -483,7 +502,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "setConfigurationFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -495,7 +513,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "getMeterFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -507,7 +524,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "resetMeterFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -650,8 +666,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "getRssiState":
                         Log.i(LOG_TAG, "deviceService.getRssiState" + DeviceInfo.mqttDeviceId);
-                        zwaveService.startNetworkHealthCheck();
-                        DeviceInfo.getMqttPayload = "";
+                        DeviceInfo.callResult = zwaveService.startNetworkHealthCheck();
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            Log.i(LOG_TAG, "getRssiState : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:getRssiState:"+DeviceInfo.callResult;
+                        }
                         break;
 
                     case "getBattery":
@@ -684,7 +704,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "startStopSwitchLevelChangeFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -708,7 +727,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "switchAllOnFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -720,7 +738,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "switchAllOffFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -732,7 +749,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "setSwitchAllFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -744,7 +760,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "getSwitchAllFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -768,7 +783,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "getMeterSupportedFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -793,7 +807,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "setNotificationFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -819,7 +832,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     case "removeFailDevice":
                         Log.i(LOG_TAG, "deviceService.removeFailDevice");
                         Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
-                        zwaveService.removeFailedDevice(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = zwaveService.removeFailedDevice(DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            Log.i(LOG_TAG, "removeFailDevice : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:removeFailDevice:"+DeviceInfo.callResult;
+                        }
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -836,9 +854,10 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         if (DeviceInfo.callResult >= 0) {
                             DeviceInfo.resultToMqttBroker = "setDefaultTrue";
                         } else {
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:setDefaultFail:"+DeviceInfo.callResult;
                             DeviceInfo.resultToMqttBroker = "setDefaultFail";
+                            Log.i(LOG_TAG, "setDefault : -17 !!!!!!!!!!!!!");
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         DeviceInfo.resultToMqttBroker = "";
                         break;
@@ -846,7 +865,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     case "replaceFailDevice":
                         Log.i(LOG_TAG, "deviceService.replaceFailDevice");
                         Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
-                        zwaveService.replaceFailedDevice(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = zwaveService.replaceFailedDevice(DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            Log.i(LOG_TAG, "removeFailDevice : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:replaceFailDevice:"+DeviceInfo.callResult;
+                        }
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -882,7 +906,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "setDoorLockOperationFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -901,7 +924,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "setDoorLockConfigFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -913,7 +935,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "setBinarySwitchStateFail";
                         }
-                        DeviceInfo.callResult = -1;
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -1464,7 +1485,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 DeviceInfo.className = className;
                 DeviceInfo.result = result;
 
-                Log.i(LOG_TAG, "class name = [" + DeviceInfo.className + "]| result = " + DeviceInfo.result);
+                Log.i(LOG_TAG, "class name = [" + DeviceInfo.className + "] | result = " + DeviceInfo.result);
 
                 if (className.equals("addDevice") || className.equals("removeDevice")) {
 
