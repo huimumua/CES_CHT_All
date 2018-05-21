@@ -1,8 +1,7 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context="com.askey.mobile.zwave.control.home.fragment.roomitem.MyHomeRoomFragment">
 
     <android.support.v4.widget.NestedScrollView
@@ -11,19 +10,20 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_marginTop="50dp">
 
             <LinearLayout
                 android:id="@+id/top"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="wrap_content"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:id="@+id/notify_layout"
                     android:layout_width="match_parent"
-                    android:layout_height="150dp"
+                    android:layout_height="wrap_content"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:visibility="visible">
@@ -83,13 +83,6 @@
                         android:background="@android:color/holo_red_dark"
                         />
 
-                    <ImageView
-                        android:id="@+id/confirm_change"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_centerVertical="true"
-                        android:layout_toRightOf="@id/edt_name"
-                        android:src="@drawable/ic_edit_pic" />
                 </RelativeLayout>
 
             </LinearLayout>
@@ -100,23 +93,19 @@
                 android:layout_height="wrap_content"
                 android:visibility="visible" />
 
-            <LinearLayout
-                android:id="@+id/no_device_layout"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <ImageView
-                    android:id="@+id/add_first_device"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_margin="5dp"
-                    android:src="@drawable/ic_add_device" />
-
-            </LinearLayout>
         </LinearLayout>
     </android.support.v4.widget.NestedScrollView>
-</LinearLayout>
+    <RelativeLayout
+        android:id="@+id/no_device_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/add_first_device"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/ic_add_device" />
+    </RelativeLayout>
+</RelativeLayout>

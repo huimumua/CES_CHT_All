@@ -50,8 +50,8 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
     public static String LOG_TAG = "MyHomeRoomFragment";
     private RecyclerView recyclerView;
     private DeviceAdapter adapter;
-    private LinearLayout notify_layout, no_device_layout;
-    private RelativeLayout edit_layout;
+    private LinearLayout notify_layout;
+    private RelativeLayout edit_layout ,no_device_layout;
     private ImageView add_first_device;
     private String mqttResult;
     private final static String ROOM_ID = "roomId";
@@ -135,7 +135,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
         edt_name.setText(roomName);
         notify_layout = (LinearLayout) view.findViewById(R.id.notify_layout);
         edit_layout = (RelativeLayout) view.findViewById(R.id.edit_layout);
-        no_device_layout = (LinearLayout) view.findViewById(R.id.no_device_layout);
+        no_device_layout = (RelativeLayout) view.findViewById(R.id.no_device_layout);
         add_first_device = (ImageView) view.findViewById(R.id.add_first_device);
         add_first_device.setOnClickListener(this);
         recyclerView = (RecyclerView) view.findViewById(R.id.recyclerview);

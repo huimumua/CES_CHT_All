@@ -60,7 +60,7 @@ import java.util.List;
 public class ScenesFragment extends BaseFragment implements View.OnClickListener, ScenesAdapter.OnItemClickListener {
     private static boolean ADD_SUCCESS = false;
     private final String TAG = ScenesFragment.class.getSimpleName();
-    private ImageView menu, voice, edit;
+    private ImageView menu, voice, edit, firstAddImageView;
     private List<ProvisionInfo> dataList;
     private RecyclerView scene_recycler;
     private ScenesAdapter adapter;
@@ -98,6 +98,15 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
         scene_recycler.setAdapter(adapter);
         adapter.setOnItemClickListener(this);
 
+        if (Const.RESET_PROVISION) {
+            Const.RESET_PROVISION = false;
+            networkRole.setText(Const.NETWORK_ROLE);
+            if (dataList.size() > 0) {
+                dataList.clear();
+                adapter.notifyDataSetChanged();
+            }
+        }
+
 //        ProvisionInfo provisionInfo;
 //        DeviceInfo deviceInfo;
 ////        for (int i = 0; i < 7; i++) {
@@ -110,6 +119,11 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
 //////            deviceInfo.setDeviceId(String.valueOf(i));
 //////            deviceInfoList.add(deviceInfo);
 ////        }
+        if(dataList.size() == 0){
+            setFirstAddImageView(true);
+        } else {
+            setFirstAddImageView(false);
+        }
 
         return view;
     }
@@ -130,6 +144,9 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
 
         edit = (ImageView) view.findViewById(R.id.edit);
         edit.setOnClickListener(this);
+
+        firstAddImageView =(ImageView) view.findViewById(R.id.dsk_add_first_device);
+        firstAddImageView.setOnClickListener(this);
 
         scene_recycler = (RecyclerView) view.findViewById(R.id.scene_recycler);
         scene_recycler.setLayoutManager(new GridLayoutManager(getActivity(), 3));
@@ -212,6 +229,12 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
             if (Interface.equals("All Provision List Report")) {
                 ProvisionInfo provisionInfo;
                 JSONArray provisionList = reportedObject.optJSONArray("Detial provision list");
+
+                if(provisionList == null)
+                {
+                    return;
+                }
+
                 for (int i = 0; i < provisionList.length(); i++) {
                     JSONObject temp = provisionList.getJSONObject(i);
                     String deviceType = temp.getString("Device type info");
@@ -247,6 +270,12 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
                         @Override
                         public void run() {
                             adapter.notifyDataSetChanged();
+
+                            if(dataList.size() == 0){
+                                setFirstAddImageView(true);
+                            }else {
+                                setFirstAddImageView(false);
+                            }
                         }
                     });
                 }
@@ -258,6 +287,21 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
                 String result = reportedObject.optString("Result");
                 if (result.equals("true")) {
                     removeDevice();
+
+                    Log.i(TAG, "==============dataList :"+dataList.size());
+                    ((Activity) getContext()).runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            adapter.notifyDataSetChanged();
+
+                            if(dataList.size() == 0){
+                                setFirstAddImageView(true);
+                            }else {
+                                setFirstAddImageView(false);
+                            }
+                        }
+                    });
+
                     removeDeviceHint();
 
                 }
@@ -356,6 +400,10 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
                     }
                 });
                 break;
+            case R.id.dsk_add_first_device:
+                Intent intent = new Intent(getActivity(), AddSmartStartActivity.class);
+                startActivityForResult(intent, 2);
+                break;
         }
     }
 
@@ -389,6 +437,20 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
         removedDeviceNodeId = itemInfo.getNodeId();
         showDeleteDeviceDialog(itemDesk);
         clickPosition = position;
+    }
+
+    /**
+     *
+     * @param tag 如果dataList.size > 0 就填false,表示有DSK列表，不显示第一次添加的按钮
+     */
+    private void setFirstAddImageView(boolean tag){
+        if(tag){
+            firstAddImageView.setVisibility(View.VISIBLE);
+            scene_recycler.setVisibility(View.GONE);
+        } else {
+            firstAddImageView.setVisibility(View.GONE);
+            scene_recycler.setVisibility(View.VISIBLE);
+        }
     }
 
     public void unRegister() {
@@ -519,15 +581,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
             Log.d(TAG, "正常加载,fragment可见");
             //这里仅仅是注册，发送消息在onResum里面
             MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
-            if (Const.RESET_PROVISION) {
-                Const.RESET_PROVISION = false;
-                networkRole.setText(Const.NETWORK_ROLE);
-                    if (dataList.size() > 0) {
-                        dataList.clear();
-                    adapter.notifyDataSetChanged();
-                }
 
-            }
         } else {
             Log.d(TAG, "正常加载,fragment不可见");
             unrigister();

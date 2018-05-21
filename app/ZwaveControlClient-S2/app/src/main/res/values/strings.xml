@@ -390,7 +390,7 @@
     <string name="provision">Provision</string>
     <string name="add_your_first_scene">Add your first Scene</string>
     <string name="scene_notify">With scenes, you control multiple devices at the same time.</string>
-    <string name="provisioning_list">Provisioning List</string>
+    <string name="provisioning_list">My Provision List</string>
 
     <string name="please_wait_a_moment">Please wait a moment...</string>
     <string name="step_1">Step 1</string>

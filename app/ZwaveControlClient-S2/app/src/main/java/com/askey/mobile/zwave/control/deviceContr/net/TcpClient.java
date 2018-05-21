@@ -40,7 +40,9 @@ public abstract class TcpClient implements Runnable {
 			@Override
 			public void onReceive(SocketTransceiver transceiver, String s) {
 				Logg.i(TAG,"===onReceive=Message="+s);
-				meaasgemap.get(0).receiveMessage(transceiver,s);
+
+				if(meaasgemap.size() > 0)
+					meaasgemap.get(0).receiveMessage(transceiver, s);
 			}
 
 			@Override
