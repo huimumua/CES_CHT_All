@@ -19,7 +19,7 @@ public class Const {
     public static final boolean DEBUG = true;
 
     public static final int TCP_PORT = 48080;
-    public static final long TCP_TIMER_TIMEOUT = 1000*90;
+    public static final long TCP_TIMER_TIMEOUT = 1000*120;
     public static boolean RESET_PROVISION = false;
     public static boolean RESET_ROOMS = false;
     public static boolean RESET_FAVORITE = false;
