@@ -305,6 +305,11 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                                 TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
                                 showFailedAddZaveDialog(getResources().getString(R.string.fail_add_notify));
                             } else {
+                                if("Getting Node Information".equals(status))
+                                {
+                                    timerCancel();
+                                    tcpTimeoutThread.start();
+                                }
                                 addStstus.setText(status);
                             }
                         }
