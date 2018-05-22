@@ -93,6 +93,7 @@
             android:button="@null"
             android:text="BT Mesh"
             android:gravity="center"
+            android:visibility="invisible"
             />
 
     </LinearLayout>
