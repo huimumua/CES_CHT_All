@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -162,6 +163,7 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
         negativeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                timerCancel();
                 alertDialog.dismiss();
                 finish();
             }
@@ -291,6 +293,17 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
                                 timerCancel();
                                 Toast.makeText(mContext,"Remove Device Failed ! ",Toast.LENGTH_LONG).show();
                                 finish();
+                            } else if("-17".equals(status)){
+                                timerCancel();
+                                showPromptDialog(getResources().getString(R.string.prompt_try_again));
+                            } else {
+                                step_notify1.setText(status);
+                            }
+                        } else if (messageType.equals("Remove Failed Node")){
+                            String status = jsonObject.optString("Status");
+                            if("-17".equals(status)){
+                                timerCancel();
+                                showPromptDialog(getResources().getString(R.string.prompt_try_again));
                             } else {
                                 step_notify1.setText(status);
                             }
@@ -304,6 +317,47 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
         }
     }
 
+    private void showPromptDialog(String message) {
+        final AlertDialog.Builder addDialog = new AlertDialog.Builder(this);
+        LayoutInflater layoutInflater = LayoutInflater.from(this);
+        View view = layoutInflater.inflate(R.layout.dialog_normal_layout, null);
+        addDialog.setView(view);
+        final AlertDialog alertDialog = addDialog.create();
+
+        TextView title = (TextView) view.findViewById(R.id.title);
+        TextView promptMessage = (TextView) view.findViewById(R.id.message);
+        title.setText("Prompt");
+        promptMessage.setText(message);
+        TextView positiveButton = (TextView) view.findViewById(R.id.positiveButton);
+        TextView negativeButton = (TextView) view.findViewById(R.id.negativeButton);
+        positiveButton.setText("retry");
+        positiveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //点击重试，返回添加设备界面，再次执行添加设备
+                //预留的接口mqtt
+                if (TcpClient.getInstance().isConnected()) {
+                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:removeDevice:Zwave");  //mobile_zwave:removeDevice:Zwave:"+ nodeId
+                }
+                alertDialog.dismiss();
+            }
+        });
+
+        negativeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //点击取消，返回主页
+                if (TcpClient.getInstance().isConnected()) {
+                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopRemoveDevice:Zwave"); //停止底层的所有操作
+                }
+                alertDialog.dismiss();
+                finish();
+
+            }
+        });
+
+        alertDialog.show();
+    }
 
     @Override
     public void onClick(View v) {

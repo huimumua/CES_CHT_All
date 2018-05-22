@@ -94,6 +94,7 @@
     <string name="message_time_fmt">Time: %1$s</string>
     <string name="publish">Publish</string>
     <string name="topic_fmt">Topic: %1$s</string>
+    <string name="prompt_try_again">Current operation not completed yet, try again later.</string>
 
 
     <string name="enabled">Enabled</string>
@@ -441,6 +442,7 @@
     <string name="node_id">Node id: %s</string>
     <string name="security_status">Security status: %s</string>
     <string name="device_type_s">Device type: %s</string>
+    <string name="add_failed">Add Failed !</string>
 
     <!--account activity-->
     <string name="activity_account_title">My QBee Account</string>

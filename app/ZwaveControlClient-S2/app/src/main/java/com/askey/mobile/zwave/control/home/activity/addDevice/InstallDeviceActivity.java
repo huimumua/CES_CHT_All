@@ -109,7 +109,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
         if (TcpClient.getInstance().isConnected()) {
             Logg.i(LOG_TAG, "TcpClient - > isConnected ");
             TcpClient.getInstance().getTransceiver().send("mobile_zwave:addDevice:Zwave");
-            tcpTimeoutThread.start();
+            //tcpTimeoutThread.start();
 
         }
 
@@ -277,6 +277,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
 
                         if ("Node Add Status".equals(messageType)) {
 
+                            Log.i(LOG_TAG, "=======status:"+status);
                             if("No".equals(isAdded)){
                                 addStstus.setText(getResources().getString(R.string.node_added)); //This node has already been included
                                 //progressBar.setIndeterminate(false);//参数为true时，进度条采用不明确显示进度的‘模糊模式’
@@ -295,23 +296,27 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                                 progressBar.setIndeterminate(false);
                             } else if ("Failed".equals(status)) {
                                 Logg.i(LOG_TAG, "=====result==" + "Fail");
-                                showAddFailDialog();
+                                showAddFailDialog(getResources().getString(R.string.add_failed));
                                 progressBar.setIndeterminate(false);
                             } else if ("Learn Ready".equals(status)) {
                                 addStstus.setText(getResources().getString(R.string.add_device_learn_ready));//Please press the trigger button of the device
                                 //10S后 超时后 调用StopAddDevice();
-//                                timerCancel();
+                                //  timerCancel();
                             } else if ("Timeout".equals(status)) {
                                 TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
                                 showFailedAddZaveDialog(getResources().getString(R.string.fail_add_notify));
+                            } else if ("-17".equals(status)) {
+                                Logg.i(LOG_TAG, "================jnierror=="+status);
+                                timerCancel();
+                                showAddFailDialog(getResources().getString(R.string.prompt_try_again));
                             } else {
                                 if("Getting Node Information".equals(status))
                                 {
                                     timerCancel();
-                                    tcpTimeoutThread.start();
                                 }
                                 addStstus.setText(status);
                             }
+
                         }
                     }
                 });
@@ -324,7 +329,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
 
     }
 
-    private void showAddFailDialog() {
+    private void showAddFailDialog(String message) {
         final AlertDialog.Builder addDialog = new AlertDialog.Builder(this);
         LayoutInflater layoutInflater = LayoutInflater.from(this);
         View view = layoutInflater.inflate(R.layout.dialog_normal_layout, null);
@@ -332,9 +337,9 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
         final AlertDialog alertDialog = addDialog.create();
 
         TextView title = (TextView) view.findViewById(R.id.title);
-        TextView message = (TextView) view.findViewById(R.id.message);
+        TextView promptMessage = (TextView) view.findViewById(R.id.message);
         title.setText("Prompt");
-        message.setText("Add faild");
+        promptMessage.setText(message);
         TextView positiveButton = (TextView) view.findViewById(R.id.positiveButton);
         TextView negativeButton = (TextView) view.findViewById(R.id.negativeButton);
         positiveButton.setText("retry");
@@ -356,7 +361,9 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
             @Override
             public void onClick(View view) {
                 //点击取消，返回主页
-
+                if (TcpClient.getInstance().isConnected()) {
+                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave"); //停止底层的所有操作
+                }
                 alertDialog.dismiss();
                 finish();
 
