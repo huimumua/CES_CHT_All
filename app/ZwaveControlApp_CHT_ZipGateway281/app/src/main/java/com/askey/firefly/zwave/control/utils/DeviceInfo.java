@@ -62,6 +62,7 @@ public class DeviceInfo {
     public static String resultToMqttBroker = "";
 
     public static String room = "";
+    public static boolean failFlag = false;
 
 
 

@@ -193,25 +193,16 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         return new String(byteArrayOutputStream.toByteArray(), "UTF8");
     }
 
-
-    private Runnable initMqtt = new Runnable() {
-        @Override
-        public void run() {
-            Intent MqttIntent = new Intent(WelcomeActivity.this, MQTTBroker.class);
-            startService(MqttIntent);
-        }
-    };
-
     // only execute one time
     private Runnable checkInitStatus = new Runnable() {
         @Override
         public void run() {
 
-            while (!DeviceInfo.isMQTTInitFinish && !DeviceInfo.isOpenControllerFinish && !DeviceInfo.isZwaveInitFinish) {
+            while (!DeviceInfo.isMQTTInitFinish && !DeviceInfo.isOpenControllerFinish) {
 
                 try {
-                    Log.i(LOG_TAG, "isOpenControllerFinish & isMQTTInitFinish true");
-                    Thread.sleep(1000);
+                    //Log.i(LOG_TAG, "isOpenControllerFinish & isMQTTInitFinish true");
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -222,8 +213,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             while (!DeviceInfo.isZwaveInitFinish) {
 
                 try {
-                    Log.i(LOG_TAG, "isZwaveInitFinish true");
-                    Thread.sleep(1000);
+                    //Log.i(LOG_TAG, "isZwaveInitFinish true");
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

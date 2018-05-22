@@ -1303,7 +1303,7 @@ public class MQTTBroker extends Service {
         boolean circle = false;
         while (!circle) {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -1400,8 +1400,7 @@ public class MQTTBroker extends Service {
                     message.put("MessageType", "Controller Reset Status");
                     message.put("Status", status);
                     if(status.equals("Failed")) {
-                        mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t" + "\"MessageType\":" + "\t" + "\"Controller Reset Status\"," + "\n" + "\t" + "\"Status\":" +
-                                "\t" + DeviceInfo.callResult); //TCP format
+                        mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Controller Reset Status\"," + "\"Status\":" + DeviceInfo.callResult + "}"); //TCP format
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -2709,29 +2708,23 @@ public class MQTTBroker extends Service {
                 DeviceInfo.result = "";
                 DeviceInfo.resultToMqttBroker = "";
             } else if (DeviceInfo.resultToMqttBroker.contains("dongleBusy")) {
+                DeviceInfo.failFlag = true;
                 String[] tmp = DeviceInfo.resultToMqttBroker.split(":");
                 Log.d(LOG_TAG,"-17 !!!!!!!!!!!!!" + tmp[1]);
                 if(tmp[1].equals("addDevice")) {
-                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Node Add Status\"," + "\n" + "\t" + "\"Status\":" +
-                            "\t" + tmp[2]); //TCP format
+                    mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Node Add Status\"," + "\"Status\":" + "\"" + tmp[2] + "\"" + "}"); //TCP format
                 } else if(tmp[1].equals("removeDevice")) {
-                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Node Remove Status\"," + "\n" + "\t" + "\"Status\":" +
-                            "\t" + tmp[2]); //TCP format
+                    mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Node Remove Status\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
                 } else if(tmp[1].equals("stopAddDevice")) {
-                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Node StopAdd Status\"," + "\n" + "\t" + "\"Status\":" +
-                            "\t" + tmp[2]); //TCP format
+                    mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Node StopAdd Status\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
                 } else if(tmp[1].equals("stopRemoveDevice")) {
-                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Node StopRemove Status\"," + "\n" + "\t" + "\"Status\":" +
-                            "\t" + tmp[2]); //TCP format
+                    mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Node StopRemove Status\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
                 } else if(tmp[1].equals("getRssiState")) {
-                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Network Health Check\"," + "\n" + "\t" + "\"Status\":" +
-                            "\t" + tmp[2]); //TCP format
+                    mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Network Health Check\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
                 } else if(tmp[1].equals("removeFailDevice")) {
-                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Remove Failed Node\"," + "\n" + "\t" + "\"Status\":" +
-                            "\t" + tmp[2]); //TCP format
+                    mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Remove Failed Node\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
                 } else if(tmp[1].equals("replaceFailDevice")) {
-                    mTCPServer.sendMessage(Const.TCPClientPort, "\n" + "\t"+ "\"MessageType\":" + "\t" + "\"Replace Failed Node\"," + "\n" + "\t" + "\"Status\":" +
-                            "\t" + tmp[2]); //TCP format
+                    mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Replace Failed Node\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
                 }
                 DeviceInfo.resultToMqttBroker = "";
             } else {
@@ -2870,7 +2863,11 @@ public class MQTTBroker extends Service {
         String tNodeId = tokens[2];
 
         //Log.i(LOG_TAG, "gino result :   " + DeviceInfo.result);
-        mTCPServer.sendMessage(Const.TCPClientPort, DeviceInfo.result); //TCP format
+        if(!DeviceInfo.failFlag) {
+            mTCPServer.sendMessage(Const.TCPClientPort, DeviceInfo.result); //TCP format
+        }
+        DeviceInfo.failFlag = false;
+
         Log.i(LOG_TAG, "into addRemoveDevice");
 /*
         if(DeviceInfo.result.contains("Failed")) {
