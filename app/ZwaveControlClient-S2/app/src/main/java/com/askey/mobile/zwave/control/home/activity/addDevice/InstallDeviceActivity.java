@@ -227,6 +227,12 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                 Intent intent = new Intent(mContext, DskActivity.class);
                 startActivity(intent);
             } else if (msgType.equals("GrantKeys")) {
+                ((Activity) mContext).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        addStstus.setText("Processing....");
+                    }
+                });
                 //消息格式Grant Keys:value ,截取 ：后面的字符串
                 String keys = result.substring(result.indexOf(":") + 1);
                 if (keys.equals("0")) {
@@ -347,6 +353,13 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
             @Override
             public void onClick(View view) {
                 //点击重试，返回添加设备界面，再次执行添加设备
+                ((Activity) mContext).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        addStstus.setText("Please wait a moment...");
+                    }
+                });
+
                 progressBar.setIndeterminate(true);
                 //预留的接口mqtt
                 if (TcpClient.getInstance().isConnected()) {
@@ -391,6 +404,12 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
             @Override
             public void onClick(View view) {
                 //点击重试，返回添加设备界面，再次执行添加设备
+                ((Activity) mContext).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        addStstus.setText("Please wait a moment...");
+                    }
+                });
                 //预留的接口mqtt
                 if (TcpClient.getInstance().isConnected()) {
                     Logg.i(LOG_TAG, "TcpClient - > isConnected ");
