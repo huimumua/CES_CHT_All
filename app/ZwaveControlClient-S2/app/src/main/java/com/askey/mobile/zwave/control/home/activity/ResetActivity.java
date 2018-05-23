@@ -87,7 +87,11 @@ public class ResetActivity extends AppCompatActivity {
 //
 //                                }
                                 finish();
-                            }else {
+                            }
+                            else if(status.equals("-17")) {
+                                resetResult.setText("Current operation not completed yet, try again later");
+                                doneButton.setVisibility(View.VISIBLE);
+                            } else {
                                 resetResult.setText(getResources().getString(R.string.reset_failed));
                                 doneButton.setVisibility(View.VISIBLE);
                             }
