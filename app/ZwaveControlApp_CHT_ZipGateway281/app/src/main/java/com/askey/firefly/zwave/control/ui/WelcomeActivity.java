@@ -663,6 +663,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                             Log.i(LOG_TAG, "getRssiState : -17 !!!!!!!!!!!!!");
                             DeviceInfo.resultToMqttBroker = "dongleBusy:getRssiState:"+DeviceInfo.callResult;
                         }
+                        DeviceInfo.getMqttPayload = "";
                         break;
 
                     case "getBattery":
@@ -842,15 +843,11 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     case "setDefault":
                         Log.i(LOG_TAG, "deviceService.setDefault");
                         DeviceInfo.callResult = zwaveService.setDefault();
-                        if (DeviceInfo.callResult >= 0) {
-                            DeviceInfo.resultToMqttBroker = "setDefaultTrue";
-                        } else {
-                            DeviceInfo.resultToMqttBroker = "dongleBusy:setDefaultFail:"+DeviceInfo.callResult;
-                            DeviceInfo.resultToMqttBroker = "setDefaultFail";
+                        if (DeviceInfo.callResult < 0) {
+                            DeviceInfo.resultToMqttBroker = "setDefaultFail17";
                             Log.i(LOG_TAG, "setDefault : -17 !!!!!!!!!!!!!");
                         }
                         DeviceInfo.getMqttPayload = "";
-                        DeviceInfo.resultToMqttBroker = "";
                         break;
 
                     case "replaceFailDevice":

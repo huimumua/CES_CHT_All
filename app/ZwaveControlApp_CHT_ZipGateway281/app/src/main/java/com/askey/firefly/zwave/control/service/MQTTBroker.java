@@ -1392,26 +1392,44 @@ public class MQTTBroker extends Service {
                 DeviceInfo.resultToMqttBroker = "";
 
             } else if (DeviceInfo.result.contains("Controller Reset Status")) {
-                JSONObject jsonObject = null;
-                try {
-                    jsonObject = new JSONObject(DeviceInfo.result);
-                    String status = jsonObject.optString("Status");
-
-                    message.put("MessageType", "Controller Reset Status");
-                    message.put("Status", status);
-                    if(status.equals("Failed")) {
-                        mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Controller Reset Status\"," + "\"Status\":" + DeviceInfo.callResult + "}"); //TCP format
+                if(!DeviceInfo.failFlag) { // -17時不傳Controller Reset Status
+                    JSONObject jsonObject = null;
+                    String status = "";
+                    try {
+                        jsonObject = new JSONObject(DeviceInfo.result);
+                        status = jsonObject.optString("Status");
+                        message.put("MessageType", "Controller Reset Status");
+                        message.put("Status", status);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                    publishMessage(Const.PublicTopicName, message.toString());
+                    if (status.equals("Failed")) {
+                        JSONObject msg = new JSONObject();
+                        try {
+                            msg.put("MessageType", "setDefault");
+                            msg.put("result", "fail");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        publishMessage(Const.PublicTopicName, msg.toString());
+                    } else {
+                        JSONObject msg = new JSONObject();
+                        try {
+                            msg.put("MessageType", "setDefault");
+                            msg.put("result", "true");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        publishMessage(Const.PublicTopicName, msg.toString());
+                    }
+                    DeviceInfo.getMqttPayload = "getDeviceInfo";
+                    setDefaultFlag = true;
+                    DeviceInfo.className = "";
+                    DeviceInfo.result = "";
+                    DeviceInfo.resultToMqttBroker = "";
                 }
-                publishMessage(Const.PublicTopicName, message.toString());
-                DeviceInfo.getMqttPayload = "getDeviceInfo";
-                setDefaultFlag = true;
-                DeviceInfo.className = "";
-                DeviceInfo.result = "";
-                DeviceInfo.resultToMqttBroker = "";
-
+                DeviceInfo.failFlag = false;
             } else if (DeviceInfo.result.contains("Controller Attribute")) {
                 JSONObject jsonObject = null;
                 try {
@@ -2708,7 +2726,7 @@ public class MQTTBroker extends Service {
                 DeviceInfo.result = "";
                 DeviceInfo.resultToMqttBroker = "";
             } else if (DeviceInfo.resultToMqttBroker.contains("dongleBusy")) {
-                DeviceInfo.failFlag = true;
+                DeviceInfo.failFlag = true; // -17時不返回 add / remove TCP
                 String[] tmp = DeviceInfo.resultToMqttBroker.split(":");
                 Log.d(LOG_TAG,"-17 !!!!!!!!!!!!!" + tmp[1]);
                 if(tmp[1].equals("addDevice")) {
@@ -2719,13 +2737,36 @@ public class MQTTBroker extends Service {
                     mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Node StopAdd Status\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
                 } else if(tmp[1].equals("stopRemoveDevice")) {
                     mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Node StopRemove Status\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
-                } else if(tmp[1].equals("getRssiState")) {
-                    mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Network Health Check\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
                 } else if(tmp[1].equals("removeFailDevice")) {
                     mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Remove Failed Node\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
-                } else if(tmp[1].equals("replaceFailDevice")) {
-                    mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Replace Failed Node\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
                 }
+
+                else if(tmp[1].equals("getRssiState")) {
+                    try {
+                        message.put("MessageType", "Network Health Check");
+                        message.put("Status", DeviceInfo.callResult);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    publishMessage(Const.PublicTopicName, message.toString());
+                } else if(tmp[1].equals("replaceFailDevice")) {
+                    try {
+                        message.put("MessageType", "Replace Failed Node");
+                        message.put("Status", DeviceInfo.callResult);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    publishMessage(Const.PublicTopicName, message.toString());
+                }
+            } else if (DeviceInfo.resultToMqttBroker.equals("setDefaultFail17")){
+                DeviceInfo.failFlag = true; // -17時不傳Controller Reset Status
+                try {
+                    message.put("MessageType", "Controller Reset Status");
+                    message.put("Status", DeviceInfo.callResult);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
                 DeviceInfo.resultToMqttBroker = "";
             } else {
                if(DeviceInfo.className != "") {
@@ -2757,7 +2798,7 @@ public class MQTTBroker extends Service {
                    }
                }
             }
-
+            DeviceInfo.resultToMqttBroker = "";
         }
     };
 
@@ -2815,7 +2856,7 @@ public class MQTTBroker extends Service {
 
         for (int idx = 0; idx < tmpLine.size(); idx++) {
             Log.i(LOG_TAG, "Node id (" + idx + ") = " + tmpLine.get(idx));
-            //subscribeToTopic(Const.PublicTopicName + "Zwave" + tmpLine.get(idx));
+            //subscribeToTopic(Const.PublicTopicName + "Zwave"f + tmpLine.get(idx));
         }
         //publish result to MQTT public topic
         publishMessage(Const.PublicTopicName, result);
@@ -2863,7 +2904,7 @@ public class MQTTBroker extends Service {
         String tNodeId = tokens[2];
 
         //Log.i(LOG_TAG, "gino result :   " + DeviceInfo.result);
-        if(!DeviceInfo.failFlag) {
+        if(!DeviceInfo.failFlag) {  //-17時不返回 add / remove TCP
             mTCPServer.sendMessage(Const.TCPClientPort, DeviceInfo.result); //TCP format
         }
         DeviceInfo.failFlag = false;
