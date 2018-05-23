@@ -297,7 +297,28 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
                                 timerCancel();
                                 showPromptDialog(getResources().getString(R.string.prompt_try_again));
                             } else {
-                                step_notify1.setText(status);
+
+                                boolean digit = false;
+
+                                //whether error code
+                                try {
+                                    Integer.parseInt(status);
+                                    digit = true;
+                                }
+                                catch (NumberFormatException e) {
+                                    digit = false;
+                                }
+
+                                if(digit == true)
+                                {
+                                    timerCancel();
+                                    String str = "Error Code: " + status;
+                                    Toast.makeText(mContext,str,Toast.LENGTH_LONG).show();
+                                    finish();
+                                }
+                                else {
+                                    step_notify1.setText(status);
+                                }
                             }
                         } else if (messageType.equals("Remove Failed Node")){
                             String status = jsonObject.optString("Status");
@@ -305,7 +326,28 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
                                 timerCancel();
                                 showPromptDialog(getResources().getString(R.string.prompt_try_again));
                             } else {
-                                step_notify1.setText(status);
+
+                                boolean digit = false;
+
+                                //whether error code
+                                try {
+                                    Integer.parseInt(status);
+                                    digit = true;
+                                }
+                                catch (NumberFormatException e) {
+                                    digit = false;
+                                }
+
+                                if(digit == true)
+                                {
+                                    timerCancel();
+                                    String str = "Error Code: " + status;
+                                    Toast.makeText(mContext,str,Toast.LENGTH_LONG).show();
+                                    finish();
+                                }
+                                else {
+                                    step_notify1.setText(status);
+                                }
                             }
                         }
                     } catch (JSONException e) {

@@ -296,12 +296,14 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                                 Logg.i(LOG_TAG, "This node has already been included");
 
                             } else if ("Success".equals(status) && "Yes".equals(isAdded)) {
+                                timerCancel();
                                 Toast.makeText(mContext, "add Success", Toast.LENGTH_SHORT).show();
                                 Logg.i(LOG_TAG, "=====result==" + "Success");
                                 addStstus.setText(getResources().getString(R.string.add_device_success));//Success, Please wait a moment to rename
                                 progressBar.setIndeterminate(false);
                             } else if ("Failed".equals(status)) {
                                 Logg.i(LOG_TAG, "=====result==" + "Fail");
+                                timerCancel();
                                 showAddFailDialog(getResources().getString(R.string.add_failed));
                                 progressBar.setIndeterminate(false);
                             } else if ("Learn Ready".equals(status)) {
@@ -316,11 +318,31 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                                 timerCancel();
                                 showAddFailDialog(getResources().getString(R.string.prompt_try_again));
                             } else {
-                                if("Getting Node Information".equals(status))
+
+                                boolean digit = false;
+
+                                //whether error code
+                                try {
+                                    Integer.parseInt(status);
+                                    digit = true;
+                                }
+                                catch (NumberFormatException e) {
+                                    digit = false;
+                                }
+
+                                if(digit == true)
                                 {
                                     timerCancel();
+                                    String str = "Error Code: " + status;
+                                    showAddFailDialog(str);
                                 }
-                                addStstus.setText(status);
+                                else {
+
+                                    if ("Getting Node Information".equals(status)) {
+                                        timerCancel();
+                                    }
+                                    addStstus.setText(status);
+                                }
                             }
 
                         }
