@@ -39,10 +39,15 @@ public class Const {
     public static final int MQTT_PORT = 1883;
     public static final int TCP_TIMEOUT = 10002;
 
+    public static final int ADD_DSK = 1;
+    public static final int GET_ALL_DSK = 2;
+    public static final int REMOVE_ALL_DSK = 3;
+
     public static String activityIndex = "";
     public static boolean isRemote = false;
     public static final String AUTH_APP_ID = "askey.nas.firefly.api";
     public static String currentRoomName = "";
+    public static String removedDeviceNodeId = "";
 
     public static final String DEVICE_MODEL = "FIREFLY";
 

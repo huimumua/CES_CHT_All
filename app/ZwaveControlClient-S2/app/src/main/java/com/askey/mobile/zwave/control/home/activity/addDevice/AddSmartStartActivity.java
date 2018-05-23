@@ -26,6 +26,7 @@ import com.askey.mobile.zwave.control.base.BaseActivity;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
+import com.askey.mobile.zwave.control.home.fragment.ScenesFragment;
 import com.askey.mobile.zwave.control.qrcode.CaptureActivity;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
@@ -111,7 +112,6 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                Log.i(TAG, "~~~~~~~~onTextChanged:" + start + " before :" + before + " count " + count);
                 if (count == 47 || start == 46) {
                     underline.setVisibility(View.VISIBLE);
                 } else {
@@ -130,12 +130,10 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
             public void onCheckedChanged(RadioGroup group, int checkedId) {
                 switch (checkedId){
                     case R.id.smart_start_radio_button:
-                        Log.i(TAG, "`````````````111smart_start_radio_button");
                         addModeHintTextView.setText(getResources().getString(R.string.automaticlly));
                         bootMode = SMART_START;
                         break;
                     case R.id.s2_radio_button:
-                        Log.i(TAG, "``````````````s2_radio_button");
                         addModeHintTextView.setText(getResources().getString(R.string.user_manully));
                         bootMode = SECURITY_S2;
                         break;
@@ -153,7 +151,6 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
                 startActivityForResult(smartStartintent, 71);
                 break;
             case R.id.button_smart_start:
-                //test
                 String editText = showQRCode.getText().toString();
                 if (editText.length() == 47) {
                     showWaitingDialog();
@@ -165,9 +162,8 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
                     } else {
                         Toast.makeText(mContext, "Error in qr code.", Toast.LENGTH_LONG).show();
                     }
-                    //test
-                   // MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList("25789-25540-39294-49868-11151-46938-45489-46475", "47", ""));
                 }
+                //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList("30008-63926-16243-29736-05865-19168-33435-15670", "47", "",""));
         }
     }
 
@@ -265,7 +261,9 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
                             Intent intent = new Intent();
                             intent.putExtra("ADD_SMART_START_RESULT", result);
                             setResult(2, intent); //将result返回到ScenesFragment，然后再finish
+                            ScenesFragment.newInstance().addDskResult();
                             finish();
+
                         } else {
                             Toast.makeText(mContext, "Add device failed", Toast.LENGTH_LONG).show();
                         }

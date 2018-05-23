@@ -417,7 +417,7 @@
     <string name="get_iot_cert_fail">IOT request failed</string>
     <string name="no_network_message">No network,Please check</string>
     <string name="extender_no_contrl">Extender has no control operation</string>
-    <string name="remove_device">Remove</string>
+    <string name="remove_device">Remove Device</string>
     <string name="learn_mode">Learn Mode</string>
     <string name="network_check">Network Check</string>
     <string name="reset_device">reset</string>
@@ -443,6 +443,10 @@
     <string name="security_status">Security status: %s</string>
     <string name="device_type_s">Device type: %s</string>
     <string name="add_failed">Add Failed !</string>
+    <string name="add_dsk">Add Data</string>
+    <string name="remove_dsk">Remove Data</string>
+    <string name="remove_all_dsk">Remove all Data</string>
+    <string name="get_all_dsk">Get all Data</string>
 
     <!--account activity-->
     <string name="activity_account_title">My QBee Account</string>

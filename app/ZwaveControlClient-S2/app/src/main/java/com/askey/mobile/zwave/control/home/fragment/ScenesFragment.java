@@ -66,7 +66,6 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
     private ScenesAdapter adapter;
     private int clickPosition;
     private TextView networkRole;
-    private String removedDeviceNodeId;
     private boolean isFirstLoad = true;
     private boolean isVisibleToUser;
     private boolean isFirst2onResume = true;
@@ -137,7 +136,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
     private void initView(View view) {
         menu = (ImageView) view.findViewById(R.id.menu_btn);
         menu.setOnClickListener(this);
-        menu.setVisibility(View.GONE);
+        menu.setVisibility(View.VISIBLE);
 
         voice = (ImageView) view.findViewById(R.id.voice);
         voice.setVisibility(View.GONE);
@@ -264,6 +263,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
                     provisionInfo.setDeviceLocation(temp.getString("Device Location"));
                     provisionInfo.setDeviceInclusionState(temp.getString("Device Inclusion state"));
                     provisionInfo.setNodeId(nodeId);
+                    Const.removedDeviceNodeId = nodeId;
                     provisionInfo.setNetworkInclusionState(status);
                     dataList.add(provisionInfo);
                     ((Activity) getContext()).runOnUiThread(new Runnable() {
@@ -276,6 +276,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
                             }else {
                                 setFirstAddImageView(false);
                             }
+                            stopWaitDialog();
                         }
                     });
                 }
@@ -286,12 +287,12 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
             if (rmInterface.equals("rmProvisionListEntry")) {
                 String result = reportedObject.optString("Result");
                 if (result.equals("true")) {
-                    removeDevice();
 
                     Log.i(TAG, "==============dataList :"+dataList.size());
                     ((Activity) getContext()).runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            removeDevice();
                             adapter.notifyDataSetChanged();
 
                             if(dataList.size() == 0){
@@ -304,6 +305,21 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
 
                     removeDeviceHint();
 
+                }
+            } else if(rmInterface.equals("rmAllProvisionListEntry")) {
+                String result = reportedObject.optString("Result");
+                if (result.equals("true")) {
+                    Log.i(TAG, "------rmAllProvisionListEntry:success");
+                    ((Activity) getContext()).runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            dataList.clear();
+                            adapter.notifyDataSetChanged();
+                            setFirstAddImageView(true);
+                        }
+                    });
+                } else if(result.equals("failed")){
+                    removeFailedDialog();
                 }
             }
 
@@ -434,7 +450,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
         Log.i(TAG, "~~~~~~~~~~~~~~deleteItemClick: " + position);
         ProvisionInfo itemInfo = dataList.get(position);
         String itemDesk = itemInfo.getDsk();
-        removedDeviceNodeId = itemInfo.getNodeId();
+        Const.removedDeviceNodeId = itemInfo.getNodeId();
         showDeleteDeviceDialog(itemDesk);
         clickPosition = position;
     }
@@ -464,6 +480,10 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
         }
     }
 
+    /**
+     * 删除Dsk的提示框
+     * @param dsk
+     */
     protected void showDeleteDeviceDialog(final String dsk) {
         final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mContext);
         final AlertDialog alertDialog = alertDialogBuilder.show();
@@ -516,6 +536,38 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
         });
     }
 
+    /**
+     * 删除失败的提示框
+     */
+    protected void removeFailedDialog() {
+        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mContext);
+        final AlertDialog alertDialog = alertDialogBuilder.show();
+        alertDialog.setCancelable(false);
+        View view = LayoutInflater.from(mContext).inflate(R.layout.dialog_normal_layout, null);
+        TextView title = (TextView) view.findViewById(R.id.title);
+        TextView promptMessage = (TextView) view.findViewById(R.id.message);
+        title.setText("Prompt");
+        promptMessage.setText("Remove device failed!");
+        alertDialog.setContentView(view);
+        TextView positiveButton = (TextView) view.findViewById(R.id.positiveButton);
+        TextView negativeButton = (TextView) view.findViewById(R.id.negativeButton);
+        positiveButton.setText("retry");
+        positiveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.setMqttDataJson("rmAllProvisionListEntry"));
+                alertDialog.dismiss();
+            }
+        });
+
+        negativeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                alertDialog.dismiss();
+            }
+        });
+    }
+
     public void removeDevice() {
 
         if (dataList.size() > 0) {
@@ -532,13 +584,34 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
         }
     }
 
+    /**
+     * HomeActivity的监听onNavigationItemSelected 调用了此函数,
+     * 相应的menu执行了get all dsk/remove all dsk
+     * 调用方式：通过ScenesFragment的实例 ScenesFragment.newInstance().responseMenu(int action);
+     * @param action 相应的动作
+     */
+    public void responseMenu(int action){
+
+        if(action == Const.ADD_DSK){
+
+        } else if(action == Const.GET_ALL_DSK) {
+            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getAllProvisionListEntry());
+            showWaitingDialog();
+        } else if(action == Const.REMOVE_ALL_DSK) {
+            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.setMqttDataJson("rmAllProvisionListEntry"));
+        }
+    }
+
+    /**
+     * 判断dsk相对应的nodeId是否为“0”， 如果为“0”，表示该Device未添加
+     */
     private void removeDeviceHint() {
         //List<ProvisionInfo> dataList;
-        Log.i(TAG, "~~~~~~~~~~~~~removedDeviceNodeId:"+removedDeviceNodeId+"-");
+        Log.i(TAG, "~~~~~~~~~~~~~removedDeviceNodeId:"+Const.removedDeviceNodeId+"-");
         ((Activity) getContext()).runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (removedDeviceNodeId.equals("0")) { //NodeId = "0" 表示设备不存在
+                if (Const.removedDeviceNodeId.equals("0")) { //NodeId = "0" 表示设备不存在
                     Log.i(TAG, "removeDeviceHint:460");
                     removedDeviceHintDialog(R.string.device_not_exist);//Device does not exist设备不存在
                 } else {
@@ -597,5 +670,10 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
             showWaitingDialog();
             MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getAllProvisionListEntry());
         }
+    }
+
+    public void addDskResult(){
+        Log.i(TAG, "-----------addDskResult: ");
+        ADD_SUCCESS = true;
     }
 }

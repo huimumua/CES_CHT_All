@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -33,6 +34,7 @@ import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.deviceContr.net.SocketTransceiver;
 import com.askey.mobile.zwave.control.deviceContr.net.TCPReceive;
 import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
+import com.askey.mobile.zwave.control.home.activity.addDevice.AddSmartStartActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDeviceActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.SelectBrandActivity;
 import com.askey.mobile.zwave.control.home.adapter.HomeAdapter;
@@ -53,18 +55,22 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.acl.Group;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class HomeActivity extends BaseActivity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener, TabLayout.OnTabSelectedListener, PreviewPhotoActivity.ChangeBackgroundCallback {
     public static String LOG_TAG = "HomeActivity";
     private FrameLayout container;
-    private NavigationView sliding_menu;
+    private NavigationView sliding_menu,smartStartMenu;
     private DrawerLayout drawer_layout;
     private TabLayout bottom_tab;
     private Fragment[] fragments;
     private HomeAdapter myAdapter;
     private ImageView edit, voice, head_cion;
+    private Menu menu_1, menu_2, menu_3, menu_4, menu_5, menu_6, menu_7, menu_8, menu_9;
+    private MenuItem menu_add, menu_remove, menu_reset, menu_learn_mode, menu_network_check,
+            menu_add_dak, menu_get_all_dsk, menu_remove_all_dsk;
 
     private String[] titles = new String[]{"My Devices","Smart Start"};
 
@@ -98,6 +104,20 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     private void initView() {
         container = (FrameLayout) findViewById(R.id.container);
         sliding_menu = (NavigationView) findViewById(R.id.sliding_menu);
+
+        menu_add = sliding_menu.getMenu().findItem(R.id.item_add);
+        menu_remove = sliding_menu.getMenu().findItem(R.id.item_remouve);
+        menu_reset = sliding_menu.getMenu().findItem(R.id.item_reset);
+        menu_learn_mode = sliding_menu.getMenu().findItem(R.id.item_learn_mode);
+        menu_network_check = sliding_menu.getMenu().findItem(R.id.item_network_check);
+
+        menu_add_dak = sliding_menu.getMenu().findItem(R.id.item_add_dsk);
+        menu_get_all_dsk = sliding_menu.getMenu().findItem(R.id.item_get_all_dsk);
+        menu_remove_all_dsk = sliding_menu.getMenu().findItem(R.id.item_remove_all_dsk);
+        menu_add_dak.setVisible(false);
+        menu_get_all_dsk.setVisible(false);
+        menu_remove_all_dsk.setVisible(false);
+
         View headerLayout = sliding_menu.inflateHeaderView(R.layout.navigation_head);
         head_cion = (ImageView) headerLayout.findViewById(R.id.head_icon);
 
@@ -194,6 +214,17 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
                 intent = new Intent(this, NetworkHealthCheckActivity.class);
                 startActivity(intent);
                 return true;
+            case R.id.item_add_dsk:
+                ScenesFragment.newInstance().responseMenu(Const.ADD_DSK); //调用ScenesFragment里面的方法responseMenu（int）;
+                Intent addDskIntent = new Intent(this, AddSmartStartActivity.class);
+                startActivity(addDskIntent);
+                return true;
+            case R.id.item_remove_all_dsk:
+                ScenesFragment.newInstance().responseMenu(Const.REMOVE_ALL_DSK);
+                return true;
+            case R.id.item_get_all_dsk:
+                ScenesFragment.newInstance().responseMenu(Const.GET_ALL_DSK);
+                return true;
         }
         return false;
     }
@@ -245,14 +276,38 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
         }
     }
 
+    /**
+     * fragement切换的监听
+     * @param tab
+     */
     @Override
     public void onTabSelected(TabLayout.Tab tab) {
         switch (tab.getPosition()) {
             case 0:
                 switchFragment(0);
+
+                menu_add.setVisible(true);
+                menu_remove.setVisible(true);
+                menu_reset.setVisible(true);
+                menu_learn_mode.setVisible(true);
+                menu_network_check.setVisible(true);
+
+                menu_add_dak.setVisible(false);
+                menu_get_all_dsk.setVisible(false);
+                menu_remove_all_dsk.setVisible(false);
                 break;
             case 1:
                 switchFragment(1);
+
+                menu_add.setVisible(false);
+                menu_remove.setVisible(false);
+                menu_reset.setVisible(false);
+                menu_learn_mode.setVisible(false);
+                menu_network_check.setVisible(false);
+
+                menu_add_dak.setVisible(true);
+                menu_get_all_dsk.setVisible(true);
+                menu_remove_all_dsk.setVisible(true);
                 break;
             case 2:
                 switchFragment(2);

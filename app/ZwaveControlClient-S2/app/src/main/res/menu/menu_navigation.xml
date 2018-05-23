@@ -10,7 +10,6 @@
     </group>
 
     <group
-        android:id="@+id/group_account"
         android:checkableBehavior="single">
         <item
             android:id="@+id/item_remouve"
@@ -42,6 +41,32 @@
             android:checked="false"
             android:icon="@drawable/ic_acount"
             android:title="@string/network_check" />
+    </group>
+
+    <group
+        android:checkableBehavior="single"
+        android:visible="true">
+        <item
+            android:id="@+id/item_add_dsk"
+            android:checked="true"
+            android:icon="@drawable/ic_add"
+            android:title="@string/add_dsk" />
+    </group>
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_get_all_dsk"
+            android:checked="false"
+            android:icon="@drawable/ic_acount"
+            android:title="@string/get_all_dsk" />
+    </group>
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/item_remove_all_dsk"
+            android:checked="false"
+            android:icon="@drawable/ic_acount"
+            android:title="@string/remove_all_dsk" />
     </group>
 
 </menu>
