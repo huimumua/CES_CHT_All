@@ -379,12 +379,11 @@ public class LocalMqttData {
         }
         return result;
     }
-    public static String editProvisionListEntry(String oldDsk ,String dsk,String inclusionState,String boot_mode) {
+    public static String editProvisionListEntry(String dsk, String inclusionState, String boot_mode) {
         String result = "";
         JSONObject function = new JSONObject();
         try {
             function.put("function", "editProvisionListEntry");
-            function.put("originalDsk", oldDsk);
             function.put("dsk", dsk);
             function.put("inclusionState", inclusionState);
             function.put("boot_mode", boot_mode);

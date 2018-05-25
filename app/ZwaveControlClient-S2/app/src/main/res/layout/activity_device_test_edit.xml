@@ -1,34 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/activity_device_setting"
     android:layout_width="@dimen/device_width"
     android:layout_height="@dimen/device_heigh"
+    android:background="@android:color/white"
+    android:orientation="vertical"
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="30dp"
-    android:orientation="vertical"
-    android:background="@android:color/white">
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        >
-        <Button
-            android:id="@+id/btn_back"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="back"
-            android:background="@color/hui"
-            android:layout_marginRight="@dimen/activity_horizontal_margin"
-            />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="device name"
-            android:textSize="25sp"
-            android:layout_centerInParent="true"
-            />
-        </LinearLayout>
+    android:paddingTop="30dp">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -39,74 +19,103 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Edit provision list"
-            android:layout_margin="5dp"
-            />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="DSK:"
-            android:layout_margin="5dp"
-            />
-        <EditText
-            android:id="@+id/et_dsk"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Device boot mode:"
-            android:layout_margin="5dp"
-            />
-        <Spinner
-            android:id="@+id/device_boot_mode"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:entries="@array/device_boot_mode"
-            android:layout_margin="5dp"
-            />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="device inclusion state:"
-            android:layout_margin="5dp"
-            />
-        <Spinner
-            android:id="@+id/device_inclusion_state"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:entries="@array/device_inclusion_state"
-            android:layout_margin="5dp"
-            />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="network inclusion state:"
-            android:layout_margin="5dp"
-            />
-        <EditText
-            android:id="@+id/network_inclusionn_state"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            />
-        <Button
-            android:id="@+id/btn_ok"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="确认修改"
-            android:background="@color/hui"
-            android:layout_marginRight="@dimen/activity_horizontal_margin"
-            android:layout_gravity="center_horizontal"
-            />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:text="Node Id: "
+                android:textColor="@color/adas_text"
+                android:textSize="@dimen/device_control_title_16sp" />
+
+            <TextView
+                android:id="@+id/node_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="6dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:text="network inclusion state:"
+                android:textColor="@color/adas_text"
+                android:textSize="@dimen/device_control_title_16sp" />
+
+            <TextView
+                android:id="@+id/network_inclusionn_state"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="6dp" />
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:text="DSK:"
+                android:textColor="@color/adas_text"
+                android:textSize="@dimen/device_control_title_16sp" />
+
+            <TextView
+                android:id="@+id/dsk_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="6dp" />
+
+            <TextView
+                android:id="@+id/device_boot_mode_textview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:text="Device boot mode:"
+                android:textColor="@color/adas_text"
+                android:textSize="@dimen/device_control_title_16sp" />
+
+            <Spinner
+                android:id="@+id/device_boot_mode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:entries="@array/device_boot_mode" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:text="device inclusion state:"
+                android:textColor="@color/adas_text"
+                android:textSize="@dimen/device_control_title_16sp" />
+
+            <Spinner
+                android:id="@+id/device_inclusion_state"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:entries="@array/device_inclusion_state" />
+
 
         </LinearLayout>
     </ScrollView>
 
+    <Button
+        android:id="@+id/btn_updata"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="20dp"
+        android:layout_marginLeft="20dp"
+        android:text="updata" />
 
-</LinearLayout>
+    <Button
+        android:id="@+id/btn_remove_dsk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="20dp"
+        android:layout_marginRight="20dp"
+        android:text="remove" />
+
+</RelativeLayout>

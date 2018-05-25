@@ -436,7 +436,6 @@
     <string name="automaticlly">The device will inclusion into network automaticlly.</string>
     <string name="user_manully">The device will inclusion into network by user manully.</string>
     <string name="csa_text">Device requested for client-side authentication (CSA)</string>
-    <string name="device_not_removed">The device has not been removed</string>
     <string name="yes_or_no">YES/NO</string>
     <string name="home_id">Home id: %s</string>
     <string name="node_id">Node id: %s</string>
@@ -447,6 +446,7 @@
     <string name="remove_dsk">Remove Data</string>
     <string name="remove_all_dsk">Remove all Data</string>
     <string name="get_all_dsk">Get all Data</string>
+    <string name="device_boot_mode">Device boot mode:%s</string>
 
     <!--account activity-->
     <string name="activity_account_title">My QBee Account</string>
@@ -477,5 +477,7 @@
     <string name="iot_conn_fail">IOT connected failed</string>
     <string name="iot_conn_fail_detail">Please try again</string>
     <string name="device_not_exist">Device does not exist</string>
+    <string name="smart_start_device_not_exist">Provision list removed success,but related device not exist in this network</string>
+    <string name="device_not_removed">Provision list removed success,but related device not remove in this network</string>
     <string name="device_name_is_long">The maximum 25 bytes of the device name</string>
 </resources>

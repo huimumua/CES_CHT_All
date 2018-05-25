@@ -3,6 +3,7 @@ package com.askey.mobile.zwave.control.home.activity.addDevice;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
@@ -60,8 +61,10 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
 
     private String dskCode = "";
     private String qrCode = "";
+    private String version = "";
     private String bootMode; //传给api：addProvisionListEntry的参数，bootMode = "1" 表示选择smart start, bootMode = "0" 表示选择 S2;
     private Context mContext;
+    private SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +78,9 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
         super.onStart();
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
         this.mContext = super.mContext;
+
+        SharedPreferences sp = getSharedPreferences("zwave", Context.MODE_PRIVATE);
+        editor = sp.edit();
         Log.i(TAG, "========onStart: ");
     }
 
@@ -176,7 +182,7 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
      */
     private void subQrData(String qrData) {
 
-        String version = qrData.substring(2, 4); // version根据文档，Index2~3表示设备版本，00 表示仅支持Security s2,01 表示smart start
+        version = qrData.substring(2, 4); // version根据文档，Index2~3表示设备版本，00 表示仅支持Security s2,01 表示smart start
 
         String data = qrData.substring(12, 52); //根据文档，截取data中从12位开始至52位的字符，共40个字符。
         String data1 = data.substring(0, 5);//取字符串前5位
@@ -262,6 +268,10 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
                             intent.putExtra("ADD_SMART_START_RESULT", result);
                             setResult(2, intent); //将result返回到ScenesFragment，然后再finish
                             ScenesFragment.newInstance().addDskResult();
+
+                            editor.putString(dskCode,version);//将二维码的第2、3位保存起来，用作DeviceTestEditActivity中判断DSK类型
+                            editor.commit();
+
                             finish();
 
                         } else {

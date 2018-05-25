@@ -47,13 +47,12 @@
     </string-array>
     
     <string-array name="device_boot_mode">
-        <item>PL_BOOT_MODE_S2</item>
-        <item>PL_BOOT_MODE_SMART_STRT</item>
-        <item>PL_INCL_STS_PENDING</item>
+        <item>Security 2</item>
+        <item>Smart Start</item>
     </string-array>
     <string-array name="device_inclusion_state">
-        <item>PL_INCL_STS_PENDING</item>
-        <item>PL_INCL_STS_PASSIVE</item>
-        <item>PL_INCL_STS_IGNORED</item>
+        <item>Pending</item>
+        <item>Passive</item>
+        <item>Ignored</item>
     </string-array>
 </resources>

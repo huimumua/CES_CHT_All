@@ -143,6 +143,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
 
         edit = (ImageView) view.findViewById(R.id.edit);
         edit.setOnClickListener(this);
+        edit.setVisibility(View.GONE);
 
         firstAddImageView =(ImageView) view.findViewById(R.id.dsk_add_first_device);
         firstAddImageView.setOnClickListener(this);
@@ -170,7 +171,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
     };
 
     private void requestProvisionList() {
-        showWaitingDialog();
+        //showWaitingDialog();
         ADD_SUCCESS = true;
         Log.d(TAG, "======requestProvisionList=======");
 //        MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
@@ -226,46 +227,54 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
             }
 
             if (Interface.equals("All Provision List Report")) {
-                ProvisionInfo provisionInfo;
-                JSONArray provisionList = reportedObject.optJSONArray("Detial provision list");
 
-                if(provisionList == null)
-                {
-                    return;
+                //返回的消息为：{"reported":{"MessageType":"All Provision List Report","Error":"No list entry"}}
+                if(mqttResult.contains("Error")){
+                    Log.i(TAG, "```````````````````````Error");
+                    dataList.clear();
+                    adapter.notifyDataSetChanged();
+                    setFirstAddImageView(true);
                 }
 
-                for (int i = 0; i < provisionList.length(); i++) {
-                    JSONObject temp = provisionList.getJSONObject(i);
-                    String deviceType = temp.getString("Device type info");
-                    String deviceId = temp.getString("Device id info");
-                    String networkState = temp.getString("Network inclusion state");
+                if(mqttResult.contains("Detial provision list")){
+                    Log.i(TAG, "```````````````Detial provision list");
+                    ProvisionInfo provisionInfo;
+                    JSONArray provisionList = reportedObject.optJSONArray("Detial provision list");
+                    dataList.clear();
+                    for (int i = 0; i < provisionList.length(); i++) {
+                        JSONObject temp = provisionList.getJSONObject(i);
+                        String deviceType = temp.getString("Device type info");
+                        String deviceId = temp.getString("Device id info");
+                        String networkState = temp.getString("Network inclusion state");
 
-                    JSONObject deviceTypeObject = new JSONObject(deviceType);
-                    String genericCls = deviceTypeObject.getString("Generic Cls");
-                    String specificCls = deviceTypeObject.getString("Specific Cls");
-                    String iconType = deviceTypeObject.getString("Icon Type");
+                        JSONObject deviceTypeObject = new JSONObject(deviceType);
+                        String genericCls = deviceTypeObject.getString("Generic Cls");
+                        String specificCls = deviceTypeObject.getString("Specific Cls");
+                        String iconType = deviceTypeObject.getString("Icon Type");
 
-                    JSONObject deviceIdObject = new JSONObject(deviceId);
-                    String manufacturerId = deviceIdObject.getString("Manufacturer Id");
-                    String productType = deviceIdObject.getString("Product Type");
-                    String productId = deviceIdObject.getString("Product Id");
-                    String appVersion = deviceIdObject.getString("App Version");
-                    String appSubVer = deviceIdObject.getString("App Sub Ver");
+                        JSONObject deviceIdObject = new JSONObject(deviceId);
+                        String manufacturerId = deviceIdObject.getString("Manufacturer Id");
+                        String productType = deviceIdObject.getString("Product Type");
+                        String productId = deviceIdObject.getString("Product Id");
+                        String appVersion = deviceIdObject.getString("App Version");
+                        String appSubVer = deviceIdObject.getString("App Sub Ver");
 
-                    JSONObject networkStateObject = new JSONObject(networkState);
-                    String nodeId = networkStateObject.getString("Node Id");
-                    String status = networkStateObject.getString("Status");
-                    Log.i(TAG, "NODE " + nodeId);
-                    provisionInfo = new ProvisionInfo();
-                    provisionInfo.setDsk(temp.getString("DSK"));
-                    provisionInfo.setDeviceName(temp.getString("Device Name"));
-                    provisionInfo.setDeviceBootMode(temp.getString("Device Boot Mode"));
-                    provisionInfo.setDeviceLocation(temp.getString("Device Location"));
-                    provisionInfo.setDeviceInclusionState(temp.getString("Device Inclusion state"));
-                    provisionInfo.setNodeId(nodeId);
-                    Const.removedDeviceNodeId = nodeId;
-                    provisionInfo.setNetworkInclusionState(status);
-                    dataList.add(provisionInfo);
+                        JSONObject networkStateObject = new JSONObject(networkState);
+                        String nodeId = networkStateObject.getString("Node Id");
+                        String status = networkStateObject.getString("Status");
+                        Log.i(TAG, "NODE " + nodeId);
+                        provisionInfo = new ProvisionInfo();
+                        provisionInfo.setDsk(temp.getString("DSK"));
+                        provisionInfo.setDeviceName(temp.getString("Device Name"));
+                        provisionInfo.setDeviceBootMode(temp.getString("Device Boot Mode"));
+                        provisionInfo.setDeviceLocation(temp.getString("Device Location"));
+                        provisionInfo.setDeviceInclusionState(temp.getString("Device Inclusion state"));
+                        provisionInfo.setNodeId(nodeId);
+                        Const.removedDeviceNodeId = nodeId;
+                        provisionInfo.setNetworkInclusionState(status);
+                        dataList.add(provisionInfo);
+                    }
+
                     ((Activity) getContext()).runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -276,11 +285,10 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
                             }else {
                                 setFirstAddImageView(false);
                             }
-                            stopWaitDialog();
+                            //stopWaitDialog();
                         }
                     });
                 }
-
             }
 
             String rmInterface = reportedObject.optString("Interface");
@@ -363,6 +371,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
         if (ADD_SUCCESS) {
             MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
             MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getAllProvisionListEntry());
+            showWaitingDialog();
         }
     }
 
@@ -425,18 +434,21 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
 
     @Override
     public void onItemClick(View view, ProvisionInfo provisionInfo) {
-        Intent intent = new Intent(getActivity(), DeviceTestActivity.class);
+//        Intent intent = new Intent(getActivity(), DeviceTestActivity.class);
+//        intent.putExtra("provisionInfo", provisionInfo);
+//        Log.i(TAG, "nodeid" + provisionInfo.getNodeId());
+//        startActivity(intent);
+        Intent intent = new Intent(getActivity(), DeviceTestEditActivity.class);
         intent.putExtra("provisionInfo", provisionInfo);
-        Log.i(TAG, "nodeid" + provisionInfo.getNodeId());
         startActivity(intent);
 
     }
 
     @Override
     public void onItemLongClick(View view, ProvisionInfo provisionInfo) {
-        Intent intent = new Intent(getActivity(), DeviceTestEditActivity.class);
-        intent.putExtra("provisionInfo", provisionInfo);
-        startActivity(intent);
+//        Intent intent = new Intent(getActivity(), DeviceTestEditActivity.class);
+//        intent.putExtra("provisionInfo", provisionInfo);
+//        startActivity(intent);
     }
 
     @Override
@@ -466,6 +478,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
         } else {
             firstAddImageView.setVisibility(View.GONE);
             scene_recycler.setVisibility(View.VISIBLE);
+            Log.i(TAG, "````````scene_recycler.setVisibility(View.VISIBLE)");
         }
     }
 
@@ -613,10 +626,10 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
             public void run() {
                 if (Const.removedDeviceNodeId.equals("0")) { //NodeId = "0" 表示设备不存在
                     Log.i(TAG, "removeDeviceHint:460");
-                    removedDeviceHintDialog(R.string.device_not_exist);//Device does not exist设备不存在
+                    removedDeviceHintDialog(R.string.smart_start_device_not_exist);//设备不存在
                 } else {
                     Log.i(TAG, "removeDeviceHint:464");
-                    removedDeviceHintDialog(R.string.device_not_removed);//The device has not been removed设备未移除
+                    removedDeviceHintDialog(R.string.device_not_removed);//设备未移除
                 }
             }
         });
