@@ -231,9 +231,15 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
                 //返回的消息为：{"reported":{"MessageType":"All Provision List Report","Error":"No list entry"}}
                 if(mqttResult.contains("Error")){
                     Log.i(TAG, "```````````````````````Error");
-                    dataList.clear();
-                    adapter.notifyDataSetChanged();
-                    setFirstAddImageView(true);
+
+                    ((Activity) getContext()).runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            dataList.clear();
+                            adapter.notifyDataSetChanged();
+                            setFirstAddImageView(true);
+                        }
+                    });
                 }
 
                 if(mqttResult.contains("Detial provision list")){
