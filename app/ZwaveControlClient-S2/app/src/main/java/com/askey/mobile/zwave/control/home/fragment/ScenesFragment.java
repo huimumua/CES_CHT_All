@@ -171,7 +171,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
     };
 
     private void requestProvisionList() {
-        //showWaitingDialog();
+        showWaitingDialog();
         ADD_SUCCESS = true;
         Log.d(TAG, "======requestProvisionList=======");
 //        MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
@@ -227,9 +227,12 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
             }
 
             if (Interface.equals("All Provision List Report")) {
+                ProvisionInfo provisionInfo;
+                JSONArray provisionList = reportedObject.optJSONArray("Detial provision list");
+
 
                 //返回的消息为：{"reported":{"MessageType":"All Provision List Report","Error":"No list entry"}}
-                if(mqttResult.contains("Error")){
+                if(mqttResult.contains("Error")) {
                     Log.i(TAG, "```````````````````````Error");
 
                     ((Activity) getContext()).runOnUiThread(new Runnable() {
@@ -242,11 +245,8 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
                     });
                 }
 
-                if(mqttResult.contains("Detial provision list")){
-                    Log.i(TAG, "```````````````Detial provision list");
-                    ProvisionInfo provisionInfo;
-                    JSONArray provisionList = reportedObject.optJSONArray("Detial provision list");
-                    dataList.clear();
+                if(provisionList != null)
+                {
                     for (int i = 0; i < provisionList.length(); i++) {
                         JSONObject temp = provisionList.getJSONObject(i);
                         String deviceType = temp.getString("Device type info");
@@ -279,19 +279,27 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
                         Const.removedDeviceNodeId = nodeId;
                         provisionInfo.setNetworkInclusionState(status);
                         dataList.add(provisionInfo);
-                    }
+                        ((Activity) getContext()).runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                adapter.notifyDataSetChanged();
 
+                                if(dataList.size() == 0){
+                                    setFirstAddImageView(true);
+                                }else {
+                                    setFirstAddImageView(false);
+                                }
+                                stopWaitDialog();
+                            }
+                        });
+                    }
+                }
+                else
+                {
                     ((Activity) getContext()).runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            adapter.notifyDataSetChanged();
-
-                            if(dataList.size() == 0){
-                                setFirstAddImageView(true);
-                            }else {
-                                setFirstAddImageView(false);
-                            }
-                            //stopWaitDialog();
+                            stopWaitDialog();
                         }
                     });
                 }
@@ -358,7 +366,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
     @Override
     public void onResume() {
         super.onResume();
-        Logg.i(TAG,"===MQTTManagement===onResume=====");
+        Logg.i(TAG,"======onResume=====");
         if (isVisibleToUser && isFirst2onResume) {
             showWaitingDialog();
             isFirst2onResume = false;
@@ -375,9 +383,9 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
 
         }
         if (ADD_SUCCESS) {
+            ADD_SUCCESS = false;// Acitvity刷新的时候，Fragment都会执行onResume()，所以当判断了ADD_SUCCESS为true后就要给他赋值为false，以免误执行下面的代码。
             MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
             MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getAllProvisionListEntry());
-            showWaitingDialog();
         }
     }
 

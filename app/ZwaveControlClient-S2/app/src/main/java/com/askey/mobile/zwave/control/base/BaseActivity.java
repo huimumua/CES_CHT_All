@@ -95,9 +95,9 @@ public class BaseActivity extends AppCompatActivity {
         android.support.v7.app.AlertDialog dialog = builder.show();
         //“确”定按钮字体颜色
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
-            dialog.getButton(android.support.v7.app.AlertDialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.color_e2231a,null));
+            dialog.getButton(android.support.v7.app.AlertDialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.color_e2231a));
 //”取消“按钮字体颜色
-            dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextColor(getResources().getColor(R.color.color_e2231a,null));
+            dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextColor(getResources().getColor(R.color.color_e2231a));
         } else {
             dialog.getButton(android.support.v7.app.AlertDialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.color_e2231a));
 //”取消“按钮字体颜色

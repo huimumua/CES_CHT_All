@@ -3,7 +3,6 @@ package com.askey.mobile.zwave.control.home.activity.addDevice;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
@@ -64,7 +63,6 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
     private String version = "";
     private String bootMode; //传给api：addProvisionListEntry的参数，bootMode = "1" 表示选择smart start, bootMode = "0" 表示选择 S2;
     private Context mContext;
-    private SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,9 +76,6 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
         super.onStart();
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
         this.mContext = super.mContext;
-
-        SharedPreferences sp = getSharedPreferences("zwave", Context.MODE_PRIVATE);
-        editor = sp.edit();
         Log.i(TAG, "========onStart: ");
     }
 
@@ -209,7 +204,6 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
         ss.setSpan(new ForegroundColorSpan(Color.parseColor("#ff0000")), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         showQRCode.setText(ss);
 
-        Log.i(TAG, "~~~~~~~~~~~~~~~~~~bootMode: "+version);
         addModeHintTextView.setVisibility(View.VISIBLE);
         if(SMART_START.equals(version) ){
             radioGroup.setVisibility(View.VISIBLE);//选择 smart start / s2
@@ -268,9 +262,6 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
                             intent.putExtra("ADD_SMART_START_RESULT", result);
                             setResult(2, intent); //将result返回到ScenesFragment，然后再finish
                             ScenesFragment.newInstance().addDskResult();
-
-                            editor.putString(dskCode,version);//将二维码的第2、3位保存起来，用作DeviceTestEditActivity中判断DSK类型
-                            editor.commit();
 
                             finish();
 
