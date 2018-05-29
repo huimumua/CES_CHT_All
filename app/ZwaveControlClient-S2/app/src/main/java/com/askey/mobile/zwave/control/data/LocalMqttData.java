@@ -1268,7 +1268,7 @@ public class LocalMqttData {
         return result;
     }
 
-    public static String addProvisionList(String dsk, String length, String qrCode, String bootMode) {
+    public static String addProvisionList(String dsk, String length, String qrCode) {
         String result = "";
         JSONObject function = new JSONObject();
         try {
@@ -1276,7 +1276,6 @@ public class LocalMqttData {
             function.put("dsk", dsk);
             function.put("dsklen", length);
             function.put("QrCode", qrCode);
-            function.put("BootMode", bootMode);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();

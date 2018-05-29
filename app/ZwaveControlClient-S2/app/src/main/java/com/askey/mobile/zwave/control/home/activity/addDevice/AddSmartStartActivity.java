@@ -48,8 +48,6 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
     //private AppCompatEditText showQRCode;
     private ImageButton scanQr;
     private Button addSmartStartButton;
-    private RadioGroup radioGroup;
-    private RadioButton securityRadioBtn, smartStartRadioBtn;
     private RelativeLayout underline;
     private RelativeLayout editQrCodeLayout, editDskLayout;//edit_layout
     private TextView addModeHintTextView;
@@ -92,10 +90,6 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
         brand = getIntent().getStringExtra("brand");
         deviceType = getIntent().getStringExtra("deviceType");
 
-        radioGroup = (RadioGroup) findViewById(R.id.radio_group);
-        smartStartRadioBtn = (RadioButton) findViewById(R.id.smart_start_radio_button);
-        securityRadioBtn = (RadioButton) findViewById(R.id.s2_radio_button);
-
         showQRCode = (EditText) findViewById(R.id.show_qr_code);
         scanQr = (ImageButton) findViewById(R.id.scan_qr_code);
         scanQr.setOnClickListener(this);
@@ -129,21 +123,6 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
             }
         });
 
-        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
-                switch (checkedId){
-                    case R.id.smart_start_radio_button:
-                        addModeHintTextView.setText(getResources().getString(R.string.automaticlly));
-                        bootMode = SMART_START;
-                        break;
-                    case R.id.s2_radio_button:
-                        addModeHintTextView.setText(getResources().getString(R.string.user_manully));
-                        bootMode = SECURITY_S2;
-                        break;
-                }
-            }
-        });
     }
 
     @Override
@@ -155,16 +134,20 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
                 startActivityForResult(smartStartintent, 71);
                 break;
             case R.id.button_smart_start:
-                String editText = showQRCode.getText().toString();
-                if (editText.length() == 47) {
-                    showWaitingDialog();
-                    //调用mqtt接口，带参数
-                    MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList(dskCode, "47", qrCode, bootMode));
+                if(version.equals(SECURITY_S2)){
+                    finish();
                 } else {
-                    if (editText == null || editText.length() < 1) {
-                        Toast.makeText(mContext, "Please enter a qr code.", Toast.LENGTH_LONG).show();
+                    String editText = showQRCode.getText().toString();
+                    if (editText.length() == 47) {
+                        showWaitingDialog();
+                        //调用mqtt接口，带参数
+                        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList(dskCode, "47", qrCode));
                     } else {
-                        Toast.makeText(mContext, "Error in qr code.", Toast.LENGTH_LONG).show();
+                        if (editText == null || editText.length() < 1) {
+                            Toast.makeText(mContext, "Please enter a qr code.", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(mContext, "Error in qr code.", Toast.LENGTH_LONG).show();
+                        }
                     }
                 }
                 //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList("30008-63926-16243-29736-05865-19168-33435-15670", "47", "",""));
@@ -209,13 +192,12 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
 
         addModeHintTextView.setVisibility(View.VISIBLE);
         if(SMART_START.equals(version) ){
-            radioGroup.setVisibility(View.VISIBLE);//选择 smart start / s2
             addModeHintTextView.setText(getResources().getString(R.string.automaticlly));
-            bootMode = SMART_START;
+            addSmartStartButton.setText(getResources().getString(R.string.add));
         } else {
-            radioGroup.setVisibility(View.GONE);//选择 smart start / s2
-            addModeHintTextView.setText(getResources().getString(R.string.user_manully));
-            bootMode = SECURITY_S2;
+            addModeHintTextView.setText(getResources().getString(R.string.not_support_smart_start));
+            addSmartStartButton.setText(getResources().getString(R.string.exit));
+
         }
     }
 

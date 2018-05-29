@@ -470,7 +470,7 @@ public class APITestActivity extends BaseActivity {
         } else if(api.equals("getProvisionListEntry")){
             MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getProvisionListEntry(api,deviceId));
         } else if(api.equals("addProvisionListEntry")){
-            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList(deviceId,"47","","1"));
+            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList(deviceId,"47",""));
         } else if(api.equals("rmProvisionListEntry")){
             MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.rmProvisionListEntry(api,deviceId));
         } else if (api.equals("getAllProvisionListEntry") || api.equals("rmAllProvisionListEntry")) {

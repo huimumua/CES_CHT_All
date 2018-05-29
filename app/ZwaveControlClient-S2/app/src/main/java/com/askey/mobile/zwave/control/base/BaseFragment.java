@@ -128,46 +128,48 @@ public class BaseFragment extends Fragment {
         _handler.post(new Runnable() {
             @Override
             public void run() {
-                if (mDialog != null) {
+                /*if (mDialog != null) {
                     stopWaitDialog();
-                }
+                }*/
                 try {
                     Thread.sleep(100);
                     Logg.e(TAG,"=====showWaitingDialog=======");
-                    mDialog = CustomProgressDialog.createLoadingDialog(mContext);
-                    mDialog.setCancelable(false);//允许返回
-                    mDialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
+                    if(mDialog == null) {
+                        mDialog = CustomProgressDialog.createLoadingDialog(mContext);
+                        mDialog.setCancelable(false);//允许返回
+                        mDialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
 
-                        @Override
-                        public boolean onKey(DialogInterface arg0, int arg1,
-                                             KeyEvent arg2) {
-                            if (arg1 == KeyEvent.KEYCODE_BACK
-                                    && arg2.getRepeatCount() == 0
-                                    && arg2.getAction() == KeyEvent.ACTION_UP) {
-                                new AlertDialog.Builder(mContext)
-                                        .setTitle("Warning")
-                                        .setMessage("The processing has not been completed yet")
-                                        .setPositiveButton("OK",
-                                                new DialogInterface.OnClickListener() {
-                                                    public void onClick(
-                                                            DialogInterface dialog,
-                                                            int whichButton) {
-                                                        stopWaitDialog();
-                                                    }
-                                                })
-                                        .setNegativeButton("Cancel",
-                                                new DialogInterface.OnClickListener() {
-                                                    public void onClick(
-                                                            DialogInterface dialog,
-                                                            int whichButton) {
-                                                        return;
-                                                    }
-                                                }).show();
+                            @Override
+                            public boolean onKey(DialogInterface arg0, int arg1,
+                                                 KeyEvent arg2) {
+                                if (arg1 == KeyEvent.KEYCODE_BACK
+                                        && arg2.getRepeatCount() == 0
+                                        && arg2.getAction() == KeyEvent.ACTION_UP) {
+                                    new AlertDialog.Builder(mContext)
+                                            .setTitle("Warning")
+                                            .setMessage("The processing has not been completed yet")
+                                            .setPositiveButton("OK",
+                                                    new DialogInterface.OnClickListener() {
+                                                        public void onClick(
+                                                                DialogInterface dialog,
+                                                                int whichButton) {
+                                                            stopWaitDialog();
+                                                        }
+                                                    })
+                                            .setNegativeButton("Cancel",
+                                                    new DialogInterface.OnClickListener() {
+                                                        public void onClick(
+                                                                DialogInterface dialog,
+                                                                int whichButton) {
+                                                            return;
+                                                        }
+                                                    }).show();
+                                }
+                                return true;
                             }
-                            return true;
-                        }
 
-                    });
+                        });
+                    }
                     mDialog.show();//显示
                 } catch (Exception ex) {
                     ex.getStackTrace();
@@ -187,9 +189,13 @@ public class BaseFragment extends Fragment {
                 try {
                     Logg.e(TAG,"=====stopWaitDialog=======");
                     // activate Quickset services
-                    if (mDialog != null) {
+                    /*if (mDialog != null) {
                         mDialog.dismiss();
                         mDialog = null;
+                    }*/
+                    if(mDialog.isShowing())
+                    {
+                        mDialog.dismiss();
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

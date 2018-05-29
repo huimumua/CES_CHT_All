@@ -7,6 +7,7 @@
     <string name="two_click_exit">Click twice then exit</string>
     <string name="drawer_open">Open</string>
     <string name="drawer_close">Close</string>
+    <string name="exit">Exit</string>
 
     <string-array name="qos_options">
         <item name="qos_0">0</item>
@@ -435,6 +436,7 @@
     <string name="safety_tips_s2_2">S2 Access Control</string>
     <string name="automaticlly">The device will inclusion into network automaticlly.</string>
     <string name="user_manully">The device will inclusion into network by user manully.</string>
+    <string name="not_support_smart_start">This device does not support Smart Start, you can re-scan or exit.</string>
     <string name="csa_text">Device requested for client-side authentication (CSA)</string>
     <string name="yes_or_no">YES/NO</string>
     <string name="home_id">Home id: %s</string>

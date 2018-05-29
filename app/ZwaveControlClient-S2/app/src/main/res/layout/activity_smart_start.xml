@@ -49,29 +49,6 @@
             android:visibility="gone"></RelativeLayout>
     </RelativeLayout>
 
-    <RadioGroup
-        android:id="@+id/radio_group"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/edit_qrcode_layout"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="45dp"
-        android:visibility="gone">
-
-        <RadioButton
-            android:id="@+id/smart_start_radio_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="@string/smart_start" />
-
-        <RadioButton
-            android:id="@+id/s2_radio_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Security S2" />
-    </RadioGroup>
-
     <TextView
         android:id="@+id/add_mode_text"
         android:layout_width="250dp"
