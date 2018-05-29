@@ -1276,6 +1276,7 @@ public class LocalMqttData {
             function.put("dsk", dsk);
             function.put("dsklen", length);
             function.put("QrCode", qrCode);
+            function.put("BootMode", "01");
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();
