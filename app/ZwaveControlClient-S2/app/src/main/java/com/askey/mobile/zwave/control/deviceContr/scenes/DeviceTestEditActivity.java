@@ -100,6 +100,9 @@ public class DeviceTestEditActivity extends BaseActivity implements View.OnClick
                     String mInterface = reportedObject.optString("Interface");
                     String result = reportedObject.optString("Result");
 
+                    stopWaitDialog();
+                    finish();
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -158,19 +161,19 @@ public class DeviceTestEditActivity extends BaseActivity implements View.OnClick
         switch (view.getId()) {
             case R.id.btn_updata:
                 showWaitingDialog();
-
                 String deviceInclusionStateStr = deviceInclusionStateSpinner.getSelectedItem().toString();
                 String deviceBootModeStr = deviceBootModeSpinner.getSelectedItem().toString();
 
                 String comm = LocalMqttData.editProvisionListEntry(DSKStr, deviceInclusionStateStr, deviceBootModeStr);
                 MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, comm);
-                ScenesFragment.newInstance().addDskResult();//通知UI更新ProvisionList
-                finish();
+                ScenesFragment.newInstance().addDskResult();//??UI????ProvisionList
+                //finish();
                 break;
             case R.id.btn_remove_dsk:
+                showWaitingDialog();
                 MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.rmProvisionListEntry("rmProvisionListEntry", DSKStr));
-                ScenesFragment.newInstance().addDskResult();//通知UI更新ProvisionList
-                finish();
+                ScenesFragment.newInstance().addDskResult();//??UI????ProvisionList
+                //finish();
                 break;
         }
     }

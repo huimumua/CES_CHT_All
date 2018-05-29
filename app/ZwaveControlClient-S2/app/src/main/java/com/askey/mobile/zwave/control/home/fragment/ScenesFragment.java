@@ -383,6 +383,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
 
         }
         if (ADD_SUCCESS) {
+            showWaitingDialog();
             ADD_SUCCESS = false;// Acitvity刷新的时候，Fragment都会执行onResume()，所以当判断了ADD_SUCCESS为true后就要给他赋值为false，以免误执行下面的代码。
             MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
             MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getAllProvisionListEntry());

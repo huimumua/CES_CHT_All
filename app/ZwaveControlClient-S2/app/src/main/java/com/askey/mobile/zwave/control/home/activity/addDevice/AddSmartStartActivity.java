@@ -5,12 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextWatcher;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -26,6 +28,7 @@ import com.askey.mobile.zwave.control.base.BaseActivity;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
+import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.home.fragment.ScenesFragment;
 import com.askey.mobile.zwave.control.qrcode.CaptureActivity;
 import com.askey.mobile.zwave.control.util.Const;
@@ -229,9 +232,18 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
         if (data != null) {
             String qrData = data.getExtras().getString("QR_CODE_DATA");
             Log.i(TAG, "=========onActivityResult: " + qrData);
-            if (qrData != null && qrData.length() > 52) {
+
+            /*
+              根据zwave QR code文档规则，最短组合长度为90的纯数字组成。
+              qrData.matches("[0-9]+")判断qr是否为纯数字组成
+             */
+            boolean result=qrData.matches("[0-9]+");
+            if(result == true && qrData.length()>=90){
                 subQrData(qrData);
+            } else {
+                qrCodeFailedDialog();
             }
+
         }
     }
 
@@ -284,4 +296,22 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
         }
     }
 
+    protected void qrCodeFailedDialog() {
+        final android.app.AlertDialog.Builder alertDialogBuilder = new android.app.AlertDialog.Builder(this);
+        final android.app.AlertDialog alertDialog = alertDialogBuilder.show();
+        alertDialog.setCancelable(false);
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_removed_device_hint, null);
+        alertDialog.setContentView(view);
+
+        TextView hintView = (TextView) view.findViewById(R.id.remove_device_hint_text);
+        hintView.setText(getResources().getString(R.string.qr_code_failed));
+
+        Button ok = (Button) view.findViewById(R.id.remove_device_hint_button);
+        ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                alertDialog.dismiss();
+            }
+        });
+    }
 }
