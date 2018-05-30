@@ -10,6 +10,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.base.BaseActivity;
@@ -30,7 +31,7 @@ public class DeviceTestEditActivity extends BaseActivity implements View.OnClick
     private Button updata,revove;
     private Spinner deviceBootModeSpinner, deviceInclusionStateSpinner;
     private ProvisionInfo provisionInfo;
-    private String DSKStr, networkInclusionState, nodeId, bootModeText, deviceInclusionstate;
+    private String DSKStr;
     private TextView networkInclusionStateTestView, dskTestView, nodeIdTextView, deviceBootModeTextView;
 
     private final String PL_INCL_STS_PENDING  = "0";
@@ -57,14 +58,18 @@ public class DeviceTestEditActivity extends BaseActivity implements View.OnClick
         deviceBootModeSpinner = (Spinner) findViewById(R.id.device_boot_mode);
         deviceInclusionStateSpinner = (Spinner) findViewById(R.id.device_inclusion_state);
 
-        initDskInfo();
 
         updata.setOnClickListener(this);
         revove.setOnClickListener(this);
         deviceBootModeSpinner.setOnItemSelectedListener(this);
         deviceInclusionStateSpinner.setOnItemSelectedListener(this);
 
+        provisionInfo = getIntent().getParcelableExtra("provisionInfo");
+        DSKStr = provisionInfo.getDsk();
+
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
+        showWaitingDialog();
+        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getProvisionListEntry("getProvisionListEntry",DSKStr));
     }
 
     MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
@@ -72,7 +77,7 @@ public class DeviceTestEditActivity extends BaseActivity implements View.OnClick
         public void mqttMessageArrived(String topic, MqttMessage message) {
             final String result = new String(message.getPayload());
             Logg.i(TAG, "=mqttMessageArrived=>=topic=" + topic);
-            Logg.i(TAG, "=mqttMessageArrived=>=message=" + result);
+            Logg.i(TAG, "============mqttMessage====" + result);
 
             if (result.contains("desired")) {
                 return;
@@ -93,11 +98,48 @@ public class DeviceTestEditActivity extends BaseActivity implements View.OnClick
                     JSONObject jsonObject = new JSONObject(mqttResult);
                     String reported = jsonObject.optString("reported");
                     JSONObject reportedObject = new JSONObject(reported);
-                    String mInterface = reportedObject.optString("Interface");
-                    String result = reportedObject.optString("Result");
 
-                    stopWaitDialog();
-                    finish();
+                    String mInterface= reportedObject.optString("Interface");
+                    if(mInterface.equals("addProvisionListEntry")){
+                        String result= reportedObject.optString("Result");
+                        if(result.equals("true")){
+                            finish();
+                        }else {
+                            Toast.makeText(getApplication(), "updata failed !", Toast.LENGTH_LONG).show();
+                        }
+                    }
+
+                    if(mInterface.equals("rmProvisionListEntry")){
+                        String result= reportedObject.optString("Result");
+                        if(result.equals("true")){
+                            finish();
+                        }else {
+                            Toast.makeText(getApplication(), "Remove  Provision List Entry Failed !", Toast.LENGTH_LONG).show();
+                        }
+                    }
+
+                    String messageType = reportedObject.optString("MessageType");
+                    if(messageType.equals("Provision List Report")){
+                        String networkInclusion = reportedObject.optString("Network inclusion state");
+                        JSONObject inclusion_state_Object = new JSONObject(networkInclusion);
+                        int nodeId = inclusion_state_Object.optInt("Node Id");
+                        String networkInclusionState = inclusion_state_Object.optString("Status");
+                        String bootModeText = reportedObject.optString("Device Boot Mode");
+                        String deviceInclusionstate = reportedObject.optString("Device Inclusion state");
+
+                        nodeIdTextView.setText(String.valueOf(nodeId));
+                        networkInclusionStateTestView.setText(networkInclusionState);
+                        dskTestView.setText(DSKStr);
+                        deviceBootModeTextView.setText(String.format(getResources().getString(R.string.device_boot_mode),bootModeText));
+
+                        if(deviceInclusionstate.equals("State Pending")){
+                            deviceInclusionStateSpinner.setSelection(0);
+                        } else if(deviceInclusionstate.equals("State Passive")){
+                            deviceInclusionStateSpinner.setSelection(1);
+                        } else {
+                            deviceInclusionStateSpinner.setSelection(2);
+                        }
+                    }
 
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -106,59 +148,23 @@ public class DeviceTestEditActivity extends BaseActivity implements View.OnClick
         });
     }
 
-    private void initDskInfo() {
-        provisionInfo = getIntent().getParcelableExtra("provisionInfo");
-
-        nodeId = provisionInfo.getNodeId();
-        DSKStr = provisionInfo.getDsk();
-        bootModeText = provisionInfo.getDeviceBootMode();
-        networkInclusionState = provisionInfo.getNetworkInclusionState();
-        deviceInclusionstate = provisionInfo.getDeviceInclusionState();
-
-        nodeIdTextView.setText(nodeId);
-        networkInclusionStateTestView.setText(networkInclusionState);
-        dskTestView.setText(DSKStr);
-
-        SharedPreferences sharedPreferences = getSharedPreferences("zwave", Context.MODE_PRIVATE);
-        String version = sharedPreferences.getString(DSKStr,"");
-
-        deviceBootModeTextView.setText(String.format(getResources().getString(R.string.device_boot_mode),bootModeText));
-
-        //设置Spinner初始化的值与接口获取到的保持一致
-        Log.i(TAG, "----------bootModeText"+bootModeText);
-        if(bootModeText.equals("Smart Start")){
-            deviceBootModeSpinner.setSelection(1);
-        }else {
-            deviceBootModeSpinner.setSelection(0);
-        }
-
-        Log.i(TAG, "----------deviceInclusionstate"+deviceInclusionstate);
-        if(deviceInclusionstate.equals("State Pending")){
-            deviceInclusionStateSpinner.setSelection(0);
-        } else if(deviceInclusionstate.equals("State Passive")){
-            deviceInclusionStateSpinner.setSelection(1);
-        } else {
-            deviceInclusionStateSpinner.setSelection(2);
-        }
-    }
-
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btn_updata:
                 showWaitingDialog();
                 String deviceInclusionStateStr = deviceInclusionStateSpinner.getSelectedItem().toString();
-                String deviceBootModeStr = deviceBootModeSpinner.getSelectedItem().toString();
+                //String deviceBootModeStr = deviceBootModeSpinner.getSelectedItem().toString();
 
-                String comm = LocalMqttData.editProvisionListEntry(DSKStr, deviceInclusionStateStr, deviceBootModeStr);
+                String comm = LocalMqttData.editProvisionListEntry(DSKStr, deviceInclusionStateStr, "Smart Start");
                 MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, comm);
-                ScenesFragment.newInstance().addDskResult();//??UI????ProvisionList
+                ScenesFragment.newInstance().addDskResult();//??ProvisionList
                 //finish();
                 break;
             case R.id.btn_remove_dsk:
                 showWaitingDialog();
                 MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.rmProvisionListEntry("rmProvisionListEntry", DSKStr));
-                ScenesFragment.newInstance().addDskResult();//??UI????ProvisionList
+                ScenesFragment.newInstance().addDskResult();//??ProvisionList
                 //finish();
                 break;
         }
