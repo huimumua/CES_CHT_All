@@ -3,16 +3,13 @@ package com.askey.mobile.zwave.control.deviceContr.scenes;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.base.BaseActivity;
@@ -25,7 +22,6 @@ import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -126,17 +122,7 @@ public class DeviceTestEditActivity extends BaseActivity implements View.OnClick
         SharedPreferences sharedPreferences = getSharedPreferences("zwave", Context.MODE_PRIVATE);
         String version = sharedPreferences.getString(DSKStr,"");
 
-       /*
-         当从SharedPreferences中读出来的为“00”的时候，表示设备为S0，
-         S0的DSK不能选BootMode， 所以将deviceBootModeSpinner隐藏，不让用户选择
-         然后直接状态写成 Device boot mode:Security 2
-         */
-        if(version.equals(SECURITY_2)){
-            deviceBootModeTextView.setText(String.format(getResources().getString(R.string.device_boot_mode),bootModeText));
-            deviceBootModeSpinner.setVisibility(View.GONE);
-        } else {
-
-        }
+        deviceBootModeTextView.setText(String.format(getResources().getString(R.string.device_boot_mode),bootModeText));
 
         //设置Spinner初始化的值与接口获取到的保持一致
         Log.i(TAG, "----------bootModeText"+bootModeText);
