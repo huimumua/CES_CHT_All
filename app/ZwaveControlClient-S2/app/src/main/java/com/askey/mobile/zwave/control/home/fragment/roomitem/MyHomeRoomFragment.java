@@ -94,6 +94,13 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
             Log.d(LOG_TAG, "正常加载,fragment可见");
             //这里仅仅是注册，发送消息在onResum里面
             MQTTManagement.getSingInstance().rigister(mqttMessageArrived);
+
+            if(!isFirst2onResume)
+            {
+                showWaitingDialog();
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand(roomName));
+            }
+
 //            if (Const.RESET_ROOMS) {
 //               // MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand(roomName));
 //                if (deviceInfoList.size() > 0) {

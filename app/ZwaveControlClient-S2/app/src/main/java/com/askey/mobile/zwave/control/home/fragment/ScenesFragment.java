@@ -682,7 +682,11 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
             Log.d(TAG, "正常加载,fragment可见");
             //这里仅仅是注册，发送消息在onResum里面
             MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
-
+            if(!isFirst2onResume)
+            {
+                showWaitingDialog();
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getAllProvisionListEntry());
+            }
         } else {
             Log.d(TAG, "正常加载,fragment不可见");
             unrigister();
