@@ -27,11 +27,12 @@ public class DeviceInfo {
     public static int reqKey;
     public static boolean reqFlag = false;
     public static String devType = "Zwave";
-    public static boolean bootMode = false;
-    public static boolean InclusionState = true;
 
     public static String className = "";
     public static String result = "";
+
+    public static String sensorClassName = "";
+    public static String sensorResult = "";
 
     public static String getMqttPayload = "";
     public static String reqString = "";
@@ -64,6 +65,11 @@ public class DeviceInfo {
     public static String room = "";
     public static boolean failFlag = false;
 
+    public static String inclusionState = "Pending";
+    public static String bootMode = "";
+    public static boolean smartStartFlag = false;
 
+    public static boolean mainFlag = false;
+    public static boolean mqttFlag = false;
 
 }

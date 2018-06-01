@@ -320,7 +320,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             boolean circle = false;
             while (!circle) {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -614,7 +614,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "addProvisionListEntry":
                         Log.i(LOG_TAG, "deviceService.addProvisionListEntry");
-                        zwaveService.addProvisionListEntry("Zwave", DeviceInfo.mqttString2.getBytes(), DeviceInfo.bootMode);
+                        zwaveService.addProvisionListEntry("Zwave", DeviceInfo.dskNumber.getBytes(), DeviceInfo.inclusionState, DeviceInfo.bootMode);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -633,12 +633,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "editProvisionListEntry":
                         Log.i(LOG_TAG, "deviceService.editProvisionListEntry");
-                        zwaveService.rmProvisionListEntry("Zwave", DeviceInfo.mqttString.getBytes());
-                        if (DeviceInfo.mqttTmp == 0) {
-                            zwaveService.addProvisionListEntry("Zwave", DeviceInfo.mqttString.getBytes(), false);
-                        } else {
-                            zwaveService.addProvisionListEntry("Zwave", DeviceInfo.mqttString.getBytes(), true);
-                        }
+                        zwaveService.addProvisionListEntry("Zwave", DeviceInfo.dskNumber.getBytes(), DeviceInfo.inclusionState,DeviceInfo.bootMode);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -856,7 +851,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.callResult = zwaveService.replaceFailedDevice(DeviceInfo.mqttDeviceId);
                         if (DeviceInfo.callResult < 0) {
                             //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
-                            Log.i(LOG_TAG, "removeFailDevice : -17 !!!!!!!!!!!!!");
+                            Log.i(LOG_TAG, "removeFailDevice : "+ DeviceInfo.callResult);
                             DeviceInfo.resultToMqttBroker = "dongleBusy:replaceFailDevice:"+DeviceInfo.callResult;
                         }
                         DeviceInfo.getMqttPayload = "";
@@ -864,7 +859,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "startLearnMode":
                         Log.i(LOG_TAG, "deviceService.startLearnMode");
-                        zwaveService.StartLearnMode();
+                        DeviceInfo.callResult = zwaveService.StartLearnMode();
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            Log.i(LOG_TAG, "startLearnMode : " + DeviceInfo.callResult);
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:startLearnMode:"+DeviceInfo.callResult;
+                        }
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -1220,7 +1220,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 break;
             case R.id.btnaddProList:
                 if (editDsk.length() != 0 && editDsk.length() == 47) {    // editDsk will 5-digit or full code
-                    DeviceInfo.InclusionState = true;
+                    //DeviceInfo.InclusionState = true;
                     addProvisionList();
                 } else
                     Toast.makeText(this, "格式錯誤 !", Toast.LENGTH_SHORT).show();
@@ -1240,7 +1240,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 break;
             case R.id.btnPassive:
                 if (selectProvisionList != null) {
-                    DeviceInfo.InclusionState = false;
+                    //DeviceInfo.InclusionState = false;
                     editDsk.setText(selectProvisionList);
                     rmProvisionList();
                     addProvisionList();
@@ -1342,7 +1342,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             Toast.makeText(this,"already Provision List", Toast.LENGTH_SHORT).show();
         } else {
             provisionListArr.add(editDsk.getText().toString());
-            zwaveService.addProvisionListEntry(DeviceInfo.devType,dskNumber,DeviceInfo.InclusionState);
+            zwaveService.addProvisionListEntry(DeviceInfo.devType,dskNumber,DeviceInfo.inclusionState,DeviceInfo.bootMode);
             Toast.makeText(this, "add Provision List", Toast.LENGTH_SHORT).show();
         }
         ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,
@@ -1470,8 +1470,27 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             @Override
             public void zwaveControlResultCallBack(String className, String result) {
 
-                DeviceInfo.className = className;
-                DeviceInfo.result = result;
+                while(DeviceInfo.mqttFlag) {
+                    try {
+                        Log.d(LOG_TAG,"wait for mqtt finish !!!!!!!!!!!!!!!!!!!!!!!!");
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if(className.equals("Sensor Info Report") || className.equals("Node Battery Value") || className.equals("Notification Get Information")) {
+                    DeviceInfo.sensorClassName = className;
+                    DeviceInfo.sensorResult = result;
+                } else {
+                    DeviceInfo.className = className;
+                    DeviceInfo.result = result;
+                }
+
+                if (result.contains("Smart Start Protocol Started")) {
+                    Log.d(LOG_TAG,"DeviceInfo.smartStartFlag = true");
+                    DeviceInfo.smartStartFlag = true;
+                }
 
                 Log.i(LOG_TAG, "class name = [" + DeviceInfo.className + "] | result = " + DeviceInfo.result);
 
@@ -1487,6 +1506,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     addRemoveDevice(result);
                 }
+
+                DeviceInfo.mqttFlag = true;
             }
         };
     }
