@@ -505,6 +505,14 @@
         <activity android:name=".home.activity.NetworkHealthCheckActivity"
             android:theme="@style/AppTheme.DeviceDialog"
             ></activity>
+
+        <!--设置属性为点击dialog空白处不退出-->
+        <activity android:name=".home.activity.addDevice.SmartStartDeviceAddActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.DeviceDialog"
+            android:windowSoftInputMode="adjustResize"
+            />
     </application>
 
 </manifest>

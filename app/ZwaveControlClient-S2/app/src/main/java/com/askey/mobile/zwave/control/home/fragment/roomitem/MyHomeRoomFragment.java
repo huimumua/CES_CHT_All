@@ -31,6 +31,7 @@ import com.askey.mobile.zwave.control.deviceContr.rooms.ui.WallMoteLivingActivit
 import com.askey.mobile.zwave.control.deviceContr.scenes.DeviceTestActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDevice;
 import com.askey.mobile.zwave.control.home.activity.addDevice.SelectBrandActivity;
+import com.askey.mobile.zwave.control.home.activity.addDevice.SmartStartDeviceAddActivity;
 import com.askey.mobile.zwave.control.home.adapter.DeviceAdapter;
 import com.askey.mobile.zwave.control.interf.DeleteDeviceListener;
 import com.askey.mobile.zwave.control.util.Const;
@@ -299,6 +300,13 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
                     }
                 });
             }
+
+            if("Node Add Status".equals(messageType)){
+                Log.i(LOG_TAG, "----------Node Add Status---------");
+                Intent smartStartIntent = new Intent(getContext(), SmartStartDeviceAddActivity.class);
+                startActivity(smartStartIntent);
+            }
+
         } catch (JSONException e) {
             e.printStackTrace();
         }

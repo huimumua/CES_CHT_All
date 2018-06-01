@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -59,6 +60,8 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
         Intent intent =  getIntent();
         brand = intent.getStringExtra("brand");
         deviceType = intent.getStringExtra("deviceType");
+        Log.i(LOG_TAG, "-----brand="+brand+" deviceType="+deviceType);
+
         nodeId = intent.getStringExtra("nodeId");
 
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
@@ -107,7 +110,7 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
                                 Intent intent = new Intent();
                                 intent.setClass(mContext,HomeActivity.class);
                                 startActivity(intent);
-                               // Const.setIsDataChange(true);
+                                Const.setIsDataChange(true); //添加完了执行一下getDeviceList
                                 finish();
                             }else{
                                 ((Activity) mContext).runOnUiThread(new Runnable() {
