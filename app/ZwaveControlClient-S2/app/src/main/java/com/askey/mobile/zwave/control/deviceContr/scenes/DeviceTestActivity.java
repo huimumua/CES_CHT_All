@@ -85,34 +85,6 @@ public class DeviceTestActivity extends BaseActivity {
             }
         });
 
-//test
-//        interfaceClass.add("COMMAND_CLASS_BATTERY");
-//        interfaceClass.add("COMMAND_CLASS_BASIC");
-//        interfaceClass.add("COMMAND_CLASS_SWITCH_MULTILEVEL");
-//        interfaceClass.add("COMMAND_CLASS_CONFIGURATION");
-//        interfaceClass.add("COMMAND_CLASS_POWERLEVEL");
-//        interfaceClass.add("COMMAND_CLASS_SWITCH_ALL");
-//        interfaceClass.add("COMMAND_CLASS_SWITCH_BINARY");
-//        interfaceClass.add("COMMAND_CLASS_SENSOR_BINARY");
-//        interfaceClass.add("COMMAND_CLASS_METER");
-//        interfaceClass.add("COMMAND_CLASS_WAKE_UP");
-//        interfaceClass.add("COMMAND_CLASS_DOOR_LOCK");
-//        interfaceClass.add("COMMAND_CLASS_USER_CODE");
-//        interfaceClass.add("COMMAND_CLASS_PROTECTION");
-//        interfaceClass.add("COMMAND_CLASS_INDICATOR");
-//        interfaceClass.add("COMMAND_CLASS_DOOR_LOCK_LOOGING");
-//        interfaceClass.add("COMMAND_CLASS_LANGUAGE");
-//        interfaceClass.add("COMMAND_CLASS_SWITCH_COLOR");
-//        interfaceClass.add("COMMAND_CLASS_BARRIER_OPERATOR");
-//        interfaceClass.add("COMMAND_CLASS_BASIC_TARIFF_INFO");
-//        interfaceClass.add("COMMAND_CLASS_ASSOCIATION");
-//        interfaceClass.add("COMMAND_CLASS_NOTIFICATION_VERSION");
-//        interfaceClass.add("COMMAND_CLASS_CENTRAL_SCENE_VERSION");
-//        interfaceClass.add("COMMAND_CLASS_SCENE_ACTUATOR");
-//        interfaceClass.add("COMMAND_CLASS_FIRMWARE_UPGRADE_MD");
-//        interfaceClass.add("COMMAND_CLASS_MUTILCMD");
-//        interfaceClass.add("COMMAND_CLASS_SENSOR_MULTILEVEL");
-
        getCmdList();
     }
 
@@ -134,6 +106,8 @@ public class DeviceTestActivity extends BaseActivity {
     private void getCmdList() {
         Log.d(TAG, "======getCmdList=======");
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
+
+        //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.checkNodeIsFailed(nodeId));
         MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getSpecifyDeviceInfo(nodeId));
 
     }
@@ -154,11 +128,11 @@ public class DeviceTestActivity extends BaseActivity {
                     JSONObject detailTmp = detailInfo.getJSONObject(i);
                     securityStatus = detailTmp.optString("Node security inclusion status");
                     homeId = detailTmp.optString("Home id");
-                    deviceType = detailTmp.optString("Device type"); //TODO:需要确认huilin有没有加这个参数
 
                     JSONArray endpointList = detailTmp.getJSONArray("EndPoint List");
                     for (int j=0 ; j < endpointList.length();j++) {
                         JSONObject endpointTmp = endpointList.getJSONObject(j);
+                        deviceType = endpointTmp.optString("ZWave+ device type"); //设备类型
                         JSONArray interfaceList = endpointTmp.getJSONArray("Interface List");
                         for (int k=0; k < interfaceList.length(); k++) {
                             JSONObject interfaceTmp = interfaceList.getJSONObject(k);
