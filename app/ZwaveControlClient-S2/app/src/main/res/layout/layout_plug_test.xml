@@ -15,7 +15,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:text="@string/new_scence_title"
+        android:text="device name :"
         android:textColor="@color/color_primary"
         android:textSize="25sp" />
 
@@ -58,17 +58,59 @@
         android:background="@color/color_primary" />
 
     <TextView
+        android:id="@+id/node_is_failed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/margin_5dp"
-        android:text="Command Class List"
-        android:textColor="@color/color_primary"
-        android:textSize="@dimen/device_control_title_16sp" />
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:text="@string/device_is_failed"
+        android:textColor="@color/text_color"
+        android:visibility="gone" />
 
-
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/comm_list"
+    <LinearLayout
+        android:id="@+id/command_class_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/device_smaller_icon_10dp" />
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:text="Command Class List"
+            android:textColor="@color/color_primary"
+            android:textSize="@dimen/device_control_title_16sp" />
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/comm_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/device_smaller_icon_10dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/failed_node_layout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="bottom"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/remove_failed_node"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:layout_weight="1"
+            android:text="@string/remove" />
+
+        <Button
+            android:id="@+id/replace_failed_node"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:layout_weight="1"
+            android:text="@string/replace" />
+    </LinearLayout>
 </LinearLayout>

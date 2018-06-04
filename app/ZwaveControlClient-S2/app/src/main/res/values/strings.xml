@@ -249,6 +249,8 @@
     <string name="delete_explain">\ \ The device will be permanently \n removed from your QBee Home. </string>
     <string name="delete_smart_start">Delete Smart Start</string>
     <string name="proceed">Proceed</string>
+    <string name="remove">remove</string>
+    <string name="replace">replace</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">favorites fragment</string>
@@ -449,6 +451,8 @@
     <string name="remove_all_dsk">Remove all Data</string>
     <string name="get_all_dsk">Get all Data</string>
     <string name="device_boot_mode">Device boot mode:%s</string>
+    <string name="device_is_failed">The node is failed !</string>
+    <string name="device_name_2">Device name: %s</string>
 
     <!--account activity-->
     <string name="activity_account_title">My QBee Account</string>

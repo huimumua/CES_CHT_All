@@ -19,14 +19,22 @@
 
 
         <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="15dp"
+            android:textSize="@dimen/device_title_20sp"
+            android:textColor="@color/contents_text"
+            android:text="please press device button" />
+
+        <TextView
             android:id="@+id/status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:padding="15dp"
-            android:textSize="20sp"
-            android:textColor="@color/red"
-            android:text="please press device button" />
+            android:textSize="@dimen/device_title_20sp"
+            android:textColor="@color/contents_text" />
 
         <Button
             android:id="@+id/remove_confirm_btn"
