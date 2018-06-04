@@ -237,15 +237,17 @@ public class ZwaveControlService extends Service {
                 plList[i] = new ZwaveProvisionList();
             }
 
-            plList[0].setType(ZwaveProvisionList.PL_INFO_TYPE_INCL_STS);
 
             if(InclusionState.equals("Pending")) {
+                plList[0].setType(ZwaveProvisionList.PL_INFO_TYPE_INCL_STS);
                 plList[0].setInclusionState(ZwaveProvisionList.PL_INCL_STS_PENDING);
                 Log.d(LOG_TAG,"PENDING mode");
             } else if (InclusionState.equals("Passive")){
+                plList[0].setType(ZwaveProvisionList.PL_INFO_TYPE_INCL_STS);
                 plList[0].setInclusionState(ZwaveProvisionList.PL_INCL_STS_PASSIVE);
                 Log.d(LOG_TAG,"PASSIVE mode");
             } else if (InclusionState.equals("Ignored")){
+                plList[0].setType(ZwaveProvisionList.PL_INFO_TYPE_INCL_STS);
                 plList[0].setInclusionState(ZwaveProvisionList.PL_INCL_STS_IGNORED);
                 Log.d(LOG_TAG,"IGNORED mode");
             }
@@ -270,17 +272,17 @@ public class ZwaveControlService extends Service {
             plList[3].stProvisionList.loc = "complany";
 
             plList[4].setType(ZwaveProvisionList.PL_INFO_TYPE_PROD_TYPE);
-            plList[4].stProvisionList.pti.generic_cls = 0x10;
-            plList[4].stProvisionList.pti.specific_cls = 0x01;
-            plList[4].stProvisionList.pti.icon_type = 0x0700;
+            plList[4].stProvisionList.pti.generic_cls = DeviceInfo.qrCodeDeviceType;
+            plList[4].stProvisionList.pti.specific_cls = DeviceInfo.qrCodeDeviceType2;
+            plList[4].stProvisionList.pti.icon_type = DeviceInfo.qrCodeIcon;
 
             plList[5].setType(ZwaveProvisionList.PL_INFO_TYPE_PROD_ID);
-            plList[5].stProvisionList.pii.manf_id = 0;
-            plList[5].stProvisionList.pii.prod_type = 0x0003;
-            plList[5].stProvisionList.pii.prod_id = 0x0002;
-            plList[5].stProvisionList.pii.app_ver = 0x04;
-            plList[5].stProvisionList.pii.app_sub_ver = 0x01;
-
+            plList[5].stProvisionList.pii.manf_id = DeviceInfo.qrCodeVendorId;
+            plList[5].stProvisionList.pii.prod_type = DeviceInfo.qrCodeProcuctType;
+            plList[5].stProvisionList.pii.prod_id = DeviceInfo.qrCodeProcuctId;
+            plList[5].stProvisionList.pii.app_ver = DeviceInfo.qrCodeAppVersion;
+            plList[5].stProvisionList.pii.app_sub_ver = DeviceInfo.qrCodeAppVersion2;
+            Log.d(LOG_TAG,"plList = " + plList.toString());
             String result = "false";
             int res = ZwaveControlHelper.ZwController_addProvisionListEntry(dskNumber, dskNumber.length, plList,6);
             if (res == 0){

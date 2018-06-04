@@ -331,7 +331,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.callResult = zwaveService.addDevice(DeviceInfo.devType);
                         if (DeviceInfo.callResult < 0) {
                             //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
-                            Log.i(LOG_TAG, "addDevice : -17 !!!!!!!!!!!!!" + DeviceInfo.callResult);
+                            //Log.i(LOG_TAG, "addDevice : -17 !!!!!!!!!!!!!" + DeviceInfo.callResult);
                             DeviceInfo.resultToMqttBroker = "dongleBusy:addDevice:"+DeviceInfo.callResult;
                         }
                         DeviceInfo.getMqttPayload = "";
@@ -342,7 +342,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.callResult = zwaveService.removeDevice(DeviceInfo.devType, 1);
                         if (DeviceInfo.callResult < 0) {
                             //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
-                            Log.i(LOG_TAG, "removeDevice : -17 !!!!!!!!!!!!!");
+                            //Log.i(LOG_TAG, "removeDevice : -17 !!!!!!!!!!!!!");
                             DeviceInfo.resultToMqttBroker = "dongleBusy:removeDevice:"+DeviceInfo.callResult;
                         }
                         DeviceInfo.getMqttPayload = "";
@@ -353,7 +353,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.callResult = zwaveService.stopAddDevice(DeviceInfo.devType);
                         if (DeviceInfo.callResult < 0) {
                             //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
-                            Log.i(LOG_TAG, "stopAddDevice : -17 !!!!!!!!!!!!!");
+                            //Log.i(LOG_TAG, "stopAddDevice : -17 !!!!!!!!!!!!!");
                             DeviceInfo.resultToMqttBroker = "dongleBusy:stopAddDevice:"+DeviceInfo.callResult;
                         }
                         DeviceInfo.getMqttPayload = "";
@@ -364,7 +364,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.callResult = zwaveService.stopRemoveDevice(DeviceInfo.devType);
                         if (DeviceInfo.callResult < 0) {
                             //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
-                            Log.i(LOG_TAG, "stopRemoveDevice : -17 !!!!!!!!!!!!!");
+                            //Log.i(LOG_TAG, "stopRemoveDevice : -17 !!!!!!!!!!!!!");
                             DeviceInfo.resultToMqttBroker = "dongleBusy:stopRemoveDevice:"+DeviceInfo.callResult;
                         }
                         DeviceInfo.getMqttPayload = "";
@@ -655,7 +655,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.callResult = zwaveService.startNetworkHealthCheck();
                         if (DeviceInfo.callResult < 0) {
                             //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
-                            Log.i(LOG_TAG, "getRssiState : -17 !!!!!!!!!!!!!");
+                            //Log.i(LOG_TAG, "getRssiState : -17 !!!!!!!!!!!!!");
                             DeviceInfo.resultToMqttBroker = "dongleBusy:getRssiState:"+DeviceInfo.callResult;
                         }
                         DeviceInfo.getMqttPayload = "";
@@ -822,7 +822,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.callResult = zwaveService.removeFailedDevice(DeviceInfo.mqttDeviceId);
                         if (DeviceInfo.callResult < 0) {
                             //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
-                            Log.i(LOG_TAG, "removeFailDevice : -17 !!!!!!!!!!!!!");
+                            //Log.i(LOG_TAG, "removeFailDevice : -17 !!!!!!!!!!!!!");
                             DeviceInfo.resultToMqttBroker = "dongleBusy:removeFailDevice:"+DeviceInfo.callResult;
                         }
                         DeviceInfo.getMqttPayload = "";
@@ -840,7 +840,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.callResult = zwaveService.setDefault();
                         if (DeviceInfo.callResult < 0) {
                             DeviceInfo.resultToMqttBroker = "setDefaultFail17";
-                            Log.i(LOG_TAG, "setDefault : -17 !!!!!!!!!!!!!");
+                            //Log.i(LOG_TAG, "setDefault : -17 !!!!!!!!!!!!!");
                         }
                         DeviceInfo.getMqttPayload = "";
                         break;

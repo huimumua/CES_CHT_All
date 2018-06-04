@@ -34,6 +34,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class MQTTBroker extends Service {
@@ -820,6 +821,44 @@ public class MQTTBroker extends Service {
                 case "addProvisionListEntry":
                     Log.i(LOG_TAG, "deviceService.addProvisionListEntry");
                     DeviceInfo.bootMode = payload.getString("BootMode");
+                    String qrCode = payload.getString("QrCode");
+
+                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(56,61));
+                    DeviceInfo.mqttString2 = Integer.toHexString(Integer.valueOf(DeviceInfo.mqttString));
+                    DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(0,2));
+                    DeviceInfo.qrCodeDeviceType = Integer.parseInt(DeviceInfo.mqttString3,16);
+                    DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(2,4));
+                    DeviceInfo.qrCodeDeviceType2 = Integer.parseInt(DeviceInfo.mqttString3,16);
+
+                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(61,66));
+                    DeviceInfo.qrCodeIcon = Integer.valueOf(DeviceInfo.mqttString);
+
+                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(70,75));
+                    DeviceInfo.qrCodeVendorId = Integer.valueOf(DeviceInfo.mqttString);
+
+                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(75,80));
+                    DeviceInfo.qrCodeProcuctType = Integer.valueOf(DeviceInfo.mqttString);
+
+                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(80,85));
+                    DeviceInfo.qrCodeProcuctId = Integer.valueOf(DeviceInfo.mqttString);
+
+                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(85,90));
+                    DeviceInfo.mqttString2 = Integer.toHexString(Integer.valueOf(DeviceInfo.mqttString));
+                    DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(0,1));
+                    DeviceInfo.qrCodeAppVersion = Integer.parseInt(DeviceInfo.mqttString3,16);
+                    DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(1,3));
+                    DeviceInfo.qrCodeAppVersion2 = Integer.parseInt(DeviceInfo.mqttString3,16);
+
+                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeDeviceType).toString());
+                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeDeviceType2).toString());
+                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeIcon).toString());
+                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeVendorId).toString());
+                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeProcuctType).toString());
+                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeProcuctId).toString());
+                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeAppVersion).toString());
+                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeAppVersion2).toString());
+
+
                     if (DeviceInfo.bootMode.contains("01")) {
                         DeviceInfo.bootMode = "Smart Start";
                         Log.d(LOG_TAG, "DeviceInfo.bootMode = Smart Start");

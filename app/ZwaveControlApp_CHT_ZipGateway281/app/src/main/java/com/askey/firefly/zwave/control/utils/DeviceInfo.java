@@ -66,10 +66,23 @@ public class DeviceInfo {
     public static boolean failFlag = false;
 
     public static String inclusionState = "Pending";
-    public static String bootMode = "";
+    public static String bootMode = "Smart Start";
+
+    public static int qrCodeDeviceType = 0;
+    public static int qrCodeDeviceType2 = 0;
+
+    public static int qrCodeIcon = 0;
+    public static int qrCodeVendorId = 0;
+    public static int qrCodeProcuctType = 0;
+    public static int qrCodeProcuctId = 0;
+    public static int qrCodeAppVersion = 0;
+    public static int qrCodeAppVersion2 = 0;
+
+
     public static boolean smartStartFlag = false;
 
     public static boolean mainFlag = false;
     public static boolean mqttFlag = false;
+
 
 }
