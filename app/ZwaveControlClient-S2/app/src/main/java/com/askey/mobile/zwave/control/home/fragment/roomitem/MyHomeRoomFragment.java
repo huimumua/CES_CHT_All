@@ -438,7 +438,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
     public void deleteItemClick(final int position) {
         DeviceInfo info = deviceInfoList.get(position);
         //deviceId就是nodeId
-        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.checkNodeIsFailed(info.getDeviceId()));
+        //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.checkNodeIsFailed(info.getDeviceId()));
         clickNodeId = info.getDeviceId();
         clickPosition = position;
     }

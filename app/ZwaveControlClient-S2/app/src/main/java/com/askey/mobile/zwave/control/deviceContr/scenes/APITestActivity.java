@@ -435,6 +435,12 @@ public class APITestActivity extends BaseActivity {
 
     //getSupportSwitchType  getSensorBinarySupportedSensor  getSensorBinary  startStopSwitchLevelChange可以发出去
     private void requestMqtt() {
+        if(api == null)
+        {
+            Log.e(TAG, "requestMqtt, api is null");
+            return;
+        }
+
         if (api.equals("getBattery")
                 || api.equals("getSensorMultilevel")
                 || api.equals("getBasic")
@@ -665,6 +671,11 @@ public class APITestActivity extends BaseActivity {
                     String messageType = reportedObject.optString("MessageType");
                     //String result = reportedObject.optString("Result");
                     Log.i(TAG, "~~~~~~~~~mqttMessageResult" + reported);
+                    if(api == null)
+                    {
+                        Log.e(TAG, "mqttMessageResult, api is null");
+                        return;
+                    }
                      if (api.equals("getRssiState")
                 || api.equals("getWakeUpInterval") ) {
 

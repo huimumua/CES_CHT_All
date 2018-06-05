@@ -157,6 +157,9 @@ public class DeviceTestActivity extends BaseActivity {
 
             if ("Specify Node Info".equals(messageType)) {
                 JSONArray detailInfo = reportedObject.optJSONArray("Detialed Node Info");
+                if(interfaceClass.size()>0){
+                    interfaceClass.clear();
+                }
                 for (int i = 0; i < detailInfo.length(); i++) {
                     JSONObject detailTmp = detailInfo.getJSONObject(i);
                     securityStatus = detailTmp.optString("Node security inclusion status");
@@ -174,18 +177,13 @@ public class DeviceTestActivity extends BaseActivity {
                         }
                     }
                 }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
 
-                        homeIdTextView.setText(String.format(getString(R.string.home_id), homeId));
-                        nodeIdTextView.setText(String.format(getString(R.string.node_id), nodeId));
-                        securityStatusTextView.setText(String.format(getString(R.string.security_status), securityStatus));
-                        deviceTypeTextView.setText(String.format(getString(R.string.device_type_s), deviceType));
+                homeIdTextView.setText(String.format(getString(R.string.home_id), homeId));
+                nodeIdTextView.setText(String.format(getString(R.string.node_id), nodeId));
+                securityStatusTextView.setText(String.format(getString(R.string.security_status), securityStatus));
+                deviceTypeTextView.setText(String.format(getString(R.string.device_type_s), deviceType));
+                adapter.notifyDataSetChanged();
 
-                        adapter.notifyDataSetChanged();
-                    }
-                });
             } else if ("Node Is Failed Check Report".equals(messageType)) { //检查node所对应Device是否活着
                 MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getSpecifyDeviceInfo(nodeId));
                 if (reported.contains("Status")) {
