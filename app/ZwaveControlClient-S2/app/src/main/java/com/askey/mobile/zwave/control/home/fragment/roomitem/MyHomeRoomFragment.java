@@ -287,19 +287,20 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
                     });
                 }
 //            }
-            if ("Node Is Failed Check Report".equals(messageType)) {
-                final String status = reportedObject.optString("Status");
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if ("Alive".equals(status)) {
-                            showDeleteDeviceDialog(getActivity(), roomName, clickNodeId);
-                        } else {
-                            showFailDeleteDeviceDialog(getActivity(), roomName, clickNodeId);
-                        }
-                    }
-                });
-            }
+
+//            if ("Node Is Failed Check Report".equals(messageType)) {
+//                final String status = reportedObject.optString("Status");
+//                getActivity().runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        if ("Alive".equals(status)) {
+//                            showDeleteDeviceDialog(getActivity(), roomName, clickNodeId);
+//                        } else {
+//                            showFailDeleteDeviceDialog(getActivity(), roomName, clickNodeId);
+//                        }
+//                    }
+//                });
+//            }
 
             if("Node Add Status".equals(messageType)){
                 Log.i(LOG_TAG, "----------Node Add Status---------");
