@@ -28,7 +28,7 @@ import org.json.JSONObject;
 public class RemoveFailActivity extends BaseActivity {
     private static final String LOG_TAG = RemoveFailActivity.class.getSimpleName();
     private static DeleteDeviceListener deleteDeviceListener;
-    TextView title;
+    TextView title, actionTip;
     TextView status;
     Button removeConfirmBtn;
 
@@ -37,8 +37,10 @@ public class RemoveFailActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_delete_fail);
         title = (TextView) findViewById(R.id.title);
+        actionTip = (TextView) findViewById(R.id.action_tip);
         status = (TextView) findViewById(R.id.status);
         title.setText("removeFailDevice");
+        actionTip.setText(getResources().getString(R.string.please_wait_a_moment));
         removeConfirmBtn = (Button) findViewById(R.id.remove_confirm_btn);
         removeConfirmBtn.setOnClickListener(new View.OnClickListener() {
             @Override

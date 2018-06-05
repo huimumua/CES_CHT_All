@@ -19,6 +19,7 @@
 
 
         <TextView
+            android:id="@+id/action_tip"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
@@ -35,6 +36,12 @@
             android:padding="15dp"
             android:textSize="@dimen/device_title_20sp"
             android:textColor="@color/contents_text" />
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="30dp"/>
 
         <Button
             android:id="@+id/remove_confirm_btn"
