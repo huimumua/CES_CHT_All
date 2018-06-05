@@ -674,8 +674,8 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_SetDefault();
     }
 
-    public void checkNodeIsFailed(int deviceId) {
-        ZwaveControlHelper.ZwController_checkNodeIsFailed(deviceId);
+    public int checkNodeIsFailed(int deviceId) {
+        return ZwaveControlHelper.ZwController_checkNodeIsFailed(deviceId);
     }
 
     public int getConfiguration(int deviceId, int paramMode, int paramNumber, int rangeStart, int rangeEnd){

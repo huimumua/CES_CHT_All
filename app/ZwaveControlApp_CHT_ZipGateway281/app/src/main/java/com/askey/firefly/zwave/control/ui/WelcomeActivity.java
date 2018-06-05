@@ -831,7 +831,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     case "checkNodeIsFailed":
                         Log.i(LOG_TAG, "deviceService.checkNodeIsFailed");
                         Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
-                        zwaveService.checkNodeIsFailed(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = zwaveService.checkNodeIsFailed(DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            //Log.i(LOG_TAG, "removeFailDevice : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:checkNodeIsFailed:"+DeviceInfo.callResult;
+                        }
                         DeviceInfo.getMqttPayload = "";
                         break;
 

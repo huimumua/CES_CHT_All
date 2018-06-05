@@ -2540,6 +2540,22 @@ public class MQTTBroker extends Service {
                         e.printStackTrace();
                     }
                     publishMessage(Const.PublicTopicName, message.toString());
+                } else if(tmp[1].equals("startLearnMode")) {
+                    try {
+                        message.put("MessageType", "Controller Init Status");
+                        message.put("Status", DeviceInfo.callResult);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    publishMessage(Const.PublicTopicName, message.toString());
+                } else if(tmp[1].equals("checkNodeIsFailed")) {
+                    try {
+                        message.put("MessageType", "Node Is Failed Check Report");
+                        message.put("Error", DeviceInfo.callResult);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    publishMessage(Const.PublicTopicName, message.toString());
                 }
             } else {
                if(DeviceInfo.className != "") {
