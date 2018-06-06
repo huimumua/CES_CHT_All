@@ -3,6 +3,7 @@ package com.askey.mobile.zwave.control.home.activity.addDevice;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -12,6 +13,7 @@ import com.askey.mobile.zwave.control.base.BaseActivity;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
+import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.interf.DeleteDeviceListener;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
@@ -107,5 +109,26 @@ public class RemoveFailActivity extends BaseActivity {
         }
     }
 
+    /**
+     * ??????,????????TCP:stopAddDevice?????
+     * ???stopAddDevice??????????api??
+     * @param keyCode
+     * @param event
+     * @return
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {
+            if (TcpClient.getInstance().isConnected()) {
+                Logg.i(LOG_TAG, "TcpClient -> send -> mobile_zwave:stopAddDevice:Zwave");
+                TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
+            }
+            Const.setIsDataChange(true);
+            finish();
+            return false;
+        } else {
+            return super.onKeyDown(keyCode, event);
+        }
+    }
 
 }

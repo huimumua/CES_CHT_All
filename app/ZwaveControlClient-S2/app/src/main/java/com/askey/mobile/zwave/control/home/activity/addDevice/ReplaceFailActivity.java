@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
@@ -186,6 +187,27 @@ public class ReplaceFailActivity extends BaseActivity {
         });
 
         alertDialog.show();
+    }
+
+    /**
+     * ??????,????????TCP:stopAddDevice?????
+     * ???stopAddDevice??????????api??
+     * @param keyCode
+     * @param event
+     * @return
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {
+            if (TcpClient.getInstance().isConnected()) {
+                Logg.i(LOG_TAG, "TcpClient -> send -> mobile_zwave:stopAddDevice:Zwave");
+                TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopAddDevice:Zwave");
+            }
+            finish();
+            return false;
+        } else {
+            return super.onKeyDown(keyCode, event);
+        }
     }
 
 }
