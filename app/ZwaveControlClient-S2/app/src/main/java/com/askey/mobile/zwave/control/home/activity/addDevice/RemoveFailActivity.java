@@ -116,7 +116,7 @@ public class RemoveFailActivity extends BaseActivity {
      * @param event
      * @return
      */
-    @Override
+   /* @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK)) {
             if (TcpClient.getInstance().isConnected()) {
@@ -129,6 +129,6 @@ public class RemoveFailActivity extends BaseActivity {
         } else {
             return super.onKeyDown(keyCode, event);
         }
-    }
+    }*/
 
 }
