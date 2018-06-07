@@ -3,18 +3,24 @@ package com.askey.mobile.zwave.control.home.activity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Adapter;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
+import com.askey.mobile.zwave.control.deviceContr.model.NetworkHealthInfo;
 import com.askey.mobile.zwave.control.deviceContr.net.SocketTransceiver;
 import com.askey.mobile.zwave.control.deviceContr.net.TCPReceive;
 import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
+import com.askey.mobile.zwave.control.home.adapter.NetworkHealthAdapter;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
 
@@ -23,21 +29,44 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class NetworkHealthCheckActivity extends AppCompatActivity {
     private static final String LOG_TAG = NetworkHealthCheckActivity.class.getSimpleName();
-    private TextView networkHealth,rssiValue;
+    private TextView networkStatus, alwaysOnDeviceException;
+    private RecyclerView networkHealthListView;
+    private List<NetworkHealthInfo> networkHealthInfoList;
+    private NetworkHealthAdapter networkHealthAdapter;
+    private NetworkHealthInfo networkHealthInfo;
+    private ProgressBar progressBar;
+
+    /*
+     * ??Network Health Check?????node, ???????node???????????node????,
+     * ???????????node??,???listView?Item??
+     */
+    private String lastNodeId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_network_health);
-        networkHealth = (TextView) findViewById(R.id.network_health);
-        rssiValue = (TextView) findViewById(R.id.rssi_value);
+        networkStatus = (TextView) findViewById(R.id.network_health_status);
+        alwaysOnDeviceException = (TextView) findViewById(R.id.always_on_device);
+        progressBar = (ProgressBar) findViewById(R.id.network_health_progress_bar);
+        networkHealthListView = (RecyclerView) findViewById(R.id.network_health_list);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        networkHealthListView.setLayoutManager(layoutManager);
+
+        networkHealthInfoList = new ArrayList<>();
+        networkHealthAdapter = new NetworkHealthAdapter(networkHealthInfoList);
+        networkHealthListView.setAdapter(networkHealthAdapter);
 
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
-        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.setMqttDataJson("getRssiState", "0"));
+        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.setMqttDataJson("startNetworkHealthCheck"));
 
-        TcpClient.getInstance().rigister(tcpReceive);//注册TCP监听
+        TcpClient.getInstance().rigister(tcpReceive);//??TCP??
     }
 
     MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
@@ -49,30 +78,77 @@ public class NetworkHealthCheckActivity extends AppCompatActivity {
             if (result.contains("desired")) {
                 return;
             }
-            JSONObject jsonObject = null;
-            try {
-                jsonObject = new JSONObject(result);
-                String reported = jsonObject.optString("reported");
-                JSONObject reportedObject = new JSONObject(reported);
-                String messageType = reportedObject.optString("MessageType");
-                if ("Network IMA Info Report".equals(messageType)) {
-                    final String netHealth = reportedObject.optString("Network Health");
-                    final String rsValue = reportedObject.optString("RSSI hops value");
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            networkHealth.setText(netHealth);
-                            rssiValue.setText(rsValue);
-                        }
-                    });
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    message(result);
                 }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            });
         }
-
-
     };
+
+    private void message(String result) {
+
+        try {
+            JSONObject jsonObject = new JSONObject(result);
+            String reported = jsonObject.optString("reported");
+            JSONObject reportedObject = new JSONObject(reported);
+            String messageType = reportedObject.optString("MessageType");
+            if ("Network IMA Info Report".equals(messageType)) {
+                final String nodeId = reportedObject.optString("Direct nodeid");
+                final String netHealth = reportedObject.optString("Network Health");
+                final String rsValue = reportedObject.optString("RSSI hops value");
+
+                Log.i(LOG_TAG, "----------Network IMA Info Report");
+                if (!lastNodeId.equals(nodeId)) {
+                    Log.i(LOG_TAG, "-----------lastNodeId != nodeId: " + nodeId + "lastNodeId: " + lastNodeId);
+                    lastNodeId = nodeId;
+                    networkHealthInfo = new NetworkHealthInfo();
+
+                    networkHealthInfo.setDirectNodeId(nodeId);
+                    networkHealthInfo.setNetworkHealth(netHealth);
+                    networkHealthInfo.setRssiHopsValue(rsValue);
+
+                    networkHealthInfoList.add(networkHealthInfo);
+                    networkHealthAdapter.notifyDataSetChanged();
+
+                }
+
+
+            } else if ("Network Health Check".equals(messageType)) {
+
+                if (reported.contains("Error")) { //??????0???,?? -17 ?-13
+
+                    progressBar.setVisibility(View.GONE);//???????progressBar
+                    int errorCode = reportedObject.optInt("Error");
+                    if (errorCode == -17) {
+                        showPromptDialog(getResources().getString(R.string.prompt_try_again));
+                    } else if (errorCode == -13) {//????????,???? -13
+                        //There is no always on node exists in network.
+                        showPromptDialog(getResources().getString(R.string.node_not_exists_network));
+                    } else {
+                        showPromptDialog(String.valueOf(errorCode));
+                    }
+
+                } else {
+                    String status = reportedObject.optString("Status");
+                    networkStatus.setText(status);
+                    if(status.equals("OP Done")){ //OP Done????????
+                        progressBar.setVisibility(View.GONE);
+                        if(networkHealthInfoList.size()<1){
+                            alwaysOnDeviceException.setVisibility(View.VISIBLE);
+                        }
+                    }
+                }
+
+            } else if ("Network RSSI Info Report".equals(messageType)) {
+                //??Device???,?????
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 
     TCPReceive tcpReceive = new TCPReceive() {
         @Override
@@ -87,7 +163,7 @@ public class NetworkHealthCheckActivity extends AppCompatActivity {
 
         @Override
         public void receiveMessage(SocketTransceiver transceiver, String tcpMassage) {
-            //处理结果
+            //????
             removeDeviceResult(tcpMassage);
 
         }
@@ -101,25 +177,25 @@ public class NetworkHealthCheckActivity extends AppCompatActivity {
 
     private void removeDeviceResult(final String result) {
 
-        Log.i(LOG_TAG, "====removeDeviceResult:"+result);
+        Log.i(LOG_TAG, "====removeDeviceResult:" + result);
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                try{
+                try {
                     final JSONObject jsonObject = new JSONObject(result);
 
-                    if(jsonObject == null) return;
+                    if (jsonObject == null) return;
 
                     String messageType = jsonObject.optString("MessageType");
-                    if("Network Health Check".equals(messageType)){
+                    if ("Network Health Check".equals(messageType)) {
                         String status = jsonObject.optString("Status");
-                        if("-17".equals(status)){
+                        if ("-17".equals(status)) {
                             showPromptDialog(getResources().getString(R.string.prompt_try_again));
                         }
                     }
-                }catch (JSONException e) {
+                } catch (JSONException e) {
                     e.printStackTrace();
-                    Logg.i(LOG_TAG,"errorJson------>"+result);
+                    Logg.i(LOG_TAG, "errorJson------>" + result);
                 }
             }
         });
@@ -132,10 +208,10 @@ public class NetworkHealthCheckActivity extends AppCompatActivity {
     }
 
     private void unrigister() {
-        if(mMqttMessageArrived!=null){
+        if (mMqttMessageArrived != null) {
             MQTTManagement.getSingInstance().unrigister(mMqttMessageArrived);
         }
-        if(tcpReceive != null){
+        if (tcpReceive != null) {
             TcpClient.getInstance().unrigister(tcpReceive);
         }
     }
@@ -149,7 +225,7 @@ public class NetworkHealthCheckActivity extends AppCompatActivity {
 
         TextView title = (TextView) view.findViewById(R.id.title);
         TextView promptMessage = (TextView) view.findViewById(R.id.message);
-        title.setText("Prompt");
+        title.setText("Warning");
         promptMessage.setText(message);
         TextView positiveButton = (TextView) view.findViewById(R.id.positiveButton);
         TextView negativeButton = (TextView) view.findViewById(R.id.negativeButton);
@@ -157,9 +233,7 @@ public class NetworkHealthCheckActivity extends AppCompatActivity {
         positiveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //点击重试，返回添加设备界面，再次执行添加设备
-                //预留的接口mqtt
-                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.setMqttDataJson("getRssiState", "0"));
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.setMqttDataJson("startNetworkHealthCheck"));
                 alertDialog.dismiss();
             }
         });
@@ -167,9 +241,9 @@ public class NetworkHealthCheckActivity extends AppCompatActivity {
         negativeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //点击取消，返回主页
+                //????,????
                 if (TcpClient.getInstance().isConnected()) {
-                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopRemoveDevice:Zwave"); //停止底层的所有操作
+                    TcpClient.getInstance().getTransceiver().send("mobile_zwave:stopRemoveDevice:Zwave"); //?????????
                 }
                 alertDialog.dismiss();
                 finish();

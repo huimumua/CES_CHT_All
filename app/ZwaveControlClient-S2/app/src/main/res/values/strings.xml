@@ -96,7 +96,8 @@
     <string name="publish">Publish</string>
     <string name="topic_fmt">Topic: %1$s</string>
     <string name="prompt_try_again">Current operation not completed yet, try again later.</string>
-
+    <string name="node_not_exists_network">There is no always on node exists in network.</string>
+    <string name="message_always_on_exception">The Network Health Check process is over, but there is an exception to the always on device, such as "no power". \n Please check  the devcie is started normally.</string>
 
     <string name="enabled">Enabled</string>
     <string name="disabled">Disabled</string>

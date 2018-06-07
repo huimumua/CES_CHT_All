@@ -5,46 +5,48 @@
     android:layout_width="@dimen/device_width"
     android:layout_height="@dimen/device_heigh"
     android:background="@android:color/white"
-    android:orientation="vertical"
-    tools:context=".home.activity.ResetActivity">
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:layout_marginTop="@dimen/activity_horizontal_margin"
-    >
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Network Health: "
-        android:layout_gravity="center"
-        />
-    <TextView
-        android:id="@+id/network_health"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        />
-</LinearLayout>
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="@dimen/device_icon_20dp"
         android:layout_marginTop="@dimen/activity_horizontal_margin"
-        >
+        android:orientation="horizontal">
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="RSSI hops value: "
             android:layout_gravity="center"
-            />
+            android:text="Network Health Check: " />
+
         <TextView
-            android:id="@+id/rssi_value"
+            android:id="@+id/network_health_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            />
+            android:layout_gravity="center" />
     </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/network_health_progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="@dimen/device_set_icon_top_10dp" />
+
+    <TextView
+        android:id="@+id/always_on_device"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/device_set_icon_top_10dp"
+        android:text="@string/message_always_on_exception"
+        android:visibility="gone" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/network_health_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/device_smaller_icon_10dp" />
 
 </LinearLayout>
