@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -22,6 +23,7 @@ import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
+import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.home.activity.HomeActivity;
 import com.askey.mobile.zwave.control.home.fragment.RoomsFragment;
 import com.askey.mobile.zwave.control.util.Const;
@@ -297,5 +299,25 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
         return true;
     }
 
+    /**
+     *监听返回按钮
+     * 如果还没有给Device命名就点了返回，此时Device已添加成功，需要更新Devcie list
+     * @param keyCode
+     * @param event
+     * @return
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {
+            Intent intent = new Intent();
+            intent.setClass(mContext,HomeActivity.class);
+            startActivity(intent);
+            Const.setIsDataChange(true);
+            finish();
+            return false;
+        } else {
+            return super.onKeyDown(keyCode, event);
+        }
+    }
 
 }
