@@ -137,6 +137,7 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
         View view = layoutInflater.inflate(R.layout.dialog_normal_layout, null);
         addDialog.setView(view);
         final android.support.v7.app.AlertDialog alertDialog = addDialog.create();
+        alertDialog.setCanceledOnTouchOutside(false);
         //设置dialog背景透明，目的是为了实现弹窗的圆角
         alertDialog.getWindow().setBackgroundDrawableResource(R.color.transparent);
         TextView title = (TextView) view.findViewById(R.id.title);

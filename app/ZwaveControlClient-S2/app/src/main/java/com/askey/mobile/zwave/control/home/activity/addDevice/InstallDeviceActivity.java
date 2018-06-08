@@ -363,7 +363,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
         View view = layoutInflater.inflate(R.layout.dialog_normal_layout, null);
         addDialog.setView(view);
         final AlertDialog alertDialog = addDialog.create();
-
+        alertDialog.setCanceledOnTouchOutside(false);
         TextView title = (TextView) view.findViewById(R.id.title);
         TextView promptMessage = (TextView) view.findViewById(R.id.message);
         title.setText("Prompt");
@@ -414,6 +414,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
         View view = layoutInflater.inflate(R.layout.dialog_normal_layout, null);
         addDialog.setView(view);
         final android.support.v7.app.AlertDialog alertDialog = addDialog.create();
+        alertDialog.setCanceledOnTouchOutside(false);
         //设置dialog背景透明，目的是为了实现弹窗的圆角
         alertDialog.getWindow().setBackgroundDrawableResource(R.color.transparent);
         TextView title = (TextView) view.findViewById(R.id.title);

@@ -200,7 +200,7 @@ public class ResetActivity extends AppCompatActivity {
         View view = layoutInflater.inflate(R.layout.dialog_normal_layout, null);
         addDialog.setView(view);
         final AlertDialog alertDialog = addDialog.create();
-
+        alertDialog.setCanceledOnTouchOutside(false);
         TextView title = (TextView) view.findViewById(R.id.title);
         TextView promptMessage = (TextView) view.findViewById(R.id.message);
         title.setText("Prompt");
