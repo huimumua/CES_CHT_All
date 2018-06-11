@@ -650,13 +650,13 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.getMqttPayload = "";
                         break;
 
-                    case "getRssiState":
-                        Log.i(LOG_TAG, "deviceService.getRssiState" + DeviceInfo.mqttDeviceId);
+                    case "startNetworkHealthCheck":
+                        Log.i(LOG_TAG, "deviceService.startNetworkHealthCheck");
                         DeviceInfo.callResult = zwaveService.startNetworkHealthCheck();
                         if (DeviceInfo.callResult < 0) {
                             //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
-                            //Log.i(LOG_TAG, "getRssiState : -17 !!!!!!!!!!!!!");
-                            DeviceInfo.resultToMqttBroker = "dongleBusy:getRssiState:"+DeviceInfo.callResult;
+                            //Log.i(LOG_TAG, "startNetworkHealthCheck : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:startNetworkHealthCheck:"+DeviceInfo.callResult;
                         }
                         DeviceInfo.getMqttPayload = "";
                         break;

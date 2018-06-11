@@ -914,10 +914,9 @@ public class MQTTBroker extends Service {
                     DeviceInfo.getMqttPayload = "getProvisionListEntry";
                     break;
 
-                case "getRssiState":
-                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
-                    Log.i(LOG_TAG, "deviceService.getRssiState" + DeviceInfo.mqttDeviceId);
-                    DeviceInfo.getMqttPayload = "getRssiState";
+                case "startNetworkHealthCheck":
+                    Log.i(LOG_TAG, "deviceService.startNetworkHealthCheck");
+                    DeviceInfo.getMqttPayload = "startNetworkHealthCheck";
                     break;
 
                 case "getBattery":
@@ -2516,10 +2515,10 @@ public class MQTTBroker extends Service {
                     mTCPServer.sendMessage(Const.TCPClientPort, "{" +"\"MessageType\":" + "\"Remove Failed Node\"," + "\"Status\":"  + "\"" + tmp[2] + "\"" + "}"); //TCP format
                 }
 
-                else if(tmp[1].equals("getRssiState")) {
+                else if(tmp[1].equals("startNetworkHealthCheck")) {
                     try {
                         message.put("MessageType", "Network Health Check");
-                        message.put("Status", DeviceInfo.callResult);
+                        message.put("Error", DeviceInfo.callResult);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -2527,14 +2526,6 @@ public class MQTTBroker extends Service {
                 } else if(tmp[1].equals("replaceFailDevice")) {
                     try {
                         message.put("MessageType", "Replace Failed Node");
-                        message.put("Status", DeviceInfo.callResult);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                    publishMessage(Const.PublicTopicName, message.toString());
-                } else if(tmp[1].equals("startLearnMode")) {
-                    try {
-                        message.put("MessageType", "Controller Init Status");
                         message.put("Status", DeviceInfo.callResult);
                     } catch (JSONException e) {
                         e.printStackTrace();
