@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="color_picker">
+
+        <!-- 背景圓的半徑 -->
+        <attr name="circle_radius" format="dimension" />
+        <!-- 可滑動小球的半徑 -->
+        <attr name="center_radius" format="dimension" />
+        <!-- 可滑動小球的顏色 -->
+        <attr name="center_color" format="color" />
+    </declare-styleable>
+</resources>

@@ -1,0 +1,42 @@
+[
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-hdpi/ic_launcher.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-hdpi/switch_off_icon.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-hdpi/switch_off_icon.png"
+    },
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-hdpi/menu.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-hdpi/menu.png"
+    },
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-hdpi/switch_on_selected_icon.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-hdpi/switch_on_selected_icon.png"
+    },
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-hdpi/askeylogo1.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-hdpi/askeylogo1.png"
+    },
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-hdpi/ic_launcher_round.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-hdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-hdpi/toggle_on.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-hdpi/toggle_on.png"
+    },
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-hdpi/toggle_off.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-hdpi/toggle_off.png"
+    },
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-hdpi/welcome.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-hdpi/welcome.png"
+    },
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-hdpi/back.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-hdpi/back.png"
+    }
+]

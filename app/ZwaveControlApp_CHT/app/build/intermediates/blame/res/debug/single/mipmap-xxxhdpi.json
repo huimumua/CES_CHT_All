@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-xxxhdpi/ic_launcher_round.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/build/intermediates/res/merged/debug/mipmap-xxxhdpi/ic_launcher.png",
+        "source": "/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+    }
+]

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger version="3"><dataSet config="main"><source path="/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/moquette/netty_parser/src/main/assets"/><source path="/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/moquette/netty_parser/build/generated/assets/shaders/debug"/></dataSet><dataSet config="debug"><source path="/Volumes/Data/chiapin/ZwaveControlServer_iotcontrol_2.22_0614_memory/moquette/netty_parser/src/debug/assets"/></dataSet></merger>

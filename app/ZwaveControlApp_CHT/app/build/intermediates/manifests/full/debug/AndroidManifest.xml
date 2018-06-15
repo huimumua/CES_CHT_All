@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.askey.iotcontrol"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="19"
+        android:targetSdkVersion="25" />
+    <!-- android:sharedUserId="android.uid.system" -->
+
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+
+    <meta-data
+        android:name="android.support.VERSION"
+        android:value="25.3.1" />
+
+    <application
+        android:name="com.askey.iotcontrol.application.ZwaveApplication"
+        android:allowBackup="true"
+        android:banner="@mipmap/askeylogo"
+        android:icon="@mipmap/askeylogo"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:screenOrientation="landscape"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name="com.askey.iotcontrol.ui.WelcomeActivity"
+            android:screenOrientation="landscape" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="com.askey.iotcontrol.ui.TVWelcomeActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.askey.iotcontrol.ui.HomeActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.iotcontrol.ui.AddDeviceActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.iotcontrol.ui.RemoveDeviceActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.iotcontrol.ui.BulbActivity"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="stateUnchanged" />
+        <activity
+            android:name="com.askey.iotcontrol.ui.DimmerActivity"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="stateUnchanged" />
+        <activity
+            android:name="com.askey.iotcontrol.ui.PlugActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.iotcontrol.ui.SensorActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.iotcontrol.ui.ControlActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.askey.iotcontrol.ui.RoomActivity"
+            android:launchMode="singleTask" />
+
+        <receiver android:name="com.askey.iotcontrol.service.BootBroadcastReceiver" >
+            <intent-filter>
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name="com.askey.iotcontrol.service.BootBroadcastReceiver" >
+            <intent-filter>
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name="com.askey.iotcontrol.service.ZwaveControlService" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </service>
+        <service android:name="org.eclipse.paho.android.service.MqttService" />
+        <service android:name="com.askey.iotcontrol.service.MQTTBroker" />
+    </application>
+
+</manifest>
