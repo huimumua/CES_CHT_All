@@ -66,7 +66,6 @@ public class NetworkHealthCheckActivity extends AppCompatActivity {
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
         MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.setMqttDataJson("startNetworkHealthCheck"));
 
-        TcpClient.getInstance().rigister(tcpReceive);//??TCP??
     }
 
     MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
@@ -142,63 +141,12 @@ public class NetworkHealthCheckActivity extends AppCompatActivity {
                 }
 
             } else if ("Network RSSI Info Report".equals(messageType)) {
-                //??Device???,?????
+                //这种Device很少见，暂时不处理
             }
 
         } catch (JSONException e) {
             e.printStackTrace();
         }
-    }
-
-    TCPReceive tcpReceive = new TCPReceive() {
-        @Override
-        public void onConnect(SocketTransceiver transceiver) {
-
-        }
-
-        @Override
-        public void onConnectFailed() {
-
-        }
-
-        @Override
-        public void receiveMessage(SocketTransceiver transceiver, String tcpMassage) {
-            //????
-            removeDeviceResult(tcpMassage);
-
-        }
-
-        @Override
-        public void onDisconnect(SocketTransceiver transceiver) {
-
-        }
-
-    };
-
-    private void removeDeviceResult(final String result) {
-
-        Log.i(LOG_TAG, "====removeDeviceResult:" + result);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    final JSONObject jsonObject = new JSONObject(result);
-
-                    if (jsonObject == null) return;
-
-                    String messageType = jsonObject.optString("MessageType");
-                    if ("Network Health Check".equals(messageType)) {
-                        String status = jsonObject.optString("Status");
-                        if ("-17".equals(status)) {
-                            showPromptDialog(getResources().getString(R.string.prompt_try_again));
-                        }
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    Logg.i(LOG_TAG, "errorJson------>" + result);
-                }
-            }
-        });
     }
 
     @Override
@@ -210,9 +158,6 @@ public class NetworkHealthCheckActivity extends AppCompatActivity {
     private void unrigister() {
         if (mMqttMessageArrived != null) {
             MQTTManagement.getSingInstance().unrigister(mMqttMessageArrived);
-        }
-        if (tcpReceive != null) {
-            TcpClient.getInstance().unrigister(tcpReceive);
         }
     }
 

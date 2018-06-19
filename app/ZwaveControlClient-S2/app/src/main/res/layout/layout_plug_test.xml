@@ -23,7 +23,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Noid Info"
+        android:text="Node Info"
         android:textColor="@color/color_primary"
         android:textSize="@dimen/device_control_title_16sp" />
 
