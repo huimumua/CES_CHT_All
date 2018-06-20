@@ -76,7 +76,6 @@ public class ZwaveControlService extends Service {
         ImportData.importFile(this,"ZIPR.key_1024.pem");
         ImportData.importFile(this,"ZIPR.x509_1024.pem");
         ImportData.importFile(this,"zwave_device_rec.txt");
-        ImportData.importFile(this,"zwave_device_rec.txt");
         ImportData.importFile(this,"zipgateway_provisioning_list.cfg");
         ImportData.importFile(this,"cmd_class.cfg");
         ImportData.importDatabase(this);
@@ -435,7 +434,7 @@ public class ZwaveControlService extends Service {
         try {
             jo.put("Interface","getDeviceList");
             for (int idx = 0; idx < list.size(); idx++) {
-                if (list.get(idx).getNodeId()!=1) {
+                //if (list.get(idx).getNodeId()!=1) {
                     JSONObject json = new JSONObject();
                     json.put("brand", list.get(idx).getBrand());
                     json.put("nodeId", String.valueOf(list.get(idx).getNodeId()));
@@ -447,7 +446,7 @@ public class ZwaveControlService extends Service {
                     json.put("timestamp", list.get(idx).getTimestamp());
                     //json.put("nodeInfo", list.get(idx).getNodeInfo());
                     Jarray.put(json);
-                }
+                //}
             }
             jo.put("deviceList",Jarray);
         } catch (JSONException e) {
@@ -1666,7 +1665,7 @@ public class ZwaveControlService extends Service {
         }
         return deviceListResult.toString();
     }
-
+/*
     private void deleteDevice(String devType, String result) {
         Log.i(LOG_TAG, "=======deleteDevice==");
         Gson gson = new Gson();
@@ -1712,6 +1711,82 @@ public class ZwaveControlService extends Service {
             }
         }
     }
+*/
+    private void deleteDevice(String devType, String result) {
+        Log.i(LOG_TAG, "=======deleteDevice==");
+        Gson gson = new Gson();
+        DeviceList deviceList = gson.fromJson(result, DeviceList.class);
+        List<DeviceList.NodeInfoList> temp = deviceList.getNodeList();
+        List<ZwaveDevice> list = zwaveDeviceManager.queryZwaveDeviceList();
+        Log.i(LOG_TAG, "===deleteDevice====temp.size()==" + temp.size());
+        Log.i(LOG_TAG, "==deleteDevice=====list.size()==" + list.size());
+        int i;
+        JSONObject jsonObject = null;
+        String removeResult = null;
+        for (ZwaveDevice zwaveDevice : list) {//db
+            i = 0;
+            for (DeviceList.NodeInfoList nodeInfoTemp : temp) {//jni
+
+                if (!zwaveDevice.getNodeId().toString().trim().equals(nodeInfoTemp.getNodeId().toString().trim())) {
+                    i++;
+                }
+
+                // remove grop DB
+                if (temp.size() == i) {
+                    removeResult = removeDevfromDB(devType, Integer.parseInt(nodeInfoTemp.getNodeId()));
+
+                    zwaveControlResultCallBack("removeDevice", removeResult);
+                }
+            }
+        }
+        if (removeResult == null){
+            removeResult = "removeDevice:"+devType+ ":" + "fail";
+            Log.e(LOG_TAG, "This zwaveDevice does not exist in DB");
+            zwaveControlResultCallBack("removeDevice", removeResult);
+        }
+    }
+
+    private String removeDevfromDB(String devType, int deviceId){
+
+        ZwaveDevice zwaveDevice = zwaveDeviceManager.queryZwaveDevices(deviceId);
+
+        String removeResult = "removeDevice:"+devType+ ":" + deviceId;
+        zwaveDeviceManager.deleteZwaveDevice(zwaveDevice.getZwaveId());
+
+        if (zwaveDevice.getCategory().equals("WALLMOTE")){
+            devGroupManager.deleteZwaveDeviceGroupByNodeId(deviceId);
+        }else{
+            devGroupManager.deleteZwaveDeviceGroupByInGropNodeId(deviceId);
+        }
+        // remove schedule DB
+        List<ZwaveSchedule> scheduleList = zwSchManager.getZwaveScheduleList(deviceId);
+
+        if (scheduleList != null) {
+            for (int idx = 0; idx < scheduleList.size(); idx++) {
+                scheduleJobManager.cancelSchedule(scheduleList.get(idx).getJobId());
+            }
+        }
+
+        // update room DB
+        if (zwaveDevice.getCategory().equals("SENSOR")) {
+
+            List<String> tmpNodeList = zwaveDeviceManager.getRoomNameList();
+            if (tmpNodeList != null) {
+
+                for (int idx = 0; idx < tmpNodeList.size(); idx++) {
+
+                    ZwaveDeviceRoom removeScene = new ZwaveDeviceRoom();
+                    ZwaveDeviceRoom tmpScene = roomManager.getRoom(tmpNodeList.get(idx));
+                    if (tmpScene != null && tmpScene.getSensorNodeId() == deviceId) {
+                        removeScene.setSensorNodeId(null);
+                        removeScene.setCondition(null);
+                        roomManager.updateRoom(removeScene, tmpNodeList.get(idx));
+                    }
+                }
+            }
+        }
+        return removeResult;
+    }
 
     private  int getDeviceEnpointInterfaceId(int nodeId) {
         Log.i(LOG_TAG,"getDeviceEnpointInterfaceId #"+nodeId);
@@ -1751,6 +1826,26 @@ public class ZwaveControlService extends Service {
         DeviceList deviceList = gson.fromJson(result, DeviceList.class);
         List<DeviceList.NodeInfoList> temp = deviceList.getNodeList();
         Log.i(LOG_TAG, "==insertDevice=====temp.size()==" + temp.size());
+
+        List<ZwaveDevice> DBlist = zwaveDeviceManager.queryZwaveDeviceList();
+        Log.i(LOG_TAG,"get device cnt from DB = "+DBlist.size());
+
+        for (int index =0;index < DBlist.size(); index++){
+            for (int idx =0; idx < temp.size(); idx++) {
+                //Log.i(LOG_TAG,"DB #"+index+" nodeid = "+DBlist.get(index).getNodeId()+" | "
+                //        +" dongle #"+idx+" nodeid = "+temp.get(idx).getNodeId());
+                if (DBlist.get(index).getNodeId().toString().equals(temp.get(idx).getNodeId().toString())){
+                    break;
+                }
+                if (idx ==temp.size()-1) {
+                    Log.i(LOG_TAG,"remove node#"+DBlist.get(index).getNodeId()+" from DB");
+                    removeDevfromDB(devType, DBlist.get(index).getNodeId());
+                }
+            }
+        }
+        DBlist = zwaveDeviceManager.queryZwaveDeviceList();
+        Log.e(LOG_TAG,"get device cnt from DB = "+DBlist.size());
+
         for (DeviceList.NodeInfoList nodeInfoTemp : temp) {
 
             ZwaveDevice device = zwaveDeviceManager.queryZwaveDevices(Integer.parseInt(nodeInfoTemp.getNodeId()));

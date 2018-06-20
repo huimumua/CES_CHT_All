@@ -198,7 +198,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         @Override
         public void run() {
 
-            while (!DeviceInfo.isMQTTInitFinish && !DeviceInfo.isOpenControllerFinish) {
+            while (!DeviceInfo.isMQTTInitFinish && !DeviceInfo.isOpenControllerFinish && !DeviceInfo.isZwaveInitFinish) {
 
                 try {
                     //Log.i(LOG_TAG, "isOpenControllerFinish & isMQTTInitFinish true");
@@ -207,19 +207,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     e.printStackTrace();
                 }
             }
-
             initSensorfunc();
-
-            while (!DeviceInfo.isZwaveInitFinish) {
-
-                try {
-                    //Log.i(LOG_TAG, "isZwaveInitFinish true");
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
             initZwave();
 
         }

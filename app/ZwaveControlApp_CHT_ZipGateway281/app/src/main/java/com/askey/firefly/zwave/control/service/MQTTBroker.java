@@ -90,7 +90,7 @@ public class MQTTBroker extends Service {
         /*  connect to local mqtt server */
         mqttLocalConnect(mqttConnectOptions);
 
-        new Thread(initMqtt).start();
+        //new Thread(initMqtt).start();
 
 
         /*  launch tcp server and handle the tcp message */
