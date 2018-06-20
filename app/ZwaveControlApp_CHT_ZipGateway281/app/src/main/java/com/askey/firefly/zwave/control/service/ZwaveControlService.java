@@ -2207,6 +2207,12 @@ public class ZwaveControlService extends Service {
         } else if ("Replace Failed Node".equals(messageType)) {
             zwaveControlResultCallBack("Replace Failed Node", jniResult);
         } else if ("Controller Init Status".equals(messageType)) {
+            if ("Success".equals(status)) {
+                flag = 2;
+                Log.i(LOG_TAG, "=======Controller Init Status======");
+                ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
+                ZwaveControlHelper.ZwController_GetDeviceInfo();
+            }
             zwaveControlResultCallBack("Controller Init Status", jniResult);
         } else if ("Controller Attribute".equals(messageType)) {
             zwaveControlResultCallBack("Controller Attribute", jniResult);
