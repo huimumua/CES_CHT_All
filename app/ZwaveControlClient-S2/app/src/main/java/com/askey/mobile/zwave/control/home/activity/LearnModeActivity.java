@@ -1,8 +1,10 @@
 package com.askey.mobile.zwave.control.home.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.TextView;
 
@@ -103,4 +105,17 @@ public class LearnModeActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+
+        if(keyCode == KeyEvent.KEYCODE_BACK)
+        {
+            Const.setIsDataChange(true);
+            finish();
+            return false;
+        }
+        else {
+            return super.onKeyDown(keyCode, event);
+        }
+    }
 }

@@ -181,7 +181,22 @@ public class DeviceTestActivity extends BaseActivity {
                 homeIdTextView.setText(String.format(getString(R.string.home_id), homeId));
                 nodeIdTextView.setText(String.format(getString(R.string.node_id), nodeId));
                 securityStatusTextView.setText(String.format(getString(R.string.security_status), securityStatus));
-                deviceTypeTextView.setText(String.format(getString(R.string.device_type_s), deviceType));
+
+                if(deviceType.equals("")) {
+
+                    if(nodeId.equals("1"))
+                    {
+                        deviceTypeTextView.setVisibility(View.VISIBLE);
+                        deviceTypeTextView.setText("Gateway");
+                    }
+                    else {
+                        deviceTypeTextView.setVisibility(View.INVISIBLE);
+                    }
+                }
+                else {
+                    deviceTypeTextView.setVisibility(View.VISIBLE);
+                    deviceTypeTextView.setText(String.format(getString(R.string.device_type_s), deviceType));
+                }
                 adapter.notifyDataSetChanged();
 
             } else if ("Node Is Failed Check Report".equals(messageType)) { //检查node所对应Device是否活着

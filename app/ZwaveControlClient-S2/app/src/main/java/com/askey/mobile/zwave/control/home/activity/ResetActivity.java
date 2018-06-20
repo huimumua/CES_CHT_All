@@ -86,6 +86,7 @@ public class ResetActivity extends AppCompatActivity {
 //                                    String tmp = result.split(":")[1];
 //
 //                                }
+                                Const.setIsDataChange(true);
                                 finish();
                             }
                             else if(status.equals("-17")) {
