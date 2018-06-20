@@ -192,16 +192,6 @@ public class CDCSerialDevice
         conn.releaseInterface(iface);
         conn.close();
         task.working.set(false);
-
-        try
-        {
-            task.join();
-        }
-        catch (InterruptedException e)
-        {
-            e.printStackTrace();
-        }
-
         task = null;
     }
 
