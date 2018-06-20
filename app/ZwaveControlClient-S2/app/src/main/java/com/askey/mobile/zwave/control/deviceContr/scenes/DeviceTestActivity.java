@@ -187,7 +187,7 @@ public class DeviceTestActivity extends BaseActivity {
                     if(nodeId.equals("1"))
                     {
                         deviceTypeTextView.setVisibility(View.VISIBLE);
-                        deviceTypeTextView.setText("Gateway");
+                        deviceTypeTextView.setText(String.format(getString(R.string.device_type_s), "Gateway"));
                     }
                     else {
                         deviceTypeTextView.setVisibility(View.INVISIBLE);
