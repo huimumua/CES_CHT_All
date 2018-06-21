@@ -1665,7 +1665,7 @@ public class ZwaveControlService extends Service {
         }
         return deviceListResult.toString();
     }
-/*
+
     private void deleteDevice(String devType, String result) {
         Log.i(LOG_TAG, "=======deleteDevice==");
         Gson gson = new Gson();
@@ -1711,7 +1711,7 @@ public class ZwaveControlService extends Service {
             }
         }
     }
-*/
+/*
     private void deleteDevice(String devType, String result) {
         Log.i(LOG_TAG, "=======deleteDevice==");
         Gson gson = new Gson();
@@ -1745,7 +1745,7 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("removeDevice", removeResult);
         }
     }
-
+*/
     private String removeDevfromDB(String devType, int deviceId){
 
         ZwaveDevice zwaveDevice = zwaveDeviceManager.queryZwaveDevices(deviceId);
