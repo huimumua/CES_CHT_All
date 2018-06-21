@@ -140,8 +140,13 @@ public class DeviceTestActivity extends BaseActivity {
         Log.d(TAG, "======getCmdList=======");
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
 
-        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.checkNodeIsFailed(nodeId));
-        //MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getSpecifyDeviceInfo(nodeId));
+        if(!nodeId.equals("1")) {
+            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.checkNodeIsFailed(nodeId));
+        }
+        else {
+            commandClassLayout.setVisibility(View.VISIBLE);
+            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getSpecifyDeviceInfo(nodeId));
+        }
 
     }
 
