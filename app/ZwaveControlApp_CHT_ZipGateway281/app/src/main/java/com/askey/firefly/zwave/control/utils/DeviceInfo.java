@@ -84,5 +84,7 @@ public class DeviceInfo {
     public static boolean mainFlag = false;
     public static boolean mqttFlag = false;
 
+    public static String[] version = null;
+
 
 }

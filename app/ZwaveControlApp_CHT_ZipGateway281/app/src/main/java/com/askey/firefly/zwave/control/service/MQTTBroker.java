@@ -10,6 +10,7 @@ import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.askey.firefly.zwave.control.R;
 import com.askey.firefly.zwave.control.dao.ZwaveDeviceManager;
 import com.askey.firefly.zwave.control.dao.ZwaveDeviceSceneManager;
 import com.askey.firefly.zwave.control.jni.ZwaveControlHelper;
@@ -1150,6 +1151,40 @@ public class MQTTBroker extends Service {
                     Log.i(LOG_TAG, "deviceService.getBinarySwitchState");
 
                     DeviceInfo.getMqttPayload = "getBinarySwitchState";
+                    break;
+
+                case "getVersion":
+                    JSONObject message = new JSONObject();
+                    Log.i(LOG_TAG, "deviceService.getVersion");
+                    try {
+                        message.put("MessageType", "Version Messages");
+                        String [] tmp = DeviceInfo.version[7].split(":");
+                        message.put("Z-wave Library Type",tmp[1]);
+
+                        tmp = DeviceInfo.version[8].split(":");
+                        String[] tmp2 = tmp[1].split("\"");
+                        message.put("Z-wave protocol Version",tmp2[1]);
+
+                        tmp = DeviceInfo.version[9].split(":");
+                        tmp2 = tmp[1].split("\"");
+                        message.put("Firmware 0 Version",tmp2[1]);
+
+                        tmp = DeviceInfo.version[10].split(":");
+                        message.put("Hardware version",tmp[1]);
+
+                        tmp = DeviceInfo.version[11].split(":");
+                        tmp2 = tmp[1].split("\"");
+                        message.put("Firmware 1 Version",tmp2[1]);
+
+                        tmp = DeviceInfo.version[12].split(":");
+                        tmp2 = tmp[1].split("\"");
+                        message.put("Firmware 2 Version",tmp2[1]);
+                        message.put("services version",this.getResources().getString(R.string.app_versionName));
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    publishMessage(Const.PublicTopicName, message.toString());
                     break;
 
 
@@ -2597,6 +2632,44 @@ public class MQTTBroker extends Service {
         }
 
         String[] resultSplit = DeviceInfo.result.split(",");
+        DeviceInfo.version = DeviceInfo.result.split(",");
+/*
+        for(int i = 0; i < DeviceInfo.version.length; i++)
+            Log.d(LOG_TAG,"i: " + i + "  "+DeviceInfo.version[i]);
+
+
+        message = new JSONObject();
+        Log.i(LOG_TAG, "deviceService.getVersion");
+          try {
+              message.put("MessageType", "Version Messages");
+              String [] tmp = DeviceInfo.version[7].split(":");
+              message.put("Z-wave Library Type",tmp[1]);
+
+              tmp = DeviceInfo.version[8].split(":");
+              String[] tmp2 = tmp[1].split("\"");
+              message.put("Z-wave protocol Version",tmp2[1]);
+
+              tmp = DeviceInfo.version[9].split(":");
+              tmp2 = tmp[1].split("\"");
+              message.put("Firmware 0 Version",tmp2[1]);
+
+              tmp = DeviceInfo.version[10].split(":");
+              message.put("Hardware version",tmp[1]);
+
+              tmp = DeviceInfo.version[11].split(":");
+              tmp2 = tmp[1].split("\"");
+              message.put("Firmware 1 Version",tmp2[1]);
+
+              tmp = DeviceInfo.version[12].split(":");
+              tmp2 = tmp[1].split("\"");
+              message.put("Firmware 2 Version",tmp2[1]);
+              message.put("services version",this.getResources().getString(R.string.app_versionName));
+
+          } catch (JSONException e) {
+              e.printStackTrace();
+          }
+        publishMessage(Const.PublicTopicName, message.toString());
+*/
         for (int i = 10; i < resultSplit.length; i++) { //i =10 no display security Status of Controller
             if (resultSplit[i].contains("Node security inclusion status")) {
                 if (resultSplit[i].contains("S2")) {

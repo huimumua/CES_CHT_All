@@ -4,6 +4,8 @@
     <string name="cancel">Cancel</string>
     <string name="title_alert">Prompt information</string>
     <string name="zwaveNodeTitle">Node Info</string>
+    <string name="app_versionName">ISP0001DA.281120.1.1</string>
+
     <string-array name="devType">
         <item>BLUB</item>
         <item>DIMMER</item>
