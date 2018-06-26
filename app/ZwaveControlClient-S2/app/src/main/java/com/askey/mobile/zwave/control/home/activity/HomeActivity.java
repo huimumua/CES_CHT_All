@@ -37,6 +37,7 @@ import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.home.activity.addDevice.AddSmartStartActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDeviceActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.SelectBrandActivity;
+import com.askey.mobile.zwave.control.home.activity.addDevice.VersionActivity;
 import com.askey.mobile.zwave.control.home.adapter.HomeAdapter;
 import com.askey.mobile.zwave.control.home.fragment.FavoritesFragment;
 import com.askey.mobile.zwave.control.home.fragment.RoomsFragment;
@@ -70,7 +71,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     private ImageView edit, voice, head_cion;
     private Menu menu_1, menu_2, menu_3, menu_4, menu_5, menu_6, menu_7, menu_8, menu_9;
     private MenuItem menu_add, menu_remove, menu_reset, menu_learn_mode, menu_network_check,
-            menu_add_dak, menu_get_all_dsk, menu_remove_all_dsk;
+            version_msg, menu_add_dak, menu_get_all_dsk, menu_remove_all_dsk;
 
     private String[] titles = new String[]{"My Devices","Smart Start"};
 
@@ -110,6 +111,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
         menu_reset = sliding_menu.getMenu().findItem(R.id.item_reset);
         menu_learn_mode = sliding_menu.getMenu().findItem(R.id.item_learn_mode);
         menu_network_check = sliding_menu.getMenu().findItem(R.id.item_network_check);
+        version_msg = sliding_menu.getMenu().findItem(R.id.item_version_msg);
 
         menu_add_dak = sliding_menu.getMenu().findItem(R.id.item_add_dsk);
         menu_get_all_dsk = sliding_menu.getMenu().findItem(R.id.item_get_all_dsk);
@@ -214,6 +216,10 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
                 intent = new Intent(this, NetworkHealthCheckActivity.class);
                 startActivity(intent);
                 return true;
+            case R.id.item_version_msg:
+                intent = new Intent(this, VersionActivity.class);
+                startActivity(intent);
+                return true;
             case R.id.item_add_dsk:
                 ScenesFragment.newInstance().responseMenu(Const.ADD_DSK); //调用ScenesFragment里面的方法responseMenu（int）;
                 Intent addDskIntent = new Intent(this, AddSmartStartActivity.class);
@@ -291,6 +297,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
                 menu_reset.setVisible(true);
                 menu_learn_mode.setVisible(true);
                 menu_network_check.setVisible(true);
+                version_msg.setVisible(true);
 
                 menu_add_dak.setVisible(false);
                 menu_get_all_dsk.setVisible(false);
@@ -304,6 +311,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
                 menu_reset.setVisible(false);
                 menu_learn_mode.setVisible(false);
                 menu_network_check.setVisible(false);
+                version_msg.setVisible(false);
 
                 menu_add_dak.setVisible(true);
                 menu_get_all_dsk.setVisible(true);

@@ -424,6 +424,7 @@
     <string name="remove_device">Remove Device</string>
     <string name="learn_mode">Learn Mode</string>
     <string name="network_check">Network Check</string>
+    <string name="version_message">Version Message</string>
     <string name="reset_device">reset</string>
     <string name="in_operation">In operation...</string>
     <string name="reset_failed">Reset device failed!</string>
@@ -454,6 +455,17 @@
     <string name="device_boot_mode">Device boot mode:%s</string>
     <string name="device_is_failed">The node is failed !</string>
     <string name="device_name_2">Device name: %s</string>
+
+    <!--version messages-->
+    <string name="app_version">Application Version: \n %s</string>
+    <string name="services_version">Services Version: \n %s</string>
+
+    <string name="library_type">Z-Wave Library Type: %s</string>
+    <string name="protocol_version">Z-Wave Protocol Version: %s</string>
+    <string name="firmware_version">Firmware 0 Version: %s</string>
+    <string name="hardware_version">Hardware Version: %s</string>
+    <string name="firmware1_version">Firmware 1 Version: %s</string>
+    <string name="firmware2_version">Firmware 2 Version: %s</string>
 
     <!--account activity-->
     <string name="activity_account_title">My QBee Account</string>

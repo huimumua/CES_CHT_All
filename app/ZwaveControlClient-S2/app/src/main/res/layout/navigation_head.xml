@@ -12,13 +12,4 @@
         android:layout_gravity="center_vertical"
         android:src="@drawable/ic_menu_translate_btn"
         />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="30dp"
-        android:layout_gravity="center_vertical"
-        android:layout_marginLeft="@dimen/device_bulb_icon_top_20dp"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/device_title_20sp"
-        android:text="version: 1.0"/>
 </LinearLayout>
