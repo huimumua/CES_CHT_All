@@ -1152,9 +1152,46 @@ public class ZwaveControlService extends Service {
 
                 // remove grop DB
                 if (temp.size() == i) {
-                    removeResult = removeDevfromDB(devType, Integer.parseInt(nodeInfoTemp.getNodeId()));
+
+                    removeResult = "removeDevice:"+devType+ ":" + zwaveDevice.getNodeId();
+                    Log.i(LOG_TAG, "==deleteDevice=="+zwaveDevice.getCategory()+"===removeResult==" + removeResult);
+                    zwaveDeviceManager.deleteZwaveDevice(zwaveDevice.getZwaveId());
 
                     zwaveControlResultCallBack("removeDevice", removeResult);
+
+                    if (zwaveDevice.getCategory().equals("WALLMOTE")){
+                        devGroupManager.deleteZwaveDeviceGroupByNodeId(zwaveDevice.getNodeId());
+                    }else{
+                        devGroupManager.deleteZwaveDeviceGroupByInGropNodeId(zwaveDevice.getNodeId());
+                    }
+                    // remove schedule DB
+                    List<ZwaveSchedule> scheduleList = zwSchManager.getZwaveScheduleList(zwaveDevice.getNodeId());
+
+                    if (list != null) {
+                        for (int idx = 0; idx < scheduleList.size(); idx++) {
+                            scheduleJobManager.cancelSchedule(scheduleList.get(idx).getJobId());
+                        }
+                    }
+
+                    // update room DB
+                    if (zwaveDevice.getCategory().equals("SENSOR")) {
+
+                        List<String> tmpNodeList = zwaveDeviceManager.getRoomNameList();
+                        if (tmpNodeList != null) {
+
+                            for (int idx = 0; idx < tmpNodeList.size(); idx++) {
+
+                                ZwaveDeviceRoom removeScene = new ZwaveDeviceRoom();
+
+                                ZwaveDeviceRoom tmpScene = roomManager.getRoom(tmpNodeList.get(idx));
+                                if (tmpScene != null && tmpScene.getSensorNodeId() == zwaveDevice.getNodeId()) {
+                                    removeScene.setSensorNodeId(null);
+                                    removeScene.setCondition(null);
+                                    roomManager.updateRoom(removeScene, tmpNodeList.get(idx));
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1163,48 +1200,6 @@ public class ZwaveControlService extends Service {
             Log.e(LOG_TAG, "This zwaveDevice does not exist in DB");
             zwaveControlResultCallBack("removeDevice", removeResult);
         }
-    }
-
-    private String removeDevfromDB(String devType, int deviceId){
-
-        ZwaveDevice zwaveDevice = zwaveDeviceManager.queryZwaveDevices(deviceId);
-
-        String removeResult = "removeDevice:"+devType+ ":" + deviceId;
-        zwaveDeviceManager.deleteZwaveDevice(zwaveDevice.getZwaveId());
-
-        if (zwaveDevice.getCategory().equals("WALLMOTE")){
-            devGroupManager.deleteZwaveDeviceGroupByNodeId(deviceId);
-        }else{
-            devGroupManager.deleteZwaveDeviceGroupByInGropNodeId(deviceId);
-        }
-        // remove schedule DB
-        List<ZwaveSchedule> scheduleList = zwSchManager.getZwaveScheduleList(deviceId);
-
-        if (scheduleList != null) {
-            for (int idx = 0; idx < scheduleList.size(); idx++) {
-                scheduleJobManager.cancelSchedule(scheduleList.get(idx).getJobId());
-            }
-        }
-
-        // update room DB
-        if (zwaveDevice.getCategory().equals("SENSOR")) {
-
-            List<String> tmpNodeList = zwaveDeviceManager.getRoomNameList();
-            if (tmpNodeList != null) {
-
-                for (int idx = 0; idx < tmpNodeList.size(); idx++) {
-
-                    ZwaveDeviceRoom removeScene = new ZwaveDeviceRoom();
-                    ZwaveDeviceRoom tmpScene = roomManager.getRoom(tmpNodeList.get(idx));
-                    if (tmpScene != null && tmpScene.getSensorNodeId() == deviceId) {
-                        removeScene.setSensorNodeId(null);
-                        removeScene.setCondition(null);
-                        roomManager.updateRoom(removeScene, tmpNodeList.get(idx));
-                    }
-                }
-            }
-        }
-        return removeResult;
     }
 
     private  int getDeviceEnpointInterfaceId(int nodeId) {
@@ -1245,26 +1240,6 @@ public class ZwaveControlService extends Service {
         DeviceList deviceList = gson.fromJson(result, DeviceList.class);
         List<DeviceList.NodeInfoList> temp = deviceList.getNodeList();
         Log.i(LOG_TAG, "==insertDevice=====temp.size()==" + temp.size());
-
-        List<ZwaveDevice> DBlist = zwaveDeviceManager.queryZwaveDeviceList();
-        Log.i(LOG_TAG,"get device cnt from DB = "+DBlist.size());
-
-        for (int index =0;index < DBlist.size(); index++){
-            for (int idx =0; idx < temp.size(); idx++) {
-                //Log.i(LOG_TAG,"DB #"+index+" nodeid = "+DBlist.get(index).getNodeId()+" | "
-                //        +" dongle #"+idx+" nodeid = "+temp.get(idx).getNodeId());
-                if (DBlist.get(index).getNodeId().toString().equals(temp.get(idx).getNodeId().toString())){
-                    break;
-                }
-                if (idx ==temp.size()-1) {
-                    Log.i(LOG_TAG,"remove node#"+DBlist.get(index).getNodeId()+" from DB");
-                    removeDevfromDB(devType, DBlist.get(index).getNodeId());
-                }
-            }
-        }
-        DBlist = zwaveDeviceManager.queryZwaveDeviceList();
-        Log.e(LOG_TAG,"get device cnt from DB = "+DBlist.size());
-
         for (DeviceList.NodeInfoList nodeInfoTemp : temp) {
 
             ZwaveDevice device = zwaveDeviceManager.queryZwaveDevices(Integer.parseInt(nodeInfoTemp.getNodeId()));
