@@ -18,6 +18,7 @@
         android:screenOrientation="landscape"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:versionName="@string/app_versionName"
         android:theme="@style/AppTheme">
         <activity
             android:name=".ui.WelcomeActivity">
