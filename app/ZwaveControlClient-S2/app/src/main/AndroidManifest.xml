@@ -463,7 +463,7 @@
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.DeviceDialog"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="stateHidden" />
         <activity
             android:name=".home.activity.addDevice.GrantKeyActivity"
             android:launchMode="singleTask"

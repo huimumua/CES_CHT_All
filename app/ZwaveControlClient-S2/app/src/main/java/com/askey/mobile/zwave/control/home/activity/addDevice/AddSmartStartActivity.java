@@ -138,7 +138,7 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
                     finish();
                 } else {
                     String editText = showQRCode.getText().toString();
-                    if (editText.length() == 47) {
+                    if (editText.length() == 47 && checkDSk(editText)) {
                         showWaitingDialog();
                         //调用mqtt接口，带参数
                         MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList(dskCode, "47", qrCode));
@@ -154,6 +154,32 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
         }
     }
 
+    /**
+     * 判断DSK中“-”的位置是否正确，以此验证DSK格式是否正确
+     * @param dsk 样式51525-35455-41424-34445-31323-33435-21222-32425
+     * @return
+     */
+    private boolean checkDSk(String dsk){
+        if(dsk.length() > 43){
+            String str1 = dsk.substring(5,6);
+            String str2 = dsk.substring(11,12);
+            String str3 = dsk.substring(17,18);
+            String str4 = dsk.substring(23,24);
+            String str5 = dsk.substring(29,30);
+            String str6 = dsk.substring(35,36);
+            String str7 = dsk.substring(41,42);
+            if("-".equals(str1)
+                    &&"-".equals(str2)
+                    &&"-".equals(str3)
+                    &&"-".equals(str4)
+                    &&"-".equals(str5)
+                    &&"-".equals(str6)
+                    &&"-".equals(str7)){
+                return true;
+            }
+        }
+        return false;
+    }
     /**
      * 字符串截取
      * 扫描二维码获取到的数据过长，其中有一些不用的字符
