@@ -12,39 +12,53 @@
         android:id="@+id/learn_mode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="start learn mode..."
         android:layout_gravity="center"
-        />
+        android:text="start learn mode..." />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Controller Attribute:"
         android:layout_gravity="center"
         android:layout_marginTop="@dimen/activity_horizontal_margin"
-        />
+        android:text="Controller Attribute:" />
+
     <TextView
         android:id="@+id/controller_attribute"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="@dimen/activity_horizontal_margin"
-        />
+        android:layout_marginTop="@dimen/activity_horizontal_margin" />
+
     <TextView
         android:id="@+id/tv_dsk"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="@dimen/activity_horizontal_margin"
         android:text="DSK:"
-        android:layout_gravity="center"
-        android:layout_marginTop="@dimen/activity_horizontal_margin"
-        android:textColor="@android:color/holo_red_light"
-        android:visibility="invisible"
-        />
-    <TextView
-        android:id="@+id/dsk"
-        android:layout_width="wrap_content"
+        android:textColor="@color/contents_text"
+        android:visibility="invisible" />
+
+    <RelativeLayout
+        android:layout_width="240dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="@dimen/activity_horizontal_margin"
-        android:textColor="@android:color/holo_red_light"
-        />
+        android:layout_gravity="center_horizontal">
+
+        <TextView
+            android:id="@+id/dsk"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="@dimen/activity_horizontal_margin"
+            android:textColor="@color/contents_text" />
+
+        <RelativeLayout
+            android:id="@+id/red_line"
+            android:layout_width="@dimen/activity_cable_title_top_40dp"
+            android:layout_height="2dp"
+            android:layout_alignTop="@+id/dsk"
+            android:layout_marginTop="@dimen/activity_horizontal_margin"
+            android:background="@color/red"
+            android:visibility="gone"></RelativeLayout>
+    </RelativeLayout>
 </LinearLayout>

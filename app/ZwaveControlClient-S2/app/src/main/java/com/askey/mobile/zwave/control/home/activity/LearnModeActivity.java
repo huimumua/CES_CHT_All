@@ -1,11 +1,16 @@
 package com.askey.mobile.zwave.control.home.activity;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
@@ -23,6 +28,7 @@ public class LearnModeActivity extends AppCompatActivity {
     private static final String LOG_TAG = LearnModeActivity.class.getSimpleName();
     private TextView learnMode,controllerAttribute;
     private TextView tvDsk,dsk;
+    private RelativeLayout redLine;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +38,7 @@ public class LearnModeActivity extends AppCompatActivity {
         controllerAttribute = (TextView) findViewById(R.id.controller_attribute);
         tvDsk = (TextView) findViewById(R.id.tv_dsk);
         dsk = (TextView) findViewById(R.id.dsk);
+        redLine = (RelativeLayout) findViewById(R.id.red_line);
 
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
         MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.startLearnMode());
@@ -79,7 +86,13 @@ public class LearnModeActivity extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     tvDsk.setVisibility(View.VISIBLE);
-                                    dsk.setText(tmp);
+
+                                    SpannableString ss = new SpannableString(tmp);
+                                    //设置DSK前5个字符的字体颜色红色高亮。接口：setSpan(color, 字符启始位,字符结束位,前后包含);setSpan(Object what, int start, int end, int flags);
+                                    ss.setSpan(new ForegroundColorSpan(Color.parseColor("#ff0000")), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    dsk.setText(ss);
+                                    //显示下划线
+                                    redLine.setVisibility(View.VISIBLE);
                                 }
                             });
                         }
