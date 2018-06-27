@@ -66,10 +66,10 @@ public class GrantKeyActivity extends BaseActivity {
             security2Key0.setVisibility(View.GONE);
             security2Key2.setVisibility(View.GONE);
         } else if (safeLevel.equals(GRANT_KEY_0X83)) {
-            security0.setVisibility(View.GONE);
-            security2Key0.setVisibility(View.GONE);
-            security2Key1.setVisibility(View.GONE);
-            security2Key2.setVisibility(View.VISIBLE);
+            security0.setVisibility(View.VISIBLE);
+            security2Key0.setVisibility(View.VISIBLE);
+            security2Key1.setVisibility(View.VISIBLE);
+            security2Key2.setVisibility(View.GONE);
         } else if (safeLevel.equals(GRANT_KEY_0X84)) {
             Log.i(TAG, "-------GRANT_KEY_0X84");
             security0.setVisibility(View.VISIBLE);
