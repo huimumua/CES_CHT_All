@@ -364,6 +364,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.getMqttPayload = "";
                         break;
 
+                    case "getSecurity2CmdSupported": //public channel
+                        Log.i(LOG_TAG, "deviceService.getSecurity2CmdSupported");
+                        zwaveService.getSecurity2CmdSupported(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
                     case "getDeviceList": //public channel
                         Log.i(LOG_TAG, "deviceService.getDevices tRoom= " + DeviceInfo.room);
                         zwaveService.getDeviceList(DeviceInfo.room);
@@ -1030,6 +1036,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 break;
 
             case R.id.btnButton:
+                //zwaveService.getSecurity2CmdSupported(Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
+
                 if (spApiList.getSelectedItem().toString().contains("ZwController_startNetworkHealthCheck")) {
                     zwaveService.startNetworkHealthCheck();
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_getProvisionListEntry")) {
@@ -1212,11 +1220,11 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 }
                 break;
             case R.id.btnaddProList:
-                if (editDsk.length() != 0 && editDsk.length() == 47) {    // editDsk will 5-digit or full code
+                //if (editDsk.length() != 0 && editDsk.length() == 47) {    // editDsk will 5-digit or full code
                     //DeviceInfo.InclusionState = true;
                     addProvisionList();
-                } else
-                    Toast.makeText(this, "格式錯誤 !", Toast.LENGTH_SHORT).show();
+                //} else
+                //    Toast.makeText(this, "格式錯誤 !", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.btnrmProList:
                 if (selectProvisionList != null) {    // editDsk will 5-digit or full code
@@ -1328,6 +1336,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
     //insert Provision List
     private void addProvisionList() {
 
+        //String str = "33592-63521-64594-02477-00177-13100-21787-02557";
+        //String inputDsk = str + "\0";
         inputDsk = editDsk.getText().toString() + "\0";
         Log.d(LOG_TAG,inputDsk);
         byte[] dskNumber = inputDsk.getBytes();

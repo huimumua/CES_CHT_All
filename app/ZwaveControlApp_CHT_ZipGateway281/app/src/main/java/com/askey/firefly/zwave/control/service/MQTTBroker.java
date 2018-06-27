@@ -956,6 +956,12 @@ public class MQTTBroker extends Service {
                     DeviceInfo.getMqttPayload = "setSwitchAllOffBroadcast";
                     break;
 
+                case "getSecurity2CmdSupported":
+                    Log.i(LOG_TAG, "deviceService.getSecurity2CmdSupported");
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.getMqttPayload = "getSecurity2CmdSupported";
+                    break;
+
                 case "getPowerLevel":
                     DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     Log.i(LOG_TAG, "deviceService.getPowerLevel" + DeviceInfo.mqttDeviceId);

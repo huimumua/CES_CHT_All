@@ -910,6 +910,13 @@ public class ZwaveControlService extends Service {
         return result;
     }
 
+    public int  getSecurity2CmdSupported(int deviceId){
+        updateTimestamp(deviceId);
+        int result = ZwaveControlHelper.ZwController_getSecurity2CmdSupported(deviceId);
+        return result;
+    }
+
+
     public void UpdateNode(int deviceId){
         updateTimestamp(deviceId);
         ZwaveControlHelper.ZwController_UpdateNode(deviceId);
@@ -2232,6 +2239,10 @@ public class ZwaveControlService extends Service {
             zwaveControlResultCallBack("Controller DSK Report", jniResult);
         } else if ("Binary Switch Get Information".equals(messageType)) {
             zwaveControlResultCallBack("Binary Switch Get Information", jniResult);
+        } else if ("CSA Pin".equals(messageType)) {
+            zwaveControlResultCallBack("CSA Pin", jniResult);
+        } else if ("Supported S2 Cmd Report".equals(messageType)) {
+            zwaveControlResultCallBack("Supported S2 Cmd Report", jniResult);
         }
     }
 }
