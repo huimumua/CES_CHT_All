@@ -2540,6 +2540,10 @@ public class MQTTBroker extends Service {
                 DeviceInfo.isOpenControllerFinish = true;
                 Log.i(LOG_TAG, " === isOpenControllerFinish = true ===");
 
+            } else if (DeviceInfo.className.equals("Supported S2 Cmd Report")) {
+                //Log.i(LOG_TAG, "DeviceInfo.result= " + DeviceInfo.result);
+                publishMessage(Const.PublicTopicName, DeviceInfo.result);
+
             } else if (DeviceInfo.resultToMqttBroker.contains("dongleBusy")) {
                 //DeviceInfo.failFlag = true; // -17時不返回 add / remove TCP
                 String[] tmp = DeviceInfo.resultToMqttBroker.split(":");
