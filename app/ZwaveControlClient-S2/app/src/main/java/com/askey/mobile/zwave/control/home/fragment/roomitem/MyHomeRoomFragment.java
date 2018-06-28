@@ -30,6 +30,7 @@ import com.askey.mobile.zwave.control.deviceContr.rooms.ui.SensorActivity;
 import com.askey.mobile.zwave.control.deviceContr.rooms.ui.WallMoteLivingActivity;
 import com.askey.mobile.zwave.control.deviceContr.scenes.DeviceTestActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDevice;
+import com.askey.mobile.zwave.control.home.activity.addDevice.Security2CmdSupportedActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.SelectBrandActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.SmartStartDeviceAddActivity;
 import com.askey.mobile.zwave.control.home.adapter.DeviceAdapter;
@@ -410,7 +411,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
 
     @Override
     public void onItemLongClick(View view, DeviceInfo deviceInfo) {
-//        SENSOR/BULB/DIMMER/PLUG
+/*//        SENSOR/BULB/DIMMER/PLUG
         Intent intent = null;
         if ("BULB".equals(deviceInfo.getDeviceType())) {
             intent = new Intent(getActivity(), BulbActivity.class);
@@ -431,7 +432,13 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
         intent.putExtra("room", deviceInfo.getRooms());
         intent.putExtra("shadowTopic", deviceInfo.getTopic());
         intent.putExtra("displayName", deviceInfo.getDisplayName());
-        startActivity(intent);
+        startActivity(intent);*/
+        if(!deviceInfo.getDeviceId().equals("1")) {
+            Intent intent = new Intent(getActivity(), Security2CmdSupportedActivity.class);
+            intent.putExtra("nodeId", deviceInfo.getDeviceId());
+            intent.putExtra("deviceName", deviceInfo.getDisplayName());
+            startActivity(intent);
+        }
     }
 
     @Override

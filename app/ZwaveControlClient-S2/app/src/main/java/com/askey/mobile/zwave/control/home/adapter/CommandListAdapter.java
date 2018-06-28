@@ -50,7 +50,8 @@ public class CommandListAdapter extends RecyclerView.Adapter<CommandListAdapter.
 
         switch (v.getId()) {
             case R.id.tv_command:
-                onItemClickListener.onItemClick(v, (String) v.getTag());
+                if(onItemClickListener != null)
+                    onItemClickListener.onItemClick(v, (String) v.getTag());
                 break;
         }
 

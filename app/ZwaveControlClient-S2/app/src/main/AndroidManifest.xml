@@ -508,6 +508,9 @@
         <activity android:name=".home.activity.addDevice.VersionActivity"
             android:theme="@style/AppTheme.DeviceDialog"
             />
+        <activity android:name=".home.activity.addDevice.Security2CmdSupportedActivity"
+            android:theme="@style/AppTheme.DeviceDialog"
+            />
 
         <!--设置属性为点击dialog空白处不退出-->
         <activity android:name=".home.activity.addDevice.SmartStartDeviceAddActivity"
