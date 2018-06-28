@@ -38,7 +38,7 @@ import java.util.TimerTask;
 public class InstallDeviceActivity extends BaseActivity implements View.OnClickListener {
     public static String LOG_TAG = "InstallDeviceActivity";
     private ImageView step_iv;
-    private TextView step_title, step_notify, addStstus;
+    private TextView step_title, step_notify, addStstus, dskTextView;
     private ImageView step_anim;
     private Button finishButton;
     private ProgressBar progressBar;
@@ -150,6 +150,14 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                         String reported = jsonObject.optString("reported");
                         JSONObject reportedObject = new JSONObject(reported);
                         String Interface = reportedObject.optString("Interface");
+                        String messageType = reportedObject.optString("MessageType");
+
+                        if(messageType.equals("DSK Report"))
+                        {
+                            String dskStr = reportedObject.optString("DSK");
+                            dskTextView.setText("DSK: " + dskStr);
+                        }
+
                         if (Interface.equals("addDevice")) {
                             String result = reportedObject.optString("Result");
                             String NodeId = reportedObject.optString("NodeId");
@@ -468,6 +476,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
         step_anim = (ImageView) findViewById(R.id.step_anim);
         progressBar = (ProgressBar) findViewById(R.id.progress);
         addStstus = (TextView) findViewById(R.id.add_status);
+        dskTextView = (TextView)findViewById(R.id.dsk);
         progressBar.getIndeterminateDrawable().setColorFilter(getResources().getColor(R.color.color_e2231a), android.graphics.PorterDuff.Mode.MULTIPLY);
         if (deviceType.equals("BULB")) {
             step_notify.setText(R.string.bulb_installing);
