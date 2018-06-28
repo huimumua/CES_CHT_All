@@ -2541,8 +2541,30 @@ public class MQTTBroker extends Service {
                 Log.i(LOG_TAG, " === isOpenControllerFinish = true ===");
 
             } else if (DeviceInfo.className.equals("Supported S2 Cmd Report")) {
-                //Log.i(LOG_TAG, "DeviceInfo.result= " + DeviceInfo.result);
-                publishMessage(Const.PublicTopicName, DeviceInfo.result);
+
+                String cmdclass = "";
+                String[] cmdclassSplit = DeviceInfo.result.split("\"");
+                for(int i = 9; i < cmdclassSplit.length; i+=4){
+                    //Log.d(LOG_TAG,"i :" + i +" " +cmdclassSplit[i]);
+                    //JSONObject payload2 = new JSONObject(cmdclassSplit[i]);
+                    cmdclass += cmdclassSplit[i] + ",";
+                }
+                Log.d(LOG_TAG,cmdclass);
+
+                try {
+                    message.put("MessageType","Supported S2 Cmd Report");
+
+                    JSONObject payload = new JSONObject(DeviceInfo.result);
+                    String nodeId = payload.optString("Node id");
+                    message.put("Node id",nodeId);
+                    message.put("Cmdclass",cmdclass);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+
+                publishMessage(Const.PublicTopicName, message.toString());
 
             } else if (DeviceInfo.resultToMqttBroker.contains("dongleBusy")) {
                 //DeviceInfo.failFlag = true; // -17時不返回 add / remove TCP
