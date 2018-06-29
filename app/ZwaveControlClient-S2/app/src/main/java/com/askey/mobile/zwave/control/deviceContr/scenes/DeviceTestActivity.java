@@ -76,19 +76,26 @@ public class DeviceTestActivity extends BaseActivity {
 
         adapter = new CommandListAdapter(interfaceClass);
         commList.setAdapter(adapter);
-        adapter.setOnItemClickListener(new CommandListAdapter.OnItemClickListener() {
 
-            @Override
-            public void onItemClick(View view, String str) {
-                Log.i("onItemClick", "====str=" + str);
-                Intent intent = new Intent();
-                intent.setClass(mContext, APITestActivity.class);
-                intent.putExtra("title", str);
+        if(nodeId.equals("1"))
+        {
+            adapter.setOnItemClickListener(null);
+        }
+        else {
+            adapter.setOnItemClickListener(new CommandListAdapter.OnItemClickListener() {
 
-                intent.putExtra("nodeId", getIntent().getStringExtra("nodeId"));
-                startActivity(intent);
-            }
-        });
+                @Override
+                public void onItemClick(View view, String str) {
+                    Log.i("onItemClick", "====str=" + str);
+                    Intent intent = new Intent();
+                    intent.setClass(mContext, APITestActivity.class);
+                    intent.putExtra("title", str);
+
+                    intent.putExtra("nodeId", getIntent().getStringExtra("nodeId"));
+                    startActivity(intent);
+                }
+            });
+        }
 
         remove.setOnClickListener(new View.OnClickListener() {
             @Override
