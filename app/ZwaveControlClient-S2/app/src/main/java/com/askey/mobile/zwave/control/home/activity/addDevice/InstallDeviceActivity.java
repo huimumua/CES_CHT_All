@@ -158,6 +158,12 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                             dskTextView.setText("DSK: " + dskStr);
                         }
 
+                        if(messageType.equals("CSA Pin"))
+                        {
+                            String pinCodeStr = reportedObject.optString("PinCode");
+                            dskTextView.setText("PinCode: " + pinCodeStr);
+                        }
+
                         if (Interface.equals("addDevice")) {
                             String result = reportedObject.optString("Result");
                             String NodeId = reportedObject.optString("NodeId");
