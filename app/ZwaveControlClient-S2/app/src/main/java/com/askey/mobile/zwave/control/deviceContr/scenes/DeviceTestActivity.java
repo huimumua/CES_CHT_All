@@ -180,7 +180,9 @@ public class DeviceTestActivity extends BaseActivity {
                     JSONArray endpointList = detailTmp.getJSONArray("EndPoint List");
                     for (int j = 0; j < endpointList.length(); j++) {
                         JSONObject endpointTmp = endpointList.getJSONObject(j);
-                        deviceType = endpointTmp.optString("ZWave+ device type"); //设备类型
+                        String endPointId = endpointTmp.optString("Endpoint id");
+                        if(endPointId.equals("0"))
+                            deviceType = endpointTmp.optString("ZWave+ device type"); //设备类型
                         JSONArray interfaceList = endpointTmp.getJSONArray("Interface List");
                         for (int k = 0; k < interfaceList.length(); k++) {
                             JSONObject interfaceTmp = interfaceList.getJSONObject(k);

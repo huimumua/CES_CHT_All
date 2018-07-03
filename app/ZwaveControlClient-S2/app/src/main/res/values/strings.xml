@@ -434,7 +434,7 @@
     <string name="delete">DELETE</string>
     <string name="smart_start">Smart start</string>
     <string name="safety_tips">The device may control these classess</string>
-    <string name="safety_tips_s0">S0 Unauthenticated</string>
+    <string name="safety_tips_s0">S0</string>
     <string name="safety_tips_s2_0">S2 Unauthenticated</string>
     <string name="safety_tips_s2_1">S2 Authenticated</string>
     <string name="safety_tips_s2_2">S2 Access Control</string>
