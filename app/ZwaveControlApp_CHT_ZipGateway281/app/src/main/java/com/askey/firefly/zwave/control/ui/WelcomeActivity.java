@@ -1495,7 +1495,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     DeviceInfo.smartStartFlag = true;
                 }
 
-                Log.i(LOG_TAG, "class name = [" + DeviceInfo.className + "] | result = " + DeviceInfo.result);
+                Log.i(LOG_TAG, "Result class name = [" + DeviceInfo.className + "] | result = " + DeviceInfo.result);
 
                 if (className.equals("addDevice") || className.equals("removeDevice")) {
 
@@ -1508,6 +1508,18 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (className.equals("reNameDevice")) {
 
                     addRemoveDevice(result);
+                } else if (className.equals("CSA Pin")) {
+                    Log.d(LOG_TAG,"CSA Pin ");
+
+                    JSONObject jsonObject = null;
+                    try {
+                        jsonObject = new JSONObject(result);
+                        DeviceInfo.pinCode = jsonObject.optString("PinCode");
+                        Log.d(LOG_TAG,"pinCode : "+DeviceInfo.pinCode);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
                 }
 
                 DeviceInfo.mqttFlag = true;
@@ -1520,13 +1532,13 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         mReqCallBacks = new ZwaveControlService.zwaveControlReq_CallBack() {
             @Override
             public void zwaveControlReqResultCallBack(String className, String result) {
-                Log.i(LOG_TAG, "class name = [" + className + "]| result = " + result);
+                Log.i(LOG_TAG, "Req class name = [" + className + "]| result = " + result);
 
                 if (result.contains("Grant Keys Msg")) {
 
 
                     String[] grantTmp = result.split(":");
-                    //Log.d(LOG_TAG,"Grant Keys number : " +grantTmp[2]);
+                    Log.d(LOG_TAG,"Grant Keys number : " +grantTmp[2]);
                     if(grantTmp[2].contains("135")) {
                         DeviceInfo.grantKeyNumber = "135";
                     } else if (grantTmp[2].contains("134")) {
@@ -1535,6 +1547,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.grantKeyNumber = "133";
                     } else if (grantTmp[2].contains("132")) {
                         DeviceInfo.grantKeyNumber = "132";
+                        Log.d(LOG_TAG,"Grant Keys number : 132");
+
                     } else if (grantTmp[2].contains("131")) {
                         DeviceInfo.grantKeyNumber = "131";
                     } else if (grantTmp[2].contains("130")) {
@@ -1559,6 +1573,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.grantKeyNumber = "1";
                     }
                     DeviceInfo.reqString = "Grant";
+                    Log.d(LOG_TAG,"Grant Keys number : Grant");
+
                 } else if (result.contains("PIN Requested Msg")) {
                     //DeviceInfo.reqKey = 11394;
                     DeviceInfo.reqString = "PIN";

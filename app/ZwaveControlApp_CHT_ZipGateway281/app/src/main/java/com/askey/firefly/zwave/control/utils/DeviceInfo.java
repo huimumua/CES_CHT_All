@@ -68,6 +68,9 @@ public class DeviceInfo {
     public static String inclusionState = "Pending";
     public static String bootMode = "Smart Start";
 
+    public static String pinCode = "";
+
+
     public static int qrCodeDeviceType = 0;
     public static int qrCodeDeviceType2 = 0;
 

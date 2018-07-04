@@ -1606,20 +1606,6 @@ public class MQTTBroker extends Service {
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
 
-            } else if (DeviceInfo.className.equals("CSA Pin")) {
-                JSONObject jsonObject = null;
-                try {
-                    jsonObject = new JSONObject(DeviceInfo.result);
-                    String pinCode = jsonObject.optString("PinCode");
-
-                    message.put("MessageType", "CSA Pin");
-                    message.put("PinCode", pinCode);
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                publishMessage(Const.PublicTopicName, message.toString());
-
             } else if (DeviceInfo.result.contains("All Node List Report")) {
                 JSONObject jsonObject = null;
                 try {
@@ -2273,8 +2259,17 @@ public class MQTTBroker extends Service {
                 publishMessage(Const.PublicTopicName, message.toString());
 
             } else if (DeviceInfo.reqString.equals("Grant")) {
-                Log.d(LOG_TAG,DeviceInfo.grantKeyNumber);
+                Log.d(LOG_TAG,"Grant Keys number : " +DeviceInfo.grantKeyNumber);
+                try {
+                    message.put("MessageType", "CSA Pin");
+                    message.put("PinCode", DeviceInfo.pinCode);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
                 mTCPServer.sendMessage(Const.TCPClientPort, "GrantKeys:" + DeviceInfo.grantKeyNumber); //TCP format
+
             } else if (DeviceInfo.reqString.equals("PIN")) {
                 mTCPServer.sendMessage(Const.TCPClientPort, "dsk:"); //TCP format
             } else if (DeviceInfo.reqString.equals("Au")) {
