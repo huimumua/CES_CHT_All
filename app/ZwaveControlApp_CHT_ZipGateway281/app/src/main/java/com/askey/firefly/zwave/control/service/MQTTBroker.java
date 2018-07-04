@@ -286,6 +286,8 @@ public class MQTTBroker extends Service {
                     DeviceInfo.reqKey = Integer.valueOf(tmp[1]);
                     Log.i(LOG_TAG, "req dsk : "+ Integer.valueOf(tmp[1]));
                     DeviceInfo.reqFlag = true;
+                    //mTCPServer.sendMessage(Const.TCPClientPort, "CSA:CSA"); //TCP format
+
 
                 } else if (message.contains("CSA")) {
                     String[] tmp = message.split(":");
@@ -1598,6 +1600,20 @@ public class MQTTBroker extends Service {
                     message.put("Product Id", proId);
                     message.put("Z-wave Protocol Version", protocolVersion);
                     message.put("Application Version", appVersion);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                publishMessage(Const.PublicTopicName, message.toString());
+
+            } else if (DeviceInfo.className.equals("CSA Pin")) {
+                JSONObject jsonObject = null;
+                try {
+                    jsonObject = new JSONObject(DeviceInfo.result);
+                    String pinCode = jsonObject.optString("PinCode");
+
+                    message.put("MessageType", "CSA Pin");
+                    message.put("PinCode", pinCode);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
