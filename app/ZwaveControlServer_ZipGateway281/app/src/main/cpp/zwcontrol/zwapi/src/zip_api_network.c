@@ -6567,8 +6567,9 @@ static void zwnet_cb_thrd(void *data)
                         if (cb_param.cb_prm.req_key.req_csa)
                         {
                             plt_mtx_lck(nw->mtx);
-                            memcpy(cb_param.cb_prm.req_key.csa_pin, nw->gw_dsk, 11);
-                            cb_param.cb_prm.req_key.csa_pin[11] = '\0';
+                            memcpy(cb_param.cb_prm.req_key.csa_pin, nw->gw_dsk, 5);
+			    memcpy(cb_param.cb_prm.req_key.csa_pin+5, nw->gw_dsk+6, 5);
+                            cb_param.cb_prm.req_key.csa_pin[10] = '\0';
                             plt_mtx_ulck(nw->mtx);
                         }
                         else
