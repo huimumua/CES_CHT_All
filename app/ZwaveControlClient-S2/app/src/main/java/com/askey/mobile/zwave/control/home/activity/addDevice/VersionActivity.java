@@ -49,7 +49,7 @@ public class VersionActivity extends BaseActivity {
         firmware2Version = (TextView) findViewById(R.id.firmware_2_version);
 
 
-        appVersion.setText(String.format(getResources().getString(R.string.app_version), "ISP0001MG.0.1.1"));//ISP0001MG.0.1.1
+        appVersion.setText(String.format(getResources().getString(R.string.app_version), "ISP0001MG.0.1.2"));
 
         exit = (Button) findViewById(R.id.version_exit);
         exit.setOnClickListener(new View.OnClickListener() {
