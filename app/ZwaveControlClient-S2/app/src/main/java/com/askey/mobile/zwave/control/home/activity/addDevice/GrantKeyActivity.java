@@ -18,7 +18,7 @@ import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 public class GrantKeyActivity extends BaseActivity {
     private static final String TAG = "GrantKeyActivity";
 
-    private String safeLevel;
+    private String safeLevel, csaStr;
     private CheckBox security0, security2Key0, security2Key1, security2Key2;
     private Button safeButton;
 
@@ -47,7 +47,9 @@ public class GrantKeyActivity extends BaseActivity {
 
     private void init() {
         safeLevel = getIntent().getStringExtra("SAFE_LEVEL").trim();//从AddSmartStartActivity传过来的安全等级
+        csaStr = getIntent().getStringExtra("CSA").trim();
         Log.i(TAG, "=========grantKeys=" + safeLevel + "==");
+        Log.i(TAG, "=========CSA=" + csaStr + "==");
         safeButton = (Button) findViewById(R.id.safe_confirm);
 
         security0 = (CheckBox) findViewById(R.id.safe_s0);// OX80
@@ -138,6 +140,15 @@ public class GrantKeyActivity extends BaseActivity {
         }
 
         if((int)security2Key2.getVisibility() != View.VISIBLE){
+            security2Key2.setChecked(false);
+        }
+
+        if(csaStr.equals("No"))
+        {
+            security2Key1.setEnabled(false);
+            security2Key1.setChecked(false);
+
+            security2Key2.setEnabled(false);
             security2Key2.setChecked(false);
         }
 

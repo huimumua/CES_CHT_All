@@ -46,6 +46,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
     private String deviceType = "";
     private String nodeId = "";
     private Timer timer;
+    private String csaStr = "Yes";
 
     private Handler mHandler = new Handler() {
         // 重写handleMessage()方法，此方法在UI线程运行
@@ -158,7 +159,7 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                             dskTextView.setText("DSK: " + dskStr);
                         }
 
-                        if(messageType.equals("CSA Pin"))
+                        if(messageType.equals("CSA Pin") && csaStr.equals("Yes"))
                         {
                             String pinCodeStr = reportedObject.optString("PinCode");
                             dskTextView.setText("PinCode: " + pinCodeStr);
@@ -229,6 +230,18 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
 
     };
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == 1000 && resultCode == 0)
+        {
+            Bundle bundle = data.getExtras();
+            csaStr = bundle.getString("csa");
+        }
+    }
+
     private void addDeviceResult(final String result) {
         try {
             Logg.i(LOG_TAG, "=====result==" + result);
@@ -256,11 +269,12 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                     //将keys传到SecurityLevelActivity
                     Intent intent = new Intent(mContext, GrantKeyActivity.class);
                     intent.putExtra("SAFE_LEVEL", keys);
+                    intent.putExtra("CSA", csaStr);
                     startActivity(intent);
                 }
             } else if (msgType.equals("CSA")) {
                 Intent intent = new Intent(mContext, CsaActivity.class);
-                startActivity(intent);
+                startActivityForResult(intent, 1000);
             } else if (result.contains("mobile_zwave:addDevice:Zwave")) {//接口发送的时候自已的反馈
                 return;
             } else if (result.contains("firefly_zwave:addDevice:other")) {//服务端返回的：有其他接口正在调用，没有处理完成
