@@ -1,6 +1,9 @@
 package com.askey.mobile.zwave.control.home.activity.addDevice;
 
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -13,6 +16,8 @@ import android.widget.TextView;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.util.Const;
+
+import java.io.InputStream;
 
 public class InstallGuideActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -33,6 +38,8 @@ public class InstallGuideActivity extends AppCompatActivity implements View.OnCl
         setContentView(R.layout.activity_install_guide);
 
         initView();
+        Bitmap bitmap = readBitMap(this, R.drawable.smart_switch_02);
+        step_icon.setImageBitmap(bitmap);
         initData();
     }
 
@@ -89,7 +96,11 @@ public class InstallGuideActivity extends AppCompatActivity implements View.OnCl
                     if (currentIndex < steps) {
                         linear_info.setVisibility(View.GONE);
                         linear_step.setVisibility(View.VISIBLE);
-                        step_icon.setImageResource(step_icons[currentIndex]);
+                        int step_icon = step_icons[currentIndex];
+                        // Glide.with(this).load(step_icon).into(this.step_icon);
+                        //         this.step_icon.setImageResource(step_icons[currentIndex]);
+                        Bitmap bitmap = readBitMap(this, step_icon);
+                        this.step_icon.setImageBitmap(bitmap);
                         step_notify.setText(step_notifys[currentIndex]);
                         step_index.setText("Step "+(currentIndex+1)+"");
                         currentIndex++;
@@ -104,5 +115,21 @@ public class InstallGuideActivity extends AppCompatActivity implements View.OnCl
                 break;
         }
     }
+    /**
+     * 以最省内存的方式读取本地资源的图片
+     * @param context  上下文
+     * @param resId 资源Id
+     * @return 返回bitmap
+     */
+    public static Bitmap readBitMap(Context context, int resId){
+        BitmapFactory.Options opt = new BitmapFactory.Options();
+        //压缩编码
+        opt.inPreferredConfig = Bitmap.Config.RGB_565;
+        //下面两个过时了，但没影响
+        opt.inPurgeable = true;
+        opt.inInputShareable = true;
 
+        InputStream is = context.getResources().openRawResource(resId);
+        return BitmapFactory.decodeStream(is,null,opt);
+    }
 }

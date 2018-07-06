@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/activity_device_setting"
     android:layout_width="@dimen/device_width"
@@ -18,7 +18,6 @@
         android:text="device name :"
         android:textColor="@color/color_primary"
         android:textSize="25sp" />
-
 
     <TextView
         android:layout_width="wrap_content"
@@ -67,27 +66,70 @@
         android:textColor="@color/text_color"
         android:visibility="gone" />
 
+
+    -
+
     <LinearLayout
         android:id="@+id/command_class_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:visibility="gone">
+        android:visibility="visible">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_5dp"
-            android:text="Command Class List"
-            android:textColor="@color/color_primary"
-            android:textSize="@dimen/device_control_title_16sp" />
+
+        -
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginTop="@dimen/margin_5dp"
+                android:layout_weight="1"
+                android:text="Command Class List"
+                android:textColor="@color/color_primary"
+                android:textSize="@dimen/device_control_title_16sp" />
+
+            <Spinner
+                android:id="@+id/spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:visibility="gone"></Spinner>
+
+            <TextView
+                android:id="@+id/endpointId_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginTop="@dimen/margin_5dp"
+                android:text="EndpointId:0"
+                android:textColor="@color/color_primary"
+                android:textSize="14sp" />
+
+        </LinearLayout>
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/comm_list"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/device_smaller_icon_10dp" />
+            android:layout_marginTop="@dimen/device_smaller_icon_10dp"
+            android:visibility="gone" />
+
+        <ExpandableListView
+            android:id="@+id/expandlistview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"></ExpandableListView>
+
     </LinearLayout>
+
+
+    -
 
     <LinearLayout
         android:id="@+id/failed_node_layout"
@@ -112,5 +154,7 @@
             android:layout_marginBottom="20dp"
             android:layout_weight="1"
             android:text="@string/replace" />
+
     </LinearLayout>
+
 </LinearLayout>
