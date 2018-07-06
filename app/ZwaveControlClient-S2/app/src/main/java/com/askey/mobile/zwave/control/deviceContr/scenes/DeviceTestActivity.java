@@ -62,9 +62,8 @@ public class DeviceTestActivity extends BaseActivity {
     private JSONArray interfaceList;
     private JSONArray endpointList;
     private JSONArray endpointList2;
-    private List<String> s0Supported = new ArrayList<>();
-    private List<String> s2Supported = new ArrayList<>();
-    private Info all;
+    private List<String> security = new ArrayList<>();
+    private List<String> unsecurity = new ArrayList<>();
     private JSONArray endpointList1;
 
 
@@ -82,8 +81,6 @@ public class DeviceTestActivity extends BaseActivity {
         spinnerData = new ArrayList<>();
         endpointId_textview = (TextView) findViewById(R.id.endpointId_text);
 
-        all = new Info();
-        all.setName("ALL");
         endpointId_textview.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -113,8 +110,8 @@ public class DeviceTestActivity extends BaseActivity {
                         pw.dismiss();
                         data.clear();
                         interfaceClass.clear();
-                        s2Supported.clear();
-                        s0Supported.clear();
+                        security.clear();
+                        unsecurity.clear();
                         endpointId_textview.setText("" + spinnerData.get(position));
                         JSONObject endpointTmp = null;
                         try {
@@ -139,22 +136,28 @@ public class DeviceTestActivity extends BaseActivity {
 //                                unsecure.add(interfaceclass);
 //
 //                            }
-                                if (level.equals("S0 Supported")) {
-                                    s0Supported.add(interfaceclass);
+                                if (level.equals("Secure")) {
+                                    security.add(interfaceclass);
 
                                 }
-                                if (level.equals("S2 Supported")) {
-                                    s2Supported.add(interfaceclass);
+                                if (level.equals("UnSecure")) {
+                                    unsecurity.add(interfaceclass);
 
                                 }
                                 interfaceClass.add(interfaceTmp.optString("Interface Class"));
                             }
-                            all.setData(interfaceClass);
-                            data.add(all);
-                            if (s0Supported.size() > 0) {
+
+                            if (security.size() > 0) {
                                 Info info = new Info();
-                                info.setName("S0");
-                                info.setData(s0Supported);
+                                info.setName("Secure");
+                                info.setData(security);
+                                data.add(info);
+                            }
+
+                            if (unsecurity.size() > 0) {
+                                Info info = new Info();
+                                info.setName("UnSecure");
+                                info.setData(unsecurity);
                                 data.add(info);
                             }
 //                if (unsecure.size()>0){
@@ -163,15 +166,8 @@ public class DeviceTestActivity extends BaseActivity {
 //                    info.setData(unsecure);
 //                    data.add(info);
 //                }
-                            if (s2Supported.size() > 0) {
-                                Info info = new Info();
-                                info.setName("S2");
-                                info.setData(s2Supported);
-                                data.add(info);
-
-                            }
                             myExpandableListViewAdapter.notifyDataSetChanged();
-                            Log.i("=====sieze为", "list1" + s2Supported.size() + "===" + "" + s0Supported.size() + "===" + interfaceClass.size());
+                            Log.i("=====sieze为", "list1" + security.size() + "===" + "" + unsecurity.size() + "===" + interfaceClass.size());
 
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -294,11 +290,9 @@ public class DeviceTestActivity extends BaseActivity {
     }
 
     private void mqttMessageResult(String mqttResult) {
-        List<String> unsecure = new ArrayList<>();
+
 //        s0Supported = new ArrayList<>();
 //        s2Supported = new ArrayList<>();
-        Info all = new Info();
-        all.setName("ALL");
 
         Log.i("====result", "" + mqttResult);
         JSONObject jsonObject;
@@ -341,12 +335,12 @@ public class DeviceTestActivity extends BaseActivity {
 //                                unsecure.add(interfaceclass);
 //
 //                            }
-                                if (level.equals("S0 Supported")) {
-                                    s0Supported.add(interfaceclass);
+                                if (level.equals("UnSecure")) {
+                                    unsecurity.add(interfaceclass);
 
                                 }
-                                if (level.equals("S2 Supported")) {
-                                    s2Supported.add(interfaceclass);
+                                if (level.equals("Secure")) {
+                                    security.add(interfaceclass);
 
                                 }
                                 interfaceClass.add(interfaceTmp.optString("Interface Class"));
@@ -355,12 +349,11 @@ public class DeviceTestActivity extends BaseActivity {
 
                     }
                 }
-                all.setData(interfaceClass);
-                data.add(all);
-                if (s0Supported.size() > 0) {
+
+                if (security.size() > 0) {
                     Info info = new Info();
-                    info.setName("S0");
-                    info.setData(s0Supported);
+                    info.setName("Secure");
+                    info.setData(security);
                     data.add(info);
                 }
 //                if (unsecure.size()>0){
@@ -369,10 +362,10 @@ public class DeviceTestActivity extends BaseActivity {
 //                    info.setData(unsecure);
 //                    data.add(info);
 //                }
-                if (s2Supported.size() > 0) {
+                if (unsecurity.size() > 0) {
                     Info info = new Info();
-                    info.setName("S2");
-                    info.setData(s2Supported);
+                    info.setName("UnSecure");
+                    info.setData(unsecurity);
                     data.add(info);
 
                 }
