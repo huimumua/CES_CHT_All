@@ -2,6 +2,7 @@ package com.askey.mobile.zwave.control.home.activity;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.nfc.Tag;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -22,6 +23,7 @@ import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.interf.NetworkRole;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
+import com.askey.mobile.zwave.control.util.PreferencesUtils;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONException;
@@ -31,6 +33,8 @@ public class ResetActivity extends AppCompatActivity {
     private static final String LOG_TAG = ResetActivity.class.getSimpleName();
     private TextView reset,resetResult;
     private Button doneButton;
+    private String nodeId;
+    private String role;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +73,16 @@ public class ResetActivity extends AppCompatActivity {
                         String reported = jsonObject.optString("reported");
                         JSONObject reportedObject = new JSONObject(reported);
                         String messageType = reportedObject.optString("MessageType");
+                        nodeId = reportedObject.optString("Node Id");
+                        role = reportedObject.optString("Network Role");
+
+
+//
+//                        Pref_Utils.putString(ResetActivity.this,"xw", "xw");
+//                        Pref_Utils.putString(ResetActivity.this,"xwwb", "xw");
+
+                        Log.i(LOG_TAG,""+"==="+ nodeId +"==="+ role);
+
                         if(messageType.equals("Controller Reset Status")){
                             final String status = reportedObject.optString("Status");
                             runOnUiThread(new Runnable() {
@@ -104,6 +118,12 @@ public class ResetActivity extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     resetResult.setText(tmp);
+                                    if (nodeId!=null&role!=null){
+                                        PreferencesUtils.put(ResetActivity.this,"resetid",nodeId);
+                                        PreferencesUtils.put(ResetActivity.this,"resetrole",role);
+                                    }
+
+
                                 }
                             });
                         } else if (messageType.equals("setDefault")){ //reset的返回结果

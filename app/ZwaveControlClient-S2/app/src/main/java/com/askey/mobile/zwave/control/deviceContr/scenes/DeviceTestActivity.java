@@ -5,6 +5,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,7 @@ import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.base.BaseActivity;
@@ -32,6 +34,7 @@ import com.askey.mobile.zwave.control.home.activity.addDevice.ReplaceFailActivit
 import com.askey.mobile.zwave.control.home.adapter.CommandListAdapter;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
+import com.askey.mobile.zwave.control.util.PreferencesUtils;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONArray;
@@ -65,6 +68,9 @@ public class DeviceTestActivity extends BaseActivity {
     private List<String> security = new ArrayList<>();
     private List<String> unsecurity = new ArrayList<>();
     private JSONArray endpointList1;
+    private TextView role_textview;
+    private String resetActivityNodeId;
+    private String resetActivityNetworkRole;
 
 
     @Override
@@ -80,6 +86,9 @@ public class DeviceTestActivity extends BaseActivity {
         expandableListView = (ExpandableListView) findViewById(R.id.expandlistview);
         spinnerData = new ArrayList<>();
         endpointId_textview = (TextView) findViewById(R.id.endpointId_text);
+        role_textview= (TextView) findViewById(R.id.role);
+        resetActivityNodeId = (String) PreferencesUtils.get(this, "resetid","");
+        resetActivityNetworkRole = (String) PreferencesUtils.get(this, "resetrole","");
 
         endpointId_textview.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -195,6 +204,15 @@ public class DeviceTestActivity extends BaseActivity {
 
         deviceName = getIntent().getStringExtra("deviceName");
         nodeId = getIntent().getStringExtra("nodeId");
+        Log.i("===share",""+ resetActivityNetworkRole +"====="+ resetActivityNodeId);
+        if (!TextUtils.isEmpty(resetActivityNetworkRole)&!TextUtils.isEmpty(resetActivityNodeId)){
+            if (nodeId.equals(resetActivityNodeId)){
+                role_textview.setText("Network Role: "+resetActivityNetworkRole);
+            }
+            else {
+                role_textview.setVisibility(View.GONE);
+            }
+        }
         data = new ArrayList<>();
         myExpandableListViewAdapter = new MyExpandableListViewAdapter(this, data);
 

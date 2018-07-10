@@ -19,6 +19,7 @@ import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
+import com.askey.mobile.zwave.control.util.PreferencesUtils;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONException;
@@ -45,6 +46,8 @@ public class LearnModeActivity extends AppCompatActivity {
     }
 
 
+    private String nodeId;
+    private String role;
     MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
         @Override
         public void mqttMessageArrived(String topic, MqttMessage message) {
@@ -62,6 +65,8 @@ public class LearnModeActivity extends AppCompatActivity {
                         String reported = jsonObject.optString("reported");
                         JSONObject reportedObject = new JSONObject(reported);
                         String messageType = reportedObject.optString("MessageType");
+                        nodeId = reportedObject.optString("Node Id");
+                        role = reportedObject.optString("Network Role");
                         if(messageType.equals("Controller Init Status")){
                             final String status = reportedObject.optString("Status");
                             runOnUiThread(new Runnable() {
@@ -78,6 +83,10 @@ public class LearnModeActivity extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     controllerAttribute.setText(result);
+                                    if (nodeId!=null&role!=null){
+                                        PreferencesUtils.put(LearnModeActivity.this,"resetid",nodeId);
+                                        PreferencesUtils.put(LearnModeActivity.this,"resetrole",role);
+                                    }
                                 }
                             });
                         } else if ("Controller DSK Report".equals(messageType)) {
