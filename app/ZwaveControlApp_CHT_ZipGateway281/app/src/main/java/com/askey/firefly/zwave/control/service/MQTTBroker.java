@@ -533,10 +533,22 @@ public class MQTTBroker extends Service {
                     DeviceInfo.getMqttPayload = "removeRoom";
                     break;
 
-                case "getBasic":
-                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
-                    Log.i(LOG_TAG, "deviceService.getBasic" + DeviceInfo.mqttDeviceId);
+                case "getSwitchStatus":
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("Node id"));
+                    Log.i(LOG_TAG, "deviceService.getSwitchStatus" + DeviceInfo.mqttDeviceId);
                     DeviceInfo.getMqttPayload = "getBasic";
+                    break;
+
+                case "setSwitchStatus":
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttString = payload.getString("switchStatus");
+                    if(DeviceInfo.mqttString.equals("on")) {
+                        DeviceInfo.mqttValue = 255;
+                    } else
+                        DeviceInfo.mqttValue = 0;
+
+                    Log.i(LOG_TAG, "deviceService.setSwitchStatus nodeId");
+                    DeviceInfo.getMqttPayload = "setBasic";
                     break;
 
                 case "setBasic":
@@ -544,6 +556,12 @@ public class MQTTBroker extends Service {
                     DeviceInfo.mqttValue = Integer.parseInt(payload.getString("value"));
                     Log.i(LOG_TAG, "deviceService.setBasic nodeId= " + DeviceInfo.mqttDeviceId + " value = " + DeviceInfo.mqttValue);
                     DeviceInfo.getMqttPayload = "setBasic";
+                    break;
+
+                case "getBasic":
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getBasic" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getBasic";
                     break;
 
                 case "getSwitchMultilevel":
@@ -560,11 +578,30 @@ public class MQTTBroker extends Service {
                     DeviceInfo.getMqttPayload = "setSwitchMultilevel";
                     break;
 
+                case "setBrightness":
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("Node id"));
+                    DeviceInfo.mqttValue = Integer.parseInt(payload.getString("value"));
+                    Log.i(LOG_TAG, "deviceService.setBrightness nodeId");
+                    DeviceInfo.getMqttPayload = "setBrightness";
+                    break;
+
+                case "getBrightness":
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("Node id"));
+                    Log.i(LOG_TAG, "deviceService.getBrightness" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getBrightness";
+                    break;
+
                 case "getSwitchColor":
                     DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("compId"));
                     Log.i(LOG_TAG, "deviceService.getLampColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
                     DeviceInfo.getMqttPayload = "getSwitchColor";
+                    break;
+
+                case "getLampColor":
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.getLampColor" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "getLampColor";
                     break;
 
                 case "setSwitchColor":
@@ -574,6 +611,16 @@ public class MQTTBroker extends Service {
                     Log.i(LOG_TAG, "deviceService.setSwitchColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2);
                     DeviceInfo.getMqttPayload = "setSwitchColor";
                     break;
+
+                case "setLampColor":
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("R"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("G"));
+                    DeviceInfo.mqttTmp3 = Integer.parseInt(payload.getString("B"));
+                    Log.i(LOG_TAG, "deviceService.setLampColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2+DeviceInfo.mqttTmp3);
+                    DeviceInfo.getMqttPayload = "setLampColor";
+                    break;
+
 
                 case "getSupportedColor":
                     DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
@@ -2634,12 +2681,12 @@ public class MQTTBroker extends Service {
                        if (DeviceInfo.result.contains("NodeId")) {
                            //String devType = message.getString("devType");
                            String NodeId = message.getString("NodeId");
-                           publishMessage(Const.PublicTopicName + NodeId, DeviceInfo.result);
+                           publishMessage(Const.PublicTopicName, DeviceInfo.result); //20180710 Const.PublicTopicName + NodeId -> Const.PublicTopicName for mobile app
 
                        } else if (DeviceInfo.result.contains("Node id")) {
                            //String devType = message.getString("devType");
                            String NodeId = message.getString("Node id");
-                           publishMessage(Const.PublicTopicName + NodeId, DeviceInfo.result);
+                           publishMessage(Const.PublicTopicName, DeviceInfo.result); //20180710 Const.PublicTopicName + NodeId -> Const.PublicTopicName for mobile app
 
                        } else {
                            publishMessage(Const.PublicTopicName, DeviceInfo.result);

@@ -768,24 +768,6 @@ public class ZwaveControlService extends Service {
         }
     }
 
-    public void setSwitchAllOnBroadcast(String devType){
-        //updateTimestamp(deviceId);
-        if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_SetSwitchAllOnBroadcast();
-        } else if (devType.equals(btType)) {
-
-        }
-    }
-
-    public void setSwitchAllOffBroadcast(String devType){
-        //updateTimestamp(deviceId);
-        if (devType.equals(zwaveType)) {
-            ZwaveControlHelper.ZwController_SetSwitchAllOffBroadcast();
-        } else if (devType.equals(btType)) {
-
-        }
-    }
-
 
     public int setSwitchAllOff(String devType, int deviceId){
         updateTimestamp(deviceId);
@@ -821,7 +803,7 @@ public class ZwaveControlService extends Service {
             jsonResult.put("Interface","setSwitchStatus");
             jsonResult.put("NodeId",new Integer(deviceId));
             //jsonResult.put("devType",zwaveType);
-            jsonResult.put("result", result);
+            jsonResult.put("Result", result);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -851,9 +833,9 @@ public class ZwaveControlService extends Service {
         }
         JSONObject jsonResult = new JSONObject();
         try {
-            jsonResult.put("Interface","setBrigtness");
+            jsonResult.put("Interface","setBrightness");
             jsonResult.put("NodeId",new Integer(deviceId));
-            jsonResult.put("devType",zwaveType);
+            //jsonResult.put("devType",zwaveType);
             jsonResult.put("Result", result);
 
             zwaveControlResultCallBack("setSwitchMultiLevel",jsonResult.toString());
@@ -953,22 +935,6 @@ public class ZwaveControlService extends Service {
         return ZwaveControlHelper.ZwController_setDoorLockConfiguration(deviceId,type,out_sta,in_sta,tmout_min,tmout_sec);
     }
 
-    public void getUserCode(int deviceId, int user_id){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getUserCode(deviceId,user_id);
-    }
-
-    public void setUserCode(int deviceId, int user_id, int status){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_setUserCode(deviceId,user_id,status);
-    }
-
-
-    public void getUserCodeNumber(int deviceId){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getUserCodeNumber(deviceId);
-    }
-
     public void getProtection(int deviceId){
         updateTimestamp(deviceId);
         ZwaveControlHelper.ZwController_getProtection(deviceId);
@@ -1012,51 +978,6 @@ public class ZwaveControlService extends Service {
     public void setIndicator(int deviceId, int value){
         updateTimestamp(deviceId);
         ZwaveControlHelper.ZwController_setIndicator(deviceId,value);
-    }
-
-    public void getDoorLockLoggingSupportedRecords(int deviceId){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getDoorLockLoggingSupportedRecords(deviceId);
-    }
-
-    public void getDoorLockLoggingRecords(int deviceId, int rec_num){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getDoorLockLoggingRecords(deviceId,rec_num);
-    }
-
-    public void getLanguage(int deviceId){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getLanguage(deviceId);
-    }
-
-    public void setBarrierOperator(int deviceId, int value){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_setBarrierOperator(deviceId,value);
-    }
-
-    public void getBarrierOperator(int deviceId){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getBarrierOperator(deviceId);
-    }
-
-    public void setBarrierOperatorSignal(int deviceId, int subSysType, int state){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_setBarrierOperatorSignal(deviceId,subSysType,state);
-    }
-
-    public void getBarrierOperatorSignal(int deviceId, int subSysType){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getBarrierOperatorSignal(deviceId,subSysType);
-    }
-
-    public void getSupportedBarrierOperatorSignal(int deviceId){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getSupportedBarrierOperatorSignal(deviceId);
-    }
-
-    public void getBasicTariffInfo(int deviceId){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getBasicTariffInfo(deviceId);
     }
 
     public int getSensorBasic(int deviceId, int sensorType){
@@ -1250,16 +1171,6 @@ public class ZwaveControlService extends Service {
     public void viewCommandQueue(int deviceId){
         updateTimestamp(deviceId);
         ZwaveControlHelper.ZwController_viewCommandQueue(deviceId);
-    }
-
-    public void getControllerNetworkRssiInfo(){
-        //updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getControllerNetworkRssiInfo();
-    }
-
-    public void getDeviceNetworkRssiInfo(int deviceId){
-        updateTimestamp(deviceId);
-        ZwaveControlHelper.ZwController_getDeviceNetworkRssiInfo(deviceId);
     }
 
     public void cancelAllCommandQueue(int deviceId){
@@ -2098,8 +2009,8 @@ public class ZwaveControlService extends Service {
                 jsonObject = new JSONObject();
 
                 jsonObject.put("Interface","getBrightness");
-                jsonObject.put("devType",zwaveType);
-                jsonObject.put("Node",String.valueOf(payload.getInt("Node id")));
+                //jsonObject.put("devType",zwaveType);
+                jsonObject.put("NodeId",String.valueOf(payload.getInt("Node id")));
 
                 String brightness = payload.getString("level");
                 if (brightness.equals("00h")){

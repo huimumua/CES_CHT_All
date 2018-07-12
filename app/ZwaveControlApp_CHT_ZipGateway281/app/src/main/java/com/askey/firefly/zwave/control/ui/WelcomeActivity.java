@@ -433,7 +433,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         break;
 
                     case "getSwitchMultilevel":
-                        Log.i(LOG_TAG, "deviceService.getBrightness" + DeviceInfo.mqttDeviceId);
+                        Log.i(LOG_TAG, "deviceService.getSwitchMultilevel" + DeviceInfo.mqttDeviceId);
                         zwaveService.getSwitchMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
                         DeviceInfo.getMqttPayload = "";
                         break;
@@ -444,8 +444,20 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         DeviceInfo.getMqttPayload = "";
                         break;
 
+                    case "setBrightness":
+                        Log.i(LOG_TAG, "deviceService.setBrightness");
+                        zwaveService.setSwitchMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttValue, 1);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getBrightness":
+                        Log.i(LOG_TAG, "deviceService.getBrightness" + DeviceInfo.mqttDeviceId);
+                        zwaveService.getSwitchMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
                     case "getSwitchColor":
-                        Log.i(LOG_TAG, "deviceService.getLampColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                        Log.i(LOG_TAG, "deviceService.getSwitchColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
                         zwaveService.getSwitchColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
                         DeviceInfo.getMqttPayload = "";
                         break;
@@ -453,6 +465,18 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     case "setSwitchColor":
                         Log.i(LOG_TAG, "deviceService.setSwitchColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2);
                         zwaveService.setSwitchColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setLampColor":
+                        Log.i(LOG_TAG, "deviceService.setLampColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2+DeviceInfo.mqttTmp3);
+                        zwaveService.setLampColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2,DeviceInfo.mqttTmp3);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getLampColor":
+                        Log.i(LOG_TAG, "deviceService.getLampColor" + DeviceInfo.mqttDeviceId);
+                        zwaveService.getLampColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -685,12 +709,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         } else {
                             DeviceInfo.resultToMqttBroker = "startStopSwitchLevelChangeFail";
                         }
-                        DeviceInfo.getMqttPayload = "";
-                        break;
-
-                    case "setSwitchAllOffBroadcast":
-                        Log.i(LOG_TAG, "deviceService.setSwitchAllOffBroadcast");
-                        zwaveService.setSwitchAllOffBroadcast(DeviceInfo.devType);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
