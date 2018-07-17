@@ -477,5 +477,6 @@ public class ZwaveControlHelper {
     public native static int ZwController_checkNodeIsFailed(int deviceId);
 
     public native static int ZwController_getSecurity2CmdSupported(int deviceId);
+    public native static int ZwController_sendNodeInformationFrame(int deviceId, int broadcastFlag);
 
 }
