@@ -1818,6 +1818,26 @@ static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts, hl_appl_ctx_t * hl_ap
         if(sts == OP_DONE)
         {
             initStatus = 1;
+            if(hl_appl->zwnet->zwave_role & ZW_ROLE_SECONDARY)
+            {
+                ALOGI("Now network role is secondary.");
+                plt_mtx_lck(hl_appl->desc_cont_mtx);
+
+                desc_cont_t *last_node_cont;
+                last_node_cont = hl_appl->desc_cont_hd;
+                while (last_node_cont)
+                {
+                    zwnoded_p node = (zwnoded_p)last_node_cont->desc;
+                    if(node && node->nodeid == 1)
+                    {
+                        hl_desc_cont_del(&hl_appl->desc_cont_hd, hl_desc_id_get(hl_appl->desc_cont_hd, node));
+                        break;
+                    }
+                    last_node_cont = last_node_cont->next;
+                }
+                plt_mtx_ulck(hl_appl->desc_cont_mtx);
+            }
+
             zwcontrol_save_nodeinfo(hl_appl, hl_appl->node_info_file);
             cJSON_AddStringToObject(jsonRoot, "Status", "Success");
         }
@@ -11738,6 +11758,36 @@ int  zwcontrol_s2_command_supported_get(hl_appl_ctx_t* hl_appl, int nodeId)
     if(result == 1)
     {
         ALOGI("zwcontrol_indicator_get command queued");
+    }
+
+    return result;
+}
+
+// Add for send node information frame
+int  zwcontrol_send_node_information(hl_appl_ctx_t* hl_appl, int nodeId, int broadcast_flag)
+{
+    if(!hl_appl->init_status)
+    {
+        return -1;
+    }
+
+    zwnode_p node = zwnode_find(&hl_appl->zwnet->ctl, nodeId);
+    zwnet_p nw = hl_appl->zwnet;
+
+    if(!broadcast_flag)
+    {
+        if(NULL == node)
+        {
+            ALOGE("Send single cast, node not found, please check!");
+            return ZW_ERR_NODE_NOT_FOUND;
+        }
+        ALOGI("send node info to dest nodeid: %d",node->nodeid);
+    }
+
+    int result = zwnet_send_nif(nw, nodeId, broadcast_flag);
+    if(result != 0)
+    {
+        ALOGE("zwcontrol_send_node_information retur error: %d", result);
     }
 
     return result;
