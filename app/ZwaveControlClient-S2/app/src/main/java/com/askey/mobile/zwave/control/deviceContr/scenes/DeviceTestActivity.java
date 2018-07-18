@@ -165,7 +165,7 @@ public class DeviceTestActivity extends BaseActivity {
 
                             if (unsecurity.size() > 0) {
                                 Info info = new Info();
-                                info.setName("UnSecure");
+                                info.setName("Non-secure");
                                 info.setData(unsecurity);
                                 data.add(info);
                             }
@@ -382,7 +382,7 @@ public class DeviceTestActivity extends BaseActivity {
 //                }
                 if (unsecurity.size() > 0) {
                     Info info = new Info();
-                    info.setName("UnSecure");
+                    info.setName("Non-secure");
                     info.setData(unsecurity);
                     data.add(info);
 
