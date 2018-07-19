@@ -198,7 +198,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
         @Override
         public void run() {
 
-            while (!DeviceInfo.isMQTTInitFinish && !DeviceInfo.isOpenControllerFinish && !DeviceInfo.isZwaveInitFinish) {
+            while (!DeviceInfo.isMQTTInitFinish || !DeviceInfo.isOpenControllerFinish || !DeviceInfo.isZwaveInitFinish) {
 
                 try {
                     //Log.i(LOG_TAG, "isOpenControllerFinish & isMQTTInitFinish true");
@@ -538,7 +538,8 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "getGroupInfo":
                         Log.i(LOG_TAG, "deviceService.getGroupInfo");
-                        zwaveService.getGroupInfo(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2);
+                        //zwaveService.getGroupInfo(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2);
+                        zwaveService.getGroupInfo(DeviceInfo.devType, DeviceInfo.mqttDeviceId, 2, 0);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -548,13 +549,19 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         break;
 
                     case "removeEndpointsFromGroup":
-                        zwaveService.removeEndpointsFromGroup(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, Utils.convertIntegers(DeviceInfo.arrList), DeviceInfo.mqttTmp2);
+                        zwaveService.removeEndpointsFromGroup(DeviceInfo.devType, DeviceInfo.mqttDeviceId, 2, Utils.convertIntegers(DeviceInfo.arrList), 0);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
-                    case "getMaxSupperedGroups":
+                    case "getMaxSupportedGroups":
                         Log.i(LOG_TAG, "deviceService.getMaxSupportedGroups");
-                        zwaveService.getMaxSupportedGroups(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.callResult = zwaveService.getMaxSupportedGroups(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "getMaxSupportedGroupsTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "getMaxSupportedGroupsFail";
+                        }
+
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -579,6 +586,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     case "setSchedule":
                         Log.i(LOG_TAG, "deviceService.setSchedule " + DeviceInfo.mqttString);
                         zwaveService.setSchedule(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttString, DeviceInfo.mqttString4, DeviceInfo.mqttString5, Integer.valueOf(DeviceInfo.mqttString3), DeviceInfo.mqttString2);
+                        DeviceInfo.getMqttPayload = "";
                         break;
 
                     case "getFavoriteList": //public channel
@@ -1079,27 +1087,27 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_Device_get")) {
                     zwaveService.getDeviceInfo();
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_basic_get")) {
-                    zwaveService.getBasic(DeviceInfo.devType, selectNode);
+                    zwaveService.getBasic(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_basic_set")) {
-                    zwaveService.setBasic(DeviceInfo.devType, selectNode, Integer.valueOf(editSetApiValue.getText().toString()));
+                    zwaveService.setBasic(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()), Integer.valueOf(editSetApiValue.getText().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_multilevel_get")) {
-                    zwaveService.getSwitchMultiLevel(DeviceInfo.devType, selectNode);
+                    zwaveService.getSwitchMultiLevel(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_multilevel_set")) {
-                    zwaveService.setSwitchMultiLevel(DeviceInfo.devType, selectNode, Integer.valueOf(editSetApiValue.getText().toString()), 1);
+                    zwaveService.setSwitchMultiLevel(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()), Integer.valueOf(editSetApiValue.getText().toString()), 1);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_get_support_switch_type")) {
-                    zwaveService.getSupportedSwitchType(selectNode);
+                    zwaveService.getSupportedSwitchType(Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_start_stop_switchlevel_change")) {
                     //zwaveService.startStopSwitchLevelChange(); many parameter
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_configuration_get")) {
-                    zwaveService.getConfiguration(selectNode,0,0,0,0);
+                    zwaveService.getConfiguration(Integer.valueOf(spNodeIdList.getSelectedItem().toString()),0,0,0,0);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_configuration_set")) {
                     //zwaveService.setConfiguration(); many parameter
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_powerLevel_get")) {
-                    zwaveService.getPowerLevel(selectNode);
+                    zwaveService.getPowerLevel(Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_on")) {
-                    zwaveService.setSwitchAllOn(DeviceInfo.devType, selectNode);
+                    zwaveService.setSwitchAllOn(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_off")) {
-                    zwaveService.setSwitchAllOff(DeviceInfo.devType, selectNode);
+                    zwaveService.setSwitchAllOff(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_set")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_all_get")) {
@@ -1117,9 +1125,9 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_sensor_binary_supported_sensor_get")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_meter_get")) {
-                    zwaveService.getMeter(DeviceInfo.devType, selectNode, 10);
+                    zwaveService.getMeter(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()), 10);
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_meter_supported_get")) {
-                    zwaveService.getMeterSupported(selectNode);
+                    zwaveService.getMeterSupported(Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_meter_reset")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_wake_up_interval_get")) {
@@ -1167,12 +1175,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_language_set")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_color_get")) {
-                    zwaveService.getLampColor(DeviceInfo.devType, selectNode);
+                    zwaveService.getLampColor(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_color_supported_get")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_switch_color_set")) {
                     String[] temp = editSetApiValue.getText().toString().split(",");
-                    zwaveService.setLampColor(DeviceInfo.devType, selectNode, Integer.valueOf(temp[0]), Integer.valueOf(temp[1]), Integer.valueOf(temp[2]));
+                    zwaveService.setLampColor(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()), Integer.valueOf(temp[0]), Integer.valueOf(temp[1]), Integer.valueOf(temp[2]));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_start_stop_color_levelchange")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_barrier_operator_set")) {
@@ -1202,7 +1210,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_notification_get")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_notification_supported_get")) {
-                    zwaveService.getSupportedNotification(selectNode);
+                    zwaveService.getSupportedNotification(Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_notification_supported_event_get")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_central_scene_supported_get")) {
@@ -1218,14 +1226,14 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 } else if (spApiList.getSelectedItem().toString().contains("zwcontrol_multi_cmd_encap")) {
                     //zwaveService.
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_getSpecifyDeviceInfo")) {
-                    zwaveService.getSpecifyDeviceInfo(selectNode);
+                    zwaveService.getSpecifyDeviceInfo(Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_SetDefault")) {
                     zwaveService.setDefault();
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_checkNodeIsFailed")) {
-                    zwaveService.checkNodeIsFailed(selectNode);
+                    zwaveService.checkNodeIsFailed(Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_RemoveFailedDevice")) {
-                    zwaveService.removeFailedDevice(selectNode);
-                    nodeIdArr.remove(Integer.valueOf(selectNode));
+                    zwaveService.removeFailedDevice(Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
+                    nodeIdArr.remove(Integer.valueOf(Integer.valueOf(spNodeIdList.getSelectedItem().toString())));
 
                     ArrayAdapter<Integer> devList = new ArrayAdapter<Integer>(WelcomeActivity.this,
                             android.R.layout.simple_spinner_dropdown_item,
@@ -1234,7 +1242,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
 
                 } else if (spApiList.getSelectedItem().toString().contains("ZwController_ReplaceFailedDevice")) {
-                    zwaveService.replaceFailedDevice(selectNode);
+                    zwaveService.replaceFailedDevice(Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
                 }
                 break;
             case R.id.btnaddProList:
@@ -1490,6 +1498,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
             @Override
             public void zwaveControlResultCallBack(String className, String result) {
+                Log.i(LOG_TAG, "Result class name = [" + DeviceInfo.className + "] | result = " + DeviceInfo.result);
 
                 while(DeviceInfo.mqttFlag) {
                     try {
@@ -1503,6 +1512,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 if(className.equals("Sensor Info Report") || className.equals("Node Battery Value") || className.equals("Notification Get Information")) {
                     DeviceInfo.sensorClassName = className;
                     DeviceInfo.sensorResult = result;
+
                 } else {
                     DeviceInfo.className = className;
                     DeviceInfo.result = result;
@@ -1512,8 +1522,6 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     Log.d(LOG_TAG,"DeviceInfo.smartStartFlag = true");
                     DeviceInfo.smartStartFlag = true;
                 }
-
-                Log.i(LOG_TAG, "Result class name = [" + DeviceInfo.className + "] | result = " + DeviceInfo.result);
 
                 if (className.equals("addDevice") || className.equals("removeDevice")) {
 

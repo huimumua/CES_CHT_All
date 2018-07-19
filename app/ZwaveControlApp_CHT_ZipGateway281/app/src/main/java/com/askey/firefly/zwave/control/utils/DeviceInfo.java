@@ -89,5 +89,9 @@ public class DeviceInfo {
 
     public static String[] version = null;
 
+    public static String rColor = "";
+    public static String gColor = "";
+    public static String bColor = "";
+
 
 }
