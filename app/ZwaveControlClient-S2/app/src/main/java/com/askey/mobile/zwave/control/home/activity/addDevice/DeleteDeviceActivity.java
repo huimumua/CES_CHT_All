@@ -188,7 +188,7 @@ public class DeleteDeviceActivity extends BaseActivity implements View.OnClickLi
                         JSONObject reportedObject = new JSONObject(reported);
                         String Interface = reportedObject.optString("Interface");
                         if(Interface.equals("removeDevice")){
-                            String result = reportedObject.optString("Result");
+                            String result = reportedObject.optString("result");
                             String NodeId = reportedObject.optString("NodeId");
                             if(result.equals("true")){
 

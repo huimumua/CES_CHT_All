@@ -28,6 +28,7 @@ import com.askey.mobile.zwave.control.home.activity.HomeActivity;
 import com.askey.mobile.zwave.control.home.fragment.RoomsFragment;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
+import com.askey.mobile.zwave.control.util.TimeUtils;
 import com.askey.mobile.zwave.control.util.ToastShow;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -40,7 +41,7 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
     private RelativeLayout linear_click;
     private ImageView device_icon;
     private EditText device_name;
-//    private Spinner roomSpinner;
+    //    private Spinner roomSpinner;
     private CheckBox add_favorite;
     private Button done;
     private static AddDeviceSuccessListener addDeviceSuccessListener;
@@ -83,7 +84,7 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
             Logg.i(LOG_TAG,"=mqttMessageArrived=>=topic="+topic);
             Logg.i(LOG_TAG,"=mqttMessageArrived=>=message="+result);
             if(result.contains("desired")){
-                 return;
+                return;
             }
             ((Activity) mContext).runOnUiThread(new Runnable() {
                 @Override
@@ -95,8 +96,8 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
                         JSONObject reportedObject = new JSONObject(reported);
                         String Interface = reportedObject.optString("Interface");
                         if(Interface.equals("editNodeInfo")){
-                            String result = reportedObject.optString("Result");
-                            String NodeId = reportedObject.optString("NodeId");
+                            String result = reportedObject.optString("result");
+                            String NodeId = reportedObject.optString("nodeId");
                             if(result.equals("true")){
                                 DeviceInfo deviceInfo =  new DeviceInfo();
                                 deviceInfo.setDeviceId(NodeId);
@@ -220,7 +221,7 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.done:
-                 displsyName = device_name.getText().toString();
+                displsyName = device_name.getText().toString();
                 if(displsyName.equals("")){
                     Toast.makeText(mContext,"Device name is null",Toast.LENGTH_SHORT).show();
                     return;
@@ -238,7 +239,7 @@ public class InstallSuccessActivity extends BaseActivity implements View.OnClick
                 Logg.i(LOG_TAG,"=====deviceType====="+deviceType);
                 Logg.i(LOG_TAG,"=====roomName====="+roomName);
 //                TcpClient.getInstance().getTransceiver().send("mobile_zwave:reNameDevice:"+":"+nodeId+":"+displsyName+":"+deviceType+":"+roomName+":"+isFavorite);
-                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.editNodeInfo(nodeId,roomName,isFavorite+"",displsyName,deviceType));
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.editNodeInfo(nodeId,roomName,isFavorite+"",displsyName,deviceType, TimeUtils.gettimeStamp()));
 //                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.editNodeInfo(nodeId,roomName,isFavorite+"",displsyName,deviceType));
 
                 break;

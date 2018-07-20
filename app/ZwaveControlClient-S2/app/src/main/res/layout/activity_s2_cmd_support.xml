@@ -22,13 +22,22 @@
         android:layout_below="@+id/cmd_title"
         android:layout_marginLeft="@dimen/device_notify_via_icon_20dp" />
 
+    <TextView
+        android:id="@+id/isSecondary"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:gravity="center"
+        android:text="@string/isSecondary"
+        android:textSize="@dimen/device_control_title_16sp"
+        android:visibility="gone" />
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/cmd_support_list"
         android:layout_width="match_parent"
         android:layout_height="250dp"
         android:layout_below="@+id/cmd_node_id"
-        android:layout_marginTop="@dimen/device_smaller_icon_10dp"
-        android:layout_marginLeft="@dimen/device_smaller_icon_10dp"/>
+        android:layout_marginLeft="@dimen/device_smaller_icon_10dp"
+        android:layout_marginTop="@dimen/device_smaller_icon_10dp" />
 
     <Button
         android:id="@+id/exit"

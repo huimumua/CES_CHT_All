@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
@@ -42,12 +43,14 @@ import com.askey.mobile.zwave.control.home.adapter.HomeAdapter;
 import com.askey.mobile.zwave.control.home.fragment.FavoritesFragment;
 import com.askey.mobile.zwave.control.home.fragment.RoomsFragment;
 import com.askey.mobile.zwave.control.home.fragment.ScenesFragment;
+import com.askey.mobile.zwave.control.home.fragment.roomitem.MyHomeRoomFragment;
 import com.askey.mobile.zwave.control.login.ui.LogInActivity;
 import com.askey.mobile.zwave.control.login.ui.LoginPageActivity;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.ImageUtils;
 import com.askey.mobile.zwave.control.util.Logg;
 import com.askey.mobile.zwave.control.util.PreferencesUtils;
+import com.askey.mobile.zwave.control.util.ToastShow;
 import com.askeycloud.webservice.sdk.model.ServicePreference;
 import com.askeycloud.webservice.sdk.service.iot.AskeyIoTService;
 import com.askeycloud.webservice.sdk.service.web.AskeyApiAuthService;
@@ -63,7 +66,7 @@ import java.util.TimerTask;
 public class HomeActivity extends BaseActivity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener, TabLayout.OnTabSelectedListener, PreviewPhotoActivity.ChangeBackgroundCallback {
     public static String LOG_TAG = "HomeActivity";
     private FrameLayout container;
-    private NavigationView sliding_menu,smartStartMenu;
+    private NavigationView sliding_menu, smartStartMenu;
     private DrawerLayout drawer_layout;
     private TabLayout bottom_tab;
     private Fragment[] fragments;
@@ -73,18 +76,18 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     private MenuItem menu_add, menu_remove, menu_reset, menu_learn_mode, menu_network_check,
             version_msg, menu_add_dak, menu_get_all_dsk, menu_remove_all_dsk;
 
-    private String[] titles = new String[]{"My Devices","Smart Start"};
+    private String[] titles = new String[]{"My Devices", "Smart Start"};
 
-    private int[] icon = new int[]{ R.drawable.tab_rooms_bg, R.drawable.tab_scenes_bg };
+    private int[] icon = new int[]{R.drawable.tab_rooms_bg, R.drawable.tab_scenes_bg};
     private int currentIndex;
     public static String shadowTopic = "";
     private static final String BACK_IMG_SRC = "backgroundImg";
+    private MenuItem send_nif;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-
         if (Build.VERSION.SDK_INT >= 21) {
             View decorView = getWindow().getDecorView();
             int option = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -92,14 +95,13 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
             decorView.setSystemUiVisibility(option);
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
-
         initView();
         initFragment();
 
 //        checkForUpdates();
 
-        //TcpClient.getInstance().rigister(tcpReceive);
-        //MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
+        // TcpClient.getInstance().rigister(tcpReceive);
+        // MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
     }
 
     private void initView() {
@@ -112,6 +114,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
         menu_learn_mode = sliding_menu.getMenu().findItem(R.id.item_learn_mode);
         menu_network_check = sliding_menu.getMenu().findItem(R.id.item_network_check);
         version_msg = sliding_menu.getMenu().findItem(R.id.item_version_msg);
+        send_nif = sliding_menu.getMenu().findItem(R.id.item_send_nif);
 
         menu_add_dak = sliding_menu.getMenu().findItem(R.id.item_add_dsk);
         menu_get_all_dsk = sliding_menu.getMenu().findItem(R.id.item_get_all_dsk);
@@ -140,7 +143,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
         FavoritesFragment favoritesFragment = FavoritesFragment.newInstance();
         RoomsFragment roomsFragment = RoomsFragment.newInstance();
         ScenesFragment scenesFragment = ScenesFragment.newInstance();
-        fragments = new Fragment[]{roomsFragment, scenesFragment }; //fragment的集合
+        fragments = new Fragment[]{roomsFragment, scenesFragment}; //fragment的集合
 
         head_cion.setOnClickListener(this);
         bottom_tab.addOnTabSelectedListener(this);
@@ -231,6 +234,17 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
             case R.id.item_get_all_dsk:
                 ScenesFragment.newInstance().responseMenu(Const.GET_ALL_DSK);
                 return true;
+            case R.id.item_send_nif:
+                MyHomeRoomFragment.newInstance().responseMenu(4);
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (Const.isSendNIF != null) {
+                            Toast.makeText(HomeActivity.this, "" + Const.isSendNIF, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }, 2000);
+                return true;
         }
         return false;
     }
@@ -284,6 +298,7 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
 
     /**
      * fragement切换的监听
+     *
      * @param tab
      */
     @Override
@@ -305,7 +320,6 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
                 break;
             case 1:
                 switchFragment(1);
-
                 menu_add.setVisible(false);
                 menu_remove.setVisible(false);
                 menu_reset.setVisible(false);
@@ -416,8 +430,8 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
         @Override
         public void mqttMessageArrived(String topic, MqttMessage message) {
             final String result = new String(message.getPayload());
-            Logg.i("~~~~HomeActivity", "=mqttMessageArrived=>=topic=" + topic);
-            Logg.i("~~~~HomeActivity", "=mqttMessageArrived=>=message=" + result);
+            Logg.i("==HomeActivity", "=mqttMessageArrived=>=topic=" + topic);
+            Logg.i("===HomeActivity", "=mqttMessageArrived=>=message=" + result);
 
             if (result.contains("desired")) {
                 return;
@@ -474,11 +488,15 @@ public class HomeActivity extends BaseActivity implements View.OnClickListener, 
     }
 
     private void unrigister() {
-        if(tcpReceive!=null){
+        if (tcpReceive != null) {
             TcpClient.getInstance().unrigister(tcpReceive);
         }
 //        if(mMqttMessageArrived!=null){
 //            MQTTManagement.getSingInstance().unrigister(mMqttMessageArrived);
 //        }
+    }
+
+    public interface getsendNodeInformationCallBack {
+        void getString(String result);
     }
 }

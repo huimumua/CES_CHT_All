@@ -166,8 +166,8 @@ public class InstallDeviceActivity extends BaseActivity implements View.OnClickL
                         }
 
                         if (Interface.equals("addDevice")) {
-                            String result = reportedObject.optString("Result");
-                            String NodeId = reportedObject.optString("NodeId");
+                            String result = reportedObject.optString("result");
+                            String NodeId = reportedObject.optString("nodeId");
                             if (result.equals("true")) {
                                 Intent intent = new Intent();
                                 intent.setClass(mContext, InstallSuccessActivity.class);

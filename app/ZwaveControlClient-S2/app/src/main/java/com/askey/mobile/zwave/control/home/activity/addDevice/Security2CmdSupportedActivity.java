@@ -21,6 +21,7 @@ import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
 import com.askey.mobile.zwave.control.home.adapter.CommandListAdapter;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
+import com.askey.mobile.zwave.control.util.PreferencesUtils;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONException;
@@ -43,6 +44,8 @@ public class Security2CmdSupportedActivity extends BaseActivity {
     CommandListAdapter cmdAdapter;
     List<String> cmdSupClass;
     private CommandListAdapter adapter;
+    private String resetActivityNetworkRole;
+    private TextView isSecondary;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -54,8 +57,8 @@ public class Security2CmdSupportedActivity extends BaseActivity {
     private void init() {
         nodeId = getIntent().getStringExtra("nodeId");
         nodeIdTextView = (TextView) findViewById(R.id.cmd_node_id);
-
-        cmdSupportList = (RecyclerView)findViewById(R.id.cmd_support_list);
+        isSecondary = (TextView) findViewById(R.id.isSecondary);
+        cmdSupportList = (RecyclerView) findViewById(R.id.cmd_support_list);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         cmdSupportList.setLayoutManager(layoutManager);
@@ -71,9 +74,19 @@ public class Security2CmdSupportedActivity extends BaseActivity {
                 finish();
             }
         });
+        resetActivityNetworkRole = (String) PreferencesUtils.get(this, "resetrole", "");
+        Log.i("==resetActi33", "" + resetActivityNetworkRole);
+        //Secondary
+        if (resetActivityNetworkRole != null & resetActivityNetworkRole.equals("SECONDARY")) {
+            cmdSupportList.setVisibility(View.GONE);
+            isSecondary.setVisibility(View.VISIBLE);
 
+        } else {
+            isSecondary.setVisibility(View.GONE);
+            cmdSupportList.setVisibility(View.VISIBLE);
+        }
         MQTTManagement.getSingInstance().rigister(mMqttMessageArrived);
-        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.setMqttDataJson("getSecurity2CmdSupported",nodeId));
+        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.setMqttDataJson("getSecurity2CmdSupported", nodeId));
 //        showWaitingDialog();
     }
 
@@ -107,11 +120,11 @@ public class Security2CmdSupportedActivity extends BaseActivity {
                 String nodeId = reportedObject.optString("Node id");
                 String cmdInfo = reportedObject.optString("Cmdclass");
 
-                nodeIdTextView.setText(String.format(getResources().getString(R.string.node_id),nodeId));
+                nodeIdTextView.setText(String.format(getResources().getString(R.string.node_id), nodeId));
                 String[] cmdClassArray = cmdInfo.split(",");
 
                 cmdSupClass.clear();
-                for(int i=0;i<cmdClassArray.length;i++){
+                for (int i = 0; i < cmdClassArray.length; i++) {
                     cmdSupClass.add(cmdClassArray[i]);
                 }
             }

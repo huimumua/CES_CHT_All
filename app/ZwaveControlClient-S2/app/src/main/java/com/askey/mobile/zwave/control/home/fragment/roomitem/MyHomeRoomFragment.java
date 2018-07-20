@@ -23,21 +23,15 @@ import com.askey.mobile.zwave.control.data.LocalMqttData;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MQTTManagement;
 import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.deviceContr.model.DeviceInfo;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.BulbActivity;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.DimmerActivity;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.PlugActivity;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.SensorActivity;
-import com.askey.mobile.zwave.control.deviceContr.rooms.ui.WallMoteLivingActivity;
 import com.askey.mobile.zwave.control.deviceContr.scenes.DeviceTestActivity;
-import com.askey.mobile.zwave.control.home.activity.addDevice.DeleteDevice;
+import com.askey.mobile.zwave.control.home.activity.HomeActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.Security2CmdSupportedActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.SelectBrandActivity;
 import com.askey.mobile.zwave.control.home.activity.addDevice.SmartStartDeviceAddActivity;
 import com.askey.mobile.zwave.control.home.adapter.DeviceAdapter;
-import com.askey.mobile.zwave.control.interf.DeleteDeviceListener;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
-import com.askey.mobile.zwave.control.util.ToastShow;
+import com.askey.mobile.zwave.control.util.PreferencesUtils;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONArray;
@@ -53,7 +47,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
     private RecyclerView recyclerView;
     private DeviceAdapter adapter;
     private LinearLayout notify_layout;
-    private RelativeLayout edit_layout ,no_device_layout;
+    private RelativeLayout edit_layout, no_device_layout;
     private ImageView add_first_device;
     private String mqttResult;
     private final static String ROOM_ID = "roomId";
@@ -68,18 +62,21 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
     private boolean isVisibleToUser;
     private boolean isFirst2onResume = true;
     private String clickNodeId;
-
     public MyHomeRoomFragment() {
         // Required empty public constructor
     }
-
-
     public static MyHomeRoomFragment newInstance(int id, String name) {
         MyHomeRoomFragment itemFragment = new MyHomeRoomFragment();
         Bundle bundle = new Bundle();
         bundle.putInt(ROOM_ID, id);
         bundle.putString(ROOM_NAME, name);
         itemFragment.setArguments(bundle);
+        return itemFragment;
+    }
+
+    public static MyHomeRoomFragment newInstance() {
+        MyHomeRoomFragment itemFragment = new MyHomeRoomFragment();
+
         return itemFragment;
     }
 
@@ -97,8 +94,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
             //这里仅仅是注册，发送消息在onResum里面
             MQTTManagement.getSingInstance().rigister(mqttMessageArrived);
 
-            if(!isFirst2onResume)
-            {
+            if (!isFirst2onResume) {
                 showWaitingDialog();
                 MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.getDeviceListCommand(roomName));
             }
@@ -121,6 +117,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.i("=======ddddd", "" + "onCreateView");
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_my_home_room, container, false);
         initView(view);
@@ -215,6 +212,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
 
 
     private void getDeviceList(String mqttResult) {
+
         final JSONObject jsonObject;
         try {
             jsonObject = new JSONObject(mqttResult);
@@ -238,55 +236,64 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
 //                    }
 //                });
 
-                String Interface = reportedObject.optString("Interface");
-                if (Interface.equals("getDeviceList")) {
-                    String DeviceList = reportedObject.optString("deviceList");
-                    JSONArray columnInfo = new JSONArray(DeviceList);
-                    int size = columnInfo.length();
+            String Interface = reportedObject.optString("Interface");
+
+            if (Interface.equals("sendNodeInformation")) {
+
+                String result = reportedObject.optString("result");
+                if (result.equals("true")) {
+                    Const.isSendNIF=result;
+                }
+            }
+
+            if (Interface.equals("getDeviceList")) {
+                String DeviceList = reportedObject.optString("deviceList");
+                JSONArray columnInfo = new JSONArray(DeviceList);
+                int size = columnInfo.length();
 //                    if (size > 0) {
-                        deviceInfoList.clear();
-                        for (int i = 0; i < size; i++) {
-                            JSONObject info = columnInfo.getJSONObject(i);
-                            String nodeId = info.getString("nodeId");
-                            String brand = info.getString("brand");
-                            String devType = info.getString("deviceType");
-                            String category = info.getString("category");
-                            String Room = info.getString("Room");
-                            String isFavorite = info.getString("isFavorite");
-                            String name = info.getString("name");
+                deviceInfoList.clear();
+                for (int i = 0; i < size; i++) {
+                    JSONObject info = columnInfo.getJSONObject(i);
+                    String nodeId = info.getString("nodeId");
+                    String brand = info.getString("brand");
+                    String devType = info.getString("deviceType");
+                    String category = info.getString("category");
+                    String Room = info.getString("room");
+                    String isFavorite = info.getString("isFavorite");
+                    String name = info.getString("name");
 //                        String nodeInfo = info.getString("nodeInfo");
 //                        Logg.i(LOG_TAG, "==getDeviceResult=JSONArray===nodeInfo==" + nodeInfo);
-                            DeviceInfo deviceInfo = new DeviceInfo();
-                            deviceInfo.setDeviceId(nodeId);
-                            deviceInfo.setDisplayName(name);
-                            deviceInfo.setDeviceType(category);
-                            deviceInfo.setRooms(Room);
-                            deviceInfo.setIsFavorite(isFavorite);
+                    DeviceInfo deviceInfo = new DeviceInfo();
+                    deviceInfo.setDeviceId(nodeId);
+                    deviceInfo.setDisplayName(name);
+                    deviceInfo.setDeviceType(category);
+                    deviceInfo.setRooms(Room);
+                    deviceInfo.setIsFavorite(isFavorite);
 //                        deviceInfo.setNodeInfo(nodeInfo);
-                            deviceInfoList.add(deviceInfo);
+                    deviceInfoList.add(deviceInfo);
 //                        if(devType.equals("PLUG") || devType.equals("BULB")){
 //                            String nodeTopic = Const.subscriptionTopic + "Zwave" + nodeId;
 //                            MQTTManagement.getSingInstance().publishMessage(nodeTopic, LocalMqttData.getSwitchStatus(nodeId));
 //                        }
-                            if ("SENSOR".equals(category)) {
-                                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic+"Zwave"+nodeId, LocalMqttData.getSensorMultiLevel(nodeId));
-                            }
+                    if ("SENSOR".equals(category)) {
+                        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic + "Zwave" + nodeId, LocalMqttData.getSensorMultiLevel(nodeId));
+                    }
 
-                        }
-//                    }
-                    ((Activity) getContext()).runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            adapter.notifyDataSetChanged();
-                            if (deviceInfoList.size() > 0) {
-                                isHaveDevice(true);//修改UI
-                            } else {
-                               isHaveDevice(false);//修改UI
-                            }
-                            Log.i(LOG_TAG, "deviceInfoList=" + deviceInfoList.size());
-                        }
-                    });
                 }
+//                    }
+                ((Activity) getContext()).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        adapter.notifyDataSetChanged();
+                        if (deviceInfoList.size() > 0) {
+                            isHaveDevice(true);//修改UI
+                        } else {
+                            isHaveDevice(false);//修改UI
+                        }
+                        Log.i(LOG_TAG, "deviceInfoList=" + deviceInfoList.size());
+                    }
+                });
+            }
 //            }
 
 //            if ("Node Is Failed Check Report".equals(messageType)) {
@@ -303,7 +310,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
 //                });
 //            }
 
-            if("Node Add Status".equals(messageType)){
+            if ("Node Add Status".equals(messageType)) {
                 Log.i(LOG_TAG, "----------Node Add Status---------");
                 Intent smartStartIntent = new Intent(getContext(), SmartStartDeviceAddActivity.class);
                 startActivity(smartStartIntent);
@@ -315,18 +322,34 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
 
     }
 
+    /**
+     * HomeActivity的监听onNavigationItemSelected 调用了此函数,
+     * 相应的menu执行了get all dsk/remove all dsk
+     * 调用方式：通过ScenesFragment的实例 ScenesFragment.newInstance().responseMenu(int action);
+     *
+     * @param action 相应的动作
+     */
+    public void responseMenu(int action) {
+
+        if (action == 4) {
+            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.sendNodeInformation("1"));
+        }
+
+
+    }
+
     private void changeLuminance() {
-        for (DeviceInfo deviceInfo:deviceInfoList) {
+        for (DeviceInfo deviceInfo : deviceInfoList) {
             if ("BULB".equals(deviceInfo.getDeviceType())) {
-                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic +"Zwave"+ deviceInfo.getDeviceId(), LocalMqttData.setBrigtness(deviceInfo.getDeviceId(),"70"));
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic + "Zwave" + deviceInfo.getDeviceId(), LocalMqttData.setBrigtness(deviceInfo.getDeviceId(), "70"));
             }
         }
     }
 
     private void openAllBulb() {
-        for (DeviceInfo deviceInfo:deviceInfoList) {
+        for (DeviceInfo deviceInfo : deviceInfoList) {
             if ("BULB".equals(deviceInfo.getDeviceType())) {
-                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic +"Zwave"+ deviceInfo.getDeviceId(), LocalMqttData.setSwitch(deviceInfo.getDeviceId(),"on"));
+                MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic + "Zwave" + deviceInfo.getDeviceId(), LocalMqttData.setSwitch(deviceInfo.getDeviceId(), "on"));
             }
         }
     }
@@ -433,7 +456,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
         intent.putExtra("shadowTopic", deviceInfo.getTopic());
         intent.putExtra("displayName", deviceInfo.getDisplayName());
         startActivity(intent);*/
-        if(!deviceInfo.getDeviceId().equals("1")) {
+        if (!deviceInfo.getDeviceId().equals("1")) {
             Intent intent = new Intent(getActivity(), Security2CmdSupportedActivity.class);
             intent.putExtra("nodeId", deviceInfo.getDeviceId());
             intent.putExtra("deviceName", deviceInfo.getDisplayName());
@@ -520,7 +543,7 @@ public class MyHomeRoomFragment extends BaseFragment implements DeviceAdapter.On
             在onResume里面发送请求命令
          */
         Log.i(LOG_TAG, "==========onResume==========");
-       MQTTManagement.getSingInstance().rigister(mqttMessageArrived);
+        MQTTManagement.getSingInstance().rigister(mqttMessageArrived);
         if (isVisibleToUser && isFirst2onResume) {
             showWaitingDialog();
             isFirst2onResume = false;

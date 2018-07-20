@@ -46,7 +46,7 @@
     <string name="connection_error_connecting_to">An error occurred connecting to</string>
     <string name="connection_clear">Clear</string>
     <string name="subscription_new">New Subscription</string>
-
+    <string name="isSecondary">Not Support</string>
 
     <string name="manage_title">Manage Connection</string>
     <string name="manage_delete">Delete Connection</string>
@@ -423,6 +423,7 @@
     <string name="extender_no_contrl">Extender has no control operation</string>
     <string name="remove_device">Remove Device</string>
     <string name="learn_mode">Learn Mode</string>
+    <string name="send_nif">Send NIF</string>
     <string name="network_check">Network Check</string>
     <string name="version_message">Version Message</string>
     <string name="reset_device">reset</string>

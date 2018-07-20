@@ -45,7 +45,6 @@ public class LearnModeActivity extends AppCompatActivity {
         MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.startLearnMode());
     }
 
-
     private String nodeId;
     private String role;
     MqttMessageArrived mMqttMessageArrived = new MqttMessageArrived() {
@@ -65,7 +64,7 @@ public class LearnModeActivity extends AppCompatActivity {
                         String reported = jsonObject.optString("reported");
                         JSONObject reportedObject = new JSONObject(reported);
                         String messageType = reportedObject.optString("MessageType");
-                        nodeId = reportedObject.optString("Node Id");
+                        nodeId = reportedObject.optString("nodeId");
                         role = reportedObject.optString("Network Role");
                         if(messageType.equals("Controller Init Status")){
                             final String status = reportedObject.optString("Status");

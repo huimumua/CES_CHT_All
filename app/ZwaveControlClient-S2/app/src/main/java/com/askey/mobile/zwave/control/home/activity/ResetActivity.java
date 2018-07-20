@@ -1,17 +1,13 @@
 package com.askey.mobile.zwave.control.home.activity;
 
-import android.app.Activity;
-import android.content.Intent;
-import android.nfc.Tag;
+import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.askey.mobile.zwave.control.R;
 import com.askey.mobile.zwave.control.data.LocalMqttData;
@@ -20,7 +16,6 @@ import com.askey.mobile.zwave.control.deviceContr.localMqtt.MqttMessageArrived;
 import com.askey.mobile.zwave.control.deviceContr.net.SocketTransceiver;
 import com.askey.mobile.zwave.control.deviceContr.net.TCPReceive;
 import com.askey.mobile.zwave.control.deviceContr.net.TcpClient;
-import com.askey.mobile.zwave.control.interf.NetworkRole;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
 import com.askey.mobile.zwave.control.util.PreferencesUtils;
@@ -73,14 +68,8 @@ public class ResetActivity extends AppCompatActivity {
                         String reported = jsonObject.optString("reported");
                         JSONObject reportedObject = new JSONObject(reported);
                         String messageType = reportedObject.optString("MessageType");
-                        nodeId = reportedObject.optString("Node Id");
+                        nodeId = reportedObject.optString("nodeId");
                         role = reportedObject.optString("Network Role");
-
-
-//
-//                        Pref_Utils.putString(ResetActivity.this,"xw", "xw");
-//                        Pref_Utils.putString(ResetActivity.this,"xwwb", "xw");
-
                         Log.i(LOG_TAG,""+"==="+ nodeId +"==="+ role);
 
                         if(messageType.equals("Controller Reset Status")){

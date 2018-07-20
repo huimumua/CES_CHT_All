@@ -46,7 +46,7 @@ public class LocalMqttData {
         try {
             parameter.put("deviceType", "Zwave");
             parameter.put("deviceId", deviceId);
-            parameter.put("Room", Room);
+            parameter.put("room", Room);
             parameter.put("isFavorite", isFavorite);
             parameter.put("category", category);
             parameter.put("name", name);
@@ -73,6 +73,20 @@ public class LocalMqttData {
             e.printStackTrace();
         }
         Log.d("json", result);
+        return result;
+    }
+
+    public static String sendNodeInformation(String nodeId) {
+        String result = "";
+        JSONObject function = new JSONObject();
+        try {
+            function.put("function", "sendNodeInformation");
+            function.put("deviceType", "Zwave");
+            function.put("nodeId", nodeId);
+            result = getPublicJson(function).toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         return result;
     }
 
@@ -209,7 +223,7 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "getDeviceList");
-            function.put("Room", roomName);
+            function.put("room", roomName);
 //            function.put("Room", "ALL");
             result = getPublicJson(function).toString();
 //            command.put("desired", function);
@@ -220,7 +234,7 @@ public class LocalMqttData {
         return result;
     }
 
-//    {
+    //    {
 //        "desired": {
 //        "function": "editNodeInfo"
 //        "deviceId": "1234567"
@@ -231,17 +245,23 @@ public class LocalMqttData {
 //        },
 //    },
 //    }
-
-    public static String editNodeInfo(String deviceId, String Room, String isFavorite, String name, String deviceType) {
+/*
+改动
+ */
+    public static String editNodeInfo(String deviceId, String Room, String isFavorite, String name, String deviceType, String timestamp) {
 //        JSONObject desired = new JSONObject();
         String result = "";
         JSONObject id = new JSONObject();
         JSONObject parameter = new JSONObject();
         try {
-            parameter.put("Room", Room);
-            parameter.put("isFavorite", isFavorite);
+            parameter.put("brand", "Zwave");
+            parameter.put("nodeId", deviceId);
+            parameter.put("deviceType", "Zwave");
             parameter.put("name", name);
-            parameter.put("type", deviceType);
+            parameter.put("category", deviceType);
+            parameter.put("room", Room);
+            parameter.put("isFavorite", isFavorite);
+            parameter.put("timestamp", timestamp);
             id.put("function", "editNodeInfo");
             id.put("parameter", parameter);
             id.put("nodeId", deviceId);
@@ -320,7 +340,7 @@ public class LocalMqttData {
                 }
 
             }
-            parameter.put("removeFavorite", removeList.toString());
+            parameter.put("editFavorite", removeList.toString());
 
             result = getPublicJson(parameter).toString();
         } catch (JSONException e) {
@@ -329,7 +349,6 @@ public class LocalMqttData {
         Log.d("json", result);
         return result;
     }
-
 
     //    {
 //        "desired": {
@@ -379,6 +398,7 @@ public class LocalMqttData {
         }
         return result;
     }
+
     public static String editProvisionListEntry(String dsk, String inclusionState, String boot_mode) {
         String result = "";
         JSONObject function = new JSONObject();
@@ -393,6 +413,7 @@ public class LocalMqttData {
         }
         return result;
     }
+
     public static String getSpecifyDeviceInfo(String nodeId) {//为了获得cmdlist
         String result = "";
         JSONObject function = new JSONObject();
@@ -504,7 +525,7 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "getSwitchStatus");
-            function.put("deviceId", deviceId);
+            function.put("nodeId", deviceId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -525,8 +546,9 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "setSwitchStatus");
-            function.put("deviceId", deviceId);
             function.put("switchStatus", switchState);
+            function.put("deviceType", "Zwave");
+            function.put("nodeId", deviceId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -546,6 +568,7 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "getBrightness");
+            function.put("deviceType", "Zwave");
             function.put("nodeId", deviceId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
@@ -568,8 +591,9 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "setBrightness");
-            function.put("nodeId", deviceId);
             function.put("value", value);
+            function.put("deviceType", "Zwave");
+            function.put("nodeId", deviceId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -589,6 +613,7 @@ public class LocalMqttData {
         JSONObject function = new JSONObject();
         try {
             function.put("function", "getLampColor");
+            function.put("deviceType", "Zwave");
             function.put("nodeId", deviceId);
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
@@ -610,7 +635,8 @@ public class LocalMqttData {
         try {
             function.put("function", "setLampColor");
             function.put("nodeId", deviceId);
-            function.put("lampcolor", lampcolor);
+            function.put("deviceType", "Zwave");
+            function.put("color", lampcolor);
 //            function.put("colorId", colorId);
 //            function.put("colorValue", colorValue);
             function.put("R", R);
@@ -622,7 +648,6 @@ public class LocalMqttData {
         }
         return result;
     }
-
 
 //    {
 //        "desired": {
@@ -681,8 +706,9 @@ public class LocalMqttData {
         try {
             function.put("function", "getGroupInfo");
             function.put("nodeId", deviceId);
-            function.put("groupId", endpointId);
-            function.put("endpointId", groupId);
+//            function.put("groupId", endpointId);
+//            function.put("endpointId", groupId);
+            function.put("deviceType", "Zwave");
             result = getPublicJson(function).toString();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -1295,6 +1321,7 @@ public class LocalMqttData {
         }
         return result;
     }
+
     public static String startLearnMode() {
         String result = "";
         JSONObject function = new JSONObject();

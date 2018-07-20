@@ -70,4 +70,5 @@ public class Const {
     public static int[] Bulb_notify = new int[]{R.string.bulb_1,R.string.bulb_2};
     public static int[] Wallmote_notify = new int[]{R.string.wallmote_1,R.string.wallmote_2};
     public static int[] Extender_notify = new int[]{R.string.extender_1,R.string.extender_2};
+    public static String isSendNIF;
 }

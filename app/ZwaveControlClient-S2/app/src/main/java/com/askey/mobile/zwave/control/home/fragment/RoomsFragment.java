@@ -36,6 +36,7 @@ import com.askey.mobile.zwave.control.home.fragment.roomitem.MyHomeRoomFragment;
 import com.askey.mobile.zwave.control.interf.DeleteDeviceListener;
 import com.askey.mobile.zwave.control.util.Const;
 import com.askey.mobile.zwave.control.util.Logg;
+import com.askey.mobile.zwave.control.util.TimeUtils;
 import com.askey.mobile.zwave.control.widget.MyViewPager;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -317,6 +318,7 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
         roomPager.setPagingEnable(true);
     }
 
+
     public void titleMode2Edit() {
         edit.setImageResource(R.drawable.ic_yes);
         voice.setImageResource(R.drawable.ic_camera);
@@ -386,7 +388,7 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
         mRoomName = roomName;
         MQTTManagement.getSingInstance().rigister(mqttMessageArrived);
 //            MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, "mobile_zwave:addRoom:" + roomName);
-        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.editNodeInfo("", roomName, "", "", ""));
+        MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.editNodeInfo("", roomName, "", "", "", TimeUtils.gettimeStamp()));
     }
 
     @Override
