@@ -675,11 +675,9 @@ public class MQTTBroker extends Service {
 
                 case "getGroupInfo":
                     DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
-                    //DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("groupId"));
-                    //DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("endpointId"));
-
+                    DeviceInfo.mqttTmp = Integer.parseInt(payload.getString("groupId"));
+                    DeviceInfo.mqttTmp2 = Integer.parseInt(payload.getString("endpointId"));
                     Log.i(LOG_TAG, "deviceService.getGroupInfo");
-
                     DeviceInfo.getMqttPayload = "getGroupInfo";
                     break;
 
@@ -872,42 +870,45 @@ public class MQTTBroker extends Service {
                     Log.i(LOG_TAG, "deviceService.addProvisionListEntry");
                     DeviceInfo.bootMode = payload.getString("BootMode");
                     String qrCode = payload.getString("QrCode");
+                    if(qrCode.length() > 1) {
+                        DeviceInfo.qrCodeFlag = true;
+                        Log.i(LOG_TAG, "use qrCode add dsk !!!!!!!!");
+                        DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(56,61));
+                        DeviceInfo.mqttString2 = Integer.toHexString(Integer.valueOf(DeviceInfo.mqttString));
+                        DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(0,2));
+                        DeviceInfo.qrCodeDeviceType = Integer.parseInt(DeviceInfo.mqttString3,16);
+                        DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(2,4));
+                        DeviceInfo.qrCodeDeviceType2 = Integer.parseInt(DeviceInfo.mqttString3,16);
 
-                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(56,61));
-                    DeviceInfo.mqttString2 = Integer.toHexString(Integer.valueOf(DeviceInfo.mqttString));
-                    DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(0,2));
-                    DeviceInfo.qrCodeDeviceType = Integer.parseInt(DeviceInfo.mqttString3,16);
-                    DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(2,4));
-                    DeviceInfo.qrCodeDeviceType2 = Integer.parseInt(DeviceInfo.mqttString3,16);
+                        DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(61,66));
+                        DeviceInfo.qrCodeIcon = Integer.valueOf(DeviceInfo.mqttString);
 
-                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(61,66));
-                    DeviceInfo.qrCodeIcon = Integer.valueOf(DeviceInfo.mqttString);
+                        DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(70,75));
+                        DeviceInfo.qrCodeVendorId = Integer.valueOf(DeviceInfo.mqttString);
 
-                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(70,75));
-                    DeviceInfo.qrCodeVendorId = Integer.valueOf(DeviceInfo.mqttString);
+                        DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(75,80));
+                        DeviceInfo.qrCodeProcuctType = Integer.valueOf(DeviceInfo.mqttString);
 
-                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(75,80));
-                    DeviceInfo.qrCodeProcuctType = Integer.valueOf(DeviceInfo.mqttString);
+                        DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(80,85));
+                        DeviceInfo.qrCodeProcuctId = Integer.valueOf(DeviceInfo.mqttString);
 
-                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(80,85));
-                    DeviceInfo.qrCodeProcuctId = Integer.valueOf(DeviceInfo.mqttString);
+                        DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(85,90));
+                        DeviceInfo.mqttString2 = Integer.toHexString(Integer.valueOf(DeviceInfo.mqttString));
+                        DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(0,1));
+                        DeviceInfo.qrCodeAppVersion = Integer.parseInt(DeviceInfo.mqttString3,16);
+                        DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(1,3));
+                        DeviceInfo.qrCodeAppVersion2 = Integer.parseInt(DeviceInfo.mqttString3,16);
 
-                    DeviceInfo.mqttString = String.valueOf(qrCode.subSequence(85,90));
-                    DeviceInfo.mqttString2 = Integer.toHexString(Integer.valueOf(DeviceInfo.mqttString));
-                    DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(0,1));
-                    DeviceInfo.qrCodeAppVersion = Integer.parseInt(DeviceInfo.mqttString3,16);
-                    DeviceInfo.mqttString3 = String.valueOf(DeviceInfo.mqttString2.subSequence(1,3));
-                    DeviceInfo.qrCodeAppVersion2 = Integer.parseInt(DeviceInfo.mqttString3,16);
+                        Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeDeviceType).toString());
+                        Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeDeviceType2).toString());
+                        Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeIcon).toString());
+                        Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeVendorId).toString());
+                        Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeProcuctType).toString());
+                        Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeProcuctId).toString());
+                        Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeAppVersion).toString());
+                        Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeAppVersion2).toString());
 
-                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeDeviceType).toString());
-                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeDeviceType2).toString());
-                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeIcon).toString());
-                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeVendorId).toString());
-                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeProcuctType).toString());
-                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeProcuctId).toString());
-                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeAppVersion).toString());
-                    Log.d(LOG_TAG,"QrCode = "+ Integer.valueOf(DeviceInfo.qrCodeAppVersion2).toString());
-
+                    }
 
                     if (DeviceInfo.bootMode.contains("01")) {
                         DeviceInfo.bootMode = "Smart Start";
@@ -1242,6 +1243,11 @@ public class MQTTBroker extends Service {
                     publishMessage(Const.PublicTopicName, message.toString());
                     break;
 
+                case "sendNodeInformation":
+                    DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
+                    Log.i(LOG_TAG, "deviceService.sendNodeInformation" + DeviceInfo.mqttDeviceId);
+                    DeviceInfo.getMqttPayload = "sendNodeInformation";
+                    break;
 
                 default:
                     Log.e(LOG_TAG, "no support this function, please make sure this mqtt message " + function);
@@ -1949,7 +1955,8 @@ public class MQTTBroker extends Service {
 
                 publishMessage(Const.PublicTopicName, message.toString());
 
-            } else if (DeviceInfo.result.contains("Group Info Report")) {
+            } else if (DeviceInfo.className.contains("Group Info Report")) {
+
                 JSONObject jsonObject = null;
                 try {
                     jsonObject = new JSONObject(DeviceInfo.result);
@@ -1958,7 +1965,7 @@ public class MQTTBroker extends Service {
                     String maxSupport = jsonObject.optString("Max Supported endpoints");
                     String groupMember = jsonObject.optString("Group members");
 
-                    message.put("MessageType", "Group Info Report");
+                    message.put("Interface", "getGroupInfo");
                     message.put("nodeId", nodeId);
                     message.put("Group id", groupId);
                     message.put("Max Supported endpoints", maxSupport);
@@ -1969,7 +1976,9 @@ public class MQTTBroker extends Service {
                 }
                 publishMessage(Const.PublicTopicName, message.toString());
 
-            } else if (DeviceInfo.result.contains("Configuration Get Information")) {
+            }
+
+            else if (DeviceInfo.result.contains("Configuration Get Information")) {
                 JSONObject jsonObject = null;
                 try {
                     jsonObject = new JSONObject(DeviceInfo.result);

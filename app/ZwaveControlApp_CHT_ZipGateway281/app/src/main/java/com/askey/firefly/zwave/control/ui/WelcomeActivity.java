@@ -440,7 +440,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "setSwitchMultilevel":
                         Log.i(LOG_TAG, "deviceService.setSwitchMultilevel nodeId= " + DeviceInfo.mqttDeviceId + " value = " + DeviceInfo.mqttValue + "duration " + DeviceInfo.mqttTmp);
-                        zwaveService.setSwitchMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttValue, DeviceInfo.mqttTmp);
+                        zwaveService.setSwitchMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttValue, 1);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -539,7 +539,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     case "getGroupInfo":
                         Log.i(LOG_TAG, "deviceService.getGroupInfo");
                         //zwaveService.getGroupInfo(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2);
-                        zwaveService.getGroupInfo(DeviceInfo.devType, DeviceInfo.mqttDeviceId, 2, 0);
+                        zwaveService.getGroupInfo(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, 0);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -549,7 +549,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                         break;
 
                     case "removeEndpointsFromGroup":
-                        zwaveService.removeEndpointsFromGroup(DeviceInfo.devType, DeviceInfo.mqttDeviceId, 2, Utils.convertIntegers(DeviceInfo.arrList), 0);
+                        zwaveService.removeEndpointsFromGroup(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, Utils.convertIntegers(DeviceInfo.arrList), DeviceInfo.mqttTmp2);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -586,6 +586,12 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                     case "setSchedule":
                         Log.i(LOG_TAG, "deviceService.setSchedule " + DeviceInfo.mqttString);
                         zwaveService.setSchedule(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttString, DeviceInfo.mqttString4, DeviceInfo.mqttString5, Integer.valueOf(DeviceInfo.mqttString3), DeviceInfo.mqttString2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "sendNodeInformation":
+                        Log.i(LOG_TAG, "deviceService.sendNodeInformation");
+                        zwaveService.sendNodeInformationFrame(0, 1);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -640,7 +646,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "addProvisionListEntry":
                         Log.i(LOG_TAG, "deviceService.addProvisionListEntry");
-                        zwaveService.addProvisionListEntry("Zwave", DeviceInfo.dskNumber.getBytes(), DeviceInfo.inclusionState, DeviceInfo.bootMode);
+                        zwaveService.addProvisionListEntry("Zwave", DeviceInfo.dskNumber.getBytes(), DeviceInfo.inclusionState, DeviceInfo.bootMode,DeviceInfo.qrCodeFlag);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -659,7 +665,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
                     case "editProvisionListEntry":
                         Log.i(LOG_TAG, "deviceService.editProvisionListEntry");
-                        zwaveService.addProvisionListEntry("Zwave", DeviceInfo.dskNumber.getBytes(), DeviceInfo.inclusionState,DeviceInfo.bootMode);
+                        zwaveService.addProvisionListEntry("Zwave", DeviceInfo.dskNumber.getBytes(), DeviceInfo.inclusionState,DeviceInfo.bootMode,DeviceInfo.qrCodeFlag);
                         DeviceInfo.getMqttPayload = "";
                         break;
 
@@ -1062,6 +1068,9 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
                 break;
 
             case R.id.btnButton:
+                //zwaveService.getGroupInfo(DeviceInfo.devType, Integer.valueOf(spNodeIdList.getSelectedItem().toString()), 0, 0);
+                Log.i(LOG_TAG, "call zwaveService.sendNodeInformationFrame()");
+
                 //zwaveService.getSecurity2CmdSupported(Integer.valueOf(spNodeIdList.getSelectedItem().toString()));
 
                 if (spApiList.getSelectedItem().toString().contains("ZwController_startNetworkHealthCheck")) {
@@ -1371,7 +1380,7 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
             Toast.makeText(this,"already Provision List", Toast.LENGTH_SHORT).show();
         } else {
             provisionListArr.add(editDsk.getText().toString());
-            zwaveService.addProvisionListEntry(DeviceInfo.devType,dskNumber,DeviceInfo.inclusionState,DeviceInfo.bootMode);
+            zwaveService.addProvisionListEntry(DeviceInfo.devType,dskNumber,DeviceInfo.inclusionState,DeviceInfo.bootMode,DeviceInfo.qrCodeFlag);
             Toast.makeText(this, "add Provision List", Toast.LENGTH_SHORT).show();
         }
         ArrayAdapter<String> provisionList = new ArrayAdapter<String>(WelcomeActivity.this,

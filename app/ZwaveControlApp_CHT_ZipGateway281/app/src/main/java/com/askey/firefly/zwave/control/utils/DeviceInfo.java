@@ -84,6 +84,8 @@ public class DeviceInfo {
 
     public static boolean smartStartFlag = false;
 
+    public static boolean qrCodeFlag = false;
+
     public static boolean mainFlag = false;
     public static boolean mqttFlag = false;
 

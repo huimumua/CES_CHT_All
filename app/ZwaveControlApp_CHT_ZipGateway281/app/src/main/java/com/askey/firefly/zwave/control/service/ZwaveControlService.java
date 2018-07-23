@@ -215,7 +215,7 @@ public class ZwaveControlService extends Service {
         //}
     }
 
-    public void addProvisionListEntry (String devType, byte[] dskNumber,String InclusionState, String bootMode) {
+    public void addProvisionListEntry (String devType, byte[] dskNumber,String InclusionState, String bootMode,boolean qrCodeFlag) {
         if (devType.equals(zwaveType)) {
             //updateTimestamp(deviceId);
             /*
@@ -284,10 +284,25 @@ public class ZwaveControlService extends Service {
             plList[5].stProvisionList.pii.app_sub_ver = DeviceInfo.qrCodeAppVersion2;
             Log.d(LOG_TAG,"plList = " + plList.toString());
             String result = "false";
-            int res = ZwaveControlHelper.ZwController_addProvisionListEntry(dskNumber, dskNumber.length, plList,6);
-            if (res == 0){
-                result = "true";
+            if(qrCodeFlag) {
+                int res = ZwaveControlHelper.ZwController_addProvisionListEntry(dskNumber, dskNumber.length, plList, 6);
+                Log.d(LOG_TAG,"plList = 6");
+                if (res == 0){
+                    result = "true";
+                } else {
+                    result = "false";
+                }
+
+            } else {
+                int res = ZwaveControlHelper.ZwController_addProvisionListEntry(dskNumber, dskNumber.length, plList, 2);
+                Log.d(LOG_TAG,"plList = 2");
+                if (res == 0){
+                    result = "true";
+                } else {
+                    result = "false";
+                }
             }
+            DeviceInfo.qrCodeFlag = false;
 
             JSONObject jsonResult = new JSONObject();
             try {
@@ -840,7 +855,7 @@ public class ZwaveControlService extends Service {
         updateTimestamp(deviceId);
         Log.i(LOG_TAG,"setSwitchMultiLevel device ID="+deviceId + "| value="+value+" | devType = "+devType+"|duration = "+duration );
         if (devType.equals(zwaveType)) {
-            int res = ZwaveControlHelper.ZwController_SetSwitchMultiLevel(deviceId, value, 1);
+            int res = ZwaveControlHelper.ZwController_SetSwitchMultiLevel(deviceId, value, duration);
             if (res == 0){
                 result = "true";
             }
@@ -1199,10 +1214,35 @@ public class ZwaveControlService extends Service {
         ZwaveControlHelper.ZwController_GetDeviceList();
     }
 
+    public void sendNodeInformationFrame(int deviceId,int broadcastFlag) {
+        Logg.i(LOG_TAG, "=====sendNodeInformationFrame==deviceId===" + deviceId + "===endpointId=" + broadcastFlag);
+        int result = ZwaveControlHelper.ZwController_sendNodeInformationFrame(deviceId, broadcastFlag);
+        JSONObject jo = new JSONObject();
+
+        try {
+            jo.put("Interface", "sendNodeInformation");
+            if (result >= 0)
+                jo.put("result", "true");
+            else
+                jo.put("result", "false");
+        } catch (JSONException e) {
+                e.printStackTrace();
+        }
+
+        zwaveControlResultCallBack("sendNodeInformation", jo.toString());
+    }
+
+
     public void getGroupInfo(String devType, int deviceId,int groupId ,int endpointId){
         Log.i(LOG_TAG,"=====getGroupInfo==deviceId==="+deviceId);
 
         updateTimestamp(deviceId);
+/*
+        for(int i = 1; i <= 9; i++) {
+            ZwaveControlHelper.ZwController_getGroupInfo(deviceId, i, endpointId);
+            Log.i(LOG_TAG, "get device group count : "+i);
+        }
+*/
 
         List<Integer> list;
         list = devGroupManager.getZwaveDeviceGroupListByNodeId(deviceId);
@@ -1216,12 +1256,18 @@ public class ZwaveControlService extends Service {
             jo.put("nodeId",String.valueOf(deviceId));
             jo.put("deviceType",devType);
             for (int idx = 0; idx < list.size(); idx++) {
+                Log.i(LOG_TAG, "get device group count : "+idx);
 
                 JSONObject json = new JSONObject();
                 json.put("Group id", list.get(idx));
 
                 List <ZwaveDeviceGroup> groupList = devGroupManager.getZwaveDeviceGroupListByNodeIdAndGroupId(deviceId,list.get(idx));
                 Log.i(LOG_TAG, "#"+deviceId+" G#"+list.get(idx)+" GROUP NODEID LIST SIZE = " + groupList.size());
+
+                for(int i = 1; i <= list.get(idx); i++) {
+                    ZwaveControlHelper.ZwController_getGroupInfo(deviceId, i, endpointId);
+                    Log.i(LOG_TAG, "deviceId: "+deviceId+ " groupid count: "+i + " endpointId : " + endpointId);
+                }
 
                 JSONArray nodeArray= new JSONArray();
                 for (int _idx = 0; _idx< groupList.size();_idx++) {
@@ -1232,15 +1278,18 @@ public class ZwaveControlService extends Service {
                 }
                 json.put("Group members",nodeArray);
                 json.put("Max Supported endpoints", "5");
-                json.put("endpoint id", "0");
+                json.put("endpoint id", endpointId);
                 Jarray.put(json);
             }
             jo.put("GroupInfo",Jarray);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        ZwaveControlHelper.ZwController_getGroupInfo(deviceId,groupId,endpointId);
-        zwaveControlResultCallBack("GroupInfo", jo.toString());
+        //for(int i = 1; i <= groupId;i++) {
+            //ZwaveControlHelper.ZwController_getGroupInfo(deviceId, groupId, endpointId);
+            zwaveControlResultCallBack("GroupInfo", jo.toString());
+        //}
+
     }
 
     public void addEndpointsToGroup(String devType, int deviceId, int groupId, int[] arr, int endpointId){
@@ -2054,17 +2103,6 @@ public class ZwaveControlService extends Service {
             }
         } else if (messageType.equals("Binary Sensor Support Get Information")) {
             zwaveControlResultCallBack("Binary Sensor Support Get Information", jniResult);
-        } else if (messageType.equals("Group Info Report")) {
-
-            try {
-                jsonObject = new JSONObject(jniResult);
-                jsonObject.put("Interface","getGroupInfo");
-                jsonObject.put("deviceType",zwaveType);
-                zwaveControlResultCallBack("Group Info Report", jsonObject.toString());
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
         } else if (messageType.equals("Notification Supported Report")) {
             zwaveControlResultCallBack("Notification Supported Report", jniResult);
         } else if (messageType.equals("Node Is Failed Check Report")) {
@@ -2177,6 +2215,26 @@ public class ZwaveControlService extends Service {
             }
         } else if ("Switch Color Report".equals(messageType)) {
             zwaveControlResultCallBack("Switch Color Report", jniResult);
+        } else if ("Group Info Report".equals(messageType)) {
+            /*
+            try {
+                JSONObject payload = new JSONObject(jniResult);
+                jsonObject = new JSONObject();
+
+                jsonObject.put("Interface","getGroupInfo");
+                jsonObject.put("deviceType",zwaveType);
+                jsonObject.put("nodeId",String.valueOf(payload.getInt("Node id")));
+                jsonObject.put("Group id",String.valueOf(payload.getInt("Max Supported endpoints")));
+                jsonObject.put("Max Supported endpoints",String.valueOf(payload.getInt("Max Supported endpoints")));
+                jsonObject.put("Group members",String.valueOf(payload.getInt("Group members")));
+
+                zwaveControlResultCallBack("Group Info Report", jsonObject.toString());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            */
+            zwaveControlResultCallBack("Group Info Report", jsonObject.toString());
+
         }
     }
 }
