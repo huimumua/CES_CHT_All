@@ -95,7 +95,7 @@ public class FavoriteEditActivity extends BaseActivity implements View.OnClickLi
                     JSONObject reportedObject = new JSONObject(reported);
                     String Interface = reportedObject.optString("Interface");
                     if(Interface.equals("editFavoriteList")){
-                        String result = reportedObject.optString("Result");
+                        String result = reportedObject.optString("result");
                         if(result.equals("true")){
                             loading.setVisibility(View.GONE);
                             editFavoriteListener.editFavoriteClick(favoriteList);

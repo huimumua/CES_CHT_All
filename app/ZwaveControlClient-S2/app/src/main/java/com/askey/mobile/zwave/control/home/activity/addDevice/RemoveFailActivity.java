@@ -81,8 +81,8 @@ public class RemoveFailActivity extends BaseActivity {
                                 finish();
                             }
                         }
-                        //remove失败返回的消息 {"reported":{"Interface":"removeDevice","NodeId":"fail","Result":"fail"}}
-                        String result = reportedObject.optString("Result");
+                        //remove??????? {"reported":{"Interface":"removeDevice","NodeId":"fail","Result":"fail"}}
+                        String result = reportedObject.optString("result");
                         if(result.equals("fail")){
                             status.setText("Remove failed,Please confirm whether the device exists.");
                             removeConfirmBtn.setVisibility(View.VISIBLE);

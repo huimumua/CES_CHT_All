@@ -423,7 +423,7 @@ public class RoomsFragment extends BaseFragment implements View.OnClickListener,
                         jsonObject = new JSONObject(mqttResult);
                         String reported = jsonObject.optString("reported");
                         JSONObject reportedObject = new JSONObject(reported);
-                        String result = reportedObject.optString("Result");
+                        String result = reportedObject.optString("result");
                         if (result.equals("true")) {
                             Log.d("addRoom", "111111111");
                             fragmentList.add(ItemRoomFragment.newInstance(3, mRoomName));
