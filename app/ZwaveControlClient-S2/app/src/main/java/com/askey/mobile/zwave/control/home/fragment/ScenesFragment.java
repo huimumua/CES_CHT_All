@@ -307,7 +307,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
 
             String rmInterface = reportedObject.optString("Interface");
             if (rmInterface.equals("rmProvisionListEntry")) {
-                String result = reportedObject.optString("Result");
+                String result = reportedObject.optString("result");
                 if (result.equals("true")) {
 
                     Log.i(TAG, "==============dataList :"+dataList.size());
@@ -329,7 +329,7 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
 
                 }
             } else if(rmInterface.equals("rmAllProvisionListEntry")) {
-                String result = reportedObject.optString("Result");
+                String result = reportedObject.optString("result");
                 if (result.equals("true")) {
                     Log.i(TAG, "------rmAllProvisionListEntry:success");
                     ((Activity) getContext()).runOnUiThread(new Runnable() {

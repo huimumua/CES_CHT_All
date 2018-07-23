@@ -119,7 +119,7 @@ public class SmartStartDeviceAddActivity extends BaseActivity implements View.On
                         }else if(reported.contains("addDevice")){
                             smartStartNodeId = reportedObject.optString("NodeId");
                             Log.i(TAG, "========addDevice========NodeId="+smartStartNodeId);
-                            smartStartAddResult = reportedObject.optString("Result");
+                            smartStartAddResult = reportedObject.optString("result");
                             if(smartStartAddResult.equals("true")){
                                 Intent intent = new Intent();
                                 intent.setClass(mContext, InstallSuccessActivity.class);

@@ -139,6 +139,7 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
                 } else {
                     String editText = showQRCode.getText().toString();
                     if (editText.length() == 47 && checkDSk(editText)) {
+                        dskCode = editText;
                         showWaitingDialog();
                         //调用mqtt接口，带参数
                         MQTTManagement.getSingInstance().publishMessage(Const.subscriptionTopic, LocalMqttData.addProvisionList(dskCode, "47", qrCode));
@@ -274,7 +275,7 @@ public class AddSmartStartActivity extends BaseActivity implements View.OnClickL
                         String reported = jsonObject.optString("reported");
                         JSONObject reportedObject = new JSONObject(reported);
                         String mInterface = reportedObject.optString("Interface");
-                        String result = reportedObject.optString("Result");
+                        String result = reportedObject.optString("result");
                         Log.i(TAG, "minterface : " + mInterface);
                         Log.i(TAG, "====result : " + result);
                         if (result.equals("true")) {

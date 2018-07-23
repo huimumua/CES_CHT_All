@@ -101,7 +101,7 @@ public class DeviceTestEditActivity extends BaseActivity implements View.OnClick
 
                     String mInterface= reportedObject.optString("Interface");
                     if(mInterface.equals("addProvisionListEntry")){
-                        String result= reportedObject.optString("Result");
+                        String result= reportedObject.optString("result");
                         if(result.equals("true")){
                             finish();
                         }else {
@@ -110,7 +110,7 @@ public class DeviceTestEditActivity extends BaseActivity implements View.OnClick
                     }
 
                     if(mInterface.equals("rmProvisionListEntry")){
-                        String result= reportedObject.optString("Result");
+                        String result= reportedObject.optString("result");
                         if(result.equals("true")){
                             finish();
                         }else {
