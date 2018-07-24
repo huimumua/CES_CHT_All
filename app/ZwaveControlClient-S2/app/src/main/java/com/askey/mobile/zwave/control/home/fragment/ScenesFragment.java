@@ -254,16 +254,41 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
                         String networkState = temp.getString("Network inclusion state");
 
                         JSONObject deviceTypeObject = new JSONObject(deviceType);
-                        String genericCls = deviceTypeObject.getString("Generic Cls");
-                        String specificCls = deviceTypeObject.getString("Specific Cls");
-                        String iconType = deviceTypeObject.getString("Icon Type");
+                        String genericCls = "", specificCls = "", iconType="", manufacturerId="",
+                                productType = "", productId = "", appVersion = "", appSubVer = "";
+                        if(deviceTypeObject.has("Generic Cls")) {
+                            genericCls = deviceTypeObject.getString("Generic Cls");
+                        }
+
+                        if(deviceTypeObject.has("Specific Cls")) {
+                            specificCls = deviceTypeObject.getString("Specific Cls");
+                        }
+
+                        if(deviceTypeObject.has("Icon Type")) {
+                            iconType = deviceTypeObject.getString("Icon Type");
+                        }
 
                         JSONObject deviceIdObject = new JSONObject(deviceId);
-                        String manufacturerId = deviceIdObject.getString("Manufacturer Id");
-                        String productType = deviceIdObject.getString("Product Type");
-                        String productId = deviceIdObject.getString("Product Id");
-                        String appVersion = deviceIdObject.getString("App Version");
-                        String appSubVer = deviceIdObject.getString("App Sub Ver");
+
+                        if(deviceIdObject.has("Manufacturer Id")) {
+                            manufacturerId = deviceIdObject.getString("Manufacturer Id");
+                        }
+
+                        if(deviceIdObject.has("Product Type")) {
+                            productType = deviceIdObject.getString("Product Type");
+                        }
+
+                        if(deviceIdObject.has("Product Id")) {
+                            productId = deviceIdObject.getString("Product Id");
+                        }
+
+                        if(deviceIdObject.has("App Version")) {
+                            appVersion = deviceIdObject.getString("App Version");
+                        }
+
+                        if(deviceIdObject.has("App Sub Ver")) {
+                            appSubVer = deviceIdObject.getString("App Sub Ver");
+                        }
 
                         JSONObject networkStateObject = new JSONObject(networkState);
                         String nodeId = networkStateObject.getString("Node Id");
@@ -271,10 +296,22 @@ public class ScenesFragment extends BaseFragment implements View.OnClickListener
                         Log.i(TAG, "NODE " + nodeId);
                         provisionInfo = new ProvisionInfo();
                         provisionInfo.setDsk(temp.getString("DSK"));
-                        provisionInfo.setDeviceName(temp.getString("Device Name"));
-                        provisionInfo.setDeviceBootMode(temp.getString("Device Boot Mode"));
-                        provisionInfo.setDeviceLocation(temp.getString("Device Location"));
-                        provisionInfo.setDeviceInclusionState(temp.getString("Device Inclusion state"));
+
+                        if(temp.has("Device Name")) {
+                            provisionInfo.setDeviceName(temp.getString("Device Name"));
+                        }
+
+                        if(temp.has("Device Boot Mode")) {
+                            provisionInfo.setDeviceBootMode(temp.getString("Device Boot Mode"));
+                        }
+
+                        if(temp.has("Device Location")) {
+                            provisionInfo.setDeviceLocation(temp.getString("Device Location"));
+                        }
+
+                        if(temp.has("Device Inclusion state")) {
+                            provisionInfo.setDeviceInclusionState(temp.getString("Device Inclusion state"));
+                        }
                         provisionInfo.setNodeId(nodeId);
                         Const.removedDeviceNodeId = nodeId;
                         provisionInfo.setNetworkInclusionState(status);
