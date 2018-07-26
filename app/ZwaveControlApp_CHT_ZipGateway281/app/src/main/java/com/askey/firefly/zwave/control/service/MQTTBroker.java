@@ -277,8 +277,10 @@ public class MQTTBroker extends Service {
                         DeviceInfo.reqKey = 0x02;
                     } else if (Integer.valueOf(tmp[1]) == 01 || Integer.valueOf(tmp[1]) == 1) {
                         DeviceInfo.reqKey = 0x01;
+                    } else if (Integer.valueOf(tmp[1]) == 0) {
+                        DeviceInfo.reqKey = 0;
                     }
-                    Log.i(LOG_TAG, "req grant : "+ Integer.valueOf(tmp[1]));
+                    Log.i(LOG_TAG, "req grant : "+ Integer.valueOf(tmp[1]) + " DeviceInfo.reqKey : "+ DeviceInfo.reqKey);
                     DeviceInfo.reqFlag = true;
 
                 } else if (message.contains("dsk")) {
@@ -2228,7 +2230,11 @@ public class MQTTBroker extends Service {
                     String status = jsonObject.optString("Status");
 
                     message.put("Interface", "Network Health Check");
-                    message.put("Status", status);
+                    if(status.contains("Done"))
+                        message.put("Status", "Done");
+                    else
+                        message.put("Status", status);
+
 
                 } catch (JSONException e) {
                     e.printStackTrace();

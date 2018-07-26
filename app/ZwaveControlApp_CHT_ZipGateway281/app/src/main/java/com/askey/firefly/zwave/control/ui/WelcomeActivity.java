@@ -1867,13 +1867,14 @@ public class WelcomeActivity extends BaseActivity implements View.OnClickListene
 
     //open z-wave dongle
     private void openController() {
-        //timer.schedule(new mTimerTask(), 1000 * 120);
-        String openResult = zwaveService.openController();
-        /*
-        if (openResult.contains(":0")){
-            DeviceInfo.isOpenControllerFinish = true;
-        }
-        */
+        new Thread(openController).start();
     }
+
+    private Runnable openController = new Runnable() {
+        @Override
+        public void run() {
+            zwaveService.openController();
+        }
+    };
 
 }
