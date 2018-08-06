@@ -1,10 +1,18 @@
 package com.askey.firefly.zwave.control.service;
 
+import android.app.IntentService;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.askey.firefly.zwave.control.bean.DeviceList;
@@ -28,6 +36,7 @@ import com.askey.firefly.zwave.control.utils.DeviceInfo;
 import com.askey.firefly.zwave.control.utils.Logg;
 import com.askey.firefly.zwave.control.application.ZwaveProvisionList;
 
+import com.askey.firefly.zwave.control.utils.Utils;
 import com.google.gson.Gson;
 
 import org.json.JSONArray;
@@ -35,7 +44,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.askey.firefly.zwave.control.utils.Const.FILE_PATH;
 import static com.askey.firefly.zwave.control.utils.Const.SAVE_NODEINFO_FILE;
@@ -48,13 +59,15 @@ import static com.askey.firefly.zwave.control.utils.Const.SAVE_NODEINFO_FILE;
  * 修改时间：2017/7/10 11:36
  * 修改备注：
  */
-public class ZwaveControlService extends Service {
+public class ZwaveControlService extends IntentService {
 
     private static String LOG_TAG = ZwaveControlService.class.getSimpleName();
     public static ZwaveControlService mService;
     private int flag;
     private final String zwaveType = "Zwave";
     private final String btType = "BT";
+    private BroadcastReceiver usbReceiver = null;
+    private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
     private ZwaveDeviceManager zwaveDeviceManager;
     private ZwaveScheduleManager zwSchManager;
     private ScheduleJobManager scheduleJobManager;
@@ -63,11 +76,27 @@ public class ZwaveControlService extends Service {
     private ZwaveDeviceRoomManager roomManager;
     private static ArrayList <zwaveCallBack> mCallBacks = new ArrayList<>();
     private static ArrayList <zwaveControlReq_CallBack> mReqCallBacks = new ArrayList<>();
+    private int result = 0;
 
+    /**
+     * Creates an IntentService.  Invoked by your subclass's constructor.
+     *
+     * @param name Used to name the worker thread, important only for debugging.
+     */
+    public ZwaveControlService() {
+        super("ZwaveControlService");
+    }
+
+    public static ZwaveControlService getInstance() {
+        if (mService != null) {
+            return mService;
+        }
+        return null;
+    }
 
     @Override
-    public void onCreate() {
-        super.onCreate();
+    protected void onHandleIntent(@Nullable Intent intent) {
+        Logg.i(LOG_TAG, "=====onHandleIntent=========");
         new UsbSerial(this);
         mService = this;
 
@@ -88,18 +117,6 @@ public class ZwaveControlService extends Service {
         devGroupManager = ZwaveDeviceGroupManager.getInstance(this);
         sceneManager = ZwaveSceneManager.getInstance(this);
         roomManager = ZwaveDeviceRoomManager.getInstance(this);
-    }
-
-    public static ZwaveControlService getInstance() {
-        if (mService != null) {
-            return mService;
-        }
-        return null;
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        Logg.i(LOG_TAG, "=====onBind=========");
 
         int creatResult = ZwaveControlHelper.CreateZwController(); //测试返回0
         if (creatResult == 0) {
@@ -107,59 +124,237 @@ public class ZwaveControlService extends Service {
         } else {
             Logg.e(LOG_TAG, "==CreateZwController=creatResult=" + creatResult);
         }
-        return myBinder;
+        requestControlUSBPermission();
+        register(mCallback);
+        register(mReqCallback);
+        initSensorfunc();
+        new Thread(activityZwaveControlService).start();
+        getDeviceInfo();
     }
 
-    public MyBinder myBinder = new MyBinder();
+    public static ZwaveControlService.zwaveCallBack mCallback = new ZwaveControlService.zwaveCallBack() {
 
-    public class MyBinder extends Binder {
-        public ZwaveControlService getService() {
-            return ZwaveControlService.this;
+        @Override
+        public void zwaveControlResultCallBack(String className, String result) {
+            Log.i(LOG_TAG, "Result class name = [" + DeviceInfo.className + "] | result = " + DeviceInfo.result);
+
+            while(DeviceInfo.mqttFlag) {
+                try {
+                    Log.d(LOG_TAG,"wait for mqtt finish !!!!!!!!!!!!!!!!!!!!!!!!");
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if(className.equals("Sensor Info Report") || className.equals("Node Battery Value") || className.equals("Notification Get Information")) {
+                DeviceInfo.sensorClassName = className;
+                DeviceInfo.sensorResult = result;
+
+            } else {
+                DeviceInfo.className = className;
+                DeviceInfo.result = result;
+            }
+
+            if (result.contains("Smart Start Protocol Started")) {
+                Log.d(LOG_TAG,"DeviceInfo.smartStartFlag = true");
+                DeviceInfo.smartStartFlag = true;
+            }
+
+            DeviceInfo.mqttFlag = true;
+        }
+    };
+
+
+    public ZwaveControlService.zwaveControlReq_CallBack mReqCallback;
+    {
+        mReqCallback = new ZwaveControlService.zwaveControlReq_CallBack() {
+            @Override
+            public void zwaveControlReqResultCallBack(String className, String result) {
+                Log.i(LOG_TAG, "Req class name = [" + className + "]| result = " + result);
+
+                if (result.contains("Grant Keys Msg")) {
+
+
+                    String[] grantTmp = result.split(":");
+                    Log.d(LOG_TAG,"Grant Keys number : " +grantTmp[2]);
+                    if(grantTmp[2].contains("135")) {
+                        DeviceInfo.grantKeyNumber = "135";
+                    } else if (grantTmp[2].contains("134")) {
+                        DeviceInfo.grantKeyNumber = "134";
+                    } else if (grantTmp[2].contains("133")) {
+                        DeviceInfo.grantKeyNumber = "133";
+                    } else if (grantTmp[2].contains("132")) {
+                        DeviceInfo.grantKeyNumber = "132";
+                        Log.d(LOG_TAG,"Grant Keys number : 132");
+
+                    } else if (grantTmp[2].contains("131")) {
+                        DeviceInfo.grantKeyNumber = "131";
+                    } else if (grantTmp[2].contains("130")) {
+                        DeviceInfo.grantKeyNumber = "130";
+                    } else if (grantTmp[2].contains("129")) {
+                        DeviceInfo.grantKeyNumber = "129";
+                    } else if (grantTmp[2].contains("128")) {
+                        DeviceInfo.grantKeyNumber = "128";
+                    } else if (grantTmp[2].contains("7")) {
+                        DeviceInfo.grantKeyNumber = "7";
+                    } else if (grantTmp[2].contains("6")) {
+                        DeviceInfo.grantKeyNumber = "6";
+                    } else if (grantTmp[2].contains("5")) {
+                        DeviceInfo.grantKeyNumber = "5";
+                    } else if (grantTmp[2].contains("4")) {
+                        DeviceInfo.grantKeyNumber = "4";
+                    } else if (grantTmp[2].contains("3")) {
+                        DeviceInfo.grantKeyNumber = "3";
+                    } else if (grantTmp[2].contains("2")) {
+                        DeviceInfo.grantKeyNumber = "2";
+                    } else if (grantTmp[2].contains("1")) {
+                        DeviceInfo.grantKeyNumber = "1";
+                    } else if (grantTmp[2].contains("0")) {
+                        DeviceInfo.grantKeyNumber = "0";
+                    }
+                    DeviceInfo.reqString = "Grant";
+                    Log.d(LOG_TAG,"Grant Keys number : Grant");
+
+                } else if (result.contains("PIN Requested Msg")) {
+                    //DeviceInfo.reqKey = 11394;
+                    DeviceInfo.reqString = "PIN";
+                } else if (result.contains("Client Side Au Msg")) {
+                    DeviceInfo.reqString = "Au";
+                }
+            }
+        };
+    }
+
+
+
+
+    private void requestControlUSBPermission() {
+
+        UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        HashMap<String, UsbDevice> usbDevices = manager.getDeviceList();
+
+        UsbDevice dev = null;
+        int vid = 0;
+        int pid = 0;
+
+        for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
+            dev = entry.getValue();
+            vid = dev.getVendorId();
+            pid = dev.getProductId();
+            Log.d(LOG_TAG, "Usb Device Vid = "+ Integer.toHexString(vid) +",Pid = "+ Integer.toHexString(pid));
+            if ((vid == 0x0658) && (pid == 0x0200)) {
+                Log.d(LOG_TAG, "Usb Device Is CDC Device...");
+                if (manager.hasPermission(dev)) {
+                    Log.d(LOG_TAG, "Usb Permission Ok....");
+                    doOpenController();
+                    break;
+                } else {
+                    Log.e(LOG_TAG, "Usb Permission Na,Try To Request Permission....");
+                    PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+                    manager.requestPermission(dev, mPendingIntent);
+                    IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+                    usbReceiver = new usbReceiver();
+                    registerReceiver(usbReceiver, filter);
+                }
+            }else{
+                dev = null;
+                Log.d(LOG_TAG, "Usb Device Is Not CDC Device...");
+                unregisterReceiver(usbReceiver);
+            }
+        }
+
+    }
+
+    //can take off this function !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    public class usbReceiver extends BroadcastReceiver {
+
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        if (device != null) {
+                            doOpenController();
+                        }
+                    } else {
+                        Log.d(LOG_TAG,"USB"+ "permission denied for device " + device);
+                        System.exit(0);
+                    }
+                }
+            }
         }
     }
 
-    @Override
-    public void onDestroy() {
-        Logg.i(LOG_TAG, "=====onDestroy=========");
-        super.onDestroy();
-    }
 
-    private void initZwave(){
+    //init sensor 類別裝置,當sensor裝置改變狀態會自動回報
+    private void initSensorfunc() {
 
-        Log.i(LOG_TAG,"================= initZwave ================= ");
         List<ZwaveDevice> list = zwaveDeviceManager.queryZwaveDeviceList();
 
         for (int idx = 1; idx < list.size(); idx++) {
+
             int nodeId = list.get(idx).getNodeId();
             String devType = list.get(idx).getDevType();
-            String cate = list.get(idx).getCategory();
 
-            if (devType.equals(zwaveType) && cate.equals("SENSOR")) {
+            Log.i(LOG_TAG,"#"+nodeId+" | devType = "+devType);
+
+            if (devType.equals("SENSOR")) {
                 String devNodeInfo = list.get(idx).getNodeInfo();
 
-                if (devNodeInfo!=null && devNodeInfo.contains("COMMAND_CLASS_BATTERY")) {
+                if (devNodeInfo.contains("COMMAND_CLASS_BATTERY")) {
                     Log.i(LOG_TAG, "BATTERY");
-                    getDeviceBattery(zwaveType,nodeId);
+                    getDeviceBattery(Const.zwaveType,nodeId);
                 }
 
-                if (devNodeInfo!=null && devNodeInfo.contains("COMMAND_CLASS_SENSOR_MULTILEVEL")) {
+                if (devNodeInfo.contains("COMMAND_CLASS_NOTIFICATION")) {
                     try {
-                        getSensorMultiLevel(zwaveType,nodeId);
+                        JSONObject jsonObject = new JSONObject(devNodeInfo);
+                        if (jsonObject.getString("Product id").equals("001F")) {
+                            //Water
+                            getSensorNotification(nodeId, 0x00, 0x05, 0x00);
+                        } else if (jsonObject.getString("Product id").equals("000C")) {
+                            //Motion
+                            getSensorNotification(nodeId, 0x00, 0x07, 0x00);
+                            //Door/Window
+                            getSensorNotification(nodeId, 0x00, 0x06, 0x00);
+                        } else if (jsonObject.getString("Product id").equals("0036")) {
+                            //Door/Window
+                            getSensorNotification(nodeId, 0x00, 0x06, 0x00);
+                        } else if (jsonObject.getString("Product id").equals("001E")) {
+                            //SMOKE
+                            getSensorNotification(nodeId, 0x00, 0x01, 0x00);
+                        } else if (jsonObject.getString("Product id").equals("0050")) {
+                            //Motion
+                            getSensorNotification(nodeId, 0x00, 0x07, 0x00);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (devNodeInfo.contains("COMMAND_CLASS_SENSOR_MULTILEVEL")) {
+                    try {
+                        getSensorMultiLevel(Const.zwaveType,nodeId);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
                 }
-            } else if (devType.equals(zwaveType) && cate.equals("PLUG")) {
+                getMeterSupported(nodeId);
+                GetSensorBinarySupportedSensor(nodeId);
+
+            } else if (devType.equals("PLUG")){
 
                 getMeter(zwaveType,nodeId,0x00);
                 getMeter(zwaveType,nodeId,0x02);
                 getMeter(zwaveType,nodeId,0x05);
-                //getConfiguration(nodeId, 0, 7, 0, 0);
+                getConfiguration(nodeId,0,7,0,0);
 
                 getMeterSupported(nodeId);
                 GetSensorBinarySupportedSensor(nodeId);
             }
         }
+
     }
 
     public void register(zwaveCallBack callback){
@@ -167,6 +362,7 @@ public class ZwaveControlService extends Service {
     }
 
     public void register(zwaveControlReq_CallBack callReqback){
+        Log.d(LOG_TAG,"register zwaveControlReq_CallBack");
         mReqCallBacks.add(callReqback);
     }
 
@@ -178,26 +374,19 @@ public class ZwaveControlService extends Service {
         mReqCallBacks.remove(callReqback);
     }
 
-    public String openController(){
-        return doOpenController();
-    }
-
     public int  StartLearnMode(){
         return ZwaveControlHelper.ZwController_StartLearnMode();
     }
 
     public int addDevice(String devType){
         //if (devType.equals(zwaveType)) {
-        return ZwaveControlHelper.ZwController_AddDevice();
-        //} else if (devType.equals(btType)){
-            /*
-            try {
-                btControlService.getScanDeviceList();
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-            */
+            return ZwaveControlHelper.ZwController_AddDevice();
         //}
+        /*
+        else if (devType.equals(btType)){
+
+        }
+        */
     }
 
     public int removeDevice(String devType, int nodeId){
@@ -1893,38 +2082,6 @@ public class ZwaveControlService extends Service {
         zwaveDeviceManager.updateZwaveDevice(zwaveDevice);
     }
 
-    private void initZwaveDevfunc(int nodeId){
-        ZwaveDevice zwSensor = zwaveDeviceManager.queryZwaveDevices(nodeId);
-        if (zwSensor.getDevType().equals(zwaveType)) {
-            String devNodeInfo = zwSensor.getNodeInfo();
-
-            if (devNodeInfo != null && devNodeInfo.contains("COMMAND_CLASS_BATTERY")) {
-                Log.i(LOG_TAG, "BATTERY");
-                getDeviceBattery(zwaveType,nodeId);
-            }
-
-            if (devNodeInfo != null && devNodeInfo.contains("COMMAND_CLASS_SENSOR_MULTILEVEL")) {
-                try {
-                    getSensorMultiLevel(zwaveType,nodeId);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (zwSensor.getCategory().equals("PLUG")){
-
-                getMeter(zwaveType,nodeId,0x00);
-                getMeter(zwaveType,nodeId,0x02);
-                getMeter(zwaveType,nodeId,0x05);
-                getConfiguration(nodeId,0,7,0,0);
-
-                getMeterSupported(nodeId);
-                GetSensorBinarySupportedSensor(nodeId);
-            }
-        }
-    }
-
-
-
     public void zwaveControlReq_CallBack(byte[] result, int len) {
         // jni callback
         String jniResult = new String(result);
@@ -1962,6 +2119,7 @@ public class ZwaveControlService extends Service {
         JSONObject jsonObject = null;
         String messageType = null;
         String status = null;
+
         try {
             jsonObject = new JSONObject(jniResult);
             messageType = jsonObject.optString("MessageType");
@@ -1989,7 +2147,7 @@ public class ZwaveControlService extends Service {
                 ZwaveControlHelper.ZwController_GetDeviceInfo();
             }
 
-        } else if (messageType.equals("Remove Failed Node")) {
+        } else if ("Remove Failed Node".equals(messageType)) {
             zwaveControlResultCallBack("Remove Failed Node", jniResult);
             if ("Success".equals(status)) {
                 Log.i(LOG_TAG, "=======Node Remove Status=Success=");
@@ -1997,7 +2155,7 @@ public class ZwaveControlService extends Service {
                 ZwaveControlHelper.ZwController_saveNodeInfo(SAVE_NODEINFO_FILE);
                 ZwaveControlHelper.ZwController_GetDeviceInfo();
             }
-        } else if (messageType.equals("All Node Info Report")) {
+        } else if ("All Node Info Report".equals(messageType)) {
             if (flag == 0) {
                 String jsonResult = getDeviceInfo(jniResult);
 
@@ -2088,11 +2246,11 @@ public class ZwaveControlService extends Service {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-        } else if (messageType.equals("Sensor Info Report")) {
+        } else if ("Sensor Info Report".equals(messageType)) {
             zwaveControlResultCallBack("Sensor Info Report", jniResult);
-        } else if (messageType.equals("Notification Get Information")) {
+        } else if ("Notification Get Information".equals(messageType)) {
             zwaveControlResultCallBack("Notification Get Information", jniResult);
-        } else if (messageType.equals("Supported Groupings Report")) {
+        } else if ("Supported Groupings Report".equals(messageType)) {
             try {
                 jsonObject = new JSONObject(jniResult);
                 jsonObject.put("Interface","getMaxSupportedGroups");
@@ -2101,17 +2259,17 @@ public class ZwaveControlService extends Service {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-        } else if (messageType.equals("Binary Sensor Support Get Information")) {
+        } else if ("Binary Sensor Support Get Information".equals(messageType)) {
             zwaveControlResultCallBack("Binary Sensor Support Get Information", jniResult);
-        } else if (messageType.equals("Notification Supported Report")) {
+        } else if ("Notification Supported Report".equals(messageType)) {
             zwaveControlResultCallBack("Notification Supported Report", jniResult);
-        } else if (messageType.equals("Node Is Failed Check Report")) {
+        } else if ("Node Is Failed Check Report".equals(messageType)) {
             zwaveControlResultCallBack("Node Is Failed Check Report", jniResult);
-        } else if (messageType.equals("Meter Report Information")) {
+        } else if ("Meter Report Information".equals(messageType)) {
             zwaveControlResultCallBack("Meter Report Information", jniResult);
-        } else if (messageType.equals("Specify Node Info")) {
+        } else if ("Specify Node Info".equals(messageType)) {
             zwaveControlResultCallBack("Specify Node Info", jniResult);
-        } else if (messageType.equals("Controller Network RSSI Report")) {
+        } else if ("Controller Network RSSI Report".equals(messageType)) {
             zwaveControlResultCallBack("getControllerRssi", jniResult);
         } else if ("DSK Report".equals(messageType)) {
             zwaveControlResultCallBack("DSK", jniResult);
@@ -2237,4 +2395,676 @@ public class ZwaveControlService extends Service {
 
         }
     }
+
+    private Runnable activityZwaveControlService = new Runnable() {
+        @Override
+        public void run() {
+            boolean circle = false;
+            while (!circle) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                switch (DeviceInfo.getMqttPayload) {
+
+                    case "addDevice":
+                        Log.i(LOG_TAG, "deviceService.addDevice");
+                        DeviceInfo.callResult = addDevice(DeviceInfo.devType);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            //Log.i(LOG_TAG, "addDevice : -17 !!!!!!!!!!!!!" + DeviceInfo.callResult);
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:addDevice:"+DeviceInfo.callResult;
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeDevice":
+                        Log.i(LOG_TAG, "deviceService.removeDevice");
+                        DeviceInfo.callResult = removeDevice(DeviceInfo.devType, 1);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            //Log.i(LOG_TAG, "removeDevice : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:removeDevice:"+DeviceInfo.callResult;
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "stopAddDevice":
+                        Log.i(LOG_TAG, "deviceService.stopAddDevice");
+                        DeviceInfo.callResult = stopAddDevice(DeviceInfo.devType);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            //Log.i(LOG_TAG, "stopAddDevice : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:stopAddDevice:"+DeviceInfo.callResult;
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "stopRemoveDevice":
+                        Log.i(LOG_TAG, "deviceService.stopRemoveDevice");
+                        DeviceInfo.callResult = stopRemoveDevice(DeviceInfo.devType);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            //Log.i(LOG_TAG, "stopRemoveDevice : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:stopRemoveDevice:"+DeviceInfo.callResult;
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeDeviceFromRoom":
+                        Log.i(LOG_TAG, "deviceService.removeDeviceFromRoom");
+                        removeDeviceFromRoom(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSecurity2CmdSupported": //public channel
+                        Log.i(LOG_TAG, "deviceService.getSecurity2CmdSupported");
+                        getSecurity2CmdSupported(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getDeviceList": //public channel
+                        Log.i(LOG_TAG, "deviceService.getDevices tRoom= " + DeviceInfo.room);
+                        getDeviceList(DeviceInfo.room);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "editNodeInfo":
+                        Log.d(LOG_TAG, "deviceService.editNodeInfo");
+                        DeviceInfo.callResult = editNodeInfo("", DeviceInfo.mqttDeviceId, DeviceInfo.mqttString3, DeviceInfo.devType, DeviceInfo.mqttString4, DeviceInfo.mqttString, DeviceInfo.mqttString2);
+                        Log.d(LOG_TAG, "deviceService.editNodeInfo : " + DeviceInfo.callResult);
+                        if (DeviceInfo.callResult == 1) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            DeviceInfo.resultToMqttBroker = "editNodeInfoTrue";
+                        } else {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo Fail");
+                            DeviceInfo.resultToMqttBroker = "editNodeInfoFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getRecentDeviceList": //public channel
+                        Log.i(LOG_TAG, "deviceService.getRecentDeviceList");
+                        getRecentDeviceList(DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "addRoom": //public channel
+                        Log.i(LOG_TAG, "deviceService.addRoom");
+                        addRoom(DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getRooms": //public channel
+                        Log.i(LOG_TAG, "deviceService.getRooms");
+                        getRooms();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "editRoom": //public channel
+                        Log.i(LOG_TAG, "deviceService.editRoom");
+                        editRoom(DeviceInfo.mqttString, DeviceInfo.mqttString2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeRoom": //public channel
+                        Log.i(LOG_TAG, "deviceService.removeRoom");
+                        removeRoom(DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getBasic":
+                        Log.i(LOG_TAG, "deviceService.getBasic" + DeviceInfo.mqttDeviceId);
+                        getBasic(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setBasic":
+                        Log.i(LOG_TAG, "deviceService.setBasic nodeId= " + DeviceInfo.mqttDeviceId + " value = " + DeviceInfo.mqttValue);
+                        setBasic(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttValue);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSwitchMultilevel":
+                        Log.i(LOG_TAG, "deviceService.getSwitchMultilevel" + DeviceInfo.mqttDeviceId);
+                        getSwitchMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setSwitchMultilevel":
+                        Log.i(LOG_TAG, "deviceService.setSwitchMultilevel nodeId= " + DeviceInfo.mqttDeviceId + " value = " + DeviceInfo.mqttValue + "duration " + DeviceInfo.mqttTmp);
+                        setSwitchMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttValue, 1);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setBrightness":
+                        Log.i(LOG_TAG, "deviceService.setBrightness");
+                        setSwitchMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttValue, 1);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getBrightness":
+                        Log.i(LOG_TAG, "deviceService.getBrightness" + DeviceInfo.mqttDeviceId);
+                        getSwitchMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSwitchColor":
+                        Log.i(LOG_TAG, "deviceService.getSwitchColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                        getSwitchColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setSwitchColor":
+                        Log.i(LOG_TAG, "deviceService.setSwitchColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2);
+                        setSwitchColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setLampColor":
+                        Log.i(LOG_TAG, "deviceService.setLampColor" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2+DeviceInfo.mqttTmp3);
+                        setLampColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2,DeviceInfo.mqttTmp3);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getLampColor":
+                        Log.i(LOG_TAG, "deviceService.getLampColor" + DeviceInfo.mqttDeviceId);
+                        getLampColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSupportedColor":
+                        Log.i(LOG_TAG, "deviceService.getSupportedColor" + DeviceInfo.mqttDeviceId);
+                        getSupportColor(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "startStopColorLevelChange":
+                        Log.i(LOG_TAG, "deviceService.startStopColorLevelChange" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2 + DeviceInfo.mqttTmp3 + DeviceInfo.mqttTmp4);
+                        startStopColorLevelChange(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3, DeviceInfo.mqttTmp4);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+
+                    case "getConfiguration":
+                        Log.i(LOG_TAG, "deviceService.getConfiguration");
+                        getConfiguration(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3, DeviceInfo.mqttTmp4);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setConfiguration":
+                        Log.i(LOG_TAG, "deviceService.setConfiguration");
+                        try {
+                            DeviceInfo.callResult = setConfiguration(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3, DeviceInfo.mqttTmp4);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setConfigurationTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setConfigurationFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getMeter":
+                        Log.i(LOG_TAG, "deviceService.getMeter" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                        DeviceInfo.callResult = getMeter(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "getMeterTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "getMeterFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "resetMeter":
+                        Log.i(LOG_TAG, "deviceService.resetMeter" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = resetMeter(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "resetMeterTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "resetMeterFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getGroupInfo":
+                        Log.i(LOG_TAG, "deviceService.getGroupInfo");
+                        //getGroupInfo(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2);
+                        getGroupInfo(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, 0);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "addEndpointsToGroup":
+                        addEndpointsToGroup(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, Utils.convertIntegers(DeviceInfo.arrList), DeviceInfo.mqttTmp2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeEndpointsFromGroup":
+                        removeEndpointsFromGroup(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, Utils.convertIntegers(DeviceInfo.arrList), DeviceInfo.mqttTmp2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getMaxSupportedGroups":
+                        Log.i(LOG_TAG, "deviceService.getMaxSupportedGroups");
+                        DeviceInfo.callResult = getMaxSupportedGroups(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "getMaxSupportedGroupsTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "getMaxSupportedGroupsFail";
+                        }
+
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setScheduleActive":
+                        Log.i(LOG_TAG, "deviceService.setScheduleActive " + DeviceInfo.mqttString);
+                        setScheduleActive(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getScheduleList":
+                        Log.i(LOG_TAG, "deviceService.getScheduleList");
+                        getScheduleList(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeSchedule":
+                        Log.i(LOG_TAG, "deviceService.removeSchedule " + DeviceInfo.mqttString);
+                        removeSchedule(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setSchedule":
+                        Log.i(LOG_TAG, "deviceService.setSchedule " + DeviceInfo.mqttString);
+                        setSchedule(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttString, DeviceInfo.mqttString4, DeviceInfo.mqttString5, Integer.valueOf(DeviceInfo.mqttString3), DeviceInfo.mqttString2);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "sendNodeInformation":
+                        Log.i(LOG_TAG, "deviceService.sendNodeInformation");
+                        sendNodeInformationFrame(0, 1);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getFavoriteList": //public channel
+                        Log.i(LOG_TAG, "deviceService.getFavoriteList");
+                        getFavoriteList();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "editFavoriteList": //public channel
+                        Log.i(LOG_TAG, "deviceService.editFavoriteList");
+                        editFavoriteList(DeviceInfo.addList, DeviceInfo.removeList);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setSceneAction":
+                        Log.i(LOG_TAG, "deviceService.setSceneAction ");
+                        //setSceneAction();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSceneList": //public channel
+                        Log.i(LOG_TAG, "deviceService.getScene");
+                        getScene();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeSceneAction":
+                        Log.i(LOG_TAG, "deviceService.removeSceneAction " + DeviceInfo.mqttString + " | nodeId = " + DeviceInfo.mqttString2);
+                        //removeSceneAction();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeScene":
+                        Log.i(LOG_TAG, "deviceService.removeScene " + DeviceInfo.mqttString);
+                        //removeScene(DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "editScene":
+                        Log.i(LOG_TAG, "deviceService.editScene " + DeviceInfo.mqttString + " to " + DeviceInfo.mqttString3 + "" +
+                                " |iconName = " + DeviceInfo.mqttString2 + " to " + DeviceInfo.mqttString4);
+                        //editScene(DeviceInfo.mqttString);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "executeScene":
+                        Log.i(LOG_TAG, "deviceService.removeScene " + DeviceInfo.mqttString2 + " action = " + DeviceInfo.mqttString);
+                        //editScene(sceneName);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "addProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.addProvisionListEntry");
+                        addProvisionListEntry("Zwave", DeviceInfo.dskNumber.getBytes(), DeviceInfo.inclusionState, DeviceInfo.bootMode,DeviceInfo.qrCodeFlag);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "rmProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.rmProvisionListEntry");
+                        //dskNumber = DeviceInfo.mqttString.getBytes();
+                        rmProvisionListEntry("Zwave", DeviceInfo.mqttString.getBytes());
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "rmAllProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.rmAllProvisionListEntry");
+                        rmAllProvisionListEntry();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "editProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.editProvisionListEntry");
+                        addProvisionListEntry("Zwave", DeviceInfo.dskNumber.getBytes(), DeviceInfo.inclusionState,DeviceInfo.bootMode,DeviceInfo.qrCodeFlag);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getAllProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.getAllProvisionListEntry");
+                        getAllProvisionListEntry();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getProvisionListEntry":
+                        Log.i(LOG_TAG, "deviceService.getProvisionListEntry");
+                        //dskNumber = DeviceInfo.mqttString.getBytes();
+                        getProvisionListEntry("Zwave", DeviceInfo.mqttString.getBytes());
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "startNetworkHealthCheck":
+                        Log.i(LOG_TAG, "deviceService.startNetworkHealthCheck");
+                        DeviceInfo.callResult = startNetworkHealthCheck();
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            //Log.i(LOG_TAG, "startNetworkHealthCheck : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:startNetworkHealthCheck:"+DeviceInfo.callResult;
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getBattery":
+                        Log.i(LOG_TAG, "deviceService.getBattery" + DeviceInfo.mqttDeviceId);
+                        getDeviceBattery(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSensorMultilevel":
+                        Log.i(LOG_TAG, "deviceService.getSensorMultilevel" + DeviceInfo.mqttDeviceId);
+                        try {
+                            getSensorMultiLevel(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSupportSwitchType":
+                        Log.i(LOG_TAG, "deviceService.getSupportSwitchType" + DeviceInfo.mqttDeviceId);
+                        getSupportedSwitchType(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "startStopSwitchLevelChange":
+                        Log.i(LOG_TAG, "deviceService.startStopSwitchLevelChange");
+                        DeviceInfo.callResult = startStopSwitchLevelChange(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3, DeviceInfo.mqttTmp4, DeviceInfo.mqttTmp5);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "startStopSwitchLevelChangeTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "startStopSwitchLevelChangeFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getPowerLevel":
+                        Log.i(LOG_TAG, "deviceService.getPowerLevel" + DeviceInfo.mqttDeviceId);
+                        getPowerLevel(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "switchAllOn":
+                        Log.i(LOG_TAG, "deviceService.switchAllOn" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = setSwitchAllOn(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "switchAllOnTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "switchAllOnFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "switchAllOff":
+                        Log.i(LOG_TAG, "deviceService.switchAllOff" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = setSwitchAllOff(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "switchAllOffTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "switchAllOffFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setSwitchAll":
+                        Log.i(LOG_TAG, "deviceService.setSwitchAll" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = setSwitchAll(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setSwitchAllTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setSwitchAllFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSwitchAll":
+                        Log.i(LOG_TAG, "deviceService.GetSwitchAll" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = getSwitchAll(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "getSwitchAllTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "getSwitchAllFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSensorBinary":
+                        Log.i(LOG_TAG, "deviceService.getSensorBinary");
+                        getSensorBasic(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSensorBinarySupportedSensor":
+                        Log.i(LOG_TAG, "deviceService.getSensorBinarySupportedSensor" + DeviceInfo.mqttDeviceId);
+                        GetSensorBinarySupportedSensor(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getMeterSupported":
+                        Log.i(LOG_TAG, "deviceService.getMeterSupported" + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = getMeterSupported(DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "getMeterSupportedTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "getMeterSupportedFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSpecificGroup":
+                        Log.i(LOG_TAG, "deviceService.getSpecificGroup" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                        getSpecificGroup(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getNotification":
+                        Log.i(LOG_TAG, "deviceService.getNotification" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2 + DeviceInfo.mqttTmp3);
+                        getSensorNotification(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+
+                    case "setNotification":
+                        Log.i(LOG_TAG, "deviceService.setNotification" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp + DeviceInfo.mqttTmp2);
+                        DeviceInfo.callResult = setNotification(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setNotificationTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setNotificationFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSupportedNotification":
+                        Log.i(LOG_TAG, "deviceService.getSupportedNotification" + DeviceInfo.mqttDeviceId);
+                        getSupportedNotification(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSupportedEventNotification":
+                        Log.i(LOG_TAG, "deviceService.getSupportedEventNotification" + DeviceInfo.mqttDeviceId + DeviceInfo.mqttTmp);
+                        getSupportedEventNotification(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSpecifyDeviceInfo":
+                        Log.i(LOG_TAG, "deviceService.getSpecifyDeviceInfo");
+                        Log.i(LOG_TAG, "nodeId: " + DeviceInfo.mqttDeviceId);
+                        getSpecifyDeviceInfo(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "removeFailDevice":
+                        Log.i(LOG_TAG, "deviceService.removeFailDevice");
+                        Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = removeFailedDevice(DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            //Log.i(LOG_TAG, "removeFailDevice : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:removeFailDevice:"+DeviceInfo.callResult;
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "checkNodeIsFailed":
+                        Log.i(LOG_TAG, "deviceService.checkNodeIsFailed");
+                        Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = checkNodeIsFailed(DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            //Log.i(LOG_TAG, "removeFailDevice : -17 !!!!!!!!!!!!!");
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:checkNodeIsFailed:"+DeviceInfo.callResult;
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setDefault":
+                        Log.i(LOG_TAG, "deviceService.setDefault");
+                        DeviceInfo.callResult = setDefault();
+                        if (DeviceInfo.callResult < 0) {
+                            DeviceInfo.resultToMqttBroker = "setDefaultFail17";
+                            //Log.i(LOG_TAG, "setDefault : -17 !!!!!!!!!!!!!");
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "replaceFailDevice":
+                        Log.i(LOG_TAG, "deviceService.replaceFailDevice");
+                        Log.i(LOG_TAG, "DeviceInfo.mqttDeviceId: " + DeviceInfo.mqttDeviceId);
+                        DeviceInfo.callResult = replaceFailedDevice(DeviceInfo.mqttDeviceId);
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            Log.i(LOG_TAG, "removeFailDevice : "+ DeviceInfo.callResult);
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:replaceFailDevice:"+DeviceInfo.callResult;
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "startLearnMode":
+                        Log.i(LOG_TAG, "deviceService.startLearnMode");
+                        DeviceInfo.callResult = StartLearnMode();
+                        if (DeviceInfo.callResult < 0) {
+                            //Log.d(LOG_TAG, "deviceService.editNodeInfo true");
+                            Log.i(LOG_TAG, "startLearnMode : " + DeviceInfo.callResult);
+                            DeviceInfo.resultToMqttBroker = "dongleBusy:startLearnMode:"+DeviceInfo.callResult;
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSceneActuatorConf":
+                        Log.i(LOG_TAG, "deviceService.getSceneActuatorConf");
+                        getSceneActuatorConf(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getSupportedCentralScene":
+                        Log.i(LOG_TAG, "deviceService.getSupportedCentralScene");
+                        getSupportedCentralScene(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getDoorLockOperation":
+                        Log.i(LOG_TAG, "deviceService.getDoorLockOperation");
+                        getDoorLockOperation(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setDoorLockOperation":
+                        Log.i(LOG_TAG, "deviceService.setDoorLockOperation");
+                        DeviceInfo.callResult = setDoorLockOperation(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setDoorLockOperationTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setDoorLockOperationFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getDoorLockConfig":
+                        Log.i(LOG_TAG, "deviceService.getDoorLockConfiguration");
+                        getDoorLockConfiguration(DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setDoorLockConfig":
+                        Log.i(LOG_TAG, "deviceService.setDoorLockConfig");
+
+                        DeviceInfo.callResult = setDoorLockConfiguration(DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp, DeviceInfo.mqttTmp2, DeviceInfo.mqttTmp3, DeviceInfo.mqttTmp4, DeviceInfo.mqttTmp5);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setDoorLockConfigTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setDoorLockConfigFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "setBinarySwitchState":
+                        Log.i(LOG_TAG, "deviceService.setBinarySwitchState");
+                        DeviceInfo.callResult = setBinarySwitchState(DeviceInfo.devType, DeviceInfo.mqttDeviceId, DeviceInfo.mqttTmp);
+                        if (DeviceInfo.callResult >= 0) {
+                            DeviceInfo.resultToMqttBroker = "setBinarySwitchStateTrue";
+                        } else {
+                            DeviceInfo.resultToMqttBroker = "setBinarySwitchStateFail";
+                        }
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getBinarySwitchState":
+                        Log.i(LOG_TAG, "deviceService.getBinarySwitchState");
+                        getBinarySwitchState(DeviceInfo.devType, DeviceInfo.mqttDeviceId);
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+
+                    case "getDeviceInfo":
+                        Log.i(LOG_TAG, "deviceService.getDeviceInfo");
+                        getDeviceInfo();
+                        DeviceInfo.getMqttPayload = "";
+                        break;
+                }
+            }
+        }
+    };
+
 }

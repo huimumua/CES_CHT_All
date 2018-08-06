@@ -87,28 +87,7 @@ public class BaseActivity extends AppCompatActivity{
         }
     }
 
-    public void setTopLayout(boolean isVis, String str) {
-        if((findViewById(R.id.img_back))!=null && (findViewById(R.id.tv_title))!=null){
-            //Back button =(ImageView)findViewById(R.id.img_back);
-            ImageView back = (ImageView)findViewById(R.id.img_back);
-            if(isVis){
-                back.setVisibility(View.VISIBLE);
-                back.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        backToHomeActivity();
-                    }
-                });
-            }else{
-                back.setVisibility(View.INVISIBLE);
-            }
-            //Title
-            TextView text = (TextView)findViewById(R.id.tv_title);
-            if(!"".equals(str) && str!=null){
-                text.setText(str);
-            }
-        }
-    }
+
 
     private void setProgressText(View v, String text) {
 
@@ -148,11 +127,6 @@ public class BaseActivity extends AppCompatActivity{
         }
     }
 
-    protected void backToHomeActivity(){
-        Intent intent = new Intent();
-        intent.setClass(mContext, HomeActivity.class);
-        mContext.startActivity(intent);
-        finish();
-    }
+
 
 }

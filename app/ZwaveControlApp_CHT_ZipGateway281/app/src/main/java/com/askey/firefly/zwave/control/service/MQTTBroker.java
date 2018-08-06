@@ -81,18 +81,13 @@ public class MQTTBroker extends Service {
         mqttConnectOptions.setAutomaticReconnect(true);
         mqttConnectOptions.setCleanSession(true);
 
-
         /*  connect to remote mqtt server */
-
         if (Const.remoteMqttFlag) {
             mqttRemoteConnect(mqttConnectOptions);
         }
 
         /*  connect to local mqtt server */
         mqttLocalConnect(mqttConnectOptions);
-
-        //new Thread(initMqtt).start();
-
 
         /*  launch tcp server and handle the tcp message */
         Log.i(LOG_TAG, "TCPServer = [" + handleTCPMessage() + "]");
@@ -108,8 +103,6 @@ public class MQTTBroker extends Service {
             }
 
         }).start();
-
-
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -132,17 +125,6 @@ public class MQTTBroker extends Service {
         DeviceInfo.reqFlag = false;
         return DeviceInfo.reqKey;
     }
-
-
-    public Runnable initMqtt = new Runnable() {
-        @Override
-        public void run() {
-            MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
-            mqttConnectOptions.setAutomaticReconnect(true);
-            mqttConnectOptions.setCleanSession(true);
-            mqttLocalConnect(mqttConnectOptions);
-        }
-    };
 
 
     @Override

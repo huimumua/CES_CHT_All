@@ -1,7 +1,7 @@
 package com.askey.firefly.zwave.control.utils;
 
-import com.askey.firefly.zwave.control.page.zwNodeMember;
-import com.askey.firefly.zwave.control.page.zwScenceMember;
+//import com.askey.firefly.zwave.control.page.zwNodeMember;
+//import com.askey.firefly.zwave.control.page.zwScenceMember;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
 
 import java.util.ArrayList;
@@ -19,8 +19,8 @@ public class DeviceInfo {
     public static ArrayList<String> remoteSubTopiclist = new ArrayList<>();
     public static ArrayList<String> localSubTopiclist = new ArrayList<>();
 
-    public static List<zwNodeMember> memberList = new ArrayList<>();
-    public static List<zwScenceMember> roomList = new ArrayList<>();
+    //public static List<zwNodeMember> memberList = new ArrayList<>();
+    //public static List<zwScenceMember> roomList = new ArrayList<>();
     public static String[] deviceType = {"BULB", "DIMMER", "PLUG", "SENSOR", "CONTROL", "OTHER"};
     public static String[] allRoomName = {"My Home","Living Room","Bedroom"};
     public static String dskNumber = null;
