@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     tools:context="com.askey.mobile.zwave.control.home.fragment.roomitem.MyHomeRoomFragment">
 
-    <android.support.v4.widget.NestedScrollView
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -94,7 +94,7 @@
                 android:visibility="visible" />
 
         </LinearLayout>
-    </android.support.v4.widget.NestedScrollView>
+    </ScrollView>
     <RelativeLayout
         android:id="@+id/no_device_layout"
         android:layout_width="match_parent"
