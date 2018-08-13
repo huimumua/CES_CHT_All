@@ -1,0 +1,45 @@
+[
+    {
+        "outputFile": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\incremental\\mergeQbeeDebugAndroidTestResources\\merged.dir\\values\\values.xml",
+        "map": [
+            {
+                "to": {
+                    "startLine": 2,
+                    "startColumn": 4,
+                    "startOffset": 55,
+                    "endColumn": 63,
+                    "endOffset": 114
+                },
+                "from": {
+                    "file": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\generated\\res\\resValues\\androidTest\\qbee\\debug\\values\\generated.xml",
+                    "position": {
+                        "startLine": 6,
+                        "startColumn": 4,
+                        "startOffset": 165,
+                        "endColumn": 63,
+                        "endOffset": 224
+                    }
+                }
+            },
+            {
+                "to": {
+                    "startLine": 3,
+                    "startColumn": 4,
+                    "startOffset": 119,
+                    "endColumn": 45,
+                    "endOffset": 160
+                },
+                "from": {
+                    "file": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\exploded-aar\\com.android.support.test\\rules\\0.5\\res\\values\\values.xml",
+                    "position": {
+                        "startLine": 4,
+                        "startColumn": 4,
+                        "startOffset": 229,
+                        "endColumn": 45,
+                        "endOffset": 270
+                    }
+                }
+            }
+        ]
+    }
+]

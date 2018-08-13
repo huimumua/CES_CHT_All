@@ -1,0 +1,159 @@
+-- Merging decision tree log ---
+manifest
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:2:1-52:12
+	package
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:3:5-46
+		INJECTED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml
+		INJECTED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml
+	android:versionName
+		INJECTED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml
+		INJECTED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml
+	xmlns:android
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:2:11-69
+	android:versionCode
+		INJECTED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml
+		INJECTED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml
+uses-permission#android.permission.RECEIVE_BOOT_COMPLETED
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:5:5-81
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:5:22-78
+uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:6:5-81
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:6:22-78
+uses-permission#android.permission.ACCESS_NETWORK_STATE
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:7:5-79
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:7:22-76
+uses-permission#android.permission.READ_EXTERNAL_STORAGE
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:8:5-80
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:8:22-77
+uses-permission#android.permission.INTERNET
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:9:5-67
+MERGED from [zipGatewayS2_for_Qbee:broker:unspecified] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\zipGatewayS2_for_Qbee\broker\unspecified\AndroidManifest.xml:10:5-67
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:9:22-64
+uses-permission#android.permission.WAKE_LOCK
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:10:5-68
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:10:22-65
+uses-permission#android.permission.ACCESS_WIFI_STATE
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:11:5-76
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:11:22-73
+application
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:13:5-50:19
+MERGED from [com.android.support.constraint:constraint-layout:1.0.0-alpha9] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support.constraint\constraint-layout\1.0.0-alpha9\AndroidManifest.xml:9:5-20
+MERGED from [com.android.support:design:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\design\25.3.1\AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:appcompat-v7:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\25.3.1\AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:animated-vector-drawable:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\animated-vector-drawable\25.3.1\AndroidManifest.xml:26:5-20
+MERGED from [com.android.support:support-vector-drawable:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-vector-drawable\25.3.1\AndroidManifest.xml:26:5-20
+MERGED from [com.android.support:transition:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\transition\25.3.1\AndroidManifest.xml:26:5-20
+MERGED from [com.android.support:support-v4:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-v4\25.3.1\AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:support-fragment:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-fragment\25.3.1\AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:support-media-compat:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-media-compat\25.3.1\AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:support-core-ui:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-core-ui\25.3.1\AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:support-core-utils:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-core-utils\25.3.1\AndroidManifest.xml:29:5-20
+MERGED from [com.android.support:support-compat:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-compat\25.3.1\AndroidManifest.xml:29:5-20
+	android:screenOrientation
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:18:9-46
+	android:label
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:17:9-41
+	android:supportsRtl
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:20:9-35
+	android:versionName
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:21:9-54
+	android:roundIcon
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:19:9-54
+	android:allowBackup
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:15:9-35
+	android:icon
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:16:9-41
+	android:theme
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:22:9-40
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:14:9-53
+activity#com.askey.firefly.zwave.control.ui.WelcomeActivity
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:23:9-30:20
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:24:13-47
+intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:25:13-29:29
+action#android.intent.action.MAIN
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:26:17-69
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:26:25-66
+category#android.intent.category.LAUNCHER
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:28:17-77
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:28:27-74
+receiver#com.askey.firefly.zwave.control.service.BootBroadcastReceiver
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:32:9-38:20
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:32:19-64
+intent-filter#android.intent.action.BOOT_COMPLETED+android.intent.action.USER_PRESENT
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:33:13-37:29
+action#android.intent.action.USER_PRESENT
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:34:17-77
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:34:25-74
+action#android.intent.action.BOOT_COMPLETED
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:35:17-79
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:35:25-76
+service#com.askey.firefly.zwave.control.service.ZwaveControlService
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:40:9-46:19
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:40:18-61
+service#org.eclipse.paho.android.service.MqttService
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:47:9-80
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:47:18-77
+service#com.askey.firefly.zwave.control.service.MQTTBroker
+ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:48:9-63
+	android:name
+		ADDED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml:48:18-52
+uses-sdk
+INJECTED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
+MERGED from [com.android.support.constraint:constraint-layout:1.0.0-alpha9] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support.constraint\constraint-layout\1.0.0-alpha9\AndroidManifest.xml:5:5-7:41
+MERGED from [com.android.support:design:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\design\25.3.1\AndroidManifest.xml:21:5-23:62
+MERGED from [com.android.support:appcompat-v7:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\25.3.1\AndroidManifest.xml:21:5-23:78
+MERGED from [com.android.support:animated-vector-drawable:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\animated-vector-drawable\25.3.1\AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-vector-drawable:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-vector-drawable\25.3.1\AndroidManifest.xml:20:5-43
+MERGED from [com.android.support:recyclerview-v7:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\recyclerview-v7\25.3.1\AndroidManifest.xml:20:5-43
+MERGED from [com.android.support:transition:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\transition\25.3.1\AndroidManifest.xml:20:5-44
+MERGED from [com.android.support:support-v4:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-v4\25.3.1\AndroidManifest.xml:21:5-23:54
+MERGED from [com.android.support:support-fragment:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-fragment\25.3.1\AndroidManifest.xml:21:5-23:60
+MERGED from [com.android.support:support-media-compat:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-media-compat\25.3.1\AndroidManifest.xml:21:5-23:63
+MERGED from [com.android.support:support-core-ui:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-core-ui\25.3.1\AndroidManifest.xml:21:5-23:58
+MERGED from [com.android.support:support-core-utils:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-core-utils\25.3.1\AndroidManifest.xml:21:5-23:61
+MERGED from [com.android.support:support-compat:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-compat\25.3.1\AndroidManifest.xml:21:5-23:58
+MERGED from [zipGatewayS2_for_Qbee:broker:unspecified] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\zipGatewayS2_for_Qbee\broker\unspecified\AndroidManifest.xml:6:5-8:41
+MERGED from [zipGatewayS2_for_Qbee:netty_parser:unspecified] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\zipGatewayS2_for_Qbee\netty_parser\unspecified\AndroidManifest.xml:6:5-8:41
+MERGED from [zipGatewayS2_for_Qbee:parser_commons:unspecified] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\zipGatewayS2_for_Qbee\parser_commons\unspecified\AndroidManifest.xml:6:5-8:41
+	tools:overrideLibrary
+		ADDED from [com.android.support:design:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\design\25.3.1\AndroidManifest.xml:23:9-59
+	android:targetSdkVersion
+		INJECTED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml
+		INJECTED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml
+		INJECTED from D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\src\main\AndroidManifest.xml
+meta-data#android.support.VERSION
+ADDED from [com.android.support:design:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\design\25.3.1\AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:appcompat-v7:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\25.3.1\AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:animated-vector-drawable:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\animated-vector-drawable\25.3.1\AndroidManifest.xml:22:5-24:34
+MERGED from [com.android.support:support-vector-drawable:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-vector-drawable\25.3.1\AndroidManifest.xml:22:5-24:34
+MERGED from [com.android.support:recyclerview-v7:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\recyclerview-v7\25.3.1\AndroidManifest.xml:22:5-24:34
+MERGED from [com.android.support:transition:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\transition\25.3.1\AndroidManifest.xml:22:5-24:34
+MERGED from [com.android.support:support-v4:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-v4\25.3.1\AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:support-fragment:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-fragment\25.3.1\AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:support-media-compat:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-media-compat\25.3.1\AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:support-core-ui:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-core-ui\25.3.1\AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:support-core-utils:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-core-utils\25.3.1\AndroidManifest.xml:25:5-27:34
+MERGED from [com.android.support:support-compat:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\support-compat\25.3.1\AndroidManifest.xml:25:5-27:34
+	android:value
+		ADDED from [com.android.support:design:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\design\25.3.1\AndroidManifest.xml:27:9-31
+	android:name
+		ADDED from [com.android.support:design:25.3.1] D:\Project\00016_CHT\zipGatewayS2_for_Qbee\app\build\intermediates\exploded-aar\com.android.support\design\25.3.1\AndroidManifest.xml:26:9-47

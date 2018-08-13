@@ -1,0 +1,42 @@
+[
+    {
+        "merged": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\res\\merged\\qbee\\debug\\mipmap-hdpi\\toggle_off.png",
+        "source": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\src\\main\\res\\mipmap-hdpi\\toggle_off.png"
+    },
+    {
+        "merged": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\res\\merged\\qbee\\debug\\mipmap-hdpi\\toggle_on.png",
+        "source": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\src\\main\\res\\mipmap-hdpi\\toggle_on.png"
+    },
+    {
+        "merged": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\res\\merged\\qbee\\debug\\mipmap-hdpi\\ic_launcher.png",
+        "source": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\src\\main\\res\\mipmap-hdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\res\\merged\\qbee\\debug\\mipmap-hdpi\\ic_launcher_round.png",
+        "source": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\src\\main\\res\\mipmap-hdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\res\\merged\\qbee\\debug\\mipmap-hdpi\\switch_off_icon.png",
+        "source": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\src\\main\\res\\mipmap-hdpi\\switch_off_icon.png"
+    },
+    {
+        "merged": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\res\\merged\\qbee\\debug\\mipmap-hdpi\\menu.png",
+        "source": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\src\\main\\res\\mipmap-hdpi\\menu.png"
+    },
+    {
+        "merged": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\res\\merged\\qbee\\debug\\mipmap-hdpi\\switch_on_selected_icon.png",
+        "source": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\src\\main\\res\\mipmap-hdpi\\switch_on_selected_icon.png"
+    },
+    {
+        "merged": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\res\\merged\\qbee\\debug\\mipmap-hdpi\\welcome.png",
+        "source": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\src\\main\\res\\mipmap-hdpi\\welcome.png"
+    },
+    {
+        "merged": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\res\\merged\\qbee\\debug\\mipmap-hdpi\\back.png",
+        "source": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\src\\main\\res\\mipmap-hdpi\\back.png"
+    },
+    {
+        "merged": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\build\\intermediates\\res\\merged\\qbee\\debug\\mipmap-hdpi\\askeylogo1.png",
+        "source": "D:\\Project\\00016_CHT\\zipGatewayS2_for_Qbee\\app\\src\\main\\res\\mipmap-hdpi\\askeylogo1.png"
+    }
+]
