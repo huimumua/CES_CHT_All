@@ -1829,6 +1829,8 @@ public class ZwaveControlService extends IntentService {
 
         Log.i(LOG_TAG, "===isOK==" + isOK);
         String openResult = "openController:" + isOK;
+        if(isOK == 0)
+            DeviceInfo.isZwaveInitFinish = true;
 
         String tmpString = new String(result);
         Log.i(LOG_TAG, tmpString);
@@ -2374,6 +2376,8 @@ public class ZwaveControlService extends IntentService {
             }
         } else if ("Switch Color Report".equals(messageType)) {
             zwaveControlResultCallBack("Switch Color Report", jniResult);
+        } else if ("Transfer Error Report".equals(messageType)) {
+            zwaveControlResultCallBack("Transfer Error Report", jniResult);
         } else if ("Group Info Report".equals(messageType)) {
             /*
             try {
