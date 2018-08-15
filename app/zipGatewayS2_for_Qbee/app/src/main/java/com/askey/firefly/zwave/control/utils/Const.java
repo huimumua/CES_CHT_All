@@ -32,8 +32,8 @@ public class Const {
 	public static final String DBPATH = DATA_PATH + "/" + DATABASE_NAME;
 
 	public static final int TCP_PORT = 48080;
-	//public static final String remoteServerIP = "211.75.141.112"; //our 成都server
-	public static final String remoteServerIP = "10.8.2.230";	//成都server
+	public static final String remoteServerIP = "211.75.141.112"; //our server
+	//public static final String remoteServerIP = "10.8.2.230";	//成都server
 	public static final String TCPSTRING = "firefly_zwave:";
 
 	public static String localMQTTServerUri = "tcp://"+ Utils.getIpAddress() + ":1883";
