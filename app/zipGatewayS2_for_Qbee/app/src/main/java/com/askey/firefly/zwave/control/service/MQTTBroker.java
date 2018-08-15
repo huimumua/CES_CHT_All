@@ -1,19 +1,14 @@
 package com.askey.firefly.zwave.control.service;
 
 import android.app.Service;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.IBinder;
-import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.askey.firefly.zwave.control.R;
 import com.askey.firefly.zwave.control.dao.ZwaveDeviceManager;
 import com.askey.firefly.zwave.control.dao.ZwaveDeviceSceneManager;
-import com.askey.firefly.zwave.control.jni.ZwaveControlHelper;
 import com.askey.firefly.zwave.control.net.TCPServer;
 import com.askey.firefly.zwave.control.net.UDPConnectin;
 import com.askey.firefly.zwave.control.utils.Const;
@@ -34,9 +29,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+
 
 public class MQTTBroker extends Service {
 
@@ -57,9 +52,6 @@ public class MQTTBroker extends Service {
     private byte[] dskNumber;
 
     private boolean setDefaultFlag = false;
-
-
-
 
     @Override
     public void onCreate() {
@@ -111,7 +103,6 @@ public class MQTTBroker extends Service {
             }
 
         }).start();
-
     }
 
     public static int jni() {
@@ -440,6 +431,7 @@ public class MQTTBroker extends Service {
         String[] devInfo = new String[2];
         String devType = "Zwave";
 
+
  /*
         if (!TopicName.equals(Const.PublicTopicName)) {
             if (tokens[1].contains("Zwave")) {
@@ -455,6 +447,7 @@ public class MQTTBroker extends Service {
 
         }
 */
+
         JSONObject payload = new JSONObject(mqttMessage);
 
         if (mqttMessage.contains("function")) {
@@ -463,21 +456,27 @@ public class MQTTBroker extends Service {
 
             switch (function) {
                 case "getZwaveGatewayInit":
-                    JSONObject message = new JSONObject();
-                    DeviceInfo.mqttString = payload.getString("result");
-                    if(DeviceInfo.mqttString.equals("true")) {
-                        DeviceInfo.getMqttPayload = "getDeviceInfo";
-                    }
-                    Log.i(LOG_TAG, "zwaveGatewayInit");
-                    try {
-                        message.put("Interface", "zwaveGatewayInit");
-                        message.put("result","true");
+                    if(DeviceInfo.isZwaveInitFinish) {
+                        JSONObject message = new JSONObject();
+                        try {
+                            message.put("Interface", "zwaveGatewayInit");
+                            message.put("result", "true");
 
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        publishMessage(Const.PublicTopicName, message.toString());
+                    } else {
+                        JSONObject message = new JSONObject();
+                        try {
+                            message.put("Interface", "zwaveGatewayInit");
+                            message.put("result", "false");
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        publishMessage(Const.PublicTopicName, message.toString());
                     }
-                    DeviceInfo.isZwaveInitFinish = false;
-                    publishMessage(Const.PublicTopicName, message.toString());
                     break;
 
                 case "removeDeviceFromRoom":
@@ -1213,7 +1212,7 @@ public class MQTTBroker extends Service {
                     break;
 
                 case "getVersion":
-                    message = new JSONObject();
+                    JSONObject message = new JSONObject();
                     Log.i(LOG_TAG, "deviceService.getVersion");
                     try {
                         message.put("MessageType", "Version Messages");
@@ -2697,19 +2696,6 @@ public class MQTTBroker extends Service {
                     }
                     publishMessage(Const.PublicTopicName, message.toString());
                 }
-            } else if(DeviceInfo.isZwaveInitFinish) {
-                    message = new JSONObject();
-                    Log.i(LOG_TAG, "zwaveGatewayInit");
-                    try {
-                        message.put("Interface", "zwaveGatewayInit");
-                        message.put("result","true");
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                    DeviceInfo.isZwaveInitFinish = false;
-                    publishMessage(Const.PublicTopicName, message.toString());
-
             } else {
                 if(DeviceInfo.className != "") {
                     publishMessage(Const.PublicTopicName, DeviceInfo.result);
