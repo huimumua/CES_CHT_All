@@ -74,7 +74,7 @@ public class ZwaveControlHelper {
         ZwaveControlService.getInstance().zwaveControlReq_CallBack(result, len);
         //android.util.Log.d("ZwaveControlHelper", "ZwaveControlReq_CallBack " + new String(result));
 
-        return MQTTBroker.jni();
+        return ZwaveControlService.waitReqCallBack();
 
     }
 

@@ -66,8 +66,6 @@ public class ZwaveControlService extends IntentService {
     private int flag;
     private final String zwaveType = "Zwave";
     private final String btType = "BT";
-    private BroadcastReceiver usbReceiver = null;
-    private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
     private ZwaveDeviceManager zwaveDeviceManager;
     private ZwaveScheduleManager zwSchManager;
     private ScheduleJobManager scheduleJobManager;
@@ -76,7 +74,6 @@ public class ZwaveControlService extends IntentService {
     private ZwaveDeviceRoomManager roomManager;
     private static ArrayList <zwaveCallBack> mCallBacks = new ArrayList<>();
     private static ArrayList <zwaveControlReq_CallBack> mReqCallBacks = new ArrayList<>();
-    private int result = 0;
 
     /**
      * Creates an IntentService.  Invoked by your subclass's constructor.
@@ -87,16 +84,10 @@ public class ZwaveControlService extends IntentService {
         super("ZwaveControlService");
     }
 
-    public static ZwaveControlService getInstance() {
-        if (mService != null) {
-            return mService;
-        }
-        return null;
-    }
 
     @Override
-    protected void onHandleIntent(@Nullable Intent intent) {
-        Logg.i(LOG_TAG, "=====onHandleIntent=========");
+    public void onCreate() {
+        super.onCreate();
         new UsbSerial(this);
         mService = this;
 
@@ -117,6 +108,39 @@ public class ZwaveControlService extends IntentService {
         devGroupManager = ZwaveDeviceGroupManager.getInstance(this);
         sceneManager = ZwaveSceneManager.getInstance(this);
         roomManager = ZwaveDeviceRoomManager.getInstance(this);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                waitReqCallBack();
+            }
+
+        }).start();
+
+    }
+
+    public static int waitReqCallBack() {
+        while (!DeviceInfo.reqFlag){
+            try {
+                Thread.sleep(100);
+                //Log.d(LOG_TAG,"!DeviceInfo.reqFlag !!!!!!!!!!!!!!!!!");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        DeviceInfo.reqFlag = false;
+        return DeviceInfo.reqKey;
+    }
+
+    public static ZwaveControlService getInstance() {
+        if (mService != null) {
+            return mService;
+        }
+        return null;
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        Logg.i(LOG_TAG, "=====onBind=========");
 
         int creatResult = ZwaveControlHelper.CreateZwController(); //测试返回0
         if (creatResult == 0) {
@@ -124,12 +148,26 @@ public class ZwaveControlService extends IntentService {
         } else {
             Logg.e(LOG_TAG, "==CreateZwController=creatResult=" + creatResult);
         }
-        requestControlUSBPermission();
-        register(mCallback);
-        register(mReqCallback);
-        initSensorfunc();
-        new Thread(activityZwaveControlService).start();
-        getDeviceInfo();
+        return myBinder;
+    }
+
+    @Override
+    protected void onHandleIntent(@Nullable Intent intent) {
+
+    }
+
+    public MyBinder myBinder = new MyBinder();
+
+    public class MyBinder extends Binder {
+        public ZwaveControlService getService() {
+            return ZwaveControlService.this;
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        Logg.i(LOG_TAG, "=====onDestroy=========");
+        super.onDestroy();
     }
 
     public static ZwaveControlService.zwaveCallBack mCallback = new ZwaveControlService.zwaveCallBack() {
@@ -137,6 +175,7 @@ public class ZwaveControlService extends IntentService {
         @Override
         public void zwaveControlResultCallBack(String className, String result) {
             Log.i(LOG_TAG, "Result class name = [" + DeviceInfo.className + "] | result = " + DeviceInfo.result);
+
 
             while(DeviceInfo.mqttFlag) {
                 try {
@@ -215,76 +254,21 @@ public class ZwaveControlService extends IntentService {
                     }
                     DeviceInfo.reqString = "Grant";
                     Log.d(LOG_TAG,"Grant Keys number : Grant");
-
+                    DeviceInfo.reqKey = Integer.valueOf(DeviceInfo.grantKeyNumber);
+                    DeviceInfo.reqFlag = true;
                 } else if (result.contains("PIN Requested Msg")) {
-                    //DeviceInfo.reqKey = 11394;
+                    DeviceInfo.reqKey = 11394;
                     DeviceInfo.reqString = "PIN";
+                    DeviceInfo.reqFlag = true;
+
                 } else if (result.contains("Client Side Au Msg")) {
                     DeviceInfo.reqString = "Au";
+                    DeviceInfo.reqKey = 0;
+                    DeviceInfo.reqFlag = true;
+
                 }
             }
         };
-    }
-
-
-
-
-    private void requestControlUSBPermission() {
-
-        UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
-        HashMap<String, UsbDevice> usbDevices = manager.getDeviceList();
-
-        UsbDevice dev = null;
-        int vid = 0;
-        int pid = 0;
-
-        for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
-            dev = entry.getValue();
-            vid = dev.getVendorId();
-            pid = dev.getProductId();
-            Log.d(LOG_TAG, "Usb Device Vid = "+ Integer.toHexString(vid) +",Pid = "+ Integer.toHexString(pid));
-            if ((vid == 0x0658) && (pid == 0x0200)) {
-                Log.d(LOG_TAG, "Usb Device Is CDC Device...");
-                if (manager.hasPermission(dev)) {
-                    Log.d(LOG_TAG, "Usb Permission Ok....");
-                    doOpenController();
-                    break;
-                } else {
-                    Log.e(LOG_TAG, "Usb Permission Na,Try To Request Permission....");
-                    PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
-                    manager.requestPermission(dev, mPendingIntent);
-                    IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
-                    usbReceiver = new usbReceiver();
-                    registerReceiver(usbReceiver, filter);
-                }
-            }else{
-                dev = null;
-                Log.d(LOG_TAG, "Usb Device Is Not CDC Device...");
-                unregisterReceiver(usbReceiver);
-            }
-        }
-
-    }
-
-    //can take off this function !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    public class usbReceiver extends BroadcastReceiver {
-
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (ACTION_USB_PERMISSION.equals(action)) {
-                synchronized (this) {
-                    UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        if (device != null) {
-                            doOpenController();
-                        }
-                    } else {
-                        Log.d(LOG_TAG,"USB"+ "permission denied for device " + device);
-                        System.exit(0);
-                    }
-                }
-            }
-        }
     }
 
 
@@ -354,7 +338,6 @@ public class ZwaveControlService extends IntentService {
                 GetSensorBinarySupportedSensor(nodeId);
             }
         }
-
     }
 
     public void register(zwaveCallBack callback){
@@ -362,7 +345,6 @@ public class ZwaveControlService extends IntentService {
     }
 
     public void register(zwaveControlReq_CallBack callReqback){
-        Log.d(LOG_TAG,"register zwaveControlReq_CallBack");
         mReqCallBacks.add(callReqback);
     }
 
@@ -380,13 +362,16 @@ public class ZwaveControlService extends IntentService {
 
     public int addDevice(String devType){
         //if (devType.equals(zwaveType)) {
-            return ZwaveControlHelper.ZwController_AddDevice();
+        return ZwaveControlHelper.ZwController_AddDevice();
+        //} else if (devType.equals(btType)){
+            /*
+            try {
+                btControlService.getScanDeviceList();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            */
         //}
-        /*
-        else if (devType.equals(btType)){
-
-        }
-        */
     }
 
     public int removeDevice(String devType, int nodeId){
@@ -2119,7 +2104,6 @@ public class ZwaveControlService extends IntentService {
         JSONObject jsonObject = null;
         String messageType = null;
         String status = null;
-
         try {
             jsonObject = new JSONObject(jniResult);
             messageType = jsonObject.optString("MessageType");

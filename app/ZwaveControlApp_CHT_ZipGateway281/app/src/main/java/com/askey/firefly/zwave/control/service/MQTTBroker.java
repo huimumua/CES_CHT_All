@@ -65,12 +65,12 @@ public class MQTTBroker extends Service {
     public void onCreate() {
 
         super.onCreate();
-
         try {
             mqttServer.startServer();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         boolean bResult = uDPConnecting.startReceiver();
         Log.i("MQTTClient", "UDP server = [" + bResult + "]");
         Log.i("MQTTClient", "MQTT Local Server = [" + mqttServer.getServerStatus() + "]");
@@ -112,20 +112,6 @@ public class MQTTBroker extends Service {
         }).start();
 
     }
-
-    public static int jni() {
-        while (!DeviceInfo.reqFlag){
-            try {
-                Thread.sleep(100);
-                //Log.d(LOG_TAG,"!DeviceInfo.reqFlag !!!!!!!!!!!!!!!!!");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        DeviceInfo.reqFlag = false;
-        return DeviceInfo.reqKey;
-    }
-
 
     @Override
     public void onDestroy() {

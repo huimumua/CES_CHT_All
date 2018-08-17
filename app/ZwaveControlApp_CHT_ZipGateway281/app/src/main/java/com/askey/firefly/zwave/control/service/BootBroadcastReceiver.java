@@ -37,17 +37,16 @@ public class BootBroadcastReceiver extends BroadcastReceiver{
 
                 }
             };
-            //Intent service = new Intent(context, ZwaveControlService.class);
-            //context. bindService(service, serviceConnection, Context.BIND_AUTO_CREATE);
+            Intent service = new Intent(context, ZwaveControlService.class);
+            context. bindService(service, serviceConnection, Context.BIND_AUTO_CREATE);
         }
 
         if (intent.getAction().equals("android.intent.action.BOOT_COMPLETED")) {
             Log.i(TAG, "=========BOOT_COMPLETED===========");
 
-            Intent activityIntent = new Intent(context, WelcomeActivity.class);
-            activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(activityIntent);
-
+            Intent activity = new Intent(context, WelcomeActivity.class);
+            activity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(activity);
         }
 
     }

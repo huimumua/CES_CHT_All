@@ -42,6 +42,7 @@
                 android:paddingLeft="20.0dip"
                 android:paddingRight="20.0dip"
                 android:paddingTop="15.0dip"
+                android:focusable="true"
                 android:background="@color/white"/>
         </LinearLayout>
 
