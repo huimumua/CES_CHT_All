@@ -58,13 +58,11 @@ public class MQTTBroker extends Service {
 
     private boolean setDefaultFlag = false;
 
-
-
-
     @Override
     public void onCreate() {
 
         super.onCreate();
+
         try {
             mqttServer.startServer();
         } catch (IOException e) {
@@ -110,7 +108,6 @@ public class MQTTBroker extends Service {
             }
 
         }).start();
-
     }
 
     @Override
@@ -318,7 +315,7 @@ public class MQTTBroker extends Service {
                     public void messageArrived(String topic, MqttMessage message) throws Exception {
                         String mqttMessage = new String(message.getPayload());
                         mqttMessage = mqttMessage.replaceAll("\n", "");
-                        Log.i(LOG_TAG, "Remote MQTT Incoming [" + topic + "] : " + mqttMessage);
+                        Log.i(LOG_TAG, "Remote MQTT receive Message , publishTopic [" + topic + "] : " + mqttMessage);
 
                         if (mqttMessage.contains("desired")) {
 
@@ -400,7 +397,7 @@ public class MQTTBroker extends Service {
                         JSONObject jsonObject = new JSONObject(mqttMessage);
 
                         String data = jsonObject.getJSONObject("state").getJSONObject("desired").getString("data");
-                        Log.i(LOG_TAG, "Local MQTT data=" + data);
+                        //Log.i(LOG_TAG, "Local MQTT data=" + data);
 
                         handleMqttIncomingMessage(topic, data);
                     }
@@ -425,6 +422,7 @@ public class MQTTBroker extends Service {
         String[] devInfo = new String[2];
         String devType = "Zwave";
 
+
  /*
         if (!TopicName.equals(Const.PublicTopicName)) {
             if (tokens[1].contains("Zwave")) {
@@ -440,13 +438,38 @@ public class MQTTBroker extends Service {
 
         }
 */
+
         JSONObject payload = new JSONObject(mqttMessage);
 
         if (mqttMessage.contains("function")) {
             String function = payload.getString("function");
-            Log.i(LOG_TAG, "gino " + function);
+            //Log.i(LOG_TAG, "gino " + function);
 
             switch (function) {
+                case "getZwaveGatewayInit":
+                    if(DeviceInfo.isZwaveInitFinish) {
+                        JSONObject message = new JSONObject();
+                        try {
+                            message.put("Interface", "zwaveGatewayInit");
+                            message.put("result", "true");
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        publishMessage(Const.PublicTopicName, message.toString());
+                    } else {
+                        JSONObject message = new JSONObject();
+                        try {
+                            message.put("Interface", "zwaveGatewayInit");
+                            message.put("result", "false");
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        publishMessage(Const.PublicTopicName, message.toString());
+                    }
+                    break;
+
                 case "removeDeviceFromRoom":
                     DeviceInfo.mqttDeviceId = Integer.parseInt(payload.getString("nodeId"));
                     Log.i(LOG_TAG, "deviceService.removeDeviceFromRoom");
@@ -1371,18 +1394,22 @@ public class MQTTBroker extends Service {
             message.setPayload(json.toString().getBytes());
             Log.i(LOG_TAG, "MQTT send Message , publishTopic : "+ publishTopic + " Message : " + publishMessage);
 
-
+            boolean localMqttMsg = false;
             if (mqttLocalClient.isConnected()) {
                 mqttLocalClient.publish(publishTopic, message);
+                localMqttMsg = true;
+                Log.e(LOG_TAG, "localMqttMsg = true");
             } else {
                 Log.e(LOG_TAG, "[LocalMqttClient] fail to connect local mqtt server");
             }
-
-            if (Const.remoteMqttFlag) {
-                if (mqttRemoteClient.isConnected()) {
-                    mqttRemoteClient.publish(publishTopic, message);
-                } else {
-                    Log.e(LOG_TAG, "[LocalMqttClient] fail to connect local mqtt server");
+            if(localMqttMsg == false) {
+                Log.e(LOG_TAG, "localMqttMsg = false");
+                if (Const.remoteMqttFlag) {
+                    if (mqttRemoteClient.isConnected()) {
+                        mqttRemoteClient.publish(publishTopic, message);
+                    } else {
+                        Log.e(LOG_TAG, "[LocalMqttClient] fail to connect local mqtt server");
+                    }
                 }
             }
 
@@ -2783,7 +2810,7 @@ public class MQTTBroker extends Service {
     }
 
     private void getDeviceList(String result) {
-        Log.i(LOG_TAG, "into getDeviceList");
+        //Log.i(LOG_TAG, "into getDeviceList");
         ArrayList<String> tmpLine = Utils.searchString(result, "deviceList");
 
         for (int idx = 0; idx < tmpLine.size(); idx++) {
@@ -2865,10 +2892,15 @@ public class MQTTBroker extends Service {
                     }
                     publishMessage(Const.PublicTopicName, message.toString());
                     DeviceInfo.smartStartFlag = false;
-                    Log.d(LOG_TAG,"DeviceInfo.smartStartFlag = false");
+                    Log.d(LOG_TAG, "DeviceInfo.smartStartFlag = false");
 
 
-                } else {
+                }
+            }
+        }
+
+        /*
+                else {
                     Log.i(LOG_TAG, "removeDevice:  result");
                     if(!setDefaultFlag) {
                         try {
@@ -2894,8 +2926,107 @@ public class MQTTBroker extends Service {
                     }
                 }
                 //Const.TCPClientPort = 0;
+
+            }
+
+
+
+        if(DeviceInfo.result.contains("Node Add Status")) {
+            if (DeviceInfo.result.contains("Success")) {
+                if (DeviceInfo.result.contains("Nodeid")) {
+                    try {
+                        JSONObject payload = new JSONObject(DeviceInfo.result);
+                        int nodeid = Integer.parseInt(payload.getString("Nodeid"));
+                        Log.d(LOG_TAG, "status true" + " node id " + nodeid);
+                        //if (nodeid == 0) {
+                        try {
+                            message.put("Interface", "addDevice");
+                            message.put("nodeId", nodeid);
+                            message.put("result", "true");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        subscribeToTopic(Const.PublicTopicName + "Zwace" + nodeid);
+                        publishMessage(Const.PublicTopicName, message.toString());
+                        Log.i(LOG_TAG, "Node Add Status result true result true");
+                        DeviceInfo.getMqttPayload = "getDeviceList";
+                        //}
+                    } catch(JSONException e){
+                        e.printStackTrace();
+                    }
+                }
+            } else if (DeviceInfo.result.contains("Failed")){
+                if (DeviceInfo.result.contains("Nodeid")) {
+                    try {
+                        JSONObject payload = new JSONObject(DeviceInfo.result);
+                        int nodeid = Integer.parseInt(payload.getString("Nodeid"));
+                        Log.d(LOG_TAG, "status true" + " node id " + nodeid);
+                        //if (nodeid == 0) {
+                        try {
+                            message.put("Interface", "addDevice");
+                            message.put("nodeId", nodeid);
+                            message.put("result", "false");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        publishMessage(Const.PublicTopicName, message.toString());
+                        //}
+                    } catch(JSONException e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+            DeviceInfo.smartStartFlag = false;
+            Log.d(LOG_TAG,"DeviceInfo.smartStartFlag = false");
+        }
+*/
+        if(DeviceInfo.result.contains("Node Remove Status")) {
+            if (DeviceInfo.result.contains("Success")) {
+                if (DeviceInfo.result.contains("Nodeid")) {
+                    try {
+                        JSONObject payload = new JSONObject(DeviceInfo.result);
+                        int nodeid = Integer.parseInt(payload.getString("Nodeid"));
+                        Log.d(LOG_TAG, "status true" + " node id " + nodeid);
+                        //if (nodeid == 0) {
+                            try {
+                                message.put("Interface", "removeDevice");
+                                message.put("nodeId", nodeid);
+                                message.put("result", "true");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            unsubscribeTopic(Const.PublicTopicName + "Zwave" + nodeid);
+                            publishMessage(Const.PublicTopicName, message.toString());
+                            Log.i(LOG_TAG, "Node Remove Status result true");
+                            DeviceInfo.getMqttPayload = "getDeviceList";
+                        //}
+                    } catch(JSONException e){
+                        e.printStackTrace();
+                    }
+                }
+            } else if (DeviceInfo.result.contains("Failed")){
+                if (DeviceInfo.result.contains("Nodeid")) {
+                    try {
+                        JSONObject payload = new JSONObject(DeviceInfo.result);
+                        int nodeid = Integer.parseInt(payload.getString("Nodeid"));
+                        Log.d(LOG_TAG, "status true" + " node id " + nodeid);
+                        //if (nodeid == 0) {
+                        try {
+                            message.put("Interface", "removeDevice");
+                            message.put("nodeId", nodeid);
+                            message.put("result", "false");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        publishMessage(Const.PublicTopicName, message.toString());
+                        //}
+                    } catch(JSONException e){
+                        e.printStackTrace();
+                    }
+                }
             }
         }
+        /*
         //不再DB裡面刪除或添加,回傳mqtt payload
         else if (DeviceInfo.className.equals("removeDevice")) {
             Log.i(LOG_TAG, "removeDevice  result");
@@ -2918,6 +3049,7 @@ public class MQTTBroker extends Service {
                 publishMessage(Const.PublicTopicName, message.toString());
             }
         }
+        */
 
         //add fail send mqtt payload
         else if (DeviceInfo.className.equals("addDevice")) {
@@ -2932,6 +3064,7 @@ public class MQTTBroker extends Service {
                 publishMessage(Const.PublicTopicName, message.toString());
             }
         }
+        
         /*
         else if (DeviceInfo.result.contains("NewAdded")) {
                 String[] tmpAdd = DeviceInfo.result.split(",");

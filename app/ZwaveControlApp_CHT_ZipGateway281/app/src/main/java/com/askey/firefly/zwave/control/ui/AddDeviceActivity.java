@@ -49,7 +49,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
     private Timer timer;
     private ZwaveDeviceManager zwDevManager;
     private ZwaveControlService zwaveService;
-
+    private boolean cancel = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -94,6 +94,7 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
                 finish();
                 break;
             case R.id.btn_cancel:
+                cancel = true;
                 showStopAddDialog();
                 break;
         }
@@ -432,10 +433,11 @@ public class AddDeviceActivity extends BaseActivity implements View.OnClickListe
                             proBar.setIndeterminate(false);
 
                         } else if ("Failed".equals(status)) {
-                            showFailedAddZaveDialog("Add Device Fail");
-                            timerCancel();
-                            proBar.setIndeterminate(false);
-
+                            if(cancel == false) {
+                                showFailedAddZaveDialog("Add Device Fail");
+                                timerCancel();
+                                proBar.setIndeterminate(false);
+                            }
                         } else if("Learn Ready".equals(status)){
                             tvStatus.setText("Please press the trigger button of the device");
 

@@ -19,7 +19,6 @@ public class DeviceInfo {
     public static boolean isMQTTInitFinish = false;
     public static ArrayList<String> remoteSubTopiclist = new ArrayList<>();
     public static ArrayList<String> localSubTopiclist = new ArrayList<>();
-    public static ArrayList<String> awsIotDevList = new ArrayList<>();
 
     public static List<zwNodeMember> memberList = new ArrayList<>();
     public static List<RoomMember> roomList = new ArrayList<>();
@@ -96,6 +95,4 @@ public class DeviceInfo {
     public static String rColor = "";
     public static String gColor = "";
     public static String bColor = "";
-
-
 }

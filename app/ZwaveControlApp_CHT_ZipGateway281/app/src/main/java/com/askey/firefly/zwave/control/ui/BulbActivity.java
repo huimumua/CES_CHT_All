@@ -8,7 +8,9 @@ import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -88,9 +90,11 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
         cbSwitch.setOnClickListener(this);
     }
 
+
     public Runnable bindzwaveservice = new Runnable() {
         @Override
         public void run() {
+
             Intent serviceIntent = new Intent(BulbActivity.this, ZwaveControlService.class);
             bindService(serviceIntent, conn, Context.BIND_AUTO_CREATE);
         }
@@ -105,13 +109,13 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             switch (checkedId) {
                 case R.id.warmWhite:
                     //set the color to warmwhite
-                    warmWhite();
+                    setLampToWarmWhite(zwaveType,nodeId);
                     colorPickerLayout.setVisibility(View.GONE);
                     colorSet = 0;
                     break;
                 case R.id.coldWite:
                     //disable warmwhite color
-                    coldWite();
+                    setLampToColdWhite(zwaveType,nodeId);
                     colorPickerLayout.setVisibility(View.GONE);
                     colorSet = 1;
                     break;
@@ -123,6 +127,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             }
         }
     };
+
 
     private void initView() {
 
@@ -142,7 +147,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 brightnessLevel = i*10;
 
-                setSwitchMultiLevel();
+                setSwitchMultiLevel(zwaveType, nodeId, brightnessLevel, 1);
                 if (brightnessLevel!=0 && cbSwitch.isChecked()==false){
                     cbSwitch.setChecked(true);
                 }else if (brightnessLevel==0){
@@ -165,8 +170,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                //zwaveService.setSwitchMultiLevel(zwaveType, nodeId, brightnessLevel, 1);
-                setSwitchMultiLevel();
+                setSwitchMultiLevel(zwaveType, nodeId, brightnessLevel, 1);
                 if (brightnessLevel!=0 && cbSwitch.isChecked()==false){
                     cbSwitch.setChecked(true);
                 }
@@ -178,6 +182,8 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                //zwaveService.getBasic(zwaveType, nodeId);
+                //zwaveService.getSwitchMultiLevel(zwaveType,nodeId);
             }
         });
     }
@@ -189,7 +195,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             @Override
             public void onColorChange(int color) {
                 txtColor.setTextColor(color);
-                setLampColor(Color.red(color),Color.green(color),Color.blue(color));
+                setLampColor(zwaveType,nodeId,Color.red(color),Color.green(color),Color.blue(color));
             }
 
         });
@@ -215,10 +221,11 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
                     if (basicValue ==0) {
                         turnOn();
                     }else {
-                        setSwitchMultiLevel();
+                        setSwitchMultiLevel(zwaveType, nodeId, basicValue, 1);
                     }
-                    getSwitchMultiLevel();
+                    getSwitchMultiLevel(zwaveType,nodeId);
                 } else {
+                    //zwaveService.setSwitchAllOff(nodeId);
                     turnOff();
                     brightness.setText("Brightness : 0 %");
                     brightness_change.setProgress(0);
@@ -231,7 +238,6 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
     }
 
 
-
     // bind service with zwave control service
     private ServiceConnection conn = new ServiceConnection() {
         @Override
@@ -241,7 +247,8 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             //register mCallback
             if (zwaveService != null) {
                 zwaveService.register(mCallback);
-
+                getBasic();
+                getSwitchMultiLevel(Const.zwaveType,nodeId);
                 new initDeviceTask().execute(zwaveService);
             }
         }
@@ -256,8 +263,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
 
         @Override
         public void zwaveControlResultCallBack(String className, String result) {
-
-            //Log.e(LOG_TAG,"mCallBack = "+className+" | result = "+result);
+            Log.d(LOG_TAG,"mCallBack = "+className+" | result = "+result);
 
         if (className.equals("setBasic")|| className.equals("getBasic")
             || className.equals("setSwitchAllOn") ||className.equals("setSwitchAllOn")
@@ -269,7 +275,51 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             if (Utils.isGoodJson(result)) {
                 ((Activity) mContext).runOnUiThread(new BulbActivity.CallbackRunnable(nodeId, result));
             }
+            if (result.contains("on")) {
+                switchStatus(1);
+            } else {
+                switchStatus(2);
+            }
+            if(result.contains("Cur Val")) {
+                switchStatus(3);
+            }
         }
+        }
+    };
+
+    private void switchStatus(final int value) {
+        new Thread(){
+            @Override
+            public void run(){
+                switch (value){
+                    case 1:
+                        Log.d(LOG_TAG,"status on");
+                        mHandler.sendEmptyMessage(1);
+                        break;
+                    case 2:
+                        Log.d(LOG_TAG,"status off");
+                        mHandler.sendEmptyMessage(2);
+                        break;
+                    case 3:
+                        brightness_change.setProgress(3);
+                        break;
+                }
+            }
+        }.start();
+    }
+
+
+    public Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case 1:
+                    cbSwitch.setChecked(true);
+                    break;
+                case 2:
+                    cbSwitch.setChecked(false);
+                    break;
+            }
         }
     };
 
@@ -338,7 +388,7 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
         @Override
         protected Void doInBackground(ZwaveControlService... params) {
 
-            getSwitchMultiLevel();
+            getSwitchMultiLevel(zwaveType,nodeId);
             params[0].getLampColor(zwaveType,nodeId);
 
             try {
@@ -350,6 +400,17 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
         }
     }
 
+
+    private void getBasic() {
+        new Thread(){
+            @Override
+            public void run(){
+                if(zwaveService != null)
+                    zwaveService.getBasic(Const.zwaveType,nodeId);
+            }
+        }.start();
+    }
+
     private void zwaveUnregister() {
         new Thread(){
             @Override
@@ -359,49 +420,57 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
             }
         }.start();
     }
-    private void getSwitchMultiLevel() {
+
+    private void setLampToWarmWhite(String zwaveType, final int nodeId) {
         new Thread(){
             @Override
             public void run(){
-                zwaveService.getSwitchMultiLevel(Const.zwaveType,nodeId);
+                    zwaveService.setLampToWarmWhite(Const.zwaveType,nodeId);
             }
         }.start();
     }
 
-    private void setSwitchMultiLevel() {
+    private void setLampToColdWhite(String zwaveType, final int nodeId) {
         new Thread(){
             @Override
             public void run(){
-                zwaveService.setSwitchMultiLevel(zwaveType, nodeId, brightnessLevel, 1);
+                zwaveService.setLampToColdWhite(Const.zwaveType,nodeId);
             }
         }.start();
     }
 
-    private void coldWite() {
+    private void setSwitchMultiLevel(final String zwaveType, final int nodeId, final int brightnessLevel, final int value) {
         new Thread(){
             @Override
             public void run(){
-                zwaveService.setLampToColdWhite(zwaveType,nodeId);
+                zwaveService.setSwitchMultiLevel(zwaveType, nodeId, brightnessLevel, value);
             }
         }.start();
     }
 
-    private void warmWhite() {
+    private void getSwitchMultiLevel(final String zwaveType, final int nodeId) {
         new Thread(){
             @Override
             public void run(){
-                zwaveService.setLampToWarmWhite(zwaveType,nodeId);
+                zwaveService.getSwitchMultiLevel(zwaveType, nodeId);
             }
         }.start();
     }
 
+    private void setLampColor(final String zwaveType, final int nodeId, final int red, final int green , final int blue) {
+        new Thread(){
+            @Override
+            public void run(){
+                zwaveService.setLampColor(zwaveType,nodeId,red,green,blue);
+            }
+        }.start();
+    }
 
     private void turnOn() {
         new Thread(){
             @Override
             public void run(){
                 zwaveService.setBasic(Const.zwaveType,nodeId,255);
-                zwaveService.getBasic(Const.zwaveType,nodeId);
             }
         }.start();
     }
@@ -415,12 +484,5 @@ public class BulbActivity extends BaseActivity implements View.OnClickListener {
         }.start();
     }
 
-    private void setLampColor(final int red, final int green, final int blue) {
-        new Thread(){
-            @Override
-            public void run(){
-                zwaveService.setLampColor(zwaveType,nodeId,red,green,blue);
-            }
-        }.start();
-    }
+
 }

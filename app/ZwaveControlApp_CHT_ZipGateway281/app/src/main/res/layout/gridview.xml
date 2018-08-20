@@ -14,6 +14,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:columnWidth="120dp"
-        android:numColumns="5"  />
+        android:columnWidth="240dp"
+        android:numColumns="auto_fit" />
 </LinearLayout>

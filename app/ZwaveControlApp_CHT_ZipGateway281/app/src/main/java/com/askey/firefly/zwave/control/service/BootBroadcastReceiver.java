@@ -49,5 +49,13 @@ public class BootBroadcastReceiver extends BroadcastReceiver{
             context.startActivity(activity);
         }
 
+        if (intent.getAction().equals("android.intent.action.destroy")) {
+            Logg.i(TAG, "=========destroy===========");
+            //启动程序
+            Intent activity = new Intent(context, WelcomeActivity.class);
+            activity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(activity);
+        }
+
     }
 }

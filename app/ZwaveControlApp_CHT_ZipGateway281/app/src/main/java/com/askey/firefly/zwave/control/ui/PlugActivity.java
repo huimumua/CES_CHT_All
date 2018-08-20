@@ -7,7 +7,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -20,7 +22,6 @@ import com.askey.firefly.zwave.control.service.ZwaveControlService;
 import com.askey.firefly.zwave.control.utils.Const;
 import com.askey.firefly.zwave.control.utils.Utils;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.regex.Matcher;
@@ -32,7 +33,6 @@ public class PlugActivity extends BaseActivity implements View.OnClickListener {
     private int nodeId;
     private TextView txSWMode,txParameter,txValue,txParameter1,txValue1;
     private ZwaveControlService zwaveService;
-    private String switchStatus = "";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -111,6 +111,21 @@ public class PlugActivity extends BaseActivity implements View.OnClickListener {
         }
     }
 
+    public Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case 1:
+                    powerSwitch.setChecked(true);
+                    break;
+                case 2:
+                    powerSwitch.setChecked(false);
+                    break;
+            }
+        }
+    };
+
+
     // bind service with zwave control service
     private ServiceConnection conn = new ServiceConnection() {
         @Override
@@ -138,12 +153,12 @@ public class PlugActivity extends BaseActivity implements View.OnClickListener {
         public void zwaveControlResultCallBack(String className, String result) {
 
             Log.i(LOG_TAG, "class name = " + className + " | reuslt =" + result);
-            if(className.equals("getBasic")){
-                if(result.contains("on")) {
-                    Log.d(LOG_TAG,result);
-                    powerSwitch.setChecked(true);
-                } else
-                    powerSwitch.setChecked(false);
+            if(className.equals("getBasic")) {
+                if (result.contains("on")) {
+                    switchStatus(1);
+                } else {
+                    switchStatus(2);
+                }
             }
             if (className.equals("setConfiguration") || className.equals("getConfiguration")
                     || className.equals("setSwitchMultiLevel") || className.equals("getSwitchMultiLevel")
@@ -157,6 +172,7 @@ public class PlugActivity extends BaseActivity implements View.OnClickListener {
             }
         }
     };
+
 
     private class CallbackRunnable implements Runnable {
 
@@ -240,6 +256,24 @@ public class PlugActivity extends BaseActivity implements View.OnClickListener {
             params[0].getMeter(Const.zwaveType,nodeId,0x00);
             return null;
         }
+    }
+
+    private void switchStatus(final int value) {
+        new Thread(){
+            @Override
+            public void run(){
+                switch (value){
+                    case 1:
+                        Log.d(LOG_TAG,"status on");
+                        mHandler.sendEmptyMessage(1);
+                        break;
+                    case 2:
+                        Log.d(LOG_TAG,"status off");
+                        mHandler.sendEmptyMessage(2);
+                        break;
+                }
+            }
+        }.start();
     }
 
 

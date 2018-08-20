@@ -213,6 +213,7 @@ public class RemoveDeviceActivity extends BaseActivity implements View.OnClickLi
                         tvStatus.setText("Success");
                         proBar.setIndeterminate(false);
                         timerCancel();
+                        backToHomeActivity();
 
                     } else if ("Failed".equals(status)) {
                         Toast.makeText(mContext, "Delete Faild", Toast.LENGTH_SHORT).show();

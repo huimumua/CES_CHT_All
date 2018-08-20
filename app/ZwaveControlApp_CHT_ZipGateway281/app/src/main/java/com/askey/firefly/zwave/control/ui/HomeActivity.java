@@ -1,6 +1,9 @@
 package com.askey.firefly.zwave.control.ui;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.PagerAdapter;
@@ -9,6 +12,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.askey.firefly.zwave.control.R;
@@ -24,17 +30,18 @@ import java.util.List;
  * Created by chiapin on 2017/9/22.
  */
 
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity extends BaseActivity {
 
     private static String LOG_TAG = HomeActivity.class.getSimpleName();
-
     private TabLayout mTablayout;
     private ViewPager mViewPager;
     private List<PageView> pageList;
     private SamplePagerAdapter adapter;
-
     private long clickTime = 0;
-
+    initTask mTask;
+    private ProgressBar progressBar;
+    private TextView text;
+    private FrameLayout rootFrameLayout;
     // Tab titles
     private String[] tabs = { "DEVICE LIST", "ROOM LIST" };
 
@@ -46,7 +53,66 @@ public class HomeActivity extends AppCompatActivity {
         pageList = new ArrayList<>();
         initData();
         initView();
+
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        text = (TextView) findViewById(R.id.textView5);
+
+        mTask = new initTask();
+        mTask.execute();
     }
+
+    class initTask extends AsyncTask<String, Integer, String> {
+
+        protected void onPreExecute() {
+            text.setText("loading");
+        }
+
+
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            try {
+                int count = 0;
+                int length = 1;
+                while (count< 99) {
+                    count += length;
+                    publishProgress(count);
+                    Thread.sleep(60);
+                }
+            }catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... progresses) {
+            progressBar.setProgress(progresses[0]);
+            text.setText("loading..." + progresses[0] + "%");
+        }
+
+
+        @Override
+        protected void onPostExecute(String result) {
+            text.setText("finish");
+            mHandler.sendEmptyMessage(0);
+        }
+
+    }
+
+    public Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case 0:
+                    hideProgressDialog();
+                    break;
+            }
+        }
+    };
+
 
     @Override
     protected void onStart() {
