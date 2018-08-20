@@ -68,6 +68,10 @@ import java.util.TimerTask;
  */
 
 public class WelcomeActivity extends BaseActivity {
+    private static String LOG_TAG = WelcomeActivity.class.getSimpleName();
+    private BroadcastReceiver usbReceiver = null;
+    private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
+    private ZwaveControlService zwaveService;
     MyTask mTask;
 
     @Override
@@ -84,13 +88,9 @@ public class WelcomeActivity extends BaseActivity {
 
         @Override
         protected void onPreExecute() {
-            showProgressDialog(mContext, "Initializing�AOpen Zwave Controller...");
+            showProgressDialog(mContext, "Initializing, AOpen Zwave Controller...");
         }
 
-
-        // ��k2�GdoInBackground�]�^
-        // �@�ΡG����?�J??�B?���?������?�ާ@�B��^ ?�{��??�檺?�G
-        // ��?�q??��?�Ӽ�?���[??�ס�����?
         @Override
         protected String doInBackground(String... params) {
 
@@ -99,6 +99,18 @@ public class WelcomeActivity extends BaseActivity {
 
             Intent zwaveService = new Intent(WelcomeActivity.this, ZwaveControlService.class);
             startService(zwaveService);
+            bindService(zwaveService, conn, Context.BIND_AUTO_CREATE);
+
+            //requestControlUSBPermission();
+
+            while(!DeviceInfo.isOpenControllerFinish){
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
@@ -108,20 +120,92 @@ public class WelcomeActivity extends BaseActivity {
             return null;
         }
 
-        // ��k4�GonPostExecute�]�^
-        // �@�ΡG����?�{��??��?�G�B??��?�G?�ܨ�UI?��
+
         @Override
         protected void onPostExecute(String result) {
-            // ?�槹?�Z�A?��sUI
-            //showInitZaveDialog( "�[?����");
             mHandler.sendEmptyMessage(0);
+        }
+    }
 
+    private ServiceConnection conn = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+
+            zwaveService = ((ZwaveControlService.MyBinder)iBinder).getService();
+            //register mCallback
+            if (zwaveService != null) {
+                //zwaveService.register(mCallback);
+                requestControlUSBPermission();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            zwaveService = null;
+        }
+    };
+
+    private void requestControlUSBPermission() {
+
+        UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        HashMap<String, UsbDevice> usbDevices = manager.getDeviceList();
+
+        UsbDevice dev = null;
+        int vid = 0;
+        int pid = 0;
+
+        for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
+            dev = entry.getValue();
+            vid = dev.getVendorId();
+            pid = dev.getProductId();
+            Log.d(LOG_TAG, "Usb Device Vid = "+ Integer.toHexString(vid) +",Pid = "+ Integer.toHexString(pid));
+            if ((vid == 0x0658) && (pid == 0x0200)) {
+                Log.d(LOG_TAG, "Usb Device Is CDC Device...");
+                if (manager.hasPermission(dev)) {
+                    Log.d(LOG_TAG, "Usb Permission Ok....");
+                    zwaveService.doOpenController();
+                    break;
+                } else {
+                    Log.e(LOG_TAG, "Usb Permission Na,Try To Request Permission....");
+                    DeviceInfo.isOpenControllerFinish = false;
+                    PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+                    manager.requestPermission(dev, mPendingIntent);
+                    IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+                    usbReceiver = new usbReceiver();
+                    registerReceiver(usbReceiver, filter);
+                }
+            }else{
+                dev = null;
+                Log.d(LOG_TAG, "Usb Device Is Not CDC Device...");
+//                unregisterReceiver(usbReceiver);
+            }
+        }
+
+    }
+
+    public class usbReceiver extends BroadcastReceiver {
+
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        if (device != null) {
+                            zwaveService.doOpenController();
+                        }
+                    } else {
+                        Log.d(LOG_TAG,"USB"+ "permission denied for device " + device);
+                        System.exit(0);
+                    }
+                }
+            }
         }
     }
 
     private void process() {
 
-        showProgressDialog(mContext, "Initializing�AOpen Zwave Controller...");
+        showProgressDialog(mContext, "Initializing ,Open Zwave Controller...");
         new Thread(){
             @Override
             public void run(){

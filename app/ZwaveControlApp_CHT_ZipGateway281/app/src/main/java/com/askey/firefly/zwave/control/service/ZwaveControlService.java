@@ -129,7 +129,7 @@ public class ZwaveControlService extends IntentService {
             Logg.e(LOG_TAG, "==CreateZwController=creatResult=" + creatResult);
         }
         //requestControlUSBPermission();
-        doOpenController();
+        //doOpenController();
         register(mCallback);
         register(mReqCallback);
         initSensorfunc();
@@ -1869,7 +1869,8 @@ public class ZwaveControlService extends IntentService {
         }
         byte[] result = new byte[500];
         int isOK = ZwaveControlHelper.OpenZwController(FILE_PATH, SAVE_NODEINFO_FILE, result);
-
+        if(isOK == 0)
+            DeviceInfo.isOpenControllerFinish = true;
         Log.i(LOG_TAG, "===isOK==" + isOK);
         String openResult = "openController:" + isOK;
 
@@ -2280,7 +2281,7 @@ public class ZwaveControlService extends IntentService {
                 jsonObject.put("nodeId",String.valueOf(payload.getInt("Node id")));
 
                 String switchStatus = payload.getString("value");
-                Log.d(LOG_TAG,"gino value"+switchStatus);
+                //Log.d(LOG_TAG,"gino value"+switchStatus);
                 if (switchStatus.equals("00")){
                     jsonObject.put("switchStatus","off");
                 } else{

@@ -9,6 +9,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +22,7 @@ import com.askey.firefly.zwave.control.R;
 import com.askey.firefly.zwave.control.page.PageView;
 import com.askey.firefly.zwave.control.page.RoomListPage;
 import com.askey.firefly.zwave.control.page.devListPage;
+import com.askey.firefly.zwave.control.utils.DeviceInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,17 +56,17 @@ public class HomeActivity extends BaseActivity {
         initData();
         initView();
 
-        progressBar = (ProgressBar) findViewById(R.id.progressBar);
-        text = (TextView) findViewById(R.id.textView5);
+        //progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        //text = (TextView) findViewById(R.id.textView5);
 
         mTask = new initTask();
-        mTask.execute();
+        //mTask.execute();
     }
 
     class initTask extends AsyncTask<String, Integer, String> {
 
         protected void onPreExecute() {
-            text.setText("loading");
+            text.setText("Start Loading");
         }
 
 
@@ -75,6 +77,7 @@ public class HomeActivity extends BaseActivity {
             try {
                 int count = 0;
                 int length = 1;
+                Log.d(LOG_TAG,"gino " + DeviceInfo.memberList.size());
                 while (count< 99) {
                     count += length;
                     publishProgress(count);
@@ -90,13 +93,13 @@ public class HomeActivity extends BaseActivity {
         @Override
         protected void onProgressUpdate(Integer... progresses) {
             progressBar.setProgress(progresses[0]);
-            text.setText("loading..." + progresses[0] + "%");
+            text.setText("Loading..." + progresses[0] + "%");
         }
 
 
         @Override
         protected void onPostExecute(String result) {
-            text.setText("finish");
+            text.setText("Finish load");
             mHandler.sendEmptyMessage(0);
         }
 
