@@ -3933,7 +3933,7 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
                 {
                     hl_meter_info_show(intf, InterfaceInfo);
                 }
-                else if (intf->cls == COMMAND_CLASS_NOTIFICATION_V4 && intf->ver >=3)
+                else if (intf->cls == COMMAND_CLASS_NOTIFICATION_V4 && intf->ver >= 3)
                 {
                     hl_notification_info_show(intf, InterfaceInfo);
                     result = zwif_notification_rpt_set(intf, hl_notification_get_report_cb);
@@ -4294,7 +4294,7 @@ static int hl_specify_node_desc_dump(hl_appl_ctx_t *hl_appl, int nodeId, cJSON *
                     {
                         hl_meter_info_show(intf, InterfaceInfo);
                     }
-                    else if (intf->cls == COMMAND_CLASS_NOTIFICATION_V4)
+                    else if (intf->cls == COMMAND_CLASS_NOTIFICATION_V4 && intf->ver >= 3)
                     {
                         hl_notification_info_show(intf, InterfaceInfo);
                         //result = zwif_notification_rpt_set(intf, hl_notification_get_report_cb);
