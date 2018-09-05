@@ -3200,6 +3200,8 @@ static void  hl_sup_sensor_show(zwifd_p intf, cJSON *interfaceInfo)
             return;
         }
 
+        char str[100] = {0};
+
         cJSON_AddItemToArray(sensorInfoArray, sensorInfo);
 
         if (sup_sensor[i] > ZW_SENSOR_TYPE_TGT_TEMP)
@@ -3208,8 +3210,9 @@ static void  hl_sup_sensor_show(zwifd_p intf, cJSON *interfaceInfo)
         }
 
         ALOGI("                        Supported sensor type:%s", sensor_type_str[sup_sensor[i]]);
+        sprintf(str, "sensor type %d", i+1);
 
-        cJSON_AddStringToObject(sensorInfo, "sensor type", sensor_type_str[sup_sensor[i]]);
+        cJSON_AddStringToObject(sensorInfo, str, sensor_type_str[sup_sensor[i]]);
     }
 }
 
@@ -3424,6 +3427,8 @@ static void hl_notification_info_show(zwifd_p intf, cJSON *interfaceInfo)
         return;
     }
 
+    char notifiy_str[100] = {0};
+
     cJSON_AddItemToObject(interfaceInfo, "Notification Info", notificationInfoArray);
 
     for (i=0; i<notify_cnt; i++)
@@ -3442,7 +3447,10 @@ static void hl_notification_info_show(zwifd_p intf, cJSON *interfaceInfo)
         {
             ALOGI("                        Supported notification type: %s",notif_type[sup_notify[i].type_evt[j].ztype]);
 
-            cJSON_AddStringToObject(notificationInfo, "Supported notifications", notif_type[sup_notify[i].type_evt[j].ztype]);evt_len = 0;
+            sprintf(notifiy_str,"Supported notifications type %d",j+1);
+
+            cJSON_AddStringToObject(notificationInfo, notifiy_str, notif_type[sup_notify[i].type_evt[j].ztype]);
+            evt_len = 0;
 
             for(k = 0; k < sup_notify[i].type_evt[j].evt_len * 8; k++)
             {
@@ -3459,23 +3467,26 @@ static void hl_notification_info_show(zwifd_p intf, cJSON *interfaceInfo)
             {
                 return;
             }
-            cJSON_AddItemToObject(notificationInfo, "Supported event", eventInfo);
+
+            sprintf(notifiy_str,"Related events %d",j+1);
+            cJSON_AddItemToObject(notificationInfo, notifiy_str, eventInfo);
 
             for(int l=0; l< evt_len; l++)
             {
+                sprintf(notifiy_str,"event[%d]",l+1);
                 if(sup_notify[i].type_evt[j].ztype == 0x06)
                 {
-                    cJSON_AddStringToObject(eventInfo, "event", access_control_evt[sup_evt[l]]);
+                    cJSON_AddStringToObject(eventInfo, notifiy_str, access_control_evt[sup_evt[l]]);
                     ALOGI("                           Supported event:%s", access_control_evt[sup_evt[l]]);
                 }
                 if(sup_notify[i].type_evt[j].ztype == 0x07)
                 {
-                    cJSON_AddStringToObject(eventInfo, "event", home_security_evt[sup_evt[l]]);
+                    cJSON_AddStringToObject(eventInfo, notifiy_str, home_security_evt[sup_evt[l]]);
                     ALOGI("                           Supported event:%s",home_security_evt[sup_evt[l]]);
                 }
                 if(sup_notify[i].type_evt[j].ztype == 0x05)
                 {
-                    cJSON_AddStringToObject(eventInfo, "event", water_alarm_evt[sup_evt[l]]);
+                    cJSON_AddStringToObject(eventInfo, notifiy_str, water_alarm_evt[sup_evt[l]]);
                     ALOGI("                           Supported event:%s",water_alarm_evt[sup_evt[l]]);
                 }
             } // dump supported event for notification type end
