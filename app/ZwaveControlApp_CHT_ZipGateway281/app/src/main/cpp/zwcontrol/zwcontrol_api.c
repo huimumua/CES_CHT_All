@@ -1585,7 +1585,6 @@ static void hl_nw_notify_hdlr(nw_notify_msg_t *notify_msg)
 static void dummy_post_msg(void *msg)
 {
     hl_nw_notify_hdlr((nw_notify_msg_t *)msg);
-    free(msg);
 }
 
 static char* hl_nw_create_op_msg(uint8_t op, uint16_t sts, hl_appl_ctx_t * hl_appl,  zwnet_sts_t *info)
@@ -1938,6 +1937,7 @@ static void hl_nw_notify_cb(void *user, uint8_t op, uint16_t sts, zwnet_sts_t *i
             free(str);
         }
     }
+    free(nw_notify);
 }
 
 static char  *prompt_str(hl_appl_ctx_t *hl_appl, const char *disp_str, int out_buf_sz, char *out_str)
@@ -3200,6 +3200,8 @@ static void  hl_sup_sensor_show(zwifd_p intf, cJSON *interfaceInfo)
             return;
         }
 
+        char str[100] = {0};
+
         cJSON_AddItemToArray(sensorInfoArray, sensorInfo);
 
         if (sup_sensor[i] > ZW_SENSOR_TYPE_TGT_TEMP)
@@ -3208,8 +3210,9 @@ static void  hl_sup_sensor_show(zwifd_p intf, cJSON *interfaceInfo)
         }
 
         ALOGI("                        Supported sensor type:%s", sensor_type_str[sup_sensor[i]]);
+        sprintf(str, "sensor type %d", i+1);
 
-        cJSON_AddStringToObject(sensorInfo, "sensor type", sensor_type_str[sup_sensor[i]]);
+        cJSON_AddStringToObject(sensorInfo, str, sensor_type_str[sup_sensor[i]]);
     }
 }
 
@@ -3424,6 +3427,8 @@ static void hl_notification_info_show(zwifd_p intf, cJSON *interfaceInfo)
         return;
     }
 
+    char notifiy_str[100] = {0};
+
     cJSON_AddItemToObject(interfaceInfo, "Notification Info", notificationInfoArray);
 
     for (i=0; i<notify_cnt; i++)
@@ -3442,7 +3447,10 @@ static void hl_notification_info_show(zwifd_p intf, cJSON *interfaceInfo)
         {
             ALOGI("                        Supported notification type: %s",notif_type[sup_notify[i].type_evt[j].ztype]);
 
-            cJSON_AddStringToObject(notificationInfo, "Supported notifications", notif_type[sup_notify[i].type_evt[j].ztype]);evt_len = 0;
+            sprintf(notifiy_str,"Supported notifications type %d",j+1);
+
+            cJSON_AddStringToObject(notificationInfo, notifiy_str, notif_type[sup_notify[i].type_evt[j].ztype]);
+            evt_len = 0;
 
             for(k = 0; k < sup_notify[i].type_evt[j].evt_len * 8; k++)
             {
@@ -3459,23 +3467,26 @@ static void hl_notification_info_show(zwifd_p intf, cJSON *interfaceInfo)
             {
                 return;
             }
-            cJSON_AddItemToObject(notificationInfo, "Supported event", eventInfo);
+
+            sprintf(notifiy_str,"Related events %d",j+1);
+            cJSON_AddItemToObject(notificationInfo, notifiy_str, eventInfo);
 
             for(int l=0; l< evt_len; l++)
             {
+                sprintf(notifiy_str,"event[%d]",l+1);
                 if(sup_notify[i].type_evt[j].ztype == 0x06)
                 {
-                    cJSON_AddStringToObject(eventInfo, "event", access_control_evt[sup_evt[l]]);
+                    cJSON_AddStringToObject(eventInfo, notifiy_str, access_control_evt[sup_evt[l]]);
                     ALOGI("                           Supported event:%s", access_control_evt[sup_evt[l]]);
                 }
                 if(sup_notify[i].type_evt[j].ztype == 0x07)
                 {
-                    cJSON_AddStringToObject(eventInfo, "event", home_security_evt[sup_evt[l]]);
+                    cJSON_AddStringToObject(eventInfo, notifiy_str, home_security_evt[sup_evt[l]]);
                     ALOGI("                           Supported event:%s",home_security_evt[sup_evt[l]]);
                 }
                 if(sup_notify[i].type_evt[j].ztype == 0x05)
                 {
-                    cJSON_AddStringToObject(eventInfo, "event", water_alarm_evt[sup_evt[l]]);
+                    cJSON_AddStringToObject(eventInfo, notifiy_str, water_alarm_evt[sup_evt[l]]);
                     ALOGI("                           Supported event:%s",water_alarm_evt[sup_evt[l]]);
                 }
             } // dump supported event for notification type end
@@ -3933,7 +3944,7 @@ static int hl_node_desc_dump(hl_appl_ctx_t *hl_appl, cJSON *jsonRoot)
                 {
                     hl_meter_info_show(intf, InterfaceInfo);
                 }
-                else if (intf->cls == COMMAND_CLASS_NOTIFICATION_V4)
+                else if (intf->cls == COMMAND_CLASS_NOTIFICATION_V4 && intf->ver >= 3)
                 {
                     hl_notification_info_show(intf, InterfaceInfo);
                     result = zwif_notification_rpt_set(intf, hl_notification_get_report_cb);
@@ -4294,7 +4305,7 @@ static int hl_specify_node_desc_dump(hl_appl_ctx_t *hl_appl, int nodeId, cJSON *
                     {
                         hl_meter_info_show(intf, InterfaceInfo);
                     }
-                    else if (intf->cls == COMMAND_CLASS_NOTIFICATION_V4)
+                    else if (intf->cls == COMMAND_CLASS_NOTIFICATION_V4 && intf->ver >= 3)
                     {
                         hl_notification_info_show(intf, InterfaceInfo);
                         //result = zwif_notification_rpt_set(intf, hl_notification_get_report_cb);

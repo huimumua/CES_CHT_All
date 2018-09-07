@@ -118,7 +118,7 @@ BYTE serial_ok;
 PROCESS_THREAD(serial_api_process, ev, data)
 {
   unsigned char buf[14];
-  int type;
+  int type, retry_cnt;
   /****************************************************************************/
   /*                              PRIVATE DATA                                */
   /****************************************************************************/
@@ -136,12 +136,28 @@ PROCESS_THREAD(serial_api_process, ev, data)
           {
             LOG_PRINTF("Using serial port %s\n", (char* )data);
             serial_ok = SerialAPI_Init((char*) data, &serial_api_callbacks);
-            if (!serial_ok)
+	    /** Remove by Daniel....2018/9/4 **/
+            /*if (!serial_ok)
             {
               ERR_PRINTF("Error opening serial API\n");
               process_exit(&serial_api_process);
               return 1;
+            }*/
+	    /** Add by Daniel....2018/9/4 **/
+	    while (!serial_ok){
+              if(retry_cnt < 3)
+              {
+                WRN_PRINTF("Error opening serial API, Restarting...\n");
+                serial_ok = SerialAPI_Init((char*) data, &serial_api_callbacks);
+                retry_cnt++;
+              }
+              else{
+                ERR_PRINTF("Failed to open serial API!\n");
+                process_exit(&serial_api_process);
+                return 1;
+              }
             }
+	    /** Add by Daniel END **/
           }
           else
           {

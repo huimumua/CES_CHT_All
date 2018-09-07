@@ -43,7 +43,10 @@ void SerialDestroy()
 int SerialGetByte()
 {
     unsigned char c;
-    SerialGetBuffer(&c,1);
+    int result;
+    result = SerialGetBuffer(&c,1);
+    if(result < 0)
+        return result;
     return c;
 }
 
@@ -59,7 +62,7 @@ void SerialPutByte(unsigned char c)
 
 int SerialGetBuffer(unsigned char* c, int len)
 {
-    int n, k;
+    int n, k, retry_cnt=0;
     k = 0;
 
     if(c == NULL)
@@ -73,9 +76,12 @@ int SerialGetBuffer(unsigned char* c, int len)
 
         if(n == 0)
         {
+	    retry_cnt++;
+	    if(retry_cnt == 50)
+	        return -1;
             continue;
         }
-
+	retry_cnt = 0;
         k = k+n;
     }
 

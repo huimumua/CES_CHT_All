@@ -187,7 +187,8 @@ ConUpdate(BYTE acknowledge) /* IN do we send acknowledge and handle frame if rec
     {
       c = SerialGetByte();
       if(c<0) {
-        break;
+        //break;
+        return c;
       }
       switch (con_state)
       {

@@ -268,6 +268,8 @@ static void dump_serbuf()  {
 /***************************** Timers ***********************************/
 static struct ZW_timer timers[0x10];
 
+static int serial_init_flag=0;
+
 BYTE SupportsCommand_func(BYTE cmd)
 {
  if((cmd==FUNC_ID_SERIAL_API_GET_CAPABILITIES) || (capabilities.supported_bitmask[((cmd-1)>>3)]  & (1<<((cmd-1) & 0x7)))) {
@@ -398,7 +400,7 @@ BOOL SerialAPI_Init(const char* serial_port, const struct SerialAPI_Callbacks* _
   BYTE type;
   int i;
     if(!ConInit(serial_port)) return FALSE;
-
+    serial_init_flag = 1;
 
     cbFuncZWSendData = NULL;
     cbFuncZWSendTestFrame = NULL;
@@ -432,6 +434,8 @@ BOOL SerialAPI_Init(const char* serial_port, const struct SerialAPI_Callbacks* _
     byLen = 0;
     if(!SendFrameWithResponse(FUNC_ID_SERIAL_API_GET_CAPABILITIES, 0, 0 , buffer, &byLen )) {
       LOG_PRINTF("SendFrameWithResponse(FUNC_ID_SERIAL_API_GET_CAPABILITIES,...) failed in SerialAPI_Init()\n");
+      ConDestroy();  //add by Daniel...2018/9/4
+      serial_init_flag = 0;
       return FALSE;
     }
     memcpy(&capabilities, &(buffer[IDX_DATA]), byLen -IDX_DATA);
@@ -453,6 +457,7 @@ BOOL SerialAPI_Init(const char* serial_port, const struct SerialAPI_Callbacks* _
     }
     if( type != ZW_LIB_CONTROLLER_BRIDGE ) {
       LOG_PRINTF("Z-Wave dongle MUST be a Bridge library\n");
+      serial_init_flag = 0;
       return FALSE;
     }
 
@@ -464,7 +469,7 @@ BOOL SerialAPI_Init(const char* serial_port, const struct SerialAPI_Callbacks* _
       SerialAPI_ApplicationNodeInformation(listening,nodeType,nodeParm,parmLength);
     }
     //TransportService_SetCommandHandler(callbacks->ApplicationCommandHandler);
-
+    serial_init_flag = 0;
     return TRUE;
 }
 
@@ -586,12 +591,17 @@ int WaitResponse() {
 
 
 
-static void DrainRX() {
-  while( ConUpdate(TRUE) == conFrameReceived) {
-    if(serBuf[1] == REQUEST) {
-      QueueFrame();
-    }
-  }
+static int DrainRX() {
+    do{
+      if(ConUpdate(TRUE) == conFrameReceived){
+ 	if(serBuf[1] == REQUEST) {
+	  QueueFrame();
+	}
+      }
+      else if(ConUpdate(TRUE) == -1)
+	return -1;
+    }while( ConUpdate(TRUE) == conFrameReceived);
+    return 0;
 }
 
 
@@ -600,7 +610,7 @@ static int SendFrame(
 	  BYTE *Buf, /* IN pointer to BYTE buffer containing DATA to send */
 	  BYTE len)   /* IN the length of DATA to transmit */
 {
-	int i;
+	int i, res;
 	enum T_CON_TYPE ret;
 	PORT_TIMER t;
 	if(!SupportsCommand(cmd)) {
@@ -609,7 +619,9 @@ static int SendFrame(
 	  return conTxErr;
 	}
   /*First check for incoming.*/
-	DrainRX();
+	res = DrainRX();
+        if(res < 0 && serial_init_flag)
+          return res;
 
   ConTxFrame(cmd,REQUEST,Buf,len);
 	for(i=0; i < 20; i++) {

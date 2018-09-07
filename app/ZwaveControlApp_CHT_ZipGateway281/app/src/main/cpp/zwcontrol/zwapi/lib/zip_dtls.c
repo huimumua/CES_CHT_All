@@ -843,7 +843,7 @@ dtls_sess_expiry_chk - Check for DTLS sessions expiry
 */
 static void dtls_sess_expiry_chk(tpt_layer_ctx_t *tpt_ctx)
 {
-    static const uint8_t    keep_alive_msg[] = {1, COMMAND_CLASS_ZIP, COMMAND_ZIP_KEEP_ALIVE, 0x80}; //djnakata
+    static const uint8_t    keep_alive_msg[] = {0, COMMAND_CLASS_ZIP, COMMAND_ZIP_KEEP_ALIVE, 0x80}; //djnakata
     int             i;
     int             k;
     int             bytes_sent;
@@ -1001,6 +1001,9 @@ static void dtls_rd_ready_hdlr(tpt_layer_ctx_t *tpt_ctx, fd_set *read_fds, int n
                             debug_msg_show(tpt_ctx->plt_ctx, "udp rcx:");
                             debug_bin_show(tpt_ctx->plt_ctx, buf, rcx_size);
         #endif
+                            // ALOGI("************* Read udp rcx:\n");
+                            // debug_bin_show(tpt_ctx->plt_ctx, buf, rcx_size);
+                            // ALOGI("************* Read udp rcx end\n");
                             //djnakata
                             ssl_sock->keep_alive_cnt = ZIPV2_SESS_KEEP_ALIVE_CNT;
 
@@ -1029,7 +1032,7 @@ static void dtls_rd_ready_hdlr(tpt_layer_ctx_t *tpt_ctx, fd_set *read_fds, int n
                                     sock_addr = (struct sockaddr *)&sa4;
                                     //djnakata
                                     char addr[50];
-                                    if(nodeid == 1)
+                                    if(nodeid == tpt_ctx->frm_layer_ctx->ssn_layer_ctx->appl_layer_ctx->ctl_node_id)
                                     {
                                         memcpy(&sa4.sin_addr.s_addr, tbl[i].ipaddr, tbl[i].ipaddr_sz);
 										//sa4.sin_port = k;//Overload port to indicate whether the socket is using host listening port
@@ -1613,6 +1616,9 @@ void dtls_wr_thrd(tpt_layer_ctx_t *tpt_ctx)
 #ifdef SHOW_PACKAT_INFO
                         debug_msg_show(tpt_ctx->plt_ctx, "Send udp len: %d", bytes_sent);
 #endif
+                        // ALOGI("************* Send buffer to zipgateway:\n");
+                        // debug_bin_show(tpt_ctx->plt_ctx, send_pkt->buf, bytes_sent);
+                        // ALOGI("************* Send buffer to zipgateway end\n");
 
                         if (bytes_sent == send_pkt->len)
                         {   //Send O.K.
