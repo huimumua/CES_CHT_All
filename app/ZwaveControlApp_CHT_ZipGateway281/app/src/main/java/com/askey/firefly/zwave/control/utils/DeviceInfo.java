@@ -1,8 +1,5 @@
 package com.askey.firefly.zwave.control.utils;
 
-import com.askey.firefly.zwave.control.page.RoomMember;
-import com.askey.firefly.zwave.control.page.zwNodeMember;
-import com.askey.firefly.zwave.control.page.zwScenceMember;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
 
 import java.util.ArrayList;
@@ -15,15 +12,11 @@ import java.util.List;
 public class DeviceInfo {
 
     public static boolean isZwaveInitFinish = false;
-    public static boolean isOpenControllerFinish = false;
+    public static int isOpenControllerFinish = 99;
     public static boolean isMQTTInitFinish = false;
     public static ArrayList<String> remoteSubTopiclist = new ArrayList<>();
     public static ArrayList<String> localSubTopiclist = new ArrayList<>();
 
-    public static List<zwNodeMember> memberList = new ArrayList<>();
-    public static List<RoomMember> roomList = new ArrayList<>();
-    public static String[] deviceType = {"BULB", "DIMMER", "PLUG", "SENSOR", "CONTROL", "OTHER"};
-    public static String[] allRoomName = {"My Home","Living Room","Bedroom"};
     public static String dskNumber = null;
     public static int reqKey;
     public static boolean reqFlag = false;
@@ -64,7 +57,6 @@ public class DeviceInfo {
     public static String resultToMqttBroker = "";
 
     public static String room = "";
-    public static boolean failFlag = false;
 
     public static String inclusionState = "Pending";
     public static String bootMode = "Smart Start";
@@ -87,7 +79,6 @@ public class DeviceInfo {
 
     public static boolean qrCodeFlag = false;
 
-    public static boolean mainFlag = false;
     public static boolean mqttFlag = false;
 
     public static String[] version = null;

@@ -1,15 +1,6 @@
 package com.askey.firefly.zwave.control.jni;
 
-import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
-
-import com.askey.firefly.zwave.control.service.MQTTBroker;
 import com.askey.firefly.zwave.control.service.ZwaveControlService;
-import com.askey.firefly.zwave.control.utils.DeviceInfo;
-
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 项目名称：ZwaveControl

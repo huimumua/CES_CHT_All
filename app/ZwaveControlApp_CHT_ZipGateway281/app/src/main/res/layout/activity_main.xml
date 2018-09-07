@@ -1,124 +1,186 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.widget.LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="40dip"
-    android:orientation="vertical">
- <ScrollView
-     android:layout_width="match_parent"
-     android:layout_height="wrap_content"
-     >
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
     android:orientation="vertical"
-    >
-   <Button
-       android:id="@+id/btn_open"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:text="open Controller"
-       android:layout_margin="5dp"
-       />
-    <TextView
-        android:id="@+id/tx_open_result"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="open result"
-        android:layout_margin="5dp"
-        />
- <Button
-       android:id="@+id/btn_add"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:text="ADD DEVICE"
-       android:layout_margin="5dp"
-       />
-    <TextView
-        android:id="@+id/tx_add_result"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnAdd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="add" />
+
+            <Button
+                android:id="@+id/btn_stopAdd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="stop_Add" />
+
+            <Button
+                android:id="@+id/btnRm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="rm" />
+
+            <Button
+                android:id="@+id/btn_stopRm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="stop_rm" />
+
+            <Button
+                android:id="@+id/btnButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="確認" />
+
+            <Button
+                android:id="@+id/btnPlug"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="plug_test" />
+
+            <Button
+                android:id="@+id/btnBulb"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="bulb_test" />
+
+            <Button
+                android:id="@+id/btnSensor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="sensor_test" />
+
+            <Button
+                android:id="@+id/button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="grant_Key" />
+
+            <Button
+                android:id="@+id/btn_next"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="next" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="API_name"
+                android:textSize="24sp" />
+
+            <Spinner
+                android:id="@+id/spApiList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="node_Id"
+                android:textSize="24sp" />
+
+            <Spinner
+                android:id="@+id/nodeIdList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/textView3"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="Input_value"
+                android:textSize="24sp" />
+
+            <EditText
+                android:id="@+id/editText"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:textSize="24sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="add result"
-        android:layout_margin="5dp"
-        />
-    <Button
-       android:id="@+id/btn_remove"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:text="REMOVE DEVICE"
-        android:layout_margin="5dp"
-       />
-    <TextView
-        android:id="@+id/tx_remove_result"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="remove result"
-        android:layout_margin="5dp"
-        />
-    <Button
-       android:id="@+id/btn_get"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:text="GET DEVICE LIST"
-        android:layout_margin="5dp"
-       />
-    <TextView
-        android:id="@+id/tx_get_result"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="deviceInfo result"
-        android:layout_margin="5dp"
-        />
-    <Button
-        android:id="@+id/btn_getBarr"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="GET BATTERY"
-        android:layout_margin="5dp"
-        />
-    <Button
-        android:id="@+id/btn_getSenser"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="GET SENSOR INFO"
-        android:layout_margin="5dp"
-        />
-    <Button
-        android:id="@+id/btn_update"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="REFLASH"
-        android:layout_margin="5dp"
-        />
-    <EditText
-        android:id="@+id/et_node_id"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Please input the nodeId"
-        />
-    <Button
-        android:id="@+id/btn_get_power"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="GET POWER"
-        android:layout_margin="5dp"
-        />
-    <Button
-        android:id="@+id/btn_on"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="TURN BULB ON"
-        android:layout_margin="5dp"
-        />
-    <Button
-        android:id="@+id/btn_off"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="TURN BULB OFF"
-        android:layout_margin="5dp"
-        />
- </LinearLayout>
- </ScrollView>
-</android.widget.LinearLayout>
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvtest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textAlignment="center"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txAllMsg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="20"
+            android:textAlignment="center"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+
+</LinearLayout>
+

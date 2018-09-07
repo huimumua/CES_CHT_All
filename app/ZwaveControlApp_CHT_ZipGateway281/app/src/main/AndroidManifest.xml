@@ -29,25 +29,8 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.HomeActivity"
-            android:launchMode="singleTask"/>
-        <activity android:name=".ui.AddDeviceActivity"
-            android:launchMode="singleTask"/>
-        <activity android:name=".ui.RemoveDeviceActivity"
-            android:launchMode="singleTask"/>
-        <activity android:name=".ui.BulbActivity"
-            android:windowSoftInputMode = "stateUnchanged"
-            android:launchMode="singleTask"/>
-        <activity android:name=".ui.DimmerActivity"
-            android:windowSoftInputMode = "stateUnchanged"
-            android:launchMode="singleTask"/>
-        <activity android:name=".ui.PlugActivity"
-            android:launchMode="singleTask"/>
-        <activity android:name=".ui.SensorActivity"
-            android:launchMode="singleTask"/>
-        <activity android:name=".ui.ControlActivity"
-            android:launchMode="singleTask"/>
-        <activity android:name=".ui.RoomActivity"
+
+        <activity android:name=".ui.MainActivity"
             android:launchMode="singleTask"/>
 
         <receiver android:name=".service.BootBroadcastReceiver">

@@ -2609,7 +2609,7 @@ public class MQTTBroker extends Service {
 
             } else if (DeviceInfo.className.equals("openController")) {
                 DeviceInfo.getMqttPayload = "getDeviceInfo";
-                DeviceInfo.isOpenControllerFinish = true;
+                //DeviceInfo.isOpenControllerFinish = true;
                 Log.i(LOG_TAG, " === isOpenControllerFinish = true ===");
 
             } else if (DeviceInfo.className.equals("Supported S2 Cmd Report")) {
@@ -3052,6 +3052,8 @@ public class MQTTBroker extends Service {
         */
 
         //add fail send mqtt payload
+
+/*
         else if (DeviceInfo.className.equals("addDevice")) {
             Log.i(LOG_TAG, "addDevice  result");
             if (DeviceInfo.result.contains("Failed")) {
@@ -3064,7 +3066,7 @@ public class MQTTBroker extends Service {
                 publishMessage(Const.PublicTopicName, message.toString());
             }
         }
-        
+        */
         /*
         else if (DeviceInfo.result.contains("NewAdded")) {
                 String[] tmpAdd = DeviceInfo.result.split(",");

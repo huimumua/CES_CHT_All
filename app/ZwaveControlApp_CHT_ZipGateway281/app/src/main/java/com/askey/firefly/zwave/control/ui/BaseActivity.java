@@ -87,67 +87,6 @@ public class BaseActivity extends AppCompatActivity{
         }
     }
 
-    public void showNodeProgressDialog(Context context, String text) {
-        if (progressDialog == null) {
-            progressDialog = ProgressDialog.show(context, "Wait a moment...", text, true);
-            progressDialog.setContentView(R.layout.node_progress);
-
-            progressDialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
-
-                @Override
-                public boolean onKey(DialogInterface arg0, int arg1,
-                                     KeyEvent arg2) {
-                    if (arg1 == KeyEvent.KEYCODE_BACK
-                            && arg2.getRepeatCount() == 0
-                            && arg2.getAction() == KeyEvent.ACTION_UP) {
-                        new AlertDialog.Builder(BaseActivity.this)
-                                .setTitle("Warning")
-                                .setMessage("The processing has not been completed yet")
-                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                    public void onClick( DialogInterface dialog,int whichButton) {
-                                        hideProgressDialog();
-                                    }
-                                })
-                                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog,int whichButton) {
-                                        return;
-                                    }
-                                }).show();
-                    }
-                    return true;
-                }
-
-            });
-            View v = progressDialog.getWindow().getDecorView();
-            if (text == null) {
-                text = "Wait a moment...";
-            }
-            setProgressText(v, text);
-        }
-    }
-
-    public void setTopLayout(boolean isVis, String str) {
-        if((findViewById(R.id.img_back))!=null && (findViewById(R.id.tv_title))!=null){
-            //Back button =(ImageView)findViewById(R.id.img_back);
-            ImageView back = (ImageView)findViewById(R.id.img_back);
-            if(isVis){
-                back.setVisibility(View.VISIBLE);
-                back.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        backToHomeActivity();
-                    }
-                });
-            }else{
-                back.setVisibility(View.INVISIBLE);
-            }
-            //Title
-            TextView text = (TextView)findViewById(R.id.tv_title);
-            if(!"".equals(str) && str!=null){
-                text.setText(str);
-            }
-        }
-    }
 
     private void setProgressText(View v, String text) {
 
@@ -187,11 +126,5 @@ public class BaseActivity extends AppCompatActivity{
         }
     }
 
-    protected void backToHomeActivity(){
-        Intent intent = new Intent();
-        intent.setClass(mContext, HomeActivity.class);
-        mContext.startActivity(intent);
-        finish();
-    }
 
 }
