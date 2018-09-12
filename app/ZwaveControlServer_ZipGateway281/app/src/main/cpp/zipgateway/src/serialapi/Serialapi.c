@@ -268,7 +268,7 @@ static void dump_serbuf()  {
 /***************************** Timers ***********************************/
 static struct ZW_timer timers[0x10];
 
-static int serial_init_flag=0;
+int serial_init_flag=0;
 
 BYTE SupportsCommand_func(BYTE cmd)
 {
@@ -592,16 +592,20 @@ int WaitResponse() {
 
 
 static int DrainRX() {
-    do{
-      if(ConUpdate(TRUE) == conFrameReceived){
- 	if(serBuf[1] == REQUEST) {
-	  QueueFrame();
-	}
-      }
-      else if(ConUpdate(TRUE) == -1)
-	return -1;
-    }while( ConUpdate(TRUE) == conFrameReceived);
-    return 0;
+    
+    int ret;
+  
+    while(1){
+        ret = ConUpdate(TRUE);
+  	if(ret == conFrameReceived && serBuf[1] == REQUEST){
+            QueueFrame();
+	    continue;
+  	}
+	else if(ret == -1 && serial_init_flag)
+	    return -1;
+	else
+	    return 0;
+    }
 }
 
 
@@ -620,7 +624,7 @@ static int SendFrame(
 	}
   /*First check for incoming.*/
 	res = DrainRX();
-        if(res < 0 && serial_init_flag)
+        if(res == -1 && serial_init_flag)
           return res;
 
   ConTxFrame(cmd,REQUEST,Buf,len);
