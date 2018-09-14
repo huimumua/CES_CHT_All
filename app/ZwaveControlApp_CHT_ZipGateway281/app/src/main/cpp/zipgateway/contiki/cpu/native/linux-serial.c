@@ -16,6 +16,8 @@ extern void UsbSerial_WriteData(uint8_t *data, int size);
 extern int  UsbSerial_ReadData(uint8_t *data, int len);
 extern int  UsbSerial_Check();
 
+extern int serial_init_flag;
+
 int SerialGetBuffer(unsigned char* c, int len);
 
 int SerialInit(const char* port)
@@ -45,7 +47,7 @@ int SerialGetByte()
     unsigned char c;
     int result;
     result = SerialGetBuffer(&c,1);
-    if(result < 0)
+    if(result == -1 && serial_init_flag)
         return result;
     return c;
 }
@@ -76,11 +78,13 @@ int SerialGetBuffer(unsigned char* c, int len)
 
         if(n == 0)
         {
-	    retry_cnt++;
-	    if(retry_cnt == 50)
-	        return -1;
+	    if(serial_init_flag){
+	        retry_cnt++;
+	        if(retry_cnt == 50)
+	            return -1;
+	    }
             continue;
-        }
+	}
 	retry_cnt = 0;
         k = k+n;
     }

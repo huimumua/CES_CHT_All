@@ -1493,6 +1493,8 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                zwaveService.getDeviceInfo();
+
                 zwaveService.getDeviceList("ALL");
                 JSONObject jsonObject ,jsonObject2 = null;
                 try {

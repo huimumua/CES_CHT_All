@@ -79,6 +79,8 @@
 #define RX_ACK_TIMEOUT_DEFAULT  150
 #define RX_BYTE_TIMEOUT_DEFAULT 150
 
+extern int serial_init_flag;
+
 /****************************************************************************/
 /*                      PRIVATE TYPES and DEFINITIONS                       */
 /****************************************************************************/
@@ -186,9 +188,11 @@ ConUpdate(BYTE acknowledge) /* IN do we send acknowledge and handle frame if rec
     do
     {
       c = SerialGetByte();
-      if(c<0) {
-        //break;
-        return c;
+      if(c<0){ 
+        if(serial_init_flag)
+          return c;
+        else
+          break;
       }
       switch (con_state)
       {
