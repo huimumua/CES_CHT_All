@@ -278,6 +278,11 @@ ApplicationInitSW(void) CC_REENTRANT_ARG /* IN   Nothing   */
   if(!cfg.enable_smart_start) {
     cc_disable_list[cc_disable_list_length++] = COMMAND_CLASS_PROVISIONING_LIST;
   }
+
+  cc_disable_list[cc_disable_list_length++] = COMMAND_CLASS_ZIP_PORTAL;
+  cc_disable_list[cc_disable_list_length++] = COMMAND_CLASS_ZIP_NAMING;
+  cc_disable_list[cc_disable_list_length++] = COMMAND_CLASS_MAILBOX;
+
   //Just make sure :-)
   assert( sizeof(cc_disable_list) / sizeof(uint16_t)  > cc_disable_list_length);
 

@@ -13696,7 +13696,7 @@ static int zwnet_ctlr_info_sm(zwnet_p nw, zwnet_ctlr_evt_t evt, uint8_t *data)
         //----------------------------------------------------------------
         case CTLR_STA_CTLR_DSK:
         //----------------------------------------------------------------
-            if (!nw->multi_client)
+            //if (!nw->multi_client)
             {   //Non multi-client support
                 switch (evt)
                 {
@@ -13735,7 +13735,7 @@ static int zwnet_ctlr_info_sm(zwnet_p nw, zwnet_ctlr_evt_t evt, uint8_t *data)
                 }
                 break;
             }
-            else
+            /*else	//removed due to unsupported COMMAND_CLASS_MAILBOX....Daniel 2018/09/14
             {   //Multi-client support
                 switch (evt)
                 {
@@ -13770,7 +13770,7 @@ static int zwnet_ctlr_info_sm(zwnet_p nw, zwnet_ctlr_evt_t evt, uint8_t *data)
 
                 }
                 break;
-            }
+            }*/
 
         //----------------------------------------------------------------
         case CTLR_STA_MAILBOX:
